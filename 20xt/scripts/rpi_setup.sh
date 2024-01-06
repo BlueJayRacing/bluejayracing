@@ -11,6 +11,8 @@ wget https://www.pjrc.com/teensy/00-teensy.rules -P /home/pi/
 sudo cp /home/pi/00-teensy.rules /etc/udev/rules.d/00-teensy.rules
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh ./get-docker.sh
-
+sudo groupadd docker
+sudo usermod -aG docker $USER
+newgrp docker
 
 
