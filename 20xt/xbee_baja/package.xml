@@ -1,0 +1,7 @@
+<package>
+    <name>xbee_baja</name>
+    <version>0.1.0</version>
+    <description>Baja library for Digi XBee functions</description>
+    <maintainer email="tannergladson@example.com">Tanner Gladson</maintainer>
+    <license>MIT</license>
+</package>

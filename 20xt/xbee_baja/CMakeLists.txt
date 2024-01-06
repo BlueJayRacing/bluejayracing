@@ -10,20 +10,19 @@ set(HEADERS
 )
 
 # Create library target
-add_library(xbee_base_station_funcs STATIC ${SOURCES} ${HEADERS})
+add_library(xbee_baja STATIC ${SOURCES} ${HEADERS})
 
-# This library has been modified so it is only compatible with POSIX devices
-target_include_directories(xbee_base_station_funcs PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(xbee_baja PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Add the xbee_library as a subdirectory
+# Recursively link any dependencies
 add_subdirectory(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_ansic_library
-    ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_ansic_library/bin
+    ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi
+    ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi/bin
 )
 
-target_link_libraries(xbee_base_station_funcs
+target_link_libraries(xbee_baja
+    PRIVATE xbee_digi
     # Add any required libraries here
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_ansic_library
 )
