@@ -151,15 +151,15 @@ set(HEADERS
 )
 
 # Create library target
-add_library(xbee_library STATIC ${SOURCES} ${HEADERS})
+add_library(xbee_digi STATIC ${SOURCES} ${HEADERS})
 
 # This library has been modified so it is only compatible with POSIX devices
-target_compile_definitions(xbee_library PUBLIC "POSIX")
-target_include_directories(xbee_library PUBLIC
+target_compile_definitions(xbee_digi PUBLIC "POSIX")
+target_include_directories(xbee_digi PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/ports/posix
 )
 
-target_link_libraries(xbee_library
+target_link_libraries(xbee_digi
     # Add any required libraries here
 )
