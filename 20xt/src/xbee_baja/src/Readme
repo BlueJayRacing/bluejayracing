@@ -1,0 +1,26 @@
+This directory contains the source code which enables the main event loops in `src/base` and `src/car` to communicate data between each other. Anything beyond the immediate car-to-base scope (scheduling, discarding, etc) will be the responsibility of code elsewhere.
+
+To begin, let's start with an interface owned by the main event loop of the base station. The base station must balance bidirectional responsibilities (major bullet points), and this library will assist with implimentation details (minor points).
+0) Open a connection to the car station
+ - Create an abstract class with open(), send(), and tick() methods 
+ - Impliment this by using a class wrapping the XBee device. The constructor can initialize all
+
+1) Recieve and enqueue data from multiple IPC connections
+ - ?
+
+2) Serialize the data into protobuf packets
+ - The main event loop will construct the protobuf struct
+ - The main event loop will build the protobuf frame
+3) Transmit the packet over the connection
+ - The send() method accepts an array of binary
+ - Implementation side, this means creating a broadcast frame and emiting to Xbee
+
+4) Query the connection for incoming packets, buffer them
+ - Call tick(), which fills up a local queue that has pointers to binary arrays
+ - Implentation side, this means the Xbee frame dispatcher needs to fill the queue as it recieves
+
+5) Deserialize the recieved packets into data
+ - Take the binary out of queues, convert to protobuf struct
+6) Route the recieved data to recieved queues 
+ - For each struct, enqueue data from each fields into it respective recieved data queue 
+ - The XBee frame handler should not be routing anything!
