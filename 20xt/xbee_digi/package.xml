@@ -1,0 +1,6 @@
+<package>
+    <name>xbee_digi</name>
+    <version>0.1.0</version>
+    <description>Modified version of Digi XBee ANSI-C Library</description>
+    <maintainer email="tannergladson@example.com">Tanner Gladson</maintainer>
+</package>
