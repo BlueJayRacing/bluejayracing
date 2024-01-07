@@ -14,6 +14,8 @@ add_library(xbee_baja STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(xbee_baja PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/proto
+    # TODO: It will be necessary to have the proto files build with the PROTOBUF_GENERATE_CPP function
 )
 
 # Recursively link any dependencies
