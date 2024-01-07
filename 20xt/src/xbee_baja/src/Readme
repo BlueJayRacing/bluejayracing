@@ -1,26 +1,38 @@
 This directory contains the source code which enables the main event loops in `src/base` and `src/car` to communicate data between each other. Anything beyond the immediate car-to-base scope (scheduling, discarding, etc) will be the responsibility of code elsewhere.
 
+Goals:
+ - Never blocked by recieved data
+ - Does not discard data
+
 To begin, let's start with an interface owned by the main event loop of the base station. The base station must balance bidirectional responsibilities (major bullet points), and this library will assist with implimentation details (minor points).
+
 0) Open a connection to the car station
- - Create an abstract class with open(), send(), and tick() methods 
- - Impliment this by using a class wrapping the XBee device. The constructor can initialize all
+ - Create an abstract class with open(), is_open(), send(), has_messages(), get_message(), recieve_buffer_full(), close() methods 
+ - Impliment this by using a class wrapping the XBee device. The constructor can initialize all connection items. Has messages will tick device and store results in a dyn allocated queue. Destructor will close xbee and deallocate queue.
 
 1) Recieve and enqueue data from multiple IPC connections
- - ?
+ - Check to_transmit queues to see if any of them have messages
 
 2) Serialize the data into protobuf packets
  - The main event loop will construct the protobuf struct
  - The main event loop will build the protobuf frame
 3) Transmit the packet over the connection
- - The send() method accepts an array of binary
+ - The send() method accepts an array of binary with maximum size
  - Implementation side, this means creating a broadcast frame and emiting to Xbee
 
 4) Query the connection for incoming packets, buffer them
  - Call tick(), which fills up a local queue that has pointers to binary arrays
- - Implentation side, this means the Xbee frame dispatcher needs to fill the queue as it recieves
+ - Implentation side, this means the Xbee frame dispatcher needs to fill up a dyn allocated queue as it recieves
 
 5) Deserialize the recieved packets into data
- - Take the binary out of queues, convert to protobuf struct
+ - Main event loop will use get_messages() to retrieve message, converts to protobuf struct
 6) Route the recieved data to recieved queues 
- - For each struct, enqueue data from each fields into it respective recieved data queue 
+ - For each struct, enqueue all data from each field into its respective queue 
  - The XBee frame handler should not be routing anything!
+ - Additional thread(s) will empty the recieved queues
+
+
+So, that gives me some todo orders:
+1) Define the .proto file
+2) Define the abstract Connection class
+3) Write the main loop
