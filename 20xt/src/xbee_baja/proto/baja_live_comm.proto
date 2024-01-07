@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+message GPS {
+    float lat = 1;
+    float long = 2;
+    float alt = 3;
+}
+
+message Localization {
+    float x = 1;
+    float y = 2;
+    float z = 3;
+    float roll = 4;
+    float pitch = 5;
+    float yaw = 6;
+    optional float vx = 7;
+    optional float vy = 8;
+    optional float vz = 9;
+    optional float wr = 10;
+    optional float wp = 11;
+    optional float wy = 12;
+}
+
+message Timestamp {
+    float ts = 1;
+}
+
+message AnalogChannel {
+    enum ChannelType {
+        AXLE_TORQUE_FRONT_LEFT = 0;
+        AXLE_TORQUE_FRONT_RIGHT = 1;
+        AXLE_TORQUE_REAR_LEFT = 2;
+        AXLE_TORQUE_REAR_RIGHT = 3;
+
+        AXLE_RPM_FRONT_RIGHT = 4;
+        AXLE_RPM_FRONT_LEFT = 5;
+        AXLE_RPM_REAR = 6;
+
+        SHOCK_LEN_FRONT_RIGHT = 7; 
+        SHOCK_LEN_FRONT_LEFT = 8;
+        SHOCK_LEN_REAR_RIGHT = 9;
+        SHOCK_LEN_REAR_LEFT = 10;
+
+        STEERING_DATA = 11;
+        TACHOMETER = 12;
+        POWER_USE = 13;
+    }
+    ChannelType channel_type = 1;
+    bytes encoded_analog_points = 2;
+}
+
+message Communication {
+    enum DriverInstruction {
+        STOP_IMMEDIATELY = 0;
+        STOP_FOR_PIT = 1;
+    }
+    optional DriverInstruction instruction = 1;
+
+    enum DriverResponse {
+        SEND_HELP = 0;
+        PIT_REQUEST = 1;
+    }
+    optional DriverResponse driver_response = 2;
+}
+
+message CarState {
+    enum EngineStatus {
+        ENGINE_NORMAL = 0;
+        ENGINE_IDLING = 1;
+        ENGINE_CHOKED = 2;
+        ENGINE_UNDERPERFORMING = 3;
+        ENGINE_OFF = 4;
+    }
+    optional EngineStatus engine_status = 1;
+    optional bool rollover_status = 2;
+}
+
+message LiveComm {
+    optional GPS gps = 1;
+    optional Localization localization = 2;
+    optional Communication communication = 3;
+    optional Timestamp timestamp = 4;
+    optional AnalogChannel analog_ch = 5;
+    optional CarState car_state = 6;
+}
