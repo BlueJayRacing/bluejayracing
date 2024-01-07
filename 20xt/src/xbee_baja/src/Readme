@@ -7,15 +7,14 @@ Goals:
 To begin, let's start with an interface owned by the main event loop of the base station. The base station must balance bidirectional responsibilities (major bullet points), and this library will assist with implimentation details (minor points).
 
 0) Open a connection to the car station
- - Create an abstract class with open(), is_open(), send(), has_messages(), get_message(), recieve_buffer_full(), close() methods 
+ - Abstract Connection class
  - Impliment this by using a class wrapping the XBee device. The constructor can initialize all connection items. Has messages will tick device and store results in a dyn allocated queue. Destructor will close xbee and deallocate queue.
 
 1) Recieve and enqueue data from multiple IPC connections
  - Check to_transmit queues to see if any of them have messages
 
 2) Serialize the data into protobuf packets
- - The main event loop will construct the protobuf struct
- - The main event loop will build the protobuf frame
+ - The main event loop will construct the LiveComm object
 3) Transmit the packet over the connection
  - The send() method accepts an array of binary with maximum size
  - Implementation side, this means creating a broadcast frame and emiting to Xbee
@@ -33,6 +32,3 @@ To begin, let's start with an interface owned by the main event loop of the base
 
 
 So, that gives me some todo orders:
-1) Define the .proto file
-2) Define the abstract Connection class
-3) Write the main loop
