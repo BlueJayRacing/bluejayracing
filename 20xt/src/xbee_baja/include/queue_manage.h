@@ -23,4 +23,7 @@ LiveComm build_message(TRXProtoQueues* queues);
 // Build up to a max size LiveCOmm objject out of data from a vector of fields
 LiveComm build_message(std::vector<int> field_ids);
 
+// Decompose and distribute to the appropriate queues
+int distribute_message(LiveComm msg, TRXProtoQueues* queues);
+
 #endif // QUEUE_FUNCS

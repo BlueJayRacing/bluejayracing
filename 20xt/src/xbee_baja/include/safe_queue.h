@@ -1,5 +1,5 @@
-#ifndef MESSAGE_QUEUE_H
-#define MESSAGE_QUEUE_H
+#ifndef SAFE_QUEUE_H
+#define SAFE_QUEUE_H
 
 #include <atomic>
 #include <queue>
@@ -22,7 +22,6 @@ private:
   pthread_mutex_t dequeue_lock; // must be held while dequeueing
   pthread_mutex_t enqueue_lock; // must be held while enqueueing
   std::atomic<int> size;
-  
   // THE MESSAGES IN THE QUEUE MUST BE DYNAMICALLY ALLOCATED
   std::queue<T *> data;
 };
