@@ -16,20 +16,10 @@ int main(void) {
   // Construct a connection, open it
   Connection* conn = new XBeeConnection();
 
-  
   // If any of the tx queues have messages
   // ... get a payload from any queue in tx_queues
   // ... serialize it
   // ... send it
-
-  std::vector<int> tx_fields = tx_queues.field_ids_with_data();
-  for (int i = 0; i < tx_fields.size(); i++) {
-    int field_id = tx_fields[i];
-    LiveComm data = tx_queues.dequeue(field_id);
-    
-    // Needs to properly handle errors
-    auto result = conn->send(data.SerializeAsString());
-  }
 
   // If rx_status has message available
   // ... get a message

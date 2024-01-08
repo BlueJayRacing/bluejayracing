@@ -12,6 +12,7 @@ To begin, let's start with an interface owned by the main event loop of the base
 
 1) Recieve and enqueue data from multiple IPC connections
  - Check tx_queues to see if any payloads are available
+ - It makes the most sense to have the supervisor thread construct the queues and pass them down
 
 2) Serialize the data into protobuf packets
  - The main event loop will construct the LiveComm object. Main loop has direct access 
