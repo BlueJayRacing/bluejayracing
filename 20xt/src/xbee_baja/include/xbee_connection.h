@@ -9,7 +9,7 @@ public:
     XBeeConnection();
     ~XBeeConnection();
 
-    void open() override;
+    ConnectionStatus open() override;
     bool is_open() const override;
     void close() override;
 
