@@ -7,16 +7,20 @@
 
 // Other processes need to enqueue and deque data in its native
 // format. The xbee-driver needs to dequeue data as a LiveComm
-// struct. This class will handle the conversion between the two
+// struct. This class will handle the conversion between the two.
+// This should preclude the need for switches, casts, or LiveComms
+// anywhere outside the xbee-driver.
+
 class TRXProtoQueues {
 public:
   TRXProtoQueues();
   ~TRXProtoQueues();
 
-  // Enqeue in wrapped format
+  // Manage queue via wrapped data
   std::vector<int> field_ids_with_data();
   LiveComm dequeue(int proto_field_id);
-  LiveComm enqueue(LiveComm data);
+  void enqueue(LiveComm data);
+  int queue_size(int proto_field_id);
 
   // Enqueue data in its native format
   void enqueue(GPS data);
