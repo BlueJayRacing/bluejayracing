@@ -1,8 +1,6 @@
 #ifndef REMOTE_CONNECTION_H
 #define REMOTE_CONNECTION_H
 
-#include "../proto/baja_live_comm.pb.h"
-
 #include <string>
 
 class Connection {
@@ -19,7 +17,7 @@ public:
     CONNECTION_BROKEN,   // irrecoverable error occured
   };
   virtual SendResult tx_status() const = 0;
-  virtual SendResult send(const string) = 0;
+  virtual SendResult send(const std::string msg) = 0;
 
   enum RecieveStatus {
     MSG_AVAILABLE,      // messages are available for consumption
@@ -27,7 +25,7 @@ public:
     CONNECTION_BROKEN,  // an irrecoverable error occured in connection
   };
   virtual RecieveStatus rx_status() = 0;
-  virtual string get_message() = 0;
+  virtual std::string get_message() = 0;
 };
 
 #endif // REMOTE_CONNECTION_H

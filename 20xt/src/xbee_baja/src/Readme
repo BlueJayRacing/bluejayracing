@@ -11,10 +11,10 @@ To begin, let's start with an interface owned by the main event loop of the base
  - Impliment this by using a class wrapping the XBee device. The constructor can initialize all connection items. Has messages will tick device and store results in a dyn allocated queue. Destructor will close xbee and deallocate queue.
 
 1) Recieve and enqueue data from multiple IPC connections
- - Check to_transmit queues to see if any of them have messages
+ - Check tx_queues to see if any payloads are available
 
 2) Serialize the data into protobuf packets
- - The main event loop will construct the LiveComm object
+ - The main event loop will construct the LiveComm object. Main loop has direct access 
 3) Transmit the packet over the connection
  - The send() method accepts an array of binary with maximum size
  - Implementation side, this means creating a broadcast frame and emiting to Xbee
@@ -29,6 +29,3 @@ To begin, let's start with an interface owned by the main event loop of the base
  - For each struct, enqueue all data from each field into its respective queue 
  - The XBee frame handler should not be routing anything!
  - Additional thread(s) will empty the recieved queues
-
-
-So, that gives me some todo orders:
