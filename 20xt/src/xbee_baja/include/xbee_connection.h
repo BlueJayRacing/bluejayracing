@@ -9,7 +9,7 @@ public:
     XBeeConnection();
     ~XBeeConnection();
 
-    int open() override;
+    void open() override;
     bool is_open() const override;
     void close() override;
 
@@ -17,8 +17,6 @@ public:
     SendResult send(const std::string msg) override;
     RecieveStatus rx_status() override;
     std::string get_message() override;
-
-    // TODO: not implemented, this is just scaffolding
 };
 
 #endif // XBEE_CONNECTION_H
