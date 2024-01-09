@@ -1,4 +1,6 @@
 #include "xbee_connection.h"
+#include "xbee_baja_config.h"
+
 extern "C" {
   #include "platform_config.h"
   #include "xbee/device.h"
@@ -8,9 +10,6 @@ extern "C" {
 
 // TODO: write the frame handlers
 
-static const uint32_t  BAUD_RATE = 921600;
-static const std::string  SERIAL_DEVICE_ID = "/dev/ttyS0";
-static const int  MAX_PAYLOAD_SIZE = 100;
 
 XBeeConnection::XBeeConnection(){
   // TODO: dynamically allocate the RX queue
