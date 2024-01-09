@@ -3,8 +3,7 @@
 #include "safe_queue.h"
 
 template <typename T>
-SafeQueue<T>::SafeQueue(int max_size) : {
-  this->max_size = max_size;
+SafeQueue<T>::SafeQueue(int max_size) : max_size (max_size) {
 }
 
 // Destroy sempahore, lock, and messages

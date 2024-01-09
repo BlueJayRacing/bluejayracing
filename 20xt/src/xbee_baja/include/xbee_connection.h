@@ -21,7 +21,7 @@ public:
   std::string pop_message() override;
 
 private:
-  bool is_open;
+  bool conn_open;
 };
 
 #endif // XBEE_CONNECTION_H

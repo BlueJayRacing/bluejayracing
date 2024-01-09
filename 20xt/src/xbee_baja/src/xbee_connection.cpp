@@ -1,46 +1,45 @@
 
 
-
+#include "xbee_connection.h"
 
 XBeeConnection::XBeeConnection(){
-  return NULL;
-
+  
 }
 
 XBeeConnection::~XBeeConnection(){
-  return NULL;
 }
 
 
-Status XBeeConnection::open(){
-  return int;
+Connection::Status XBeeConnection::open(){
+  return Connection::IRRECOVERABLE_ERROR;
 }
 
-bool XBeeConnection::is_open(){
-  return is_open;
+bool XBeeConnection::is_open() const {
+  return conn_open;
 }
 
 void XBeeConnection::close(){
   
 }
 
-Status XBeeConnection::tx_status(){
-  return NULL;
+Connection::Status XBeeConnection::tx_status() const{
+  return Connection::IRRECOVERABLE_ERROR;
 }
 
-Status XBeeConnection::send(const std::string msg){
-  return NULL;
+Connection::Status XBeeConnection::send(const std::string msg){
+  return Connection::IRRECOVERABLE_ERROR;
 }
 
-Status XBeeConnection::tick(){
-  return NULL;
+Connection::Status XBeeConnection::tick(){
+  return Connection::IRRECOVERABLE_ERROR;
 }
 
-int XBeeConnection::num_messages_available(){
-  return NULL;
+int XBeeConnection::num_messages_available() const{
+  return 0;
 }
 
 std::string XBeeConnection::pop_message(){
   return NULL;
 }
+
 
