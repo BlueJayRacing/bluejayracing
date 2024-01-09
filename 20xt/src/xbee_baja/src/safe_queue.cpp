@@ -25,7 +25,7 @@ SafeQueue<T>::~SafeQueue() {
 
 template <typename T>
 int SafeQueue<T>::get_size() const {
-  return size.get();
+  return size.load();
 }
 
 // Enqueue a message pointer. Critical section.
@@ -34,7 +34,7 @@ void SafeQueue<T>::enqueue(T data) {
   Guard guard(enqueue_lock);
 
   T* data_ptr = new T(data);
-  if (size.get() < max_size) {
+  if (size.load() < max_size) {
     data.push_back(data_ptr);
     size += 1;
   }
