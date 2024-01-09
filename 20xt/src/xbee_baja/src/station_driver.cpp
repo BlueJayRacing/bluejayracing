@@ -78,19 +78,19 @@ int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues) {
   }
   
   // Any connection failure is fatal
-  if (err == Connection::CONNECTION_BROKEN) {
+  if (err == Connection::IRRECOVERABLE_ERROR) {
     std::cout << "Connection failed, exiting" << std::endl;
     return EXIT_FAILURE;
   }
 
-  return EXIT_SUCCESS
+  return EXIT_SUCCESS;
 }
 
 
-int try_recieve_data(Connection* conn, TRXProtoQueues* tx_queues) {
+int try_consume_data(Connection* conn, TRXProtoQueues* rx_queues) {
   if (conn->num_messages_available() <= 0) {
-    err = conn->tick();
-    if (err == Connection::CONNECTION_BROKEN) {
+    int err = conn->tick();
+    if (err == Connection::IRRECOVERABLE_ERROR) {
       std::cout << "Connection failed, exiting" << std::endl;
       return EXIT_FAILURE;
     }
@@ -99,7 +99,9 @@ int try_recieve_data(Connection* conn, TRXProtoQueues* tx_queues) {
   if (conn->num_messages_available() > 0) {
     std::string encoded_msg = conn->pop_message();
     LiveComm decoded_msg;
-    decoded_msg.ParseFromString(msg);
+    decoded_msg.ParseFromString(encoded_msg);
     distribute_message(decoded_msg, rx_queues);
   }
+
+  return EXIT_SUCCESS;
 }
