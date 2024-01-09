@@ -1,6 +1,8 @@
 # Minimum required CMake version
 cmake_minimum_required(VERSION 3.12)
 
+project(xbee_digi)
+
 # Project name
 set(CMAKE_C_STANDARD 99)
 

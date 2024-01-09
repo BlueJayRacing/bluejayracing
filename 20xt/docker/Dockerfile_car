@@ -7,10 +7,37 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-perception=0.10.0-1* \
     && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get install sudo
+
+ARG USER=dock
+
+RUN useradd -d /home/$USER -m -s /bin/bash $USER && echo "$USER:$USER" | chpasswd && adduser $USER sudo
+
+
+
 RUN mkdir -p 20xt_ws/src
+
+RUN chown -R dock:dock 20xt_ws
+
+USER dock
+
+RUN touch ~/.sudo_as_admin_successful
+    
+
+
+# RUN setfacl -m u:username:rwx myfolder
+
+RUN chmod -R +rwx 20xt_ws
 
 RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
     cd 20xt_ws && \
+    rosdep update && \
     rosdep install -i --from-path src --rosdistro humble -y && \
     colcon build
-    
+
+RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
+# RUN echo 'bash /ros_entrypoint.sh' >> /home/$USER/.bashrc
+
+
+
+
