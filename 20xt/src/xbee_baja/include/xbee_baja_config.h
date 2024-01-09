@@ -10,6 +10,8 @@
     static const long XBEE_BAJA_CM = 0x3FFFFFFFFFFFF; // Channel mask
     static const int XBEE_BAJA_BD = 921600; // Channel mask
 
+    static const std::string LINUX_SERIAL_DEVICE_ID = "/dev/ttyS0";
+
     static const struct cmd XBEE_BAJA_CONFIGS[] = {
     {"HP", 0},
     {"TX", 2},
