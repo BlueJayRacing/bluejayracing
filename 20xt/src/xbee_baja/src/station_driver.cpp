@@ -11,13 +11,8 @@
 #include "station_driver.h"
 
 
-int station_main_loop(void) {
-
-  // Construct RX queues using multiqueue (create one for each field ID)
-  // Construct TX queues using multiqueue (create one for each field ID)
-  TRXProtoQueues* tx_queues = new TRXProtoQueues();
-  TRXProtoQueues* rx_queues = new TRXProtoQueues();
-
+int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
+  
   // Construct a connection, open it
   Connection* conn = new XBeeConnection();
   int err = conn->open();
