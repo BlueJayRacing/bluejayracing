@@ -1,7 +1,6 @@
 #include <thread>
 #include <mutex>
 #include "safe_queue.h"
-#include "guard.h"
 
 template <typename T>
 SafeQueue<T>::SafeQueue(int max_size) : {

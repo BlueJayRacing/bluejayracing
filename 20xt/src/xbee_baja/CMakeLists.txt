@@ -11,7 +11,6 @@ set(SOURCES
 
 set(HEADERS
     include/connection.h
-    include/guard.h
     include/queue_manage.h
     include/safe_queue.h
     include/station_driver.h
