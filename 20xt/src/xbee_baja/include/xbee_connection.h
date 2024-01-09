@@ -13,8 +13,6 @@ extern "C" {
   #include "xbee/wpan.h"
 }
 
-
-
 class XBeeConnection : public Connection {
 public:
   XBeeConnection();
