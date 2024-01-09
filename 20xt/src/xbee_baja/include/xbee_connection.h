@@ -2,7 +2,18 @@
 #define XBEE_CONNECTION_H
 
 #include <string>
+#include <queue>
 #include "connection.h"
+#include "baja_live_comm.h"
+
+extern "C" {
+  #include "platform_config.h"
+  #include "xbee/device.h"
+  #include "xbee/atcmd.h"
+  #include "xbee/wpan.h"
+}
+
+
 
 class XBeeConnection : public Connection {
 public:
@@ -22,6 +33,11 @@ public:
 
 private:
   bool conn_open;
+  bool send_succeeded;
+  std::queue<std::string>* rx_queue;
+
+  xbee_serial_t serial;
+  xbee_dev_t xbee;
 };
 
 #endif // XBEE_CONNECTION_H
