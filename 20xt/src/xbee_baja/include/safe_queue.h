@@ -3,11 +3,10 @@
 
 #include <atomic>
 #include <deque>
-#include <pthread.h>
-#include <semaphore.h>
+#include <thread>
+#include <mutex>
 
 // If cannot get to work, consider using oneTBB concurrent_bounded_queue<T, alloc> instead
-
 // A thread-safe queue that can be accessed concurrently by enqueing
 // and dequeing threads.
 
@@ -25,8 +24,8 @@ private:
   const int max_size;
   std::atomic<int> size;
 
-  pthread_mutex_t dequeue_lock; // must be held while dequeueing
-  pthread_mutex_t enqueue_lock; // must be held while enqueueing
+  std::mutex dequeue_lock; // must be held while dequeueing
+  std::mutex enqueue_lock; // must be held while enqueueing
   // THE MESSAGES IN THE QUEUE MUST BE DYNAMICALLY ALLOCATED
   std::deque<T *> data;
 };
