@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.12)
 set(SOURCES
     src/queue_manage.cpp 
     src/safe_queue.cpp 
-    src/station_main_loop.cpp 
+    src/station_driver.cpp 
     src/xbee_connection.cpp
     # Add more source files here
 )
