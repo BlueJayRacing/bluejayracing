@@ -1,9 +1,11 @@
 #ifndef TRX_QUEUEs_H
 #define TRX_QUEUEs_H
 
+#include <map>
+
 #include "safe_queue.h"
 #include "baja_live_comm.pb.h"
-#include <map>
+
 static const int MAX_SIZE = 300;
 // Multi queue containing all of the RX and TX data in its
 // native format. Intended to be constructed by the supervisor

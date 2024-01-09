@@ -1,7 +1,7 @@
 #include <iostream>
 #include <thread>
 
-#include "xbee_driver"
+#include "station_driver.h"
 #include "trx_queues.h"
 
 TRXProtoQueues* tx_queues;

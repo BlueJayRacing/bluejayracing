@@ -6,6 +6,7 @@ set(SOURCES
     src/safe_queue.cpp 
     src/station_driver.cpp 
     src/xbee_connection.cpp
+    src/trx_queues.cpp
     # Add more source files here
 )
 
@@ -43,5 +44,6 @@ add_subdirectory(
 
 target_link_libraries(xbee_baja
     PRIVATE xbee_digi
+    PUBLIC ${PROTOBUF_LIBRARIES}
     # Add any required libraries here
 )
