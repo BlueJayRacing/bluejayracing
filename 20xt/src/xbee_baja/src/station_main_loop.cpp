@@ -8,6 +8,7 @@
 #include "baja_live_comm.pb.h"
 #include "trx_queues.h"
 #include "queue_manage.h"
+#include "station_driver.h"
 
 
 int station_main_loop(void) {
