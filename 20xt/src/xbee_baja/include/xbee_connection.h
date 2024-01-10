@@ -4,7 +4,6 @@
 #include <string>
 #include <queue>
 #include "connection.h"
-#include "baja_live_comm.h"
 
 extern "C" {
   #include "platform_config.h"

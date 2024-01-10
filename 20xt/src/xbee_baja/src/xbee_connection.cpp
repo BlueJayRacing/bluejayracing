@@ -2,10 +2,10 @@
 #include "xbee_baja_config.h"
 
 extern "C" {
-  #include "platform_config.h"
   #include "xbee/device.h"
   #include "xbee/atcmd.h"
   #include "xbee/wpan.h"
+  #include "platform_config.h"
 }
 
 // TODO: write the frame handlers
@@ -26,8 +26,8 @@ Connection::Status XBeeConnection::open(){
   // TODO: Initialize this->xbee using the init_baja_xbee() function
   //       ... (see testConfigureXbee.h/c for example)
 
-  this->conn_open = true
-  return CONNECTION::SUCCESS;
+  this->conn_open = true;
+  return Connection::SUCCESS;
 }
 
 bool XBeeConnection::is_open() const {
@@ -58,7 +58,7 @@ Connection::Status XBeeConnection::send(const std::string msg){
   // TODO: return success if message sent over serial
 }
 
-Connection::Status XBeeConnection::tick(){
+Connection::Status XBeeConnection::tick() {
   return Connection::IRRECOVERABLE_ERROR;
   // TODO: Tick the xbee, handle possible failures
 }
@@ -67,8 +67,14 @@ int XBeeConnection::num_messages_available() const{
   return rx_queue->size();
 }
 
-std::string XBeeConnection::pop_message(){
-  return rx_queue->pop();
+std::string XBeeConnection::pop_message() {
+  if (rx_queue->size() == 0) {
+    return NULL;
+  }
+  
+  std::string msg = rx_queue->front();
+  rx_queue->pop();
+  return msg;
 }
 
 
