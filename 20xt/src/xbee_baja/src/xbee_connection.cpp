@@ -21,7 +21,13 @@ XBeeConnection::~XBeeConnection(){
 
 
 Connection::Status XBeeConnection::open(){
-  return Connection::IRRECOVERABLE_ERROR;
+  return Connection::IRRECOVERABLE_ERROR; // TODO: remove after implementation
+
+  const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
+    {XBEE_FRAME_TRANSMIT_STATUS, 0, this->tx_status_handler, nullptr},
+    {XBEE_FRAME_RECEIVE, 0, this->receive_handler, nullptr},
+    XBEE_FRAME_HANDLE_LOCAL_AT,
+    XBEE_FRAME_TABLE_END};
 
   // TODO: Initialize this->xbee using the init_baja_xbee() function
   //       ... (see testConfigureXbee.h/c for example)

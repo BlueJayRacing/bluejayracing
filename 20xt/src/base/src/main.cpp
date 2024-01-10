@@ -6,17 +6,6 @@
 #include "xbee_connection.h"
 #include "frame_handling.h"
 
-// Digi XBee library global vars. Defined in frame_handling.h --------------------
-XBeeConnection* global_xbee_conn_obj = nullptr;
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-  {XBEE_FRAME_TRANSMIT_STATUS, 0, xbee_tx_status_handler, (void *) global_xbee_conn_obj},
-  {XBEE_FRAME_RECEIVE_EXPLICIT, 0, xbee_receive_handler, (void *) global_xbee_conn_obj},
-  {XBEE_FRAME_RECEIVE, 0, xbee_receive_handler, (void *) global_xbee_conn_obj},
-  XBEE_FRAME_HANDLE_LOCAL_AT,
-  XBEE_FRAME_TABLE_END};
-// end digi stuff ---------------------------------------------------------------
-
-
 // Global shared data
 TRXProtoQueues* tx_comm_queues;
 TRXProtoQueues* rx_comm_queues;

@@ -35,6 +35,13 @@ private:
 
   xbee_serial_t serial;
   xbee_dev_t xbee;
+
+  // Xbee Frame Handlers
+  int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
+                      uint16_t length, void FAR *context);
+
+  int receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
+                        uint16_t length, void FAR *context);
 };
 
 #endif // XBEE_CONNECTION_H
