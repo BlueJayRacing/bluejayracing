@@ -27,6 +27,7 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
   std::cout << "Connection initialized" << std::endl;
 
   while (true) {
+    std::cout<<"hi"<<std::endl;
     // Send
     err = try_produce_data(conn, tx_queues);
     if (err == EXIT_FAILURE) {
@@ -36,7 +37,7 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
 
     // Recieve
     err = try_consume_data(conn, rx_queues);
-    if (err = EXIT_FAILURE) {
+    if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
       return EXIT_FAILURE;
     }

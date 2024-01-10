@@ -17,23 +17,24 @@ extern "C"
 XBeeConnection::XBeeConnection()
 {
   rx_queue = new std::queue<std::string>();
+  xbee_frame_handlers = new xbee_dispatch_table_entry_t[] {
+    {XBEE_FRAME_TRANSMIT_STATUS, 0, &XBeeConnection::tx_status_handler, this},
+    {XBEE_FRAME_RECEIVE, 0, &XBeeConnection::receive_handler, this},
+    XBEE_FRAME_HANDLE_LOCAL_AT,
+    XBEE_FRAME_TABLE_END
+  };
 }
 
 XBeeConnection::~XBeeConnection()
 {
   delete rx_queue;
+  delete xbee_frame_handlers;
 }
 
 Connection::Status XBeeConnection::open()
 {
-  const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-      {XBEE_FRAME_TRANSMIT_STATUS, 0, &XBeeConnection::tx_status_handler, this},
-      {XBEE_FRAME_RECEIVE, 0, &XBeeConnection::receive_handler, this},
-      XBEE_FRAME_HANDLE_LOCAL_AT,
-      XBEE_FRAME_TABLE_END};
-
   xbee_dev_t xbee;
-  int err = init_baja_xbee(&xbee, xbee_frame_handlers);
+  int err = init_baja_xbee();
   if (err != SUCCESS)
   {
     return IRRECOVERABLE_ERROR;
@@ -77,13 +78,22 @@ Connection::Status XBeeConnection::send(const std::string msg)
 
 Connection::Status XBeeConnection::tick()
 {
-  return IRRECOVERABLE_ERROR;
-  // TODO: Tick the xbee, handle possible failures
+  int err = xbee_dev_tick(&xbee);
+  if (err >= 1)
+  {
+    return SUCCESS;
+  }
+  if (err < 0)
+  {
+    std::cout << "ERROR: Could not tick device: " << -err << std::endl;
+    return IRRECOVERABLE_ERROR;
+  }
+  return SUCCESS; // No frames to dispatch
 }
 
 int XBeeConnection::num_messages_available() const
 {
-  return rx_queue->size();
+  return this->rx_queue->size();
 }
 
 std::string XBeeConnection::pop_message()
@@ -109,8 +119,8 @@ int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
 int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
                                     uint16_t frame_length, void FAR *conn_context)
 {
-  XBeeConnection *this_conn = (XBeeConnection *) conn_context;
-  const xbee_frame_receive_t *frame = (const xbee_frame_receive_t *) raw;
+  XBeeConnection *this_conn = (XBeeConnection *)conn_context;
+  const xbee_frame_receive_t *frame = (const xbee_frame_receive_t *)raw;
 
   if (frame == NULL)
   {
@@ -132,17 +142,17 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
 
   int payload_len = frame_length - offsetof(xbee_frame_receive_t, payload);
 
-  std::string payload((char*) frame->payload, payload_len);
+  std::string payload((char *)frame->payload, payload_len);
   this_conn->rx_queue->push(payload);
   return EXIT_SUCCESS;
 }
 
-Connection::Status XBeeConnection::init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_table_entry_t *xbee_frame_handlers)
+Connection::Status XBeeConnection::init_baja_xbee()
 {
-  xbee_serial_t serial = XBeeConnection::init_serial();
+  this->serial = XBeeConnection::init_serial();
 
   // Dump state to stdout for debug
-  int err = xbee_dev_init(xbee, &serial, NULL, NULL, xbee_frame_handlers);
+  int err = xbee_dev_init(&xbee, &serial, NULL, NULL, xbee_frame_handlers);
   if (err)
   {
     std::cout << "Error initializing XBee device" << std::endl;
@@ -151,7 +161,7 @@ Connection::Status XBeeConnection::init_baja_xbee(xbee_dev_t *xbee, const xbee_d
   std::cout << "Initialized XBee device abstraction" << std::endl;
 
   // Need to initialize AT layer so we can transmit
-  err = xbee_cmd_init_device(xbee);
+  err = xbee_cmd_init_device(&xbee);
   if (err)
   {
     std::cout << "Error initializing AT layer" << std::endl;
@@ -159,27 +169,28 @@ Connection::Status XBeeConnection::init_baja_xbee(xbee_dev_t *xbee, const xbee_d
   }
   do
   {
-    xbee_dev_tick(xbee);
-    err = xbee_cmd_query_status(xbee);
+    xbee_dev_tick(&xbee);
+    err = xbee_cmd_query_status(&xbee);
   } while (err == -EBUSY);
   if (err)
   {
-    
+
     printf("Error %d waiting for AT init to complete.\n", err);
   }
 
   std::cout << "Initialized XBee AT layer" << std::endl;
-  xbee_dev_dump_settings(xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
+  xbee_dev_dump_settings(&xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
   std::cout << "Verifying XBee settings conform to Baja standard..." << std::endl;
 
-  err = XBeeConnection::write_baja_settings(xbee);
+  err = XBeeConnection::write_baja_settings(&xbee);
   if (err == IRRECOVERABLE_ERROR)
   {
     std::cout << "Xbee settings were not verified" << std::endl;
     return IRRECOVERABLE_ERROR;
   }
-  xbee_dev_tick(xbee);
-  std::cout << "XBee settings conform to Baja standards" << std::endl << std::endl;
+  xbee_dev_tick(&xbee);
+  std::cout << "XBee settings conform to Baja standards" << std::endl
+            << std::endl;
   return SUCCESS;
 }
 
@@ -191,10 +202,12 @@ xbee_serial_t XBeeConnection::init_serial()
 
   // Set the baudrate and device ID.
   serial.baudrate = StationSerialXbeeConfig::XBEE_BAJA_BAUDRATE;
+
   std::strncpy(
-      serial.device,
-      StationSerialXbeeConfig::LINUX_SERIAL_DEVICE_ID.c_str(),
-      sizeof(serial.device));
+    serial.device,
+    StationSerialXbeeConfig::LINUX_SERIAL_DEVICE_ID.c_str(),
+    sizeof(serial.device)
+  );
   return serial;
 }
 

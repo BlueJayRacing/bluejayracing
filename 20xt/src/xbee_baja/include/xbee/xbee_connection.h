@@ -37,6 +37,8 @@ private:
 
   xbee_serial_t serial;
   xbee_dev_t xbee;
+  xbee_dispatch_table_entry_t *xbee_frame_handlers;
+  Status init_baja_xbee();
 
   // Xbee Frame Handlers
   static int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
@@ -46,7 +48,6 @@ private:
                         uint16_t length, void FAR *conn_context);
 
   // Device Abstraction Helpers
-  static Status init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_table_entry_t* xbee_frame_handlers);
   static xbee_serial_t init_serial();
   static Status write_baja_settings(xbee_dev_t *xbee);
 };
