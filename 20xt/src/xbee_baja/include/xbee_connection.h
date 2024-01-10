@@ -37,11 +37,11 @@ private:
   xbee_dev_t xbee;
 
   // Xbee Frame Handlers
-  int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
-                      uint16_t length, void FAR *context);
+  static int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
+                      uint16_t length, void FAR *conn_context);
 
-  int receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
-                        uint16_t length, void FAR *context);
+  static int receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
+                        uint16_t length, void FAR *conn_context);
 };
 
 #endif // XBEE_CONNECTION_H
