@@ -7,6 +7,7 @@ set(SOURCES
     src/station_driver.cpp 
     src/xbee_connection.cpp
     src/trx_queues.cpp
+    src/frame_handling.cpp
     # Add more source files here
 )
 
@@ -17,6 +18,7 @@ set(HEADERS
     include/station_driver.h
     include/trx_queues.h
     include/xbee_connection.h
+    include/frame_handling.h
     # Add library header files
 )
 
@@ -43,7 +45,7 @@ add_subdirectory(
 )
 
 target_link_libraries(xbee_baja
-    PRIVATE xbee_digi
+    PUBLIC xbee_digi
     PUBLIC ${PROTOBUF_LIBRARIES}
     # Add any required libraries here
 )

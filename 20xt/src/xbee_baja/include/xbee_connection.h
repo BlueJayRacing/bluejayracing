@@ -6,10 +6,10 @@
 #include "connection.h"
 
 extern "C" {
-  #include "platform_config.h"
   #include "xbee/device.h"
   #include "xbee/atcmd.h"
   #include "xbee/wpan.h"
+  #include "platform_config.h"
 }
 
 class XBeeConnection : public Connection {
