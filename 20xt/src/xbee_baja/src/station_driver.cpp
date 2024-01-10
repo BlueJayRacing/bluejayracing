@@ -21,7 +21,7 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
     err = conn->open(); // can try again
   }
   if (err == Connection::IRRECOVERABLE_ERROR) {
-    std::cout << "Connection failed, exiting" << std::endl;
+    std::cout << "Connection could not be opened, exiting" << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << "Connection initialized" << std::endl;
@@ -30,14 +30,14 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
     // Send
     err = try_produce_data(conn, tx_queues);
     if (err == EXIT_FAILURE) {
-      std::cout << "Connection failed, exiting" << std::endl;
+      std::cout << "Connection failed when trying to transmit, exiting" << std::endl;
       return EXIT_FAILURE;
     }
 
     // Recieve
     err = try_consume_data(conn, rx_queues);
     if (err = EXIT_FAILURE) {
-      std::cout << "Connection failed, exiting" << std::endl;
+      std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
       return EXIT_FAILURE;
     }
   }
@@ -74,7 +74,7 @@ int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues) {
   
   // Any connection failure is fatal
   if (err == Connection::IRRECOVERABLE_ERROR) {
-    std::cout << "Connection failed, exiting" << std::endl;
+    std::cout << "Could not send because connection failed" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -86,7 +86,7 @@ int try_consume_data(Connection* conn, TRXProtoQueues* rx_queues) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
     if (err == Connection::IRRECOVERABLE_ERROR) {
-      std::cout << "Connection failed, exiting" << std::endl;
+      std::cout << "Failed to tick device" << std::endl;
       return EXIT_FAILURE;
     }
   }

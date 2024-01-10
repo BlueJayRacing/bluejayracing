@@ -46,9 +46,9 @@ private:
                         uint16_t length, void FAR *conn_context);
 
   // Device Abstraction Helpers
-  static int init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_table_entry_t* xbee_frame_handlers);
+  static Status init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_table_entry_t* xbee_frame_handlers);
   static xbee_serial_t init_serial();
-  static int write_baja_settings();
+  static Status write_baja_settings(xbee_dev_t *xbee);
 };
 
 #endif // XBEE_CONNECTION_H

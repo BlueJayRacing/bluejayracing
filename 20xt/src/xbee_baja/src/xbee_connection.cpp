@@ -82,30 +82,30 @@ std::string XBeeConnection::pop_message() {
   return msg;
 }
 
-static int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
+int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
                     uint16_t length, void FAR *conn_context) {
   XBeeConnection * this_conn = (XBeeConnection *) conn_context;
   // TODO: handle the transmit status frame
   return 0;
 }
 
-static int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
+int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
                       uint16_t length, void FAR *conn_context) {
   XBeeConnection* this_conn = (XBeeConnection *) conn_context;
   // TODO: handle the receive frame, enqueueing it in this_conn->rx_queue
   return 0;
 }
 
-static int XBeeConnection::init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_table_entry_t* xbee_frame_handlers)
+Connection::Status XBeeConnection::init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_table_entry_t* xbee_frame_handlers)
 {
-  xbee_serial_t serial = init_serial();
+  xbee_serial_t serial = XBeeConnection::init_serial();
 
   // Dump state to stdout for debug
   int err = xbee_dev_init(xbee, &serial, NULL, NULL, xbee_frame_handlers);
   if (err)
   {
     printf("Error initializing abstraction: %" PRIsFAR "\n", strerror(-err));
-    return EXIT_FAILURE;
+    return IRRECOVERABLE_ERROR;
   }
   printf("Initialized XBee device abstraction.\n");
 
@@ -114,7 +114,7 @@ static int XBeeConnection::init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_
   if (err)
   {
     printf("Error initializing AT layer: %" PRIsFAR "\n", strerror(-err));
-    return EXIT_FAILURE;
+    return IRRECOVERABLE_ERROR;
   }
   do
   {
@@ -130,30 +130,34 @@ static int XBeeConnection::init_baja_xbee(xbee_dev_t *xbee, const xbee_dispatch_
   xbee_dev_dump_settings(xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
   printf("Veryfing XBee settings conform to Baja standard...\n");
 
-  err = write_baja_settings(xbee);
-  if (err)
+  err = XBeeConnection::write_baja_settings(xbee);
+  if (err == IRRECOVERABLE_ERROR)
   {
     printf("Xbee settings were not verified\n");
-    return EXIT_FAILURE;
+    return IRRECOVERABLE_ERROR;
   }
   xbee_dev_tick(xbee);
   printf("XBee settings conform to Baja standards\n\n");
-  return EXIT_SUCCESS;
+  return SUCCESS;
 }
 
-static xbee_serial_t XBeeConnection::init_serial()
+xbee_serial_t XBeeConnection::init_serial()
 {
   // We want to start with a clean slate
   xbee_serial_t serial;
   std::memset(&serial, 0, sizeof(serial));
 
   // Set the baudrate and device ID.
-  serial.baudrate = XBEE_BAJA_BD;
-  std::strncpy(serial.device, SERIAL_DEVICE_ID, sizeof(serial.device));
+  serial.baudrate = StationSerialXbeeConfig::XBEE_BAJA_BAUDRATE;
+  std::strncpy(
+    serial.device, 
+    StationSerialXbeeConfig::LINUX_SERIAL_DEVICE_ID.c_str(), 
+    sizeof(serial.device)
+  );
   return serial;
 }
 
-static int XBeeConnection::write_baja_settings(xbee_dev_t *xbee)
+Connection::Status XBeeConnection::write_baja_settings(xbee_dev_t *xbee)
 {
   // TODO: THis function is broken
   // int err;
@@ -170,5 +174,5 @@ static int XBeeConnection::write_baja_settings(xbee_dev_t *xbee)
   //   printf("Set %s to %d\n", XBEE_BAJA_CONFIGS[i].name, XBEE_BAJA_CONFIGS[i].value);
   // }
   // xbee_cmd_execute(xbee, "WR", NULL, 0);
-  return EXIT_SUCCESS;
+  return SUCCESS;
 }
