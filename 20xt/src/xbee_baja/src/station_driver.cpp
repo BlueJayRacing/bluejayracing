@@ -11,17 +11,11 @@
 #include "station_driver.h"
 #include "frame_handling.h"
 
-extern XBeeConnection* global_xbee_conn_obj; // Defined globally
 
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
-  
-  // The frame handler works at global context. Terrible practice, but
-  // Xbee Digi library forced our hand. Construct our connection object.
-  global_xbee_conn_obj = new XBeeConnection();
-  assert (global_xbee_conn_obj != NULL);
 
   // Continue with a normal loop and good practice
-  Connection* conn = conn;
+  Connection* conn = new XBeeConnection();;
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
