@@ -14,7 +14,7 @@
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
 
   // Continue with a normal loop and good practice
-  Connection* conn = new XBeeConnection();;
+  Connection* conn = new XBeeConnection();
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
