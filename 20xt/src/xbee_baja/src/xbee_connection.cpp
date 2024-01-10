@@ -24,8 +24,8 @@ Connection::Status XBeeConnection::open(){
   return Connection::IRRECOVERABLE_ERROR; // TODO: remove after implementation
 
   const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-    {XBEE_FRAME_TRANSMIT_STATUS, 0, this->tx_status_handler, nullptr},
-    {XBEE_FRAME_RECEIVE, 0, this->receive_handler, nullptr},
+    {XBEE_FRAME_TRANSMIT_STATUS, 0, &XBeeConnection::tx_status_handler, this},
+    {XBEE_FRAME_RECEIVE, 0, &XBeeConnection::receive_handler, this},
     XBEE_FRAME_HANDLE_LOCAL_AT,
     XBEE_FRAME_TABLE_END};
 
@@ -83,4 +83,12 @@ std::string XBeeConnection::pop_message() {
   return msg;
 }
 
+static int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
+                    uint16_t length, void FAR *conn_context) {
+  return 0;
+}
 
+static int receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
+                      uint16_t length, void FAR *conn_context) {
+  return 0;
+  }
