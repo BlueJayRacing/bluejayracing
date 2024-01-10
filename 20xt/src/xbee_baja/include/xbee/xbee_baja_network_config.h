@@ -2,6 +2,8 @@
 #define XBEE_BAJA_CONFIGS_H
 
   namespace XbeeBajaConfig {
+    // TODO: Break these configs into serial & network config headers
+    
     struct cmd {
     const char* name;
     const int value;
