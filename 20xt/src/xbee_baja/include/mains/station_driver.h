@@ -1,8 +1,8 @@
 #ifndef STATION_DRIVER_H
 #define STATION_DRIVER_H
 
-#include "connection.h"
-#include "trx_queues.h"
+#include "interfaces/connection.h"
+#include "ipc/trx_queues.h"
 
 static const int MAX_SEND_RETRIES = 100;
 

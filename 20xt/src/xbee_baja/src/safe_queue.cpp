@@ -1,6 +1,6 @@
 #include <thread>
 #include <mutex>
-#include "safe_queue.h"
+#include "ipc/safe_queue.h"
 
 template <typename T>
 SafeQueue<T>::SafeQueue(int max_size) : max_size (max_size) {

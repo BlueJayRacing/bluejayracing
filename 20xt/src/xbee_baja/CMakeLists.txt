@@ -12,13 +12,17 @@ set(SOURCES
 )
 
 set(HEADERS
-    include/connection.h
-    include/queue_manage.h
-    include/safe_queue.h
-    include/station_driver.h
-    include/trx_queues.h
-    include/xbee_connection.h
-    include/frame_handling.h
+    include/interfaces/connection.h
+    include/interfaces/ipc_queue.h
+    include/ipc/queue_manage.h
+    include/ipc/safe_queue.h
+    include/ipc/trx_queues.h
+    include/mains/station_driver.h
+    include/mains/trx_dispatcher.h
+    include/xbee/car_serial_config.h
+    include/xbee/station_serial_config.h
+    include/xbee/xbee_baja_network_config.h
+    include/xbee/xbee_connection.h
     # Add library header files
 )
 

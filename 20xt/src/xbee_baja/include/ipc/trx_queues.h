@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "safe_queue.h"
+#include "ipc/safe_queue.h"
 #include "baja_live_comm.pb.h"
 
 static const int MAX_SIZE = 300;

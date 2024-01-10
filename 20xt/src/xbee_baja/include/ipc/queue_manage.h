@@ -1,7 +1,7 @@
 #ifndef QUEUE_FUNCS
 #define QUEUE_FUNCS
 
-#include "trx_queues.h"
+#include "ipc/trx_queues.h"
 
 // Adapter functions allowing the xbee-driver loop to easily
 // manage the TRX_QUEUES with native data. Parse into LiveComm objects
