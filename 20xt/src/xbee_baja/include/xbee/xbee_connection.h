@@ -28,6 +28,8 @@ public:
   int num_messages_available() const override;
   std::string pop_message() override;
 
+  static std::string what_is_this_class();
+
 private:
   bool conn_open;
   bool send_succeeded;
@@ -45,3 +47,5 @@ private:
 };
 
 #endif // XBEE_CONNECTION_H
+
+

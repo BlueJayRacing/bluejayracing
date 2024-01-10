@@ -2,7 +2,7 @@
 #include <thread>
 
 #include "mains/station_driver.h"
-#include "interfaces/trx_queues.h"
+#include "ipc/trx_queues.h"
 
 // Global shared data
 TRXProtoQueues* tx_comm_queues;
