@@ -3,7 +3,7 @@
 
 #include <string>
 #include <queue>
-#include "connection.h"
+#include "interfaces/connection.h"
 
 extern "C" {
   #include "xbee/device.h"

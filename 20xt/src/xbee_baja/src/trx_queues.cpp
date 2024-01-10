@@ -1,4 +1,4 @@
-#include "trx_queues.h"
+#include "ipc/trx_queues.h"
 #include "baja_live_comm.pb.h"
 
 TRXProtoQueues::TRXProtoQueues() {

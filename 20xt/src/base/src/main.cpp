@@ -1,10 +1,8 @@
 #include <iostream>
 #include <thread>
 
-#include "station_driver.h"
-#include "trx_queues.h"
-#include "xbee_connection.h"
-#include "frame_handling.h"
+#include "mains/station_driver.h"
+#include "interfaces/trx_queues.h"
 
 // Global shared data
 TRXProtoQueues* tx_comm_queues;

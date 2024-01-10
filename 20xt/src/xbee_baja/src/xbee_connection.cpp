@@ -1,5 +1,5 @@
-#include "xbee_connection.h"
-#include "xbee_baja_config.h"
+#include "xbee/xbee_connection.h"
+#include "xbee/xbee_baja_config.h"
 
 extern "C" {
   #include "xbee/device.h"

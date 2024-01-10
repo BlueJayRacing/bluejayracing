@@ -3,13 +3,12 @@
 #include <thread>
 #include <chrono>
 
-#include "connection.h"
-#include "xbee_connection.h"
+#include "mains/station_driver.h"
+#include "interfaces/connection.h"
+#include "xbee/xbee_connection.h"
+#include "ipc/trx_queues.h"
+#include "ipc/queue_manage.h"
 #include "baja_live_comm.pb.h"
-#include "trx_queues.h"
-#include "queue_manage.h"
-#include "station_driver.h"
-#include "frame_handling.h"
 
 
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
