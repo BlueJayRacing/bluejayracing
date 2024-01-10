@@ -8,9 +8,6 @@ extern "C" {
   #include "platform_config.h"
 }
 
-// TODO: write the frame handlers
-
-
 XBeeConnection::XBeeConnection(){
   // TODO: dynamically allocate the RX queue
 }
@@ -85,10 +82,14 @@ std::string XBeeConnection::pop_message() {
 
 static int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
                     uint16_t length, void FAR *conn_context) {
+  XBeeConnection * this_conn = (XBeeConnection *) conn_context;
+  // TODO: handle the transmit status frame
   return 0;
 }
 
 static int receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
                       uint16_t length, void FAR *conn_context) {
+  XBeeConnection * this_conn = (XBeeConnection *) conn_context;
+  // TODO: handle the receive frame, enqueueing it in this_conn->rx_queue
   return 0;
-  }
+}
