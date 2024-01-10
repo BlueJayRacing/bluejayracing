@@ -1,5 +1,6 @@
 #include "xbee/xbee_connection.h"
-#include "xbee/xbee_baja_config.h"
+#include "xbee/xbee_baja_network_config.h"
+#include "xbee/station_serial_config.h"
 
 extern "C" {
   #include "xbee/device.h"
@@ -89,7 +90,7 @@ static int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
 
 static int receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
                       uint16_t length, void FAR *conn_context) {
-  XBeeConnection * this_conn = (XBeeConnection *) conn_context;
+  XBeeConnection* this_conn = (XBeeConnection *) conn_context;
   // TODO: handle the receive frame, enqueueing it in this_conn->rx_queue
   return 0;
 }

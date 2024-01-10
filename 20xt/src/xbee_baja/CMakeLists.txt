@@ -7,7 +7,6 @@ set(SOURCES
     src/station_driver.cpp 
     src/xbee_connection.cpp
     src/trx_queues.cpp
-    src/frame_handling.cpp
     # Add more source files here
 )
 
