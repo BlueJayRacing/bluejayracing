@@ -11,6 +11,7 @@
 #include "station_driver.h"
 #include "frame_handling.h"
 
+extern XBeeConnection* global_xbee_conn_obj; // Defined globally
 
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
   
@@ -18,7 +19,6 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
   // Xbee Digi library forced our hand. Construct our connection object.
   global_xbee_conn_obj = new XBeeConnection();
   assert (global_xbee_conn_obj != NULL);
-
 
   // Continue with a normal loop and good practice
   Connection* conn = conn;
