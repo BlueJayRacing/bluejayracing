@@ -59,21 +59,48 @@ void XBeeConnection::close()
 
 Connection::Status XBeeConnection::tx_status() const
 {
-  return IRRECOVERABLE_ERROR;
-  // TODO: Check if the XBee's serial buffer is full (return if true)
-  // TODO: Check if last message was sent successfully (return if true)
+  this->tick();
+  return this->send_succeeded ? SUCCESS : RECOVERABLE_ERROR;
 }
 
 Connection::Status XBeeConnection::send(const std::string msg)
 {
-  return IRRECOVERABLE_ERROR;
-  // TODO: convert message to a c-string
-  // TODO: Assert that the message is less than MAX_PAYLOAD_SIZE
-  // TODO: Check if the XBee's serial buffer is full
+  if (msg.length() > XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE)
+  {
+    return MSG_TOO_LARGE;
+  }
+  
+  // XBee library expects char* for payload
+  int payload_size = msg.length();
+  char payload[payload_size + 1];
+  std::strcpy(payload, msg.c_str());
 
-  // TODO: Construct the xbee_header_transmit_explicit_t
-  // TODO: Send the message using xbee_frame_write()
-  // TODO: return success if message sent over serial
+  this->latest_frame_id += 1;
+  xbee_header_transmit_explicit_t frame_out_header = {
+    .frame_type = XBEE_FRAME_TRANSMIT_EXPLICIT,
+    .frame_id = this->latest_frame_id,
+    .ieee_address = *WPAN_IEEE_ADDR_BROADCAST,
+    .network_address_be = 0xFFFE, // "Reserved"
+    .source_endpoint = WPAN_ENDPOINT_DIGI_DATA,
+    .dest_endpoint = WPAN_ENDPOINT_DIGI_DATA,
+    .cluster_id_be = DIGI_CLUST_SERIAL,
+    .profile_id_be = WPAN_PROFILE_DIGI,
+    .broadcast_radius = 0x0,
+    .options = 0x0,
+  };
+
+  int err = xbee_frame_write(&xbee, &frame_out_header, sizeof(frame_out_header), payload, payload_size, 0);
+  if (err == -EBUSY)
+  {
+    return QUEUE_FULL;
+  }
+  if (err == -EMSGSIZE) {
+    return MSG_TOO_LARGE; // Can never send a msg this large
+  }
+  if (err == EINVAL) {
+    return IRRECOVERABLE_ERROR;
+  }
+  return SUCCESS;
 }
 
 Connection::Status XBeeConnection::tick()
