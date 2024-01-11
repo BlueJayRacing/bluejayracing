@@ -9,6 +9,7 @@
     };
 
     static const long XBEE_BAJA_CM = 0x3FFFFFFFFFFFF; // Channel mask
+    static const int MAX_PAYLOAD_SIZE = 100; // bytes
 
     static const struct cmd XBEE_BAJA_CONFIGS[] = {
     {"HP", 0},
