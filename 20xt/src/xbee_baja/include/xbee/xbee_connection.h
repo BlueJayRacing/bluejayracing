@@ -35,6 +35,7 @@ private:
   bool send_succeeded;
   std::queue<std::string>* rx_queue;
 
+  uint8_t latest_frame_id;
   xbee_serial_t serial;
   xbee_dev_t xbee;
   xbee_dispatch_table_entry_t *xbee_frame_handlers;

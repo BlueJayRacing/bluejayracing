@@ -138,8 +138,8 @@ std::string XBeeConnection::pop_message()
 int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
                                       uint16_t frame_length, void FAR *conn_context)
 {
-  XBeeConnection *this_conn = (XBeeConnection *)conn_context;
-  const xbee_frame_transmit_status_t FAR *frame = raw;
+  XBeeConnection *this_conn = (XBeeConnection *) conn_context;
+  const xbee_frame_transmit_status_t *frame = (const xbee_frame_transmit_status_t*) raw;
   
   if (frame == nullptr)
   {
@@ -155,11 +155,11 @@ int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
 
   if (frame->delivery == XBEE_TX_DELIVERY_SUCCESS)
   {
-    this->send_succeeded = false;
+    this_conn->send_succeeded = false;
     return -EBADMSG;
   } else 
   {
-    this->send_succeeded = true;
+    this_conn->send_succeeded = true;
   }
   return 0;
 }
