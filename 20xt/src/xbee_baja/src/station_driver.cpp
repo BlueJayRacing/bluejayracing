@@ -27,7 +27,10 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
   std::cout << "Connection initialized" << std::endl;
 
   while (true) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
     std::cout<<"hi"<<std::endl;
+
     // Send
     err = try_produce_data(conn, tx_queues);
     if (err == EXIT_FAILURE) {
@@ -94,6 +97,7 @@ int try_consume_data(Connection* conn, TRXProtoQueues* rx_queues) {
 
   if (conn->num_messages_available() > 0) {
     std::string encoded_msg = conn->pop_message();
+    std::cout << encoded_msg <<std::endl;
     LiveComm decoded_msg;
     decoded_msg.ParseFromString(encoded_msg);
     distribute_message(decoded_msg, rx_queues);
