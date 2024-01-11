@@ -97,7 +97,7 @@ int try_consume_data(Connection* conn, TRXProtoQueues* rx_queues) {
 
   if (conn->num_messages_available() > 0) {
     std::string encoded_msg = conn->pop_message();
-    std::cout << encoded_msg <<std::endl;
+    std::cout << encoded_msg << std::endl;
     LiveComm decoded_msg;
     decoded_msg.ParseFromString(encoded_msg);
     distribute_message(decoded_msg, rx_queues);
