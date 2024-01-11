@@ -57,7 +57,7 @@ void XBeeConnection::close()
   return;
 }
 
-Connection::Status XBeeConnection::tx_status() const
+Connection::Status XBeeConnection::tx_status()
 {
   this->tick();
   return this->send_succeeded ? SUCCESS : RECOVERABLE_ERROR;

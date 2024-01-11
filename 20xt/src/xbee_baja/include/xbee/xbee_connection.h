@@ -21,7 +21,7 @@ public:
   bool is_open() const override; // Check if this object is open
   void close() override; // Disconnect from XBee device abstraction
 
-  Status tx_status() const override; // Status of last transmission/connection
+  Status tx_status() override; // Status of last transmission/connection
   Status send(const std::string msg) override;
 
   Status tick() override;
