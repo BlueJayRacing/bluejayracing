@@ -56,19 +56,25 @@ int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues) {
   }
 
   LiveComm msg = build_message(tx_queues);
-  int err = conn->send(msg.SerializeAsString());
+
+  // TODO: Revert this test
+  // int err = conn->send(msg.SerializeAsString());
+  int err = conn->send("My payload");
 
   // If full recoverable, wait only once
   for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
-    std::cout << "Send failed, retrying" << std::endl;
     std::this_thread::sleep_for(std::chrono::microseconds(1));
     err = conn->send(msg.SerializeAsString());
     iter++;
   }
 
-  if (err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED) {
-    std::cout << "Send failed, could not send" << std::endl;
+  if (err == Connection::QUEUE_FULL) {
+    std::cout << "XBee queue full and exceeded transmit retries, could not send" << std::endl;
     return EXIT_SUCCESS; // non-fatal error
+  }
+
+  if (err == Connection::SEND_FAILED) {
+    std::cout << "Send failed for unkown reason, could not send" << std::endl;
   }
 
   if (err == Connection::MSG_TOO_LARGE) {

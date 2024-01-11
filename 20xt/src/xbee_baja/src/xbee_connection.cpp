@@ -92,12 +92,15 @@ Connection::Status XBeeConnection::send(const std::string msg)
   int err = xbee_frame_write(&xbee, &frame_out_header, sizeof(frame_out_header), payload, payload_size, 0);
   if (err == -EBUSY)
   {
+    std::cout << "TX Serial Queue full" << std::endl;
     return QUEUE_FULL;
   }
   if (err == -EMSGSIZE) {
+    std::cout << "Cannot transmit, message too large" << std::endl;
     return MSG_TOO_LARGE; // Can never send a msg this large
   }
   if (err == EINVAL) {
+    std::cout << "Irrecoverable error when transmitting" << std::endl;
     return IRRECOVERABLE_ERROR;
   }
   return SUCCESS;

@@ -4,7 +4,7 @@
 #include "interfaces/connection.h"
 #include "ipc/trx_queues.h"
 
-static const int MAX_SEND_RETRIES = 100;
+static const int MAX_SEND_RETRIES = 3;
 
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues);
 int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues);
