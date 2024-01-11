@@ -112,7 +112,28 @@ int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
                                       uint16_t frame_length, void FAR *conn_context)
 {
   XBeeConnection *this_conn = (XBeeConnection *)conn_context;
-  // TODO: handle the transmit status frame
+  const xbee_frame_transmit_status_t FAR *frame = raw;
+  
+  if (frame == nullptr)
+  {
+    std::cout << "Received null TX status frame" << std::endl;
+    return -EINVAL;
+  }
+
+  if (frame_length < offsetof(xbee_frame_transmit_status_t, delivery))
+  {
+    std::cout << "Received TX status frame too short" << std::endl;
+    return -EBADMSG;
+  }
+
+  if (frame->delivery == XBEE_TX_DELIVERY_SUCCESS)
+  {
+    this->send_succeeded = false;
+    return -EBADMSG;
+  } else 
+  {
+    this->send_succeeded = true;
+  }
   return 0;
 }
 
