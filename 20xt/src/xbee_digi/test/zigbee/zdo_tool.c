@@ -22,6 +22,18 @@
 #include "../../samples/common/_atinter.h"
 #include "../../samples/common/parse_serial_args.h"
 
+#include "xbee/atcmd.h"			// for XBEE_FRAME_HANDLE_LOCAL_AT
+#include "xbee/device.h"
+#include "xbee/wpan.h"			// for XBEE_FRAME_HANDLE_RX_EXPLICIT
+// GLADSON: This test may not be not working with the new xbee_frame_handlers
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] =
+{
+	XBEE_FRAME_HANDLE_LOCAL_AT,
+	XBEE_FRAME_HANDLE_RX_EXPLICIT,
+	XBEE_FRAME_MODEM_STATUS_DEBUG,
+	XBEE_FRAME_TABLE_END
+};
+
 xbee_dev_t my_xbee;
 
 /// Used to track ZDO transactions in order to match responses to requests
@@ -63,7 +75,7 @@ int main( int argc, char *argv[])
 	parse_serial_arguments( argc, argv, &XBEE_SERPORT);
 
 	// initialize the serial and device layer for this XBee device
-	if (xbee_dev_init( &my_xbee, &XBEE_SERPORT, NULL, NULL))
+	if (xbee_dev_init( &my_xbee, &XBEE_SERPORT, NULL, NULL, &xbee_frame_handlers))
 	{
 		printf( "Failed to initialize device.\n");
 		return 0;
@@ -185,14 +197,5 @@ int main( int argc, char *argv[])
    }
 }
 
-#include "xbee/atcmd.h"			// for XBEE_FRAME_HANDLE_LOCAL_AT
-#include "xbee/device.h"
-#include "xbee/wpan.h"			// for XBEE_FRAME_HANDLE_RX_EXPLICIT
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] =
-{
-	XBEE_FRAME_HANDLE_LOCAL_AT,
-	XBEE_FRAME_HANDLE_RX_EXPLICIT,
-	XBEE_FRAME_MODEM_STATUS_DEBUG,
-	XBEE_FRAME_TABLE_END
-};
+
 
