@@ -11,6 +11,6 @@ fi
 # Build the image
 docker build -t station_docker -f $SCRIPTPATH/../docker/Dockerfile_station $SCRIPTPATH
 
-if ! ls $SCRIPTPATH/.. | grep -q build_cache; then
-    mkdir -p $SCRIPTPATH/../station_docker
+if ! ls $SCRIPTPATH/.. | grep -q .station_build_cache; then
+    mkdir -p $SCRIPTPATH/../.station_build_cache
 fi
