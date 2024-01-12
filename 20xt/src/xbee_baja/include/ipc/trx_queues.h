@@ -28,7 +28,7 @@ public:
   };
 
 private:
-  std::map<int, SafeQueueBase *> queues = {
+  std::map<FieldID, SafeQueueBase *> queues = {
       {GPS_QUEUE_ID, nullptr},
       {LOCALIZATION_QUEUE_ID, nullptr},
       {COMMUNICATION_QUEUE_ID, nullptr},
@@ -37,7 +37,7 @@ private:
       {CAR_STATE_QUEUE_ID, nullptr}};
 
    template <typename T>
-   SafeQueue<T>* get_queue(int queue_id)
+   SafeQueue<T>* get_queue(FieldID queue_id)
    {
      if (queues.at(queue_id) == nullptr)
      {
@@ -85,7 +85,7 @@ public:
 
   // Query number of elements queued
   template <typename T>
-  int get_size(int queue_id)
+  int get_size(FieldID queue_id)
   {
     SafeQueue<T>* queue = get_queue<T>(queue_id);
     return queue->get_size();
@@ -93,7 +93,7 @@ public:
 
   // Enqueue data in its native format
   template <typename T>
-  void enqueue(int queue_id, T data)
+  void enqueue(FieldID queue_id, T data)
   {
     SafeQueue<T>* queue = get_queue<T>(queue_id);
     queue->enqueue(data);
@@ -101,7 +101,7 @@ public:
 
   // Peek the first value
   template <typename T>
-  T peek(int queue_id)
+  T peek(FieldID queue_id)
   {
     SafeQueue<T>* queue = get_queue<T>(queue_id);
     return queue->peek();
@@ -109,7 +109,7 @@ public:
 
   // Deque data in its native format
   template <typename T>
-  T dequeue(int queue_id)
+  T dequeue(FieldID queue_id)
   {
     SafeQueue<T>* queue = get_queue<T>(queue_id);
     return queue->dequeue();

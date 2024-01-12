@@ -76,10 +76,10 @@ message CarState {
 }
 
 message LiveComm {
-    optional GPS gps = 1;
-    optional Localization localization = 2;
-    optional Communication communication = 3;
-    optional Timestamp timestamp = 4;
-    optional AnalogChannel analog_ch = 5;
-    optional CarState car_state = 6;
+    repeated GPS gps = 1;
+    repeated Localization localization = 2;
+    repeated Communication communication = 3;
+    repeated Timestamp timestamp = 4;
+    repeated AnalogChannel analog_ch = 5;
+    repeated CarState car_state = 6;
 }
