@@ -9,19 +9,16 @@
 // into the queues.
 
 // Minimum number of payloads available overall
-int num_payloads_available(TRXProtoQueues* queues);
+int num_payloads_available(TRXProtoQueues* tx_queues);
 
 // Min number of payloads available for a given field
 int num_payloads_available(int field_id);
-
-// Build up to a max size LiveComm object out of data from one field
-LiveComm build_message(int field_id);
 
 // Build up to a max size LiveComm object out of data from all fields
 LiveComm build_message(TRXProtoQueues* queues);
 
 // Build up to a max size LiveCOmm objject out of data from a vector of fields
-LiveComm build_message(std::vector<int> field_ids);
+LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues* tx_queues);
 
 // Decompose and distribute to the appropriate queues
 int distribute_message(LiveComm msg, TRXProtoQueues* queues);

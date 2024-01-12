@@ -54,7 +54,7 @@ private:
 public:
   TRXProtoQueues(int max_queue_size)
   {
-    queues[GPS_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<Localization>(max_queue_size)); // TODO: change to GPS type
+    queues[GPS_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<GPS>(max_queue_size));
     queues[LOCALIZATION_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<Localization>(max_queue_size));
     queues[COMMUNICATION_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<Communication>(max_queue_size));
     queues[TIMESTAMP_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<Timestamp>(max_queue_size));
