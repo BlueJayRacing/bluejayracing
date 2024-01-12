@@ -16,6 +16,8 @@ extern "C"
 
 XBeeConnection::XBeeConnection()
 {
+  // Frame handlers must be dynamically allocated so that
+  // the xbee library can access them
   rx_queue = new std::queue<std::string>();
   xbee_frame_handlers = new xbee_dispatch_table_entry_t[] {
     {XBEE_FRAME_TRANSMIT_STATUS, 0, &XBeeConnection::tx_status_handler, this},
@@ -75,10 +77,14 @@ Connection::Status XBeeConnection::send(const std::string msg)
   char payload[payload_size + 1];
   std::strcpy(payload, msg.c_str());
 
-  this->latest_frame_id += 1;
+  // We're actually sending a 0x10 transmit (not explicit), but 
+  // the library doesn't directly implement this frame type. isntead
+  // we use the explicit frame type and set destination address to
+  // broadcast
+  this->latest_tx_frame_id += 1;
   xbee_header_transmit_explicit_t frame_out_header = {
     .frame_type = XBEE_FRAME_TRANSMIT_EXPLICIT,
-    .frame_id = this->latest_frame_id,
+    .frame_id = this->latest_tx_frame_id,
     .ieee_address = *WPAN_IEEE_ADDR_BROADCAST,
     .network_address_be = 0xFFFE, // "Reserved"
     .source_endpoint = WPAN_ENDPOINT_DIGI_DATA,
@@ -109,13 +115,19 @@ Connection::Status XBeeConnection::send(const std::string msg)
 Connection::Status XBeeConnection::tick()
 {
   int err = xbee_dev_tick(&xbee);
-  if (err >= 1)
+  if (err == -EINVAL)
   {
-    return SUCCESS;
+    std::cout << "Could not tick XBee, not a valid XBee obj" << std::endl;
+    return IRRECOVERABLE_ERROR;
   }
-  if (err < 0)
+  if (err == -EBUSY)
   {
-    std::cout << "ERROR: Could not tick device: " << -err << std::endl;
+    std::cout << "Could not tick XBee, already being ticked" << std::endl;
+    return IRRECOVERABLE_ERROR;
+  }
+  if (err == -EIO)
+  {
+    std::cout << "Could not tick XBee, error with serial port" << std::endl;
     return IRRECOVERABLE_ERROR;
   }
   return SUCCESS; // No frames to dispatch
@@ -123,6 +135,8 @@ Connection::Status XBeeConnection::tick()
 
 int XBeeConnection::num_messages_available() const
 {
+  // Caution, we don't tick before checking if messages are available,
+  // the returned value may be out of date
   return this->rx_queue->size();
 }
 
@@ -191,8 +205,9 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
     return -EBADMSG;
   }
 
+  // The payload_len is the frame length minus the meta data found
+  // at the beginning of the frame
   int payload_len = frame_length - offsetof(xbee_frame_receive_t, payload);
-
   std::string payload((char *)frame->payload, payload_len);
   this_conn->rx_queue->push(payload);
   return EXIT_SUCCESS;
@@ -202,7 +217,6 @@ Connection::Status XBeeConnection::init_baja_xbee()
 {
   this->serial = XBeeConnection::init_serial();
 
-  // Dump state to stdout for debug
   int err = xbee_dev_init(&xbee, &serial, NULL, NULL, xbee_frame_handlers);
   if (err)
   {
@@ -225,8 +239,8 @@ Connection::Status XBeeConnection::init_baja_xbee()
   } while (err == -EBUSY);
   if (err)
   {
-
     printf("Error %d waiting for AT init to complete.\n", err);
+    return IRRECOVERABLE_ERROR;
   }
 
   std::cout << "Initialized XBee AT layer" << std::endl;
