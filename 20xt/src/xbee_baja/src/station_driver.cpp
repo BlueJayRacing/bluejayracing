@@ -59,7 +59,7 @@ int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues) {
 
   // TODO: Revert this test
   // int err = conn->send(msg.SerializeAsString());
-  int err = conn->send("My payload");
+  int err = conn->send("Insert my payload here");
 
   // If full recoverable, wait only once
   for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
