@@ -14,49 +14,36 @@ static const int MAX_SIZE = 300;
 
 class TRXProtoQueues {
 public:
-  TRXProtoQueues();
+  TRXProtoQueues(int max_queue_size);
   ~TRXProtoQueues();
 
   // Query number of elements queued
-  int size_gps();
-  int size_localization();
-  int size_communication();
-  int size_timestamp();
-  int size_analog_channel();
-  int size_car_state();
+  template <typename T>
+  int get_size(int field_number) const;
 
   // Enqueue data in its native format
-  void enqueue(GPS data);
-  void enqueue(Localization data);
-  void enqueue(Communication data);
-  void enqueue(Timestamp data);
-  void enqueue(AnalogChannel data);
-  void enqueue(CarState data);
+  template <typename T>
+  void enqueue(int field_number, T data);
 
   // Peek the first value
-  GPS peek_gps();
-  Localization peek_localization();
-  Communication peek_communication();
-  Timestamp peek_timestamp();
-  AnalogChannel peek_analog_channel();
-  CarState peek_car_state();
+  template <typename T>
+  T peek(int field_number);
 
   // Deque data in its native format
-  GPS dequeue_gps();
-  Localization dequeue_localization();
-  Communication dequeue_communication();
-  Timestamp dequeue_timestamp();
-  AnalogChannel dequeue_analog_channel();
-  CarState dequeue_car_state();
+  template <typename T>
+  T dequeue(int field_number);
+
+  // Get the total size
+  int get_total_size();
 
 private:
-  std::map<std::string, void*> queues = {
-    {"gps", nullptr},
-    {"localization", nullptr},
-    {"communication", nullptr},
-    {"timestamp", nullptr},
-    {"analog_channel", nullptr},
-    {"car_state", nullptr}
+  std::map<int, void*> queues = {
+    {LiveComm::kGpsFieldNumber, nullptr},
+    {LiveComm::kLocalizationFieldNumber, nullptr},
+    {LiveComm::kCommunicationFieldNumber, nullptr},
+    {LiveComm::kTimestampFieldNumber, nullptr},
+    {LiveComm::kAnalogChFieldNumber, nullptr},
+    {LiveComm::kCarStateFieldNumber, nullptr}
   };
 };
 
