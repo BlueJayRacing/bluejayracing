@@ -25,6 +25,14 @@ set(HEADERS
     # Add library header files
 )
 
+# Remove generated protobuf headers if they exist
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.h)
+    file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.h)
+endif()
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.cc)
+    file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.cc)
+endif()
+
 # Generate protobuf files
 include(FindProtobuf)
 find_package(Protobuf REQUIRED)
@@ -38,6 +46,7 @@ add_library(xbee_baja STATIC ${SOURCES} ${HEADERS} ${PROTO_SRCS} ${PROTO_HDRS})
 target_include_directories(xbee_baja PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/proto
+    ${CMAKE_CURRENT_BINARY_DIR}
     # TODO: It will be necessary to have the proto files build with the PROTOBUF_GENERATE_CPP function
 )
 
