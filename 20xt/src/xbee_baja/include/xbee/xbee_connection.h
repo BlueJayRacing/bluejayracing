@@ -33,9 +33,15 @@ public:
 private:
   bool conn_open;
   bool send_succeeded;
+  
+  // We want the user of this connection to be able to retrieve
+  // a single message at a time, but the XBee library may return
+  // multiple with a single tick. We'll store them in a queue
   std::queue<std::string>* rx_queue;
+  uint8_t latest_tx_frame_id;
 
-  uint8_t latest_frame_id;
+  // The Digi library will store pointers to the frame handlers
+  // and serial objects, so be cautious when changing live
   xbee_serial_t serial;
   xbee_dev_t xbee;
   xbee_dispatch_table_entry_t *xbee_frame_handlers;
