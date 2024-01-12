@@ -1,0 +1,13 @@
+FROM debian:latest
+
+# Update package lists
+RUN apt-get update
+
+# Install necessary packages
+RUN apt-get install -y build-essential git curl
+
+# Set the working directory
+WORKDIR /20xt_ws
+
+# Start the workspace
+CMD ["/bin/bash"]
