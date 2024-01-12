@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_executable(station_main src/main.cpp)
 
+# Turn on color diagnostics
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+
 # This top-level CMake needs targets declared in the library's CMake, so
 # we use a path to the library's directory
 add_subdirectory(
