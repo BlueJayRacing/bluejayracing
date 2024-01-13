@@ -10,15 +10,15 @@ int num_payloads_available(TRXProtoQueues *tx_queues)
   return tx_queues->get_total_size();
 }
 
-// Build up to a max size LiveCOmm objjec out of data from a vector of fields
-LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
+// Build up to a max size Observation objjec out of data from a vector of fields
+Observation build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
 {
   // Iterate through each field once, iteratively building the largest possible message
-  // until LiveComm.serializeToString() size exceeds XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE (this
+  // until Observation.serializeToString() size exceeds XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE (this
   // constant is found in xbee_baja_network_config.h)
 
   // int field_ids_size = field_ids.size();
-  // LiveComm my_live_comm = LiveComm();
+  // Observation my_live_comm = Observation();
   // int cur_field_id = 0;
   // while (tx_queues->get_total_size() > 0)
   // {
@@ -27,7 +27,7 @@ LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
   //     cur_field_id = (cur_field_id + 1) % field_ids.size();
   //     break;
   //   }
-  //   LiveComm test_livecomm = test_add_data(my_live_comm, cur_field_id, tx_queues);
+  //   Observation test_livecomm = test_add_data(my_live_comm, cur_field_id, tx_queues);
   //   if (test_livecomm.SerializeAsString().size() > XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE)
   //   {
   //     break;
@@ -41,58 +41,36 @@ LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
   // }
   // return my_live_comm;
 
-  return LiveComm();
+  return Observation();
 }
 
-LiveComm _test_add_data(LiveComm dest, LiveComm src, int field_id)
+// Copy field from src into a copy of dest. Return the copy with new data. 
+// If msg already has data in that field, it will overrite with new data. 
+Observation _test_add_data(Observation dest, Observation src, int field_id)
 {
-  // Copy field from src into a copy of dest. Return the copy with new data. 
-  // If msg already has data in that field, it will overrite with new data. 
-  
-  // // TODO: figure out how to make a copy of the msg object
-  // LiveComm msg_copy(msg);
-  
-  // // Dequeue the encapsulated data from the queue
-  // LiveComm new_data = tx_queues->front(field_id);
-  // if (new_data == NULL) {
-  //   std::cout << "ERROR: could not retrieve data from queue #" << field_id << std::endl;
-  //   return msg_copy;
-  // }
+  const google::protobuf::FieldDescriptor *field = Observation::GetDescriptor()->FindFieldByNumber(field_id);
+  const google::protobuf::Reflection *src_reflection = src.GetReflection();
+  const google::protobuf::Reflection *dest_reflection = dest.GetReflection();
 
-  // // Check that the LiveComm object has the field of interest set to non-default value
-  // const google::protobuf::Reflection *reflection = new_data.GetReflection();
-  // const google::protobuf::FieldDescriptor *field = new_data.GetDescriptor()->FindFieldByNumber(field_id);
-  // if (field != nullptr)
-  // {
-  //   if (!reflection->HasField(new_data, field))
-  //   {
-  //     std::cout << "ERROR: LiveComm object missing field #" << queue_id << std::endl;
-  //     return msg_copy;
-  //   }
-  // }
-
-  // new_data has the field of interest set to non-default value, so add only that field
-  // to the msg_copy object. We need to make a copy of the data, since it will have been
-  // dynamically allocated.
-  
-
-  // return msg;
-
-  return LiveComm();
+  // Set the dest field to a copy of the value from src_reflection
+  const google::protobuf::Message& src_msg = src_reflection->GetMessage(src, field);
+  google::protobuf::Message *dest_msg = dest_reflection->MutableMessage(&dest, field);
+  dest_msg->CopyFrom(src_msg);
+  return dest;
 }
 
-// Build up to a max size LiveComm object out of data from all fields
-LiveComm build_message(TRXProtoQueues *tx_queues)
+// Build up to a max size Observation object out of data from all fields
+Observation build_message(TRXProtoQueues *tx_queues)
 {
   // Call build_message(fields_ids, tx_queues), passing in field_id vector
   // with all of the field IDs
-  return LiveComm();
+  return Observation();
 }
 
 // Decompose and distribute to the appropriate queues
-int distribute_message(LiveComm msg, TRXProtoQueues *rx_queues)
+int distribute_message(Observation msg, TRXProtoQueues *rx_queues)
 {
-  // Decompose the LiveComm message into its fields, and enqueue
+  // Decompose the Observation message into its fields, and enqueue
   // that data into the queue with appropriate field ID
 
   // GPS my_gps = GPS();

@@ -7,9 +7,9 @@ class LiveCommQueue {
 public:
   virtual ~LiveCommQueue() {}
 
-  virtual bool enqueue(LiveComm data) = 0;
-  virtual LiveComm front() = 0;
-  virtual LiveComm dequeue() = 0;
+  virtual bool enqueue(Observation data) = 0;
+  virtual Observation front() = 0;
+  virtual Observation dequeue() = 0;
   virtual int size() = 0;
 };
 

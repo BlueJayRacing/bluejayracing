@@ -20,7 +20,7 @@ private:
 
   std::mutex dequeue_lock; // must be held while dequeueing
   std::mutex enqueue_lock; // must be held while enqueueing
-  LiveComm* data_queue;
+  Observation* data_queue;
 
 public:
 
@@ -31,13 +31,13 @@ public:
   int size();
 
   // Critical Section
-  bool enqueue(LiveComm data);
+  bool enqueue(Observation data);
 
   // Critical Section
-  LiveComm front();
+  Observation front();
 
   // Critical Section
-  LiveComm dequeue();
+  Observation dequeue();
 };
 
 #endif // MESSAGE_QUEUE_H

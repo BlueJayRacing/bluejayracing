@@ -27,26 +27,26 @@ public:
   // Returns the size of the queue with the given id
   int get_size(int queue_id);
 
-  // Enqueue a LiveComm object which contains a payload of the specified ID
+  // Enqueue a Observation object which contains a payload of the specified ID
   // returns true if successful, false if the queue is full
-  bool enqueue(int queue_id, LiveComm data);
+  bool enqueue(int queue_id, Observation data);
 
-  // Returns a LiveComm object which has both a payload of the ID specified
+  // Returns a Observation object which has both a payload of the ID specified
   // and (optionally) a timestamp  
-  LiveComm front(int queue_id);
+  Observation front(int queue_id);
 
-  // Returns a LiveComm object which has both a payload of the ID specified
+  // Returns a Observation object which has both a payload of the ID specified
   // and (optionally) a timestamp  
-  LiveComm dequeue(int queue_id);
+  Observation dequeue(int queue_id);
 
 private:
   std::map<int, LiveCommQueue*> queues = {
-      {LiveComm::kGpsFieldNumber, nullptr},
-      {LiveComm::kLocalizationFieldNumber, nullptr},
-      {LiveComm::kCommunicationFieldNumber, nullptr},
-      {LiveComm::kCarStateFieldNumber, nullptr},
-      {LiveComm::kAnalogChFieldNumber, nullptr},
-      {LiveComm::kCarStateFieldNumber, nullptr}};
+      {Observation::kGpsFieldNumber, nullptr},
+      {Observation::kLocalizationFieldNumber, nullptr},
+      {Observation::kCommunicationFieldNumber, nullptr},
+      {Observation::kCarStateFieldNumber, nullptr},
+      {Observation::kAnalogChFieldNumber, nullptr},
+      {Observation::kCarStateFieldNumber, nullptr}};
 };
 
 #endif // TRX_QUEUEs_H

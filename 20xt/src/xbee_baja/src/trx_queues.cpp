@@ -53,7 +53,7 @@ int TRXProtoQueues::get_size(int queue_id)
   return queues.at(queue_id)->size();
 }
 
-bool TRXProtoQueues::enqueue(int queue_id, LiveComm data)
+bool TRXProtoQueues::enqueue(int queue_id, Observation data)
 {
   const google::protobuf::Reflection *reflection = data.GetReflection();
   const google::protobuf::FieldDescriptor *field = data.GetDescriptor()->FindFieldByNumber(queue_id);
@@ -61,7 +61,7 @@ bool TRXProtoQueues::enqueue(int queue_id, LiveComm data)
   {
     if (!reflection->HasField(data, field))
     {
-      std::cerr << "ERROR: Cannot enqueue. LiveComm object missing field #" << queue_id << std::endl;
+      std::cerr << "ERROR: Cannot enqueue. Observation object missing field #" << queue_id << std::endl;
       return false;
     }
   }
@@ -70,23 +70,23 @@ bool TRXProtoQueues::enqueue(int queue_id, LiveComm data)
   return success;
 }
 
-LiveComm TRXProtoQueues::front(int queue_id)
+Observation TRXProtoQueues::front(int queue_id)
 {
   if (this->get_size(queue_id) <= 0)
   {
-    std::cerr << "ERROR: No data in queue with field ID. Returning default LiveComm " << queue_id << std::endl;
-    return LiveComm();
+    std::cerr << "ERROR: No data in queue with field ID. Returning default Observation " << queue_id << std::endl;
+    return Observation();
   }
 
   return queues.at(queue_id)->front();
 }
 
-LiveComm TRXProtoQueues::dequeue(int queue_id)
+Observation TRXProtoQueues::dequeue(int queue_id)
 {
   if (this->get_size(queue_id) <= 0)
   {
-    std::cerr << "ERROR: No data in queue with field ID. Returning default LiveComm " << queue_id << std::endl;
-    return LiveComm();
+    std::cerr << "ERROR: No data in queue with field ID. Returning default Observation " << queue_id << std::endl;
+    return Observation();
   }
 
   return queues.at(queue_id)->dequeue();;

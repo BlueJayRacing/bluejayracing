@@ -12,7 +12,7 @@
 
 SafeLiveCommQueue::SafeLiveCommQueue(int max_size) : max_size(max_size), qlen(0), head(-1)
 {
-  this->data_queue = new LiveComm[max_size];
+  this->data_queue = new Observation[max_size];
 }
 
 SafeLiveCommQueue::~SafeLiveCommQueue()
@@ -26,7 +26,7 @@ int SafeLiveCommQueue::size()
 }
 
 // Critical Section
-bool SafeLiveCommQueue::enqueue(LiveComm data)
+bool SafeLiveCommQueue::enqueue(Observation data)
 {
   std::scoped_lock guard(enqueue_lock);
   if (qlen.load() >= max_size)
@@ -41,29 +41,29 @@ bool SafeLiveCommQueue::enqueue(LiveComm data)
 }
 
 // Critical Section
-LiveComm SafeLiveCommQueue::front()
+Observation SafeLiveCommQueue::front()
 {
   std::scoped_lock guard(dequeue_lock);
   if (qlen.load() <= 0)
   {
     std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
-    return LiveComm();
+    return Observation();
   }
 
   return data_queue[tail.load()];
 }
 
 // Critical Section
-LiveComm SafeLiveCommQueue::dequeue()
+Observation SafeLiveCommQueue::dequeue()
 {
   std::scoped_lock guard(dequeue_lock);
   if (qlen.load() <= 0)
   {
     std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
-    return LiveComm();
+    return Observation();
   }
 
-  LiveComm data = data_queue[tail.load()];
+  Observation data = data_queue[tail.load()];
   tail = (tail.load() + 1) % max_size;
   qlen -= 1; // Must reduce length after retrieving data
   return data;

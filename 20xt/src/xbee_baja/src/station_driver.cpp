@@ -13,41 +13,6 @@
 
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
   
-  // TEST CODE
-
-  // TEST 1
-  // Make a time stamp with value 1, insert it into a src1 LiveComm object
-  Timestamp* ts1 = new Timestamp();
-  ts1->set_ts(1);
-  LiveComm src1 = LiveComm();
-  src1.set_allocated_timestamp(ts1);
-  
-  // Create dest1 message with no fields set. Use _test_add_data() to copy over from src to dest
-  LiveComm dest1 = LiveComm();
-  LiveComm dest1_copy = _test_add_data(dest1, src1, LiveComm::kTimestampFieldNumber);
-
-  // Check that it has ts value of 1
-  assert (dest1.timestamp().ts() == 0);
-  assert (dest1_copy.timestamp().ts() == 1);
-
-  // TEST 2
-  // Make a time stamp with value 2, insert it into a src2 LiveComm object
-  Timestamp* ts2 = new Timestamp();
-  ts2->set_ts(2);
-  LiveComm src2 = LiveComm();
-  src2.set_allocated_timestamp(ts2);
-
-  // Create dest2 message with the ts field set to 1. Use _test_add_data() to copy over from src to dest
-  LiveComm dest2 = LiveComm();
-  dest2.set_allocated_timestamp(ts1);
-  LiveComm dest2_copy = _test_add_data(dest2, src2, LiveComm::kTimestampFieldNumber);
-
-  assert (dest2.timestamp().ts() == 1);
-  assert (dest2_copy.timestamp().ts() == 2);
-  // END TEST CODE
-
-
-
   // Continue with a normal loop and good practice
   Connection* conn = new XBeeConnection();
   int err = conn->open();
@@ -92,7 +57,7 @@ int _try_transmit_data(Connection* conn, TRXProtoQueues* tx_queues) {
     return EXIT_SUCCESS;
   }
 
-  LiveComm msg = build_message(tx_queues);
+  Observation msg = build_message(tx_queues);
 
   // TODO: Revert this test
   // int err = conn->send(msg.SerializeAsString());
@@ -141,7 +106,7 @@ int _try_recieve_data(Connection* conn, TRXProtoQueues* rx_queues) {
   if (conn->num_messages_available() > 0) {
     std::string encoded_msg = conn->pop_message();
     std::cout << encoded_msg << std::endl;
-    LiveComm decoded_msg;
+    Observation decoded_msg;
     decoded_msg.ParseFromString(encoded_msg);
     distribute_message(decoded_msg, rx_queues);
   }
