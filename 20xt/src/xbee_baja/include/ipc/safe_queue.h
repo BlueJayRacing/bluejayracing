@@ -6,57 +6,61 @@
 #include <thread>
 #include <mutex>
 
+#include "interfaces/live_comm_queue.h"
+
 
 // If cannot get to work, consider using oneTBB concurrent_bounded_queue<T, alloc> instead
 // A thread-safe queue that can be accessed concurrently by enqueing
 // and dequeing threads.
 
-template <typename T>
-class SafeQueue {
+class SafeQueue : public LiveCommQueue {
 private:
   const int max_size;
-  std::atomic<int> size;
+  std::atomic<int> curr_size;
   std::mutex dequeue_lock; // must be held while dequeueing
   std::mutex enqueue_lock; // must be held while enqueueing
-  std::deque<T> data_queue;
+  std::deque<LiveComm> data_queue;
 
 public:
 
   SafeQueue(int max_size) : max_size (max_size) {}
   ~SafeQueue() {}
 
-  int get_size() const {
-    return size.load();
+  int size() {
+    return curr_size.load();
   }
 
-  void enqueue(T data) {
+  bool enqueue(LiveComm data) {
     std::scoped_lock guard(enqueue_lock);
-    if (size.load() < max_size) {
-      this->data_queue.push_back(data);
-      size += 1;
+    if (curr_size.load() >= max_size) {
+      return false;
     };
+
+    curr_size += 1;
+    this->data_queue.push_back(data);
+    return true;
   }
 
-  T peek() {
+  LiveComm front() {
     std::scoped_lock guard(dequeue_lock);
-    if (size.load() <= 0) {
+    if (curr_size.load() <= 0) {
       std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
-      return T();
+      return LiveComm();
     } 
     return this->data_queue.front();
   }
 
 
-  T dequeue() {
+  LiveComm dequeue() {
     std::scoped_lock guard(dequeue_lock);
-    if (size.load() <= 0) {
+    if (curr_size.load() <= 0) {
       std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
-      return T();
+      return LiveComm();
     } 
     
-    T d = this->data_queue.front();
+    LiveComm d = this->data_queue.front();
     this->data_queue.pop_front();
-    size -= 1;
+    curr_size -= 1;
     return d;
   }
 };

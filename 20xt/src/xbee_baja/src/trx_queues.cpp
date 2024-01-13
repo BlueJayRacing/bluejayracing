@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "ipc/safe_queue.h"
+#include "interfaces/live_comm_queue.h"
 #include "ipc/trx_queues.h"
 #include "baja_live_comm.pb.h"
 
@@ -9,7 +10,7 @@ TRXProtoQueues::TRXProtoQueues(int max_queue_size)
 {
   for (auto &queue : queues)
   {
-    queue.second = new SafeQueue<LiveComm>(max_queue_size);
+    queue.second = new SafeQueue(max_queue_size);
   }
 }
 
@@ -31,7 +32,7 @@ int TRXProtoQueues::get_total_size()
   {
     if (queue.second != nullptr)
     {
-      total_size += queue.second->get_size();
+      total_size += queue.second->size();
     }
   }
   return total_size;
@@ -49,56 +50,44 @@ int TRXProtoQueues::get_size(int queue_id)
     std::cerr << "WARNING: Queue with field ID is null, returning size of 0 " << queue_id << std::endl;
     return 0;
   }
-  return queues.at(queue_id)->get_size();
+  return queues.at(queue_id)->size();
 }
 
-void TRXProtoQueues::enqueue(int queue_id, LiveComm data)
+bool TRXProtoQueues::enqueue(int queue_id, LiveComm data)
 {
-
-  // TODO: Check to make sure the LiveComm has the field set (possible solution below)
-  // const google::protobuf::Reflection *reflection = message.GetReflection();
-  // const google::protobuf::FieldDescriptor *field = message.GetDescriptor()->FindFieldByNumber(queue_id);
-  // if (field != nullptr)
-  // {
-  //   if (!reflection->HasField(data, field))
-  //   {
-  //     std::cout << "ERROR: LiveComm object missing field #" << queue_id << std::endl;
-  //     return;
-  //   }
-  // }
-  queues.at(queue_id)->enqueue(data);
-}
-
-LiveComm TRXProtoQueues::peek(int queue_id)
-{
-  if (queues.find(queue_id) == queues.end())
+  const google::protobuf::Reflection *reflection = data.GetReflection();
+  const google::protobuf::FieldDescriptor *field = data.GetDescriptor()->FindFieldByNumber(queue_id);
+  if (field != nullptr)
   {
-    std::cerr << "ERROR: No queue with field ID. Returning default LiveComm " << queue_id << std::endl;
-    return LiveComm();
+    if (!reflection->HasField(data, field))
+    {
+      std::cerr << "ERROR: Cannot enqueue. LiveComm object missing field #" << queue_id << std::endl;
+      return false;
+    }
   }
 
-  if (queues.at(queue_id)->get_size() <= 0)
+  bool success = queues.at(queue_id)->enqueue(data);
+  return success;
+}
+
+LiveComm TRXProtoQueues::front(int queue_id)
+{
+  if (this->get_size(queue_id) <= 0)
   {
     std::cerr << "ERROR: No data in queue with field ID. Returning default LiveComm " << queue_id << std::endl;
     return LiveComm();
   }
 
-  return queues.at(queue_id)->peek();
+  return queues.at(queue_id)->front();
 }
 
 LiveComm TRXProtoQueues::dequeue(int queue_id)
 {
-  if (queues.find(queue_id) == queues.end())
-  {
-    std::cerr << "ERROR: No queue with field ID. Returning default LiveComm " << queue_id << std::endl;
-    return LiveComm();
-  }
-
-  if (queues.at(queue_id)->get_size() <= 0)
+  if (this->get_size(queue_id) <= 0)
   {
     std::cerr << "ERROR: No data in queue with field ID. Returning default LiveComm " << queue_id << std::endl;
     return LiveComm();
   }
 
-  return queues.at(queue_id)->dequeue();
+  return queues.at(queue_id)->dequeue();;
 }

@@ -3,9 +3,11 @@
 
 #include <map>
 #include <iostream>
+#include <queue>
 
 #include "ipc/safe_queue.h"
 #include "baja_live_comm.pb.h"
+#include "interfaces/live_comm_queue.h"
 
 static const int MAX_SIZE = 300;
 // Multi queue containing all of the RX and TX data in its
@@ -15,8 +17,6 @@ static const int MAX_SIZE = 300;
 
 class TRXProtoQueues
 {
-
-
 public:
   TRXProtoQueues(int max_queue_size);
   ~TRXProtoQueues();
@@ -28,20 +28,19 @@ public:
   int get_size(int queue_id);
 
   // Enqueue a LiveComm object which contains a payload of the specified ID
-  // WARNING: no checking is done, you must ensure that the LiveComm object
-  // has a payload of the correct ID
-  void enqueue(int queue_id, LiveComm data);
+  // returns true if successful, false if the queue is full
+  bool enqueue(int queue_id, LiveComm data);
 
   // Returns a LiveComm object which has both a payload of the ID specified
   // and (optionally) a timestamp  
-  LiveComm peek(int queue_id);
+  LiveComm front(int queue_id);
 
   // Returns a LiveComm object which has both a payload of the ID specified
   // and (optionally) a timestamp  
   LiveComm dequeue(int queue_id);
 
 private:
-  std::map<int, SafeQueue<LiveComm> *> queues = {
+  std::map<int, LiveCommQueue*> queues = {
       {LiveComm::kGpsFieldNumber, nullptr},
       {LiveComm::kLocalizationFieldNumber, nullptr},
       {LiveComm::kCommunicationFieldNumber, nullptr},

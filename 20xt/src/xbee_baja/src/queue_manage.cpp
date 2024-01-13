@@ -50,7 +50,7 @@ LiveComm test_add_data(const LiveComm& msg, int field_id, TRXProtoQueues* tx_que
   // LiveComm msg_copy(msg);
   
   // // Dequeue the encapsulated data from the queue
-  // LiveComm new_data = tx_queues->peek(field_id);
+  // LiveComm new_data = tx_queues->front(field_id);
   // if (new_data == NULL) {
   //   std::cout << "ERROR: could not retrieve data from queue #" << field_id << std::endl;
   //   return msg_copy;

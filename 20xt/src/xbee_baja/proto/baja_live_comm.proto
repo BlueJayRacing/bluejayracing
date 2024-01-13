@@ -1,9 +1,9 @@
 syntax = "proto3";
 
 message GPS {
-    float lat = 1;
-    float long = 2;
-    float alt = 3;
+    float latitude = 1;
+    float longitude = 2;
+    float altitude = 3;
 }
 
 message Localization {

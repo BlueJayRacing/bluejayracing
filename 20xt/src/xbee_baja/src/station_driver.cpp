@@ -12,33 +12,6 @@
 
 
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
-
-  // START TEST CODE
-  std::cout << "Beggining test code" << std::endl;
-
-  // Create the first live comm
-  // Set the time stamp to 1
-  Timestamp* ts = new Timestamp();
-  ts->set_ts(1);
-  LiveComm original_msg = LiveComm();
-  original_msg.set_allocated_timestamp(ts);
-  std::cout << "Original's first TS: " << original_msg.timestamp().ts() << std::endl;
-
-  // Create the second live comm via assignment constructor
-  LiveComm second_msg = LiveComm(original_msg);
-  std::cout << "Second's first TS: " << second_msg.timestamp().ts() << std::endl;
-
-  // Set the original's time stamp to 2
-  original_msg.mutable_timestamp()->set_ts(2);
-
-  // Print out the original's ts (it should be 2),  Print out the second's ts (hopefully 1)
-  std::cout << "Original's second TS: " << original_msg.timestamp().ts() << std::endl;
-  std::cout << "Second's second TS: " << second_msg.timestamp().ts() << std::endl;
-  std::cout << "End of test code" << std::endl << std::endl;
-
-  // Conclusion: The assignment constructor creates a deep copy, not a shallow copy
-  // END TEST CODE
-  
   
   // Continue with a normal loop and good practice
   Connection* conn = new XBeeConnection();
@@ -75,7 +48,7 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
   }
  
   // Cleanup
-  delete conn, tx_queues, rx_queues;
+  delete conn;
   return EXIT_SUCCESS;
 }
 
