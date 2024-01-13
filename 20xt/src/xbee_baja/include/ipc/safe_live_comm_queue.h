@@ -26,56 +26,20 @@ private:
 
 public:
 
-  SafeLiveCommQueue(int max_size) : max_size (max_size), qlen(0), head(-1) {
-    data_queue = new LiveComm[max_size];
-  }
+  SafeLiveCommQueue(int max_size);
 
-  ~SafeLiveCommQueue() {
-    delete[] data_queue;
-  }
+  ~SafeLiveCommQueue();
 
-  int size() {
-    return qlen.load();
-  }
+  int size();
 
   // Critical Section
-  bool enqueue(LiveComm data) {
-    std::scoped_lock guard(enqueue_lock);
-    if (qlen.load() >= max_size) {
-      return false;
-    };
-
-    qlen += 1; // Claim more length below filling it
-    head = (head.load() + 1) % max_size;
-    data_queue[head.load()] = data;
-    return true;
-  }
+  bool enqueue(LiveComm data);
 
   // Critical Section
-  LiveComm front() {
-    std::scoped_lock guard(dequeue_lock);
-    if (qlen.load() <= 0) {
-      std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
-      return LiveComm();
-    } 
-
-    return data_queue[tail.load()];
-  }
-
+  LiveComm front();
 
   // Critical Section
-  LiveComm dequeue() {
-    std::scoped_lock guard(dequeue_lock);
-    if (qlen.load() <= 0) {
-      std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
-      return LiveComm();
-    } 
-    
-    LiveComm data = data_queue[tail.load()];
-    tail = (tail.load() + 1) % max_size;
-    qlen -= 1; // Must reduce length after retrieving data
-    return data;
-  }
+  LiveComm dequeue();
 };
 
 #endif // MESSAGE_QUEUE_H
