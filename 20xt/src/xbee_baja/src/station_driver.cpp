@@ -57,7 +57,7 @@ int _try_transmit_data(Connection* conn, TRXProtoQueues* tx_queues) {
     return EXIT_SUCCESS;
   }
 
-  Observation msg = build_message(tx_queues);
+  LiveComm msg = build_message(tx_queues);
 
   // TODO: Revert this test
   // int err = conn->send(msg.SerializeAsString());
