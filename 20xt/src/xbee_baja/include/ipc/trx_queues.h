@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "ipc/safe_queue.h"
-#include "ipc/safe_queue_base.h"
 #include "baja_live_comm.pb.h"
 
 static const int MAX_SIZE = 300;
@@ -16,104 +15,39 @@ static const int MAX_SIZE = 300;
 
 class TRXProtoQueues
 {
+
+
 public:
-  enum FieldID
-  {
-    GPS_QUEUE_ID = 1,
-    LOCALIZATION_QUEUE_ID = 2,
-    COMMUNICATION_QUEUE_ID = 3,
-    TIMESTAMP_QUEUE_ID = 4,
-    ANALOG_CH_QUEUE_ID = 5,
-    CAR_STATE_QUEUE_ID = 6
-  };
+  TRXProtoQueues(int max_queue_size);
+  ~TRXProtoQueues();
+
+  // Get the combined size of all queues
+  int get_total_size();
+
+  // Returns the size of the queue with the given id
+  int get_size(int queue_id);
+
+  // Enqueue a LiveComm object which contains a payload of the specified ID
+  // WARNING: no checking is done, you must ensure that the LiveComm object
+  // has a payload of the correct ID
+  void enqueue(int queue_id, LiveComm data);
+
+  // Returns a LiveComm object which has both a payload of the ID specified
+  // and (optionally) a timestamp  
+  LiveComm peek(int queue_id);
+
+  // Returns a LiveComm object which has both a payload of the ID specified
+  // and (optionally) a timestamp  
+  LiveComm dequeue(int queue_id);
 
 private:
-  std::map<FieldID, SafeQueueBase *> queues = {
-      {GPS_QUEUE_ID, nullptr},
-      {LOCALIZATION_QUEUE_ID, nullptr},
-      {COMMUNICATION_QUEUE_ID, nullptr},
-      {TIMESTAMP_QUEUE_ID, nullptr},
-      {ANALOG_CH_QUEUE_ID, nullptr},
-      {CAR_STATE_QUEUE_ID, nullptr}};
-
-   template <typename T>
-   SafeQueue<T>* get_queue(FieldID queue_id)
-   {
-     if (queues.at(queue_id) == nullptr)
-     {
-       throw std::runtime_error("Queue not initialized");
-     }
-     auto queue = static_cast<SafeQueue<T> *>(queues.at(queue_id));
-     if (queue == nullptr)
-     {
-       throw std::runtime_error("Cannot cast queue. Hint: check queue ID matches expected type");
-     }
-     return queue;
-   }
-
-public:
-  TRXProtoQueues(int max_queue_size)
-  {
-    queues[GPS_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<GPS>(max_queue_size));
-    queues[LOCALIZATION_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<Localization>(max_queue_size));
-    queues[COMMUNICATION_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<Communication>(max_queue_size));
-    queues[TIMESTAMP_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<Timestamp>(max_queue_size));
-    queues[ANALOG_CH_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<AnalogChannel>(max_queue_size));
-    queues[CAR_STATE_QUEUE_ID] = dynamic_cast<SafeQueueBase *>(new SafeQueue<CarState>(max_queue_size));
-  }
-  ~TRXProtoQueues()
-  {
-    delete dynamic_cast<SafeQueue<GPS> *>(queues[GPS_QUEUE_ID]);
-    delete dynamic_cast<SafeQueue<Localization> *>(queues[LOCALIZATION_QUEUE_ID]);
-    delete dynamic_cast<SafeQueue<Communication> *>(queues[COMMUNICATION_QUEUE_ID]);
-    delete dynamic_cast<SafeQueue<Timestamp> *>(queues[TIMESTAMP_QUEUE_ID]);
-    delete dynamic_cast<SafeQueue<AnalogChannel> *>(queues[ANALOG_CH_QUEUE_ID]);
-    delete dynamic_cast<SafeQueue<CarState> *>(queues[CAR_STATE_QUEUE_ID]);
-  }
-
-  int get_total_size()
-  {
-    int total_size = 0;
-    total_size += dynamic_cast<SafeQueue<GPS> *>(queues[GPS_QUEUE_ID])->get_size();
-    total_size += dynamic_cast<SafeQueue<Localization> *>(queues[LOCALIZATION_QUEUE_ID])->get_size();
-    total_size += dynamic_cast<SafeQueue<Communication> *>(queues[COMMUNICATION_QUEUE_ID])->get_size();
-    total_size += dynamic_cast<SafeQueue<Timestamp> *>(queues[TIMESTAMP_QUEUE_ID])->get_size();
-    total_size += dynamic_cast<SafeQueue<AnalogChannel> *>(queues[ANALOG_CH_QUEUE_ID])->get_size();
-    total_size += dynamic_cast<SafeQueue<CarState> *>(queues[CAR_STATE_QUEUE_ID])->get_size();
-    return total_size;
-  }
-
-  // Query number of elements queued
-  template <typename T>
-  int get_size(FieldID queue_id)
-  {
-    SafeQueue<T>* queue = get_queue<T>(queue_id);
-    return queue->get_size();
-  }
-
-  // Enqueue data in its native format
-  template <typename T>
-  void enqueue(FieldID queue_id, T data)
-  {
-    SafeQueue<T>* queue = get_queue<T>(queue_id);
-    queue->enqueue(data);
-  }
-
-  // Peek the first value
-  template <typename T>
-  T peek(FieldID queue_id)
-  {
-    SafeQueue<T>* queue = get_queue<T>(queue_id);
-    return queue->peek();
-  }
-
-  // Deque data in its native format
-  template <typename T>
-  T dequeue(FieldID queue_id)
-  {
-    SafeQueue<T>* queue = get_queue<T>(queue_id);
-    return queue->dequeue();
-  }
+  std::map<int, SafeQueue<LiveComm> *> queues = {
+      {LiveComm::kGpsFieldNumber, nullptr},
+      {LiveComm::kLocalizationFieldNumber, nullptr},
+      {LiveComm::kCommunicationFieldNumber, nullptr},
+      {LiveComm::kCarStateFieldNumber, nullptr},
+      {LiveComm::kAnalogChFieldNumber, nullptr},
+      {LiveComm::kCarStateFieldNumber, nullptr}};
 };
 
 #endif // TRX_QUEUEs_H

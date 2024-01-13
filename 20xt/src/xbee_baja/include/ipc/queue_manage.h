@@ -1,6 +1,7 @@
 #ifndef QUEUE_FUNCS
 #define QUEUE_FUNCS
 
+#include "baja_live_comm.pb.h"
 #include "ipc/trx_queues.h"
 
 // Adapter functions allowing the xbee-driver loop to easily
@@ -22,6 +23,6 @@ LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues* tx_queues);
 
 // Decompose and distribute to the appropriate queues
 int distribute_message(LiveComm msg, TRXProtoQueues* queues);
-s
-LiveComm test_add_data(LiveComm msg,  int field_id, T data);
+
+LiveComm test_add_data(LiveComm msg,  int field_id, LiveComm data);
 #endif // QUEUE_FUNCS

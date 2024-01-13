@@ -5,7 +5,6 @@
 #include <deque>
 #include <thread>
 #include <mutex>
-#include "ipc/safe_queue_base.h"
 
 
 // If cannot get to work, consider using oneTBB concurrent_bounded_queue<T, alloc> instead
@@ -13,13 +12,13 @@
 // and dequeing threads.
 
 template <typename T>
-class SafeQueue : public SafeQueueBase {
+class SafeQueue {
 private:
   const int max_size;
   std::atomic<int> size;
   std::mutex dequeue_lock; // must be held while dequeueing
   std::mutex enqueue_lock; // must be held while enqueueing
-  std::deque<T> data;
+  std::deque<T> data_queue;
 
 public:
 
@@ -33,19 +32,30 @@ public:
   void enqueue(T data) {
     std::scoped_lock guard(enqueue_lock);
     if (size.load() < max_size) {
-      data.push_back(data);
+      this->data_queue.push_back(data);
       size += 1;
     };
   }
 
+  T peek() {
+    std::scoped_lock guard(dequeue_lock);
+    if (size.load() <= 0) {
+      std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
+      return T();
+    } 
+    return this->data_queue.front();
+  }
+
+
   T dequeue() {
     std::scoped_lock guard(dequeue_lock);
     if (size.load() <= 0) {
-      return NULL;
+      std::cerr << "ERROR: queue is empty, returning default value" << std::endl;
+      return T();
     } 
     
-    T d = data.front();
-    data.pop_front();
+    T d = this->data_queue.front();
+    this->data_queue.pop_front();
     size -= 1;
     return d;
   }

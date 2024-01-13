@@ -1,6 +1,6 @@
 #include "ipc/queue_manage.h"
-#include "xbee/xbee_baja_network_config.h"
 #include "ipc/trx_queues.h"
+#include "xbee/xbee_baja_network_config.h"
 #include "baja_live_comm.pb.h"
 
 // Minimum number of payloads available overall
@@ -11,68 +11,71 @@ int num_payloads_available(TRXProtoQueues *tx_queues)
 }
 
 // Build up to a max size LiveCOmm objjec out of data from a vector of fields
-template <typename T>
-LiveComm build_message(std::vector<TRXProtoQueues::FieldID> field_ids, TRXProtoQueues *tx_queues)
+LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
 {
-  // Iterate through all fields with data, iteratively building the largest possible message
+  // Iterate through each field once, iteratively building the largest possible message
   // until LiveComm.serializeToString() size exceeds XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE (this
   // constant is found in xbee_baja_network_config.h)
-  int field_ids_size = field_ids.size();
-  LiveComm my_live_comm = LiveComm();
-  int cur_field_id = 0;
-  while (tx_queues->get_total_size() > 0)
-  {
-    if (tx_queues->template get_size<T>(cur_field_id) <= 0)
-    {
-      cur_field_id = (cur_field_id + 1) % field_ids.size();
-      break;
-    }
-    LiveComm test_livecomm = test_add_data(my_live_comm, cur_field_id, tx_queues);
-    if (test_livecomm.SerializeAsString().size() > XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE)
-    {
-      break;
-    }
-    else
-    {
-      my_live_comm = test_livecomm;
-      tx_queues->template dequeue<T>(cur_field_id);
-      cur_field_id = (cur_field_id + 1) % field_ids.size();
-    }
-  }
 
-  return my_live_comm;
+  // int field_ids_size = field_ids.size();
+  // LiveComm my_live_comm = LiveComm();
+  // int cur_field_id = 0;
+  // while (tx_queues->get_total_size() > 0)
+  // {
+  //   if (tx_queues->template get_size<T>(cur_field_id) <= 0)
+  //   {
+  //     cur_field_id = (cur_field_id + 1) % field_ids.size();
+  //     break;
+  //   }
+  //   LiveComm test_livecomm = test_add_data(my_live_comm, cur_field_id, tx_queues);
+  //   if (test_livecomm.SerializeAsString().size() > XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE)
+  //   {
+  //     break;
+  //   }
+  //   else
+  //   {
+  //     my_live_comm = test_livecomm;
+  //     tx_queues->template dequeue<T>(cur_field_id);
+  //     cur_field_id = (cur_field_id + 1) % field_ids.size();
+  //   }
+  // }
+  // return my_live_comm;
+
+  return LiveComm();
 }
 
-LiveComm test_add_data(LiveComm msg, TRXProtoQueue::FieldID field_id, TRXProtoQueue tx_queues)
+LiveComm test_add_data(const LiveComm& msg, int field_id, TRXProtoQueues* tx_queues)
 {
-  tx_queues->template peek<T>(field_ids[cur_field_id]);
-  switch (field_id)
-  {
-  case TRXProtoQueues::GPS_QUEUE_ID:
-    msg.add_gps(data);
-    break;
+  // // TODO: figure out how to make a copy of the msg object
+  // LiveComm msg_copy(msg);
+  
+  // // Dequeue the encapsulated data from the queue
+  // LiveComm new_data = tx_queues->peek(field_id);
+  // if (new_data == NULL) {
+  //   std::cout << "ERROR: could not retrieve data from queue #" << field_id << std::endl;
+  //   return msg_copy;
+  // }
 
-  case TRXProtoQueues::LOCALIZATION_QUEUE_ID:
-    msg.add_localization(data);
-    break;
+  // // Check that the LiveComm object has the field of interest set to non-default value
+  // const google::protobuf::Reflection *reflection = new_data.GetReflection();
+  // const google::protobuf::FieldDescriptor *field = new_data.GetDescriptor()->FindFieldByNumber(field_id);
+  // if (field != nullptr)
+  // {
+  //   if (!reflection->HasField(new_data, field))
+  //   {
+  //     std::cout << "ERROR: LiveComm object missing field #" << queue_id << std::endl;
+  //     return msg_copy;
+  //   }
+  // }
 
-  case TRXProtoQueues::COMMUNICATION_QUEUE_ID:
-    msg.add_communication(data);
-    break;
+  // new_data has the field of interest set to non-default value, so add only that field
+  // to the msg_copy object. We need to make a copy of the data, since it will have been
+  // dynamically allocated.
+  
 
-  case TRXProtoQueues::TIMESTAMP_QUEUE_ID:
-    msg.add_timestamp(data);
-    break;
+  // return msg;
 
-  case TRXProtoQueues::ANALOG_CH_QUEUE_ID:
-    msg.add_analog_ch(data);
-    break;
-
-  case TRXProtoQueues::CAR_STATE_QUEUE_ID:
-    msg.add_car_state(data);
-    break;
-  }
-  return msg;
+  return LiveComm();
 }
 
 // Build up to a max size LiveComm object out of data from all fields
@@ -90,6 +93,6 @@ int distribute_message(LiveComm msg, TRXProtoQueues *rx_queues)
   // that data into the queue with appropriate field ID
 
   // GPS my_gps = GPS();
-  // rx_queues->enqueue(my_gps, TRXProtoQueues::FieldID::GPS_QUEUE_ID); // Eg on how to enqueue a recieved GPS object
+  // rx_queues->enqueue(my_gps, int); // Eg on how to enqueue a recieved GPS object
   return 0;
 }
