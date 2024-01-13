@@ -7,7 +7,7 @@
 static const int MAX_SEND_RETRIES = 3;
 
 int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues);
-int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues);
-int try_consume_data(Connection* conn, TRXProtoQueues* rx_queues);
+int _try_transmit_data(Connection* conn, TRXProtoQueues* tx_queues);
+int _try_recieve_data(Connection* conn, TRXProtoQueues* rx_queues);
 
 #endif // STATION_DRIVER_H

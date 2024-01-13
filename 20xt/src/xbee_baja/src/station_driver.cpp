@@ -32,14 +32,14 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
     std::cout<<"hi"<<std::endl;
 
     // Send
-    err = try_produce_data(conn, tx_queues);
+    err = _try_transmit_data(conn, tx_queues);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to transmit, exiting" << std::endl;
       return EXIT_FAILURE;
     }
 
     // Recieve
-    err = try_consume_data(conn, rx_queues);
+    err = _try_recieve_data(conn, rx_queues);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
       return EXIT_FAILURE;
@@ -50,7 +50,7 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
   delete conn, tx_queues, rx_queues;
 }
 
-int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues) {
+int _try_transmit_data(Connection* conn, TRXProtoQueues* tx_queues) {
   if (num_payloads_available(tx_queues) == 0) {
     return EXIT_SUCCESS;
   }
@@ -92,7 +92,7 @@ int try_produce_data(Connection* conn, TRXProtoQueues* tx_queues) {
 }
 
 
-int try_consume_data(Connection* conn, TRXProtoQueues* rx_queues) {
+int _try_recieve_data(Connection* conn, TRXProtoQueues* rx_queues) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
     if (err == Connection::IRRECOVERABLE_ERROR) {
