@@ -44,8 +44,11 @@ LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
   return LiveComm();
 }
 
-LiveComm test_add_data(const LiveComm& msg, int field_id, TRXProtoQueues* tx_queues)
+LiveComm _test_add_data(LiveComm dest, LiveComm src, int field_id)
 {
+  // Copy field from src into a copy of dest. Return the copy with new data. 
+  // If msg already has data in that field, it will overrite with new data. 
+  
   // // TODO: figure out how to make a copy of the msg object
   // LiveComm msg_copy(msg);
   

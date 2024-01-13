@@ -24,5 +24,5 @@ LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues* tx_queues);
 // Decompose and distribute to the appropriate queues
 int distribute_message(LiveComm msg, TRXProtoQueues* queues);
 
-LiveComm test_add_data(LiveComm msg,  int field_id, LiveComm data);
+LiveComm _test_add_data(LiveComm dest, LiveComm src, int field_id);
 #endif // QUEUE_FUNCS
