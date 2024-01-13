@@ -5,9 +5,9 @@
 #include <iostream>
 #include <queue>
 
-#include "ipc/safe_queue.h"
-#include "baja_live_comm.pb.h"
 #include "interfaces/live_comm_queue.h"
+#include "ipc/safe_live_comm_queue.h"
+#include "baja_live_comm.pb.h"
 
 static const int MAX_SIZE = 300;
 // Multi queue containing all of the RX and TX data in its

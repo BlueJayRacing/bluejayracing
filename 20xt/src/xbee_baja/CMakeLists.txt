@@ -6,13 +6,15 @@ set(SOURCES
     src/station_driver.cpp 
     src/xbee_connection.cpp
     src/trx_queues.cpp
+    src/safe_live_comm_queue.cpp
     # Add more source files here
 )
 
 set(HEADERS
     include/interfaces/connection.h
+    include/interfaces/live_comm_queue.h
+    include/ipc/safe_live_comm_queue.h
     include/ipc/queue_manage.h
-    include/ipc/safe_queue.h
     include/ipc/trx_queues.h
     include/mains/station_driver.h
     include/mains/trx_dispatcher.h

@@ -1,7 +1,7 @@
 #include <map>
 #include <iostream>
 
-#include "ipc/safe_queue.h"
+#include "ipc/safe_live_comm_queue.h"
 #include "interfaces/live_comm_queue.h"
 #include "ipc/trx_queues.h"
 #include "baja_live_comm.pb.h"

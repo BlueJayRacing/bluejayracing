@@ -1,5 +1,5 @@
-#ifndef SAFE_QUEUE_H
-#define SAFE_QUEUE_H
+#ifndef SAFE_LIVE_COMM_QUEUE_H
+#define SAFE_LIVE_COMM_QUEUE_H
 
 #include <atomic>
 #include <deque>
@@ -7,8 +7,6 @@
 #include <mutex>
 
 #include "interfaces/live_comm_queue.h"
-
-
 
 // This is a thread-safe queue that can be used to pass data between threads.
 // Be wary when using front() and then dequeue() as another consumer might have
