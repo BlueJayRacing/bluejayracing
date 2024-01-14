@@ -16,13 +16,12 @@ int num_payloads_available(TRXProtoQueues* tx_queues);
 int num_payloads_available(int field_id);
 
 // Build up to a max size Observation object out of data from all fields
-LiveComm build_message(TRXProtoQueues* queues);
+std::string build_message(TRXProtoQueues* queues);
 
 // Build up to a max size Observation objject out of data from a vector of fields
-LiveComm build_message(std::vector<int> field_ids, TRXProtoQueues* tx_queues);
+std::string build_message(std::vector<int> field_ids, TRXProtoQueues* tx_queues);
 
 // Decompose and distribute to the appropriate queues
 int distribute_message(Observation msg, TRXProtoQueues* queues);
 
-Observation _test_add_data(Observation dest, Observation src, int field_id);
 #endif // QUEUE_FUNCS

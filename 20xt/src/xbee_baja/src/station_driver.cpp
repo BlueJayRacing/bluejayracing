@@ -57,13 +57,13 @@ int _try_transmit_data(Connection* conn, TRXProtoQueues* tx_queues) {
     return EXIT_SUCCESS;
   }
 
-  LiveComm msg = build_message(tx_queues);
-  int err = conn->send(msg.SerializeAsString());
+  std::string msg = build_message(tx_queues);
+  int err = conn->send(msg);
 
   // If full recoverable, wait only once
   for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
     std::this_thread::sleep_for(std::chrono::microseconds(1));
-    err = conn->send(msg.SerializeAsString());
+    err = conn->send(msg);
     iter++;
   }
 
