@@ -3,9 +3,9 @@ import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Stars, Box } from "@react-three/drei";
 import { Physics } from "@react-three/cannon";
 import "../../style.css";
-import Car from './Car/Car.jsx';
-import Terrain from './Terrain/Terrain.jsx';
-import Perspective from './Views/Perspective';
+import Car from '../Components/Car/Car.jsx';
+import Terrain from '../Components/Terrain/Terrain.jsx';
+import Perspective from '../Components/Views/Perspective.jsx';
 import { useState } from 'react';
 import { useEffect } from 'react';
 

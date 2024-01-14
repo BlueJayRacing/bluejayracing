@@ -10,6 +10,9 @@
     "prettier": "prettier --write \"src/**/*.{jsx,js}\" --config \".prettierrc\""
   },
   "dependencies": {
+    "@emotion/react": "^11.11.3",
+    "@emotion/styled": "^11.11.0",
+    "@mui/material": "^5.15.2",
     "@react-three/cannon": "^6.5.2",
     "@react-three/drei": "^9.56.12",
     "@react-three/fiber": "^8.10.1",
@@ -18,7 +21,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.0",
-    "react-router-dom": "^6.7.0",
+    "react-router-dom": "^6.21.1",
     "redux": "^4.2.0",
     "three": "^0.149.0",
     "video-react": "^0.16.0"
