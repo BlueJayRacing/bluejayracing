@@ -1,29 +1,19 @@
 # Minimum required CMake version
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.28)
 
-set(SOURCES
-    src/queue_manage.cpp 
-    src/station_driver.cpp 
-    src/xbee_connection.cpp
-    # Add more source files here
+# get all of the source and headers by globbing through the src directory
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE HEADERS "include/**/*.h")
+
+# Create library target
+add_library(xbee_baja STATIC ${SOURCES} ${HEADERS} ${PROTO_SRCS} ${PROTO_HDRS})
+target_include_directories(xbee_baja PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/proto
+    ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-set(HEADERS
-    include/interfaces/connection.h
-    include/ipc/queue_manage.h
-    include/ipc/safe_queue_base.h
-    include/ipc/safe_queue.h
-    include/ipc/trx_queues.h
-    include/mains/station_driver.h
-    include/mains/trx_dispatcher.h
-    include/xbee/car_serial_config.h
-    include/xbee/station_serial_config.h
-    include/xbee/xbee_baja_network_config.h
-    include/xbee/xbee_connection.h
-    # Add library header files
-)
-
-# Remove generated protobuf headers if they exist
+# Remove generated protobuf headers if they were manually generated
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.h)
     file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.h)
 endif()
@@ -31,21 +21,14 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.cc)
     file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.cc)
 endif()
 
-# Generate protobuf files
-include(FindProtobuf)
+# Generate protobuf headers
 find_package(Protobuf REQUIRED)
-include_directories(${PROTOBUF_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/baja_live_comm.proto)
-
-# Create library target
-add_library(xbee_baja STATIC ${SOURCES} ${HEADERS} ${PROTO_SRCS} ${PROTO_HDRS})
-
-target_include_directories(xbee_baja PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/proto
-    ${CMAKE_CURRENT_BINARY_DIR}
-    # TODO: It will be necessary to have the proto files build with the PROTOBUF_GENERATE_CPP function
+protobuf_generate(
+    TARGET xbee_baja 
+    PROTOS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.proto
+    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    PROTOC_OPTIONS --experimental_allow_proto3_optional
+    LANGUAGE cpp
 )
 
 # Recursively link any dependencies

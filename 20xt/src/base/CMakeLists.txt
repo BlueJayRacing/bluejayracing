@@ -3,8 +3,16 @@ project(StationMain VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-add_executable(station_main src/main.cpp)
+# LOGGER EXECUTABLE
+add_executable(logger src/logger.cpp)
+
+
+# REMOTE COMM EXECUTABLE 
+add_executable(remote_comm src/remote_comm.cpp)
 
 # Turn on color diagnostics
 set(CMAKE_COLOR_DIAGNOSTICS ON)
@@ -18,6 +26,6 @@ add_subdirectory(
 
 # By linking the xbee_library CMake target against the my_transmitter target,
 # the compiler knows our executable uses code from the library declared in another CMake
-target_link_libraries(station_main PUBLIC xbee_baja) 
+target_link_libraries(remote_comm PUBLIC xbee_baja) 
 
 # Q: How can I reference a library that is not under the PROJECT_SOURCE_DIR?
