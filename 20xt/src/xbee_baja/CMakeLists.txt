@@ -4,9 +4,7 @@ cmake_minimum_required(VERSION 3.28)
 # get all of the source and headers by globbing through the src directory
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/**/*.h")
-
-# Create library target
-add_library(xbee_baja STATIC ${SOURCES} ${HEADERS} ${PROTO_SRCS} ${PROTO_HDRS})
+add_library(xbee_baja STATIC ${SOURCES} ${HEADERS})
 target_include_directories(xbee_baja PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/proto
@@ -36,7 +34,6 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi
     ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi/bin
 )
-
 target_link_libraries(xbee_baja
     PUBLIC xbee_digi
     PUBLIC ${PROTOBUF_LIBRARIES}

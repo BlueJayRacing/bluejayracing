@@ -7,19 +7,19 @@
 
 // An infinite loop which attempts to read bytes from an ipc queue
 int main() {
-  int qid = StationIPC::get_qid(StationIPC::RX_QID_FOR_LOGGER_FNAME);
+  int qid = StationIPC::get_mqd(StationIPC::RX_QID_FOR_LOGGER_FNAME);
   if (qid == -1) {
     std::cout << "Failed to get queue ID" << std::endl;
+    std::cout << "Errno: " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
-  int msgtype = 1;
-  int msgflag = 0 | IPC_NOWAIT;
+  char data[100];
 
-  char data = '\0';
-  int err = msgrcv(qid, &data, sizeof(data), msgtype, msgflag);
+  int err = mq_receive
   if (err == -1) {
-    std::cout << "Could not read the message" << std::endl;
+    std::cout << "Could not read message from queue #" << qid << std::endl;
+    std::cout << "Errno: " << errno << std::endl;
     return EXIT_FAILURE;
   }
 

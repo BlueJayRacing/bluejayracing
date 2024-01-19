@@ -32,7 +32,7 @@ int main() {
   shared_rx_queue = new TRXProtoQueues(MAX_QUEUE_SIZE);
 
   // And we have cross-process communication
-  ipc_tx_queue = StationIPC::get_qid(StationIPC::TX_QID_FNAME);
+  ipc_tx_queue = StationIPC::get_mqd(StationIPC::TX_QID_FNAME);
   ipc_rx_queues = StationIPC::get_rx_subsribers_qids();
   
   // Wait for worker threads to finish

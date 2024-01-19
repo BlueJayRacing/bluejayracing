@@ -4,23 +4,23 @@
 #include <vector>
 #include <map>
 #include <string>
-#include <sys/ipc.h>
-#include <sys/msg.h>
+#include <mqueue.h>
 
 namespace StationIPC {
-  
-  const std::string TX_QID_FNAME = "/etc/remote_comm_tx_queue";
-  const std::string RX_QID_FOR_SIMULATOR_FNAME = "/etc/remote_comm_rx_queue_for_simulator";
-  const std::string RX_QID_FOR_LOGGER_FNAME = "/etc/remote_comm_rx_queue_for_logger";
+  const uint32_t MAX_MSG_SIZE = 1024;
+  const std::string TX_QID_FNAME = "/remote_comm_tx_queue";
+  const std::string RX_QID_FOR_SIMULATOR_FNAME = "/remote_comm_rx_queue_for_simulator";
+  const std::string RX_QID_FOR_LOGGER_FNAME = "/remote_comm_rx_queue_for_logger";
 
-  const int get_qid(std::string q_fname) {
-    return msgget(ftok(q_fname.c_str(), 'A'), 0666 | IPC_CREAT);
+  const mqd_t get_mqd(std::string q_fname) {
+    // Hmm, we have to set non-block here
+    return mq_open(q_fname.c_str(), O_CREAT | O_RDWR, 0644, NULL);
   }
 
   const std::vector<int> get_rx_subsribers_qids() {
     std::vector<int> qids = {
-      get_qid(RX_QID_FOR_SIMULATOR_FNAME),
-      get_qid(RX_QID_FOR_LOGGER_FNAME),
+      get_mqd(RX_QID_FOR_SIMULATOR_FNAME),
+      get_mqd(RX_QID_FOR_LOGGER_FNAME),
     };
     return qids;
   }
