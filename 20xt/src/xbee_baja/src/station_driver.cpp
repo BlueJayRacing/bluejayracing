@@ -11,7 +11,7 @@
 #include "baja_live_comm.pb.h"
 
 
-int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
+int station_main_loop(TRXProtoQueues* tx_queues, LiveCommQueue* rx_queue) {
   
   // Continue with a normal loop and good practice
   Connection* conn = new XBeeConnection();
@@ -40,7 +40,7 @@ int station_main_loop(TRXProtoQueues* tx_queues, TRXProtoQueues* rx_queues) {
     }
 
     // Recieve
-    err = _try_recieve_data(conn, rx_queues);
+    err = _try_recieve_data(conn, rx_queue);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
       return EXIT_FAILURE;
@@ -91,7 +91,7 @@ int _try_transmit_data(Connection* conn, TRXProtoQueues* tx_queues) {
 }
 
 
-int _try_recieve_data(Connection* conn, TRXProtoQueues* rx_queues) {
+int _try_recieve_data(Connection* conn, LiveCommQueue* rx_queue) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
     if (err == Connection::IRRECOVERABLE_ERROR) {
@@ -102,10 +102,9 @@ int _try_recieve_data(Connection* conn, TRXProtoQueues* rx_queues) {
 
   if (conn->num_messages_available() > 0) {
     std::string encoded_msg = conn->pop_message();
-    std::cout << encoded_msg << std::endl;
-    Observation decoded_msg;
+    LiveComm decoded_msg;
     decoded_msg.ParseFromString(encoded_msg);
-    distribute_message(decoded_msg, rx_queues);
+    distribute_message(decoded_msg, rx_queue);
   }
 
   return EXIT_SUCCESS;
