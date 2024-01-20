@@ -25,7 +25,7 @@ function FrontCorner (props) {
   return debug && (
     <group>
       <group scale={scale_new} rotation={rotation} position={position}>
-          <mesh geometry={mesh}><meshLambertMaterial color="red" /></mesh>
+          <mesh geometry={mesh}><meshLambertMaterial color="blue" /></mesh>
           
         </group>
     </group>
