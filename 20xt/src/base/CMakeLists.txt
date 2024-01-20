@@ -13,6 +13,13 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_baja/bin
 )
 
+# TESTING
+add_executable(test_logger src/test_logger.cpp)
+target_link_libraries(test_logger 
+    PUBLIC xbee_baja
+    PUBLIC station_ipc    
+)
+
 # PIT COMMANDS
 add_executable(pit_commands src/pit_commands.cpp)
 target_link_libraries(pit_commands 

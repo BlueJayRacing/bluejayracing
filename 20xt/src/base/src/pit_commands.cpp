@@ -50,4 +50,6 @@ int main () {
       std::cout << "Could not send the message. Errno " << errno << std::endl;
     }
   }
+
+  std::cout << "Sent " << NUM_OBSERVATIONS << " messages to the queue" << std::endl;
 }
