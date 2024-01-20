@@ -69,13 +69,8 @@ std::string build_message(TRXProtoQueues *tx_queues)
   return build_message(BajaProtoHelpers::OBSERVATION_FIELD_IDS, tx_queues);
 }
 
-// Decompose and distribute to the appropriate queues
-int distribute_message(Observation msg, TRXProtoQueues *rx_queues)
+// Decompose and distribute into the RX queue
+int distribute_message(LiveComm msg, LiveCommQueue *rx_queue)
 {
-  // Decompose the Observation message into its fields, and enqueue
-  // that data into the queue with appropriate field ID
-
-  // GPS my_gps = GPS();
-  // rx_queues->enqueue(my_gps, int); // Eg on how to enqueue a recieved GPS object
-  return 0;
+  return 0; // TODO: Sorry Jen, I changed this again
 }
