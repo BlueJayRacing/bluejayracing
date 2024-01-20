@@ -2,7 +2,7 @@
 #define STATION_DRIVER_H
 
 #include "interfaces/connection.h"
-#include "ipc/trx_queues.h"
+#include "crossthread/trx_queues.h"
 
 static const int MAX_SEND_RETRIES = 3;
 

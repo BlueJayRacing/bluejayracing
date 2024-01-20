@@ -1,5 +1,5 @@
 #include "baja_live_comm.pb.h"
-#include "ipc/live_comm_factory.h"
+#include "crossthread/live_comm_factory.h"
 
 
 LiveCommFactory::LiveCommFactory()

@@ -1,9 +1,9 @@
 #include <map>
 #include <iostream>
 
-#include "ipc/safe_live_comm_queue.h"
+#include "crossthread/safe_live_comm_queue.h"
 #include "interfaces/live_comm_queue.h"
-#include "ipc/trx_queues.h"
+#include "crossthread/trx_queues.h"
 #include "baja_live_comm.pb.h"
 
 TRXProtoQueues::TRXProtoQueues(int max_queue_size)

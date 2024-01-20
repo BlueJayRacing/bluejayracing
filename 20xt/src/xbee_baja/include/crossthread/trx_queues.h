@@ -6,7 +6,7 @@
 #include <queue>
 
 #include "interfaces/live_comm_queue.h"
-#include "ipc/safe_live_comm_queue.h"
+#include "crossthread/safe_live_comm_queue.h"
 #include "baja_live_comm.pb.h"
 
 static const int MAX_SIZE = 300;

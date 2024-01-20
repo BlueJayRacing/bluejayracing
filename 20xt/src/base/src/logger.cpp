@@ -1,13 +1,11 @@
 #include <iostream>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
+#include <mqueue.h>
 
 #include "ipc_config.h"
 
 // An infinite loop which attempts to read bytes from an ipc queue
 int main() {
-  int qid = StationIPC::get_message_queue_des(StationIPC::RX_QUEUE_LOGGER);
+  int qid = StationIPC::open_queue(StationIPC::RX_QUEUE_LOGGER);
   if (qid == -1) {
     std::cout << "Failed to get queue ID" << std::endl;
     std::cout << "Errno: " << errno << std::endl;

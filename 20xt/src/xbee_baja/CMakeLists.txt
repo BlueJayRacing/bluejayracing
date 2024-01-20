@@ -11,31 +11,17 @@ target_include_directories(xbee_baja PUBLIC
     ${CMAKE_CURRENT_BINARY_DIR}
 )
 
-# Remove generated protobuf headers if they were manually generated
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.h)
-    file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.h)
-endif()
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.cc)
-    file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.pb.cc)
-endif()
-
-# Generate protobuf headers
-find_package(Protobuf REQUIRED)
-protobuf_generate(
-    TARGET xbee_baja 
-    PROTOS ${CMAKE_CURRENT_SOURCE_DIR}/proto/baja_live_comm.proto
-    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}
-    PROTOC_OPTIONS --experimental_allow_proto3_optional
-    LANGUAGE cpp
-)
-
 # Recursively link any dependencies
 add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi
     ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi/bin
 )
+add_subdirectory(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../station_ipc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../station_ipc/bin
+)
 target_link_libraries(xbee_baja
     PUBLIC xbee_digi
-    PUBLIC ${PROTOBUF_LIBRARIES}
+    PUBLIC station_ipc
     # Add any required libraries here
 )

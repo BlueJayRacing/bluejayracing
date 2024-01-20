@@ -2,7 +2,6 @@
 #define STATION_IPC_CONFIG_H
 
 #include <vector>
-#include <map>
 #include <string>
 #include <mqueue.h>
 
@@ -21,18 +20,12 @@ namespace StationIPC {
     .mq_curmsgs = 0,
   };
 
-  const mqd_t get_message_queue_des(std::string q_fname) {
-    return mq_open(q_fname.c_str(), QUEUE_FLAGS, QUEUE_MODE, &QUEUE_ATTRIBUTES);
-  }
+  const mqd_t open_queue(std::string q_fname);
+  const int close_queue(mqd_t qid);
+  const int unlink_queue(std::string q_fname);
 
   // The data dispatching thread will need to access a queue for each reciever
-  const std::vector<int> get_rx_subsribers_qids() {
-    std::vector<int> qids = {
-      get_message_queue_des(RX_QUEUE_SIMULATOR),
-      get_message_queue_des(RX_QUEUE_LOGGER),
-    };
-    return qids;
-  }
+  const std::vector<int> get_rx_subsribers_qids();
 }
 
 #endif
