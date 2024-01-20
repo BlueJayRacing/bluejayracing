@@ -4,6 +4,7 @@
 #include "mains/trx_dispatcher.h"
 #include "crossthread/trx_queues.h"
 #include "baja_live_comm.pb.h"
+#include "ipc_config.h"
 
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
 int dispatcher_main_loop(TRXProtoQueues& shared_tx_queue, TRXProtoQueues& shared_rx_queue,
