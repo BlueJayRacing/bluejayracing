@@ -1,8 +1,5 @@
 #include <iostream>
-#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/msg.h>
-#include <string.h>
+#include <mqueue.h>
 #include <chrono>
 #include <thread>
 
@@ -24,7 +21,7 @@ std::vector<Observation> get_dummy_observations(int n) {
 // We want to produce a series of dummy Communcation values to the TX queue
 int main () {
   // Open the message queue, return if it fails
-  mqd_t qid = StationIPC::get_message_queue_des(StationIPC::TX_QUEUE);
+  mqd_t qid = StationIPC::open_queue(StationIPC::TX_QUEUE);
   if (qid == -1) {
     std::cout << "Failed to get queue ID, errno " << errno << std::endl;
     std::cout << "Check the the remote_comm process is running first" << std::endl;
