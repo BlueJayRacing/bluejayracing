@@ -12,7 +12,7 @@ static const int MAX_QUEUE_SIZE = 300;
 
 // Global shared data
 TRXProtoQueues* shared_tx_queue;
-TRXProtoQueues* shared_rx_queue;
+LiveCommQueue* shared_rx_queue;
 std::vector<mqd_t> ipc_rx_queues;
 mqd_t ipc_tx_queue;
 
@@ -30,7 +30,7 @@ void dispatching_thread(int id) {
 int main() {
   // We have cross-thread communication
   shared_tx_queue = new TRXProtoQueues(MAX_QUEUE_SIZE);
-  shared_rx_queue = new TRXProtoQueues(MAX_QUEUE_SIZE);
+  shared_rx_queue = new SafeLiveCommQueue(MAX_QUEUE_SIZE);
 
   // And we have cross-process communication. This process will handle open/close
   ipc_tx_queue = StationIPC::open_queue(StationIPC::TX_QUEUE);

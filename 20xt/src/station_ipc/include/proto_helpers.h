@@ -8,12 +8,12 @@ namespace BajaProtoHelpers {
         Observation::kGpsFieldNumber,
         Observation::kLocalizationFieldNumber,
         Observation::kCommunicationFieldNumber,
-        Observation::kTimestampFieldNumber,
         Observation::kAnalogChFieldNumber,
         Observation::kCarStateFieldNumber,
     };
 
   std::vector<int> get_set_field_ids(Observation& obs) {
+    // Does not check the timestamp field
     std::vector<int> set_field_ids;
     const google::protobuf::Reflection *reflection = obs.GetReflection();
 
