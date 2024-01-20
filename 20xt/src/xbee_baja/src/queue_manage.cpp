@@ -1,8 +1,8 @@
 #include <string>
 
-#include "ipc/queue_manage.h"
-#include "ipc/trx_queues.h"
-#include "ipc/live_comm_factory.h"
+#include "crossthread/queue_manage.h"
+#include "crossthread/trx_queues.h"
+#include "crossthread/live_comm_factory.h"
 #include "xbee/xbee_baja_network_config.h"
 #include "baja_live_comm.pb.h"
 

@@ -2,7 +2,7 @@
 #include <mqueue.h>
 
 #include "mains/trx_dispatcher.h"
-#include "ipc/trx_queues.h"
+#include "crossthread/trx_queues.h"
 #include "baja_live_comm.pb.h"
 
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues

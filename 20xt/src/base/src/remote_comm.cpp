@@ -5,7 +5,7 @@
 #include "ipc_config.h"
 #include "mains/station_driver.h"
 #include "mains/trx_dispatcher.h"
-#include "ipc/trx_queues.h"
+#include "crossthread/trx_queues.h"
 
 // GLobal Constants
 static const int MAX_QUEUE_SIZE = 300;

@@ -7,7 +7,7 @@
 #include <mutex>
 
 #include "interfaces/live_comm_queue.h"
-#include "ipc/safe_live_comm_queue.h"
+#include "crossthread/safe_live_comm_queue.h"
 #include "baja_live_comm.pb.h"
 
 SafeLiveCommQueue::SafeLiveCommQueue(int max_size) : max_size(max_size), qlen(0), head(-1)

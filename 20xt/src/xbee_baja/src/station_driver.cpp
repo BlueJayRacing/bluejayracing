@@ -6,8 +6,8 @@
 #include "mains/station_driver.h"
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
-#include "ipc/trx_queues.h"
-#include "ipc/queue_manage.h"
+#include "crossthread/trx_queues.h"
+#include "crossthread/queue_manage.h"
 #include "baja_live_comm.pb.h"
 
 

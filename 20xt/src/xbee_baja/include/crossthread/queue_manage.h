@@ -2,7 +2,7 @@
 #define QUEUE_FUNCS
 
 #include "baja_live_comm.pb.h"
-#include "ipc/trx_queues.h"
+#include "crossthread/trx_queues.h"
 
 // Adapter functions allowing the xbee-driver loop to easily
 // manage the TRX_QUEUES with native data. Parse into Observation objects
