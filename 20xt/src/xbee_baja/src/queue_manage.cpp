@@ -5,6 +5,7 @@
 #include "crossthread/live_comm_factory.h"
 #include "xbee/xbee_baja_network_config.h"
 #include "baja_live_comm.pb.h"
+#include "proto_helpers.h"
 
 // Minimum number of payloads available overall
 int num_payloads_available(TRXProtoQueues *tx_queues)
@@ -65,16 +66,7 @@ std::string build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
 // Build up to a max size Observation object out of data from all fields
 std::string build_message(TRXProtoQueues *tx_queues)
 {
-  std::vector<int> field_ids = {
-      Observation::kGpsFieldNumber,
-      Observation::kLocalizationFieldNumber,
-      Observation::kCommunicationFieldNumber,
-      Observation::kTimestampFieldNumber,
-      Observation::kAnalogChFieldNumber,
-      Observation::kCarStateFieldNumber,
-  };
-
-  return build_message(field_ids, tx_queues);
+  return build_message(BajaProtoHelpers::OBSERVATION_FIELD_IDS, tx_queues);
 }
 
 // Decompose and distribute to the appropriate queues
