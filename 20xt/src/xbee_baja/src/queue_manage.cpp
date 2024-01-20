@@ -1,24 +1,89 @@
+#include <string>
+
 #include "ipc/queue_manage.h"
+#include "ipc/trx_queues.h"
+#include "xbee/xbee_baja_network_config.h"
+#include "baja_live_comm.pb.h"
+#include "live_comm_factory.h"
 
 // Minimum number of payloads available overall
-int num_payloads_available(TRXProtoQueues* queues) {
-  return 1; // TODO
+int num_payloads_available(TRXProtoQueues *tx_queues)
+{
+  // Return the combined number of payloads available in all queues
+  return tx_queues->get_total_size();
 }
 
-// Build up to a max size LiveComm object out of data from all fields
-LiveComm build_message(TRXProtoQueues* queues) {
-  // TODO: This is a dummy implementation
-  // GPS gps;
-  // gps.set_alt(1.5);
-  // gps.set_lat(2.5);
-  // gps.set_long_(3.5);
-  // LiveComm msg;
-  // msg.set_allocated_gps(&gps);
+bool _is_valid_message(std::string msg)
+{
+  // This does not check if the message can be validly parsed into a LiveComm object
   
-  return LiveComm(); // TODO
+  // Must not be an empty message
+  if (msg.length() == 0)
+  {
+    return false;
+  }
+  
+  // Must be of a certain length
+  if (msg.length() > XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE) {
+    return false;
+  }
+
+  return true;
+}
+
+// Build up to a max size Observation objjec out of data from a vector of fields
+std::string build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
+{
+  LiveCommFactory factory = LiveCommFactory();
+  std::string valid_msg = "";
+
+  int i = -1;
+  while (tx_queues->get_total_size() > 0)
+  {
+    // Skip invalid fields or fields without data
+    i += (i + 1) % field_ids.size();
+    if (i == field_ids.size() || tx_queues->get_size(field_ids[i]) == 0)
+    {
+      continue;
+    }
+
+    factory.add_observation(field_ids[i], tx_queues->front(field_ids[i]));    
+    std::string test_message = factory.get_live_comm().SerializeAsString();
+    
+    // If test message too large, return the last valid message
+    if (!_is_valid_message(test_message))
+    {
+      break;
+    }
+    tx_queues->dequeue(field_ids[i]);
+    valid_msg = test_message;
+  }
+
+  return valid_msg;
+}
+
+// Build up to a max size Observation object out of data from all fields
+std::string build_message(TRXProtoQueues *tx_queues)
+{
+  std::vector<int> field_ids = {
+      Observation::kGpsFieldNumber,
+      Observation::kLocalizationFieldNumber,
+      Observation::kCommunicationFieldNumber,
+      Observation::kTimestampFieldNumber,
+      Observation::kAnalogChFieldNumber,
+      Observation::kCarStateFieldNumber,
+  };
+
+  return build_message(field_ids, tx_queues);
 }
 
 // Decompose and distribute to the appropriate queues
-int distribute_message(LiveComm msg, TRXProtoQueues* queues) {
-  return 0; // TODO
+int distribute_message(Observation msg, TRXProtoQueues *rx_queues)
+{
+  // Decompose the Observation message into its fields, and enqueue
+  // that data into the queue with appropriate field ID
+
+  // GPS my_gps = GPS();
+  // rx_queues->enqueue(my_gps, int); // Eg on how to enqueue a recieved GPS object
+  return 0;
 }

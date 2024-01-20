@@ -1,9 +1,9 @@
 syntax = "proto3";
 
 message GPS {
-    float lat = 1;
-    float long = 2;
-    float alt = 3;
+    float latitude = 1;
+    float longitude = 2;
+    float altitude = 3;
 }
 
 message Localization {
@@ -75,11 +75,15 @@ message CarState {
     optional bool rollover_status = 2;
 }
 
-message LiveComm {
+message Observation {
     optional GPS gps = 1;
     optional Localization localization = 2;
     optional Communication communication = 3;
     optional Timestamp timestamp = 4;
     optional AnalogChannel analog_ch = 5;
     optional CarState car_state = 6;
+}
+
+message LiveComm {
+    repeated Observation observations = 1;
 }
