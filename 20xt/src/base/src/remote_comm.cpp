@@ -12,8 +12,8 @@ static const int MAX_QUEUE_SIZE = 300;
 // Global shared data
 TRXProtoQueues* shared_tx_queue;
 TRXProtoQueues* shared_rx_queue;
-std::vector<int> ipc_rx_queues;
-int ipc_tx_queue;
+std::vector<mqd_t> ipc_rx_queues;
+mqd_t ipc_tx_queue;
 
 
 // One thread works full time driving the XBee

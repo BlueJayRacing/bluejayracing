@@ -8,7 +8,7 @@
 #include "baja_live_comm.pb.h"
 
 int dispatcher_main_loop(TRXProtoQueues& shared_tx_queue, TRXProtoQueues& shared_rx_queue,
-                         const int ipc_tx_queue, const std::vector<int> &ipc_rx_queues)
+                         const mqd_t ipc_tx_queue, const std::vector<mqd_t> &ipc_rx_queues)
 {
   return 0;
 }
