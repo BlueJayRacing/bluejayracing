@@ -2,9 +2,9 @@
 
 #include "ipc/queue_manage.h"
 #include "ipc/trx_queues.h"
+#include "ipc/live_comm_factory.h"
 #include "xbee/xbee_baja_network_config.h"
 #include "baja_live_comm.pb.h"
-#include "live_comm_factory.h"
 
 // Minimum number of payloads available overall
 int num_payloads_available(TRXProtoQueues *tx_queues)
