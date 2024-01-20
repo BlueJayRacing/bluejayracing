@@ -24,17 +24,19 @@ void _try_queue_data_for_transmit(TRXProtoQueues& shared_tx_queue, const mqd_t i
   if (err == -1 && errno != EAGAIN) {
     std::cerr << "Failed reading message from TX IPC queue. Errno " << errno << std::endl;
     return;
-  } 
+  }
 
   // TODO: Design decision to be made. Currently, only enqueue it under the first 
   // set field that we encounter. This should work since outgoing messages will
-  // likely only have one field aynways. Prioritization logical will go here
+  // likely only have one field aynways. Prioritization logic will go here
   Observation observation;
   observation.ParseFromArray(buffer, err);
   std::vector<int> field_ids = BajaProtoHelpers::get_set_field_ids(observation);
-  if (field_ids.size() > 0) {
-    shared_tx_queue.enqueue(field_ids[0], observation);
+  if (field_ids.size() <= 0) {
+    return; // Why would a message have no data?
   }
+
+  shared_tx_queue.enqueue(field_ids[0], observation);
 }
 
 
