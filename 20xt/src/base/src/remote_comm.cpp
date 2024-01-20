@@ -31,8 +31,8 @@ int main() {
   shared_tx_queue = new TRXProtoQueues(MAX_QUEUE_SIZE);
   shared_rx_queue = new TRXProtoQueues(MAX_QUEUE_SIZE);
 
-  // And we have cross-process communication
-  ipc_tx_queue = StationIPC::get_mqd(StationIPC::TX_QID_FNAME);
+  // And we have cross-process communication. This process will handle open/close
+  ipc_tx_queue = StationIPC::get_message_queue_des(StationIPC::TX_QUEUE);
   ipc_rx_queues = StationIPC::get_rx_subsribers_qids();
   
   // Wait for worker threads to finish
@@ -44,5 +44,9 @@ int main() {
   // Clean up shared datastructures
   delete shared_tx_queue;
   delete shared_rx_queue;
+
+  // Clean up the message queues
+
+
   return 0;
 }

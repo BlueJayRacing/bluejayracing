@@ -8,24 +8,31 @@
 
 namespace StationIPC {
   const uint32_t MAX_MSG_SIZE = 1024;
-  const std::string TX_QID_FNAME = "/remote_comm_tx_queue";
-  const std::string RX_QID_FOR_SIMULATOR_FNAME = "/remote_comm_rx_queue_for_simulator";
-  const std::string RX_QID_FOR_LOGGER_FNAME = "/remote_comm_rx_queue_for_logger";
+  const std::string TX_QUEUE = "/remote_comm_tx_queue";
+  const std::string RX_QUEUE_SIMULATOR = "/remote_comm_rx_queue_for_simulator";
+  const std::string RX_QUEUE_LOGGER = "/remote_comm_rx_queue_for_logger";
 
-  const mqd_t get_mqd(std::string q_fname) {
-    // Hmm, we have to set non-block here
-    return mq_open(q_fname.c_str(), O_CREAT | O_RDWR, 0644, NULL);
+  const int QUEUE_MODE = 0644;
+  const int QUEUE_FLAGS = O_CREAT | O_RDWR | O_NONBLOCK;
+  const mq_attr QUEUE_ATTRIBUTES = {
+    .mq_flags = 0,
+    .mq_maxmsg = 10,
+    .mq_msgsize = MAX_MSG_SIZE,
+    .mq_curmsgs = 0,
+  };
+
+  const mqd_t get_message_queue_des(std::string q_fname) {
+    return mq_open(q_fname.c_str(), QUEUE_FLAGS, QUEUE_MODE, &QUEUE_ATTRIBUTES);
   }
 
+  // The data dispatching thread will need to access a queue for each reciever
   const std::vector<int> get_rx_subsribers_qids() {
     std::vector<int> qids = {
-      get_mqd(RX_QID_FOR_SIMULATOR_FNAME),
-      get_mqd(RX_QID_FOR_LOGGER_FNAME),
+      get_message_queue_des(RX_QUEUE_SIMULATOR),
+      get_message_queue_des(RX_QUEUE_LOGGER),
     };
     return qids;
   }
-
 }
-
 
 #endif
