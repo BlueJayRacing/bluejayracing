@@ -60,6 +60,7 @@ std::string build_message(std::vector<int> field_ids, TRXProtoQueues *tx_queues)
     valid_msg = test_message;
   }
 
+  std::cout << "Constructed message: " << factory.get_live_comm().DebugString() << std::endl;
   return valid_msg;
 }
 

@@ -11,8 +11,12 @@
 int dispatcher_main_loop(TRXProtoQueues& shared_tx_queue, LiveCommQueue& shared_rx_queue,
                          const mqd_t ipc_tx_queue, const std::vector<mqd_t> &ipc_rx_queues)
 {
-  _try_queue_data_for_transmit(shared_tx_queue, ipc_tx_queue);
-  _try_dispatch_recieved_data(shared_rx_queue, ipc_rx_queues);
+  while (true) {
+    usleep(100000);
+    std::cout << "Dispatcher running" << std::endl;
+    _try_queue_data_for_transmit(shared_tx_queue, ipc_tx_queue);
+    _try_dispatch_recieved_data(shared_rx_queue, ipc_rx_queues);
+  }
   return 0;
 }
 
@@ -21,9 +25,12 @@ void _try_queue_data_for_transmit(TRXProtoQueues& shared_tx_queue, const mqd_t i
 {
   char buffer[StationIPC::MAX_MSG_SIZE];
   ssize_t err = mq_receive(ipc_tx_queue, buffer, StationIPC::MAX_MSG_SIZE, NULL);
-  if (err == -1 && errno != EAGAIN) {
+  if (err== -1 && errno != EAGAIN) {
     std::cerr << "Failed reading message from TX IPC queue. Errno " << errno << std::endl;
     return;
+  }
+  if (err == -1 && errno == EAGAIN) {
+    return; // Queue is empty :)
   }
 
   // TODO: Design decision to be made. Currently, only enqueue it under the first 
