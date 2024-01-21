@@ -1,10 +1,23 @@
 FROM debian:latest
 
 # Update package lists
-RUN apt-get update
+RUN apt update
 
 # Install necessary packages
-RUN apt-get install -y build-essential git curl
+RUN apt remove --purge --auto-remove -y cmake
+RUN apt install -y build-essential git curl software-properties-common lsb-release
+
+RUN apt update
+RUN apt clean all
+
+# Difficult CMake install
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /etc/apt/trusted.gpg.d/kitware.gpg >/dev/null
+RUN apt-add-repository "deb https://apt.kitware.com/ubuntu/ $(lsb_release -cs) main"
+RUN apt update
+RUN apt install kitware-archive-keyring
+RUN rm /etc/apt/trusted.gpg.d/kitware.gpg
+RUN apt update
+RUN apt install cmake
 
 # Set the working directory
 WORKDIR /20xt_ws
