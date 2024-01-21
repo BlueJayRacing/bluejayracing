@@ -1,13 +1,14 @@
 import { createRoot } from 'react-dom/client'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Stars, Box } from "@react-three/drei";
-import { Physics } from "@react-three/cannon";
+import {Debug, Physics} from "@react-three/cannon";
 import "../../style.css";
 import Car from '../Components/Car/Car.jsx';
 import Terrain from '../Components/Terrain/Terrain.jsx';
 import Perspective from '../Components/Views/Perspective.jsx';
 import { useState } from 'react';
 import { useEffect } from 'react';
+import BajaCar from "../Components/BajaCar/BajaCar.tsx";
 
 
 function World(props) {
@@ -38,8 +39,11 @@ function World(props) {
 				<Perspective cameraPosition={cameraPosition} thirdPerson={thirdPerson}/>
 
 		    <Physics broadphase="SAP" gravity={[0, -2.6, 0]}>
-			    <Car thirdPerson={thirdPerson}/>
-			    <Terrain />
+				<Debug color="yellow" scale={1.0}>
+					<Car thirdPerson={thirdPerson}/>
+					<BajaCar thirdPerson={thirdPerson}/>
+					<Terrain />
+				</Debug>
 		    </Physics>
 	    </Canvas>
     </>

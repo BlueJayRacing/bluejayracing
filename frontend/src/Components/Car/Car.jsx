@@ -7,7 +7,7 @@ import { useWheels } from "./useWheels.jsx";
 import { WheelDebug } from "./WheelDebug";
 import { useControls } from "./useControls";
 import RearCorner from "./RearCorner";
-import FrontCorner from "./FrontCorner";
+import FrontCorner from "./FrontCorner.jsx";
 import { Vector3, Quaternion } from "three";
 
 
@@ -21,7 +21,7 @@ function Car(props) {
     // './3DBenchy.stl'
   );
 
-	const position = [0, .15, 0];
+	const position = [-2, .15, 0];
   
 	let scale = [.00025,.00025,.00025];
   

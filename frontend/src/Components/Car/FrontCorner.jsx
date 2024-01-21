@@ -30,7 +30,7 @@ function FrontCorner (props) {
         </group>
     </group>
   );
-};
+}
 
 
 export default FrontCorner;
