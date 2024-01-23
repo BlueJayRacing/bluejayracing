@@ -1,26 +1,26 @@
-FROM ubuntu:22.04
+FROM debian:latest
 
 # Update package lists
-RUN apt update
+RUN apt update && \
+    apt-get install -y build-essential git curl software-properties-common lsb-release make protobuf-compiler
 
-# Install necessary packages
-RUN apt-get install -y build-essential git curl software-properties-common lsb-release make protobuf-compiler
-RUN apt-get update
-RUN apt-get upgrade -y
+RUN apt-get update && \
+    apt-get upgrade -y
 
 # Custom CMake install to get v3.28
+ENV CMAKE_VERSION=3.28.1
 RUN apt-get remove --purge --auto-remove -y cmake
-RUN apt-get update \
-  && apt-get -y install build-essential \
-  && apt-get install -y wget \
-  && rm -rf /var/lib/apt/lists/* \
-  && wget https://github.com/Kitware/CMake/releases/download/v3.28.1/cmake-3.28.1-Linux-x86_64.sh \
-      -q -O /tmp/cmake-install.sh \
-      && chmod u+x /tmp/cmake-install.sh \
-      && mkdir /opt/cmake-3.28.1 \
-      && /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-3.28.1 \
-      && rm /tmp/cmake-install.sh \
-      && ln -s /opt/cmake-3.28.1/bin/* /usr/bin/
+RUN apt-get update && \
+    apt-get -y install build-essential wget
+
+RUN rm -rf /var/lib/apt/lists/*
+RUN wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-aarch64.sh \
+      -q -O /tmp/cmake-install.sh
+RUN chmod u+x /tmp/cmake-install.sh
+RUN mkdir /opt/cmake-$CMAKE_VERSION
+RUN /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-$CMAKE_VERSION
+RUN rm /tmp/cmake-install.sh
+RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
 
 # Set the working directory
 WORKDIR /20xt_ws/

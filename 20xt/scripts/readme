@@ -4,4 +4,5 @@ Instructions for station:
 ```
 cd build
 cmake /20xt_ws/src/base/
+cmake --build .
 ```
