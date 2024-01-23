@@ -10,24 +10,24 @@
 #include "crossthread/safe_live_comm_queue.h"
 #include "baja_live_comm.pb.h"
 
-// TODO: rename SafeLiveCommQueue to SafeObservationQueue
-SafeLiveCommQueue::SafeLiveCommQueue(int max_size) : max_size(max_size), qlen(0), head(-1)
+// TODO: rename SafeObservationQueue to SafeObservationQueue
+SafeObservationQueue::SafeObservationQueue(int max_size) : max_size(max_size), qlen(0), head(-1)
 {
   this->data_queue = new Observation[max_size];
 }
 
-SafeLiveCommQueue::~SafeLiveCommQueue()
+SafeObservationQueue::~SafeObservationQueue()
 {
   delete[] this->data_queue;
 }
 
-int SafeLiveCommQueue::size()
+int SafeObservationQueue::size()
 {
   return qlen.load();
 }
 
 // Critical Section
-bool SafeLiveCommQueue::enqueue(Observation data)
+bool SafeObservationQueue::enqueue(Observation data)
 {
   std::scoped_lock guard(enqueue_lock);
   if (qlen.load() >= max_size)
@@ -42,7 +42,7 @@ bool SafeLiveCommQueue::enqueue(Observation data)
 }
 
 // Critical Section
-Observation SafeLiveCommQueue::front()
+Observation SafeObservationQueue::front()
 {
   std::scoped_lock guard(dequeue_lock);
   if (qlen.load() <= 0)
@@ -55,7 +55,7 @@ Observation SafeLiveCommQueue::front()
 }
 
 // Critical Section
-Observation SafeLiveCommQueue::dequeue()
+Observation SafeObservationQueue::dequeue()
 {
   std::scoped_lock guard(dequeue_lock);
   if (qlen.load() <= 0)

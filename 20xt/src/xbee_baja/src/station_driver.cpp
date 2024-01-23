@@ -11,7 +11,7 @@
 #include "baja_live_comm.pb.h"
 
 
-int station_main_loop(TRXProtoQueues* tx_queues, LiveCommQueue* rx_queue) {
+int station_main_loop(TRXProtoQueues* tx_queues, ObservationQueue* rx_queue) {
   
   // Continue with a normal loop and good practice
   Connection* conn = new XBeeConnection();
@@ -91,7 +91,7 @@ int _try_transmit_data(Connection* conn, TRXProtoQueues* tx_queues) {
 }
 
 
-int _try_recieve_data(Connection* conn, LiveCommQueue* rx_queue) {
+int _try_recieve_data(Connection* conn, ObservationQueue* rx_queue) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
     if (err == Connection::IRRECOVERABLE_ERROR) {

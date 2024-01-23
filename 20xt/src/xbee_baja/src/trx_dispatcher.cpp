@@ -8,7 +8,7 @@
 #include "proto_helpers.h"
 
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
-int dispatcher_main_loop(TRXProtoQueues& shared_tx_queue, LiveCommQueue& shared_rx_queue,
+int dispatcher_main_loop(TRXProtoQueues& shared_tx_queue, ObservationQueue& shared_rx_queue,
                          const mqd_t ipc_tx_queue, const std::vector<mqd_t> &ipc_rx_queues)
 {
   while (true) {
@@ -48,7 +48,7 @@ void _try_queue_data_for_transmit(TRXProtoQueues& shared_tx_queue, const mqd_t i
 
 
 // Dispatch the data recieved over radio
-void _try_dispatch_recieved_data(LiveCommQueue& shared_rx_queue, const std::vector<mqd_t> &ipc_rx_queues)
+void _try_dispatch_recieved_data(ObservationQueue& shared_rx_queue, const std::vector<mqd_t> &ipc_rx_queues)
 {
   if (shared_rx_queue.size() <= 0) {
     return;

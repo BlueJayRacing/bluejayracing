@@ -3,9 +3,9 @@
 
 #include "baja_live_comm.pb.h"
 
-class LiveCommQueue {
+class ObservationQueue {
 public:
-  virtual ~LiveCommQueue() {}
+  virtual ~ObservationQueue() {}
 
   virtual bool enqueue(Observation data) = 0;
   virtual Observation front() = 0;

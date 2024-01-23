@@ -11,7 +11,7 @@
 // This is a thread-safe queue that can be used to pass data between threads.
 // Be wary when using front() and then dequeue() as another consumer might have
 // stolen your data
-class SafeLiveCommQueue : public LiveCommQueue {
+class SafeObservationQueue : public ObservationQueue {
 private:
   const int max_size;
   std::atomic<int> tail; // Oldest element
@@ -24,9 +24,9 @@ private:
 
 public:
 
-  SafeLiveCommQueue(int max_size);
+  SafeObservationQueue(int max_size);
 
-  ~SafeLiveCommQueue();
+  ~SafeObservationQueue();
 
   int size();
 

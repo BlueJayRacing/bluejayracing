@@ -71,7 +71,10 @@ std::string build_message(TRXProtoQueues *tx_queues)
 }
 
 // Decompose and distribute into the RX queue
-int distribute_message(LiveComm msg, LiveCommQueue *rx_queue)
+int distribute_message(LiveComm msg, ObservationQueue *rx_queue)
 {
+  for(int i = 0; i<msg.numObservation(); i++){
+    rx_queue.enqueue(msg[i]);
+  }
   return 0; // TODO: Sorry Jen, I changed this again
 }

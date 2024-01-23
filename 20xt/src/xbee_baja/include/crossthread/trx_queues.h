@@ -40,7 +40,7 @@ public:
   Observation dequeue(int queue_id);
 
 private:
-  std::map<int, LiveCommQueue*> queues = {
+  std::map<int, ObservationQueue*> queues = {
       {Observation::kGpsFieldNumber, nullptr},
       {Observation::kLocalizationFieldNumber, nullptr},
       {Observation::kCommunicationFieldNumber, nullptr},

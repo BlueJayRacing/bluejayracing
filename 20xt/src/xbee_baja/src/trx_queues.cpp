@@ -10,7 +10,7 @@ TRXProtoQueues::TRXProtoQueues(int max_queue_size)
 {
   for (auto &queue : queues)
   {
-    queue.second = new SafeLiveCommQueue(max_queue_size);
+    queue.second = new SafeObservationQueue(max_queue_size);
   }
 }
 

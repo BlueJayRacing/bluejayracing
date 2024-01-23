@@ -22,6 +22,6 @@ std::string build_message(TRXProtoQueues* queues);
 std::string build_message(std::vector<int> field_ids, TRXProtoQueues* tx_queues);
 
 // Decompose and distribute to the appropriate queues
-int distribute_message(LiveComm msg, LiveCommQueue* queues);
+int distribute_message(LiveComm msg, ObservationQueue* queues);
 
 #endif // QUEUE_FUNCS
