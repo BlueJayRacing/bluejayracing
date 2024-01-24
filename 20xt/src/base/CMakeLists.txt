@@ -14,8 +14,8 @@ add_subdirectory(
 )
 
 # TESTING
-add_executable(test_logger src/test_logger.cpp)
-target_link_libraries(test_logger 
+add_executable(test src/test.cpp)
+target_link_libraries(test
     PUBLIC xbee_baja
     PUBLIC station_ipc    
 )

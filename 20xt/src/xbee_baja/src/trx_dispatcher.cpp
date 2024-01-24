@@ -1,5 +1,6 @@
 #include <iostream>
 #include <mqueue.h>
+#include <unistd.h>
 
 #include "mains/trx_dispatcher.h"
 #include "crossthread/trx_queues.h"
@@ -36,6 +37,7 @@ void _try_queue_data_for_transmit(TRXProtoQueues& shared_tx_queue, const mqd_t i
   // TODO: Design decision to be made. Currently, only enqueue it under the first 
   // set field that we encounter. This should work since outgoing messages will
   // likely only have one field aynways. Prioritization logic will go here
+  std::cout << "Queueing data from transmit" << std::endl;
   Observation observation;
   observation.ParseFromArray(buffer, err);
   std::vector<int> field_ids = BajaProtoHelpers::get_set_field_ids(observation);
@@ -59,6 +61,7 @@ void _try_dispatch_recieved_data(ObservationQueue& shared_rx_queue, const std::v
   std::string serialized_observation = shared_rx_queue.dequeue().SerializeAsString();
 
   // Must dispatch to every subscribed proccess
+  std::cout << "Dispatching recieved data" << std::endl;
   for (mqd_t ipc_rx_queue : ipc_rx_queues) {
     err = mq_send(ipc_rx_queue, serialized_observation.c_str(), serialized_observation.length(), 0);
 

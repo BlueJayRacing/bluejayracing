@@ -1,5 +1,6 @@
 #include <iostream>
 #include <mqueue.h>
+#include <unistd.h>
 
 #include "ipc_config.h"
 
@@ -14,20 +15,21 @@ int main() {
 
   char data[StationIPC::MAX_MSG_SIZE];
 
-  ssize_t err = mq_receive(qid, data, StationIPC::MAX_MSG_SIZE, NULL);
-  if (err == -1) {
-    std::cout << "Could not read message from queue #" << qid << std::endl;
-    if (errno == EAGAIN) {
-      std::cout << "No message available (recieving process did not wait)" << std::endl;
-    } else {
-      std::cout << "Errno: " << errno << std::endl;
+  while (true) {
+    usleep(100000);
+    std::cout << "Logger is running" << std::endl;
+    ssize_t err = mq_receive(qid, data, StationIPC::MAX_MSG_SIZE, NULL);
+    if (err == -1 && errno == EAGAIN) {
+      continue;
     }
-  } else {
+    if (err == -1 && errno != EAGAIN) {
+      continue;
+    }
     std::cout << "Read " << err << " bytes from queue #" << qid << std::endl;
-    std::cout << "Read data: '" << data << "'" << std::endl; 
   }
+  
 
-  err = mq_close(qid);
+  int err = mq_close(qid);
   if (err == -1) {
     std::cout << "Could not close queue #" << qid << std::endl;
     std::cout << "Errno: " << errno << std::endl;
