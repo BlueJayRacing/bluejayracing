@@ -1,59 +1,107 @@
+#include <string>
 #include <iostream>
 #include <thread>
-#include <mqueue.h>
+#include <chrono>
 
-#include "ipc_config.h"
-#include "mains/station_driver.h"
-#include "mains/trx_dispatcher.h"
-#include "crossthread/trx_queues.h"
+#include "xbee_driver.h"
+#include "ipc/ipc_config.h"
+#include "interfaces/connection.h"
+#include "xbee/xbee_connection.h"
 
-// GLobal Constants
-static const int MAX_QUEUE_SIZE = 300;
-
-// Global shared data
-TRXProtoQueues* shared_tx_queue;
-ObservationQueue* shared_rx_queue;
-std::vector<mqd_t> ipc_rx_queues;
-mqd_t ipc_tx_queue;
-
-
-// One thread works full time driving the XBee
-void xbee_driver_thread(int id) {
-  station_main_loop(shared_tx_queue, shared_rx_queue);
-}
-
-// One thread works full time managing IPC communication
-void dispatching_thread(int id) {
-  dispatcher_main_loop(*shared_tx_queue, *shared_rx_queue, ipc_tx_queue, ipc_rx_queues);
-}
+const static MAX_SEND_RETRIES = 2;
 
 int main() {
-  // We have cross-thread communication
-  shared_tx_queue = new TRXProtoQueues(MAX_QUEUE_SIZE);
-  shared_rx_queue = new SafeObservationQueue(MAX_QUEUE_SIZE);
-
-  // And we have cross-process communication. This process will handle open/close
-  ipc_tx_queue = StationIPC::open_queue(StationIPC::TX_QUEUE);
-  ipc_rx_queues = StationIPC::get_rx_subsribers_qids();
   
-  // Wait for worker threads to finish
-  std::thread xbee_driver(xbee_driver_thread, 1);
-  std::thread dispatcher(dispatching_thread, 2);
-  xbee_driver.join();
-  dispatcher.join();
+  // Continue with a normal loop and good practice
+  Connection* conn = new XBeeConnection();
+  int err = conn->open();
+  while (err == Connection::RECOVERABLE_ERROR) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    err = conn->open(); // can try again
+  }
+  if (err == Connection::IRRECOVERABLE_ERROR) {
+    std::cout << "Connection could not be opened, exiting" << std::endl;
+    return EXIT_FAILURE;
+  }
+  std::cout << "Connection initialized" << std::endl;
 
-  // Clean up shared datastructures
-  delete shared_tx_queue;
-  delete shared_rx_queue;
 
-  // Close the message queues (local process consequences)
-  StationIPC::close_queue(ipc_tx_queue);
-  for (auto qid : ipc_rx_queues) {
-    StationIPC::close_queue(qid);
+  while (true) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::cout << "." << std::endl;
+
+    // Send
+    err = _try_transmit_data(conn);
+    if (err == EXIT_FAILURE) {
+      std::cout << "Connection failed when trying to transmit, exiting" << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    // Recieve
+    err = _try_recieve_data(conn);
+    if (err == EXIT_FAILURE) {
+      std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+ 
+  // Cleanup
+  delete conn;
+  return EXIT_SUCCESS;
+}
+
+int _try_transmit_data(Connection* conn) {
+
+  // TODO: Turn into dequeueing from a POSIX queue
+  std::string msg = get_message(tx_queues);
+
+  // TODO: make sure a message was recieved
+  int err = conn->send(msg);
+
+  // If full recoverable, wait only once
+  for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
+    std::this_thread::sleep_for(std::chrono::microseconds(1));
+    err = conn->send(msg);
+    iter++;
   }
 
-  // Unlink the message queues (system wide consequences)
-  StationIPC::unlink_queue(StationIPC::TX_QUEUE);
-  StationIPC::unlink_queue(StationIPC::RX_QUEUE_SIMULATOR);
-  return 0;
+  if (err == Connection::QUEUE_FULL) {
+    std::cout << "XBee queue full and exceeded transmit retries, could not send" << std::endl;
+    return EXIT_SUCCESS; // non-fatal error
+  }
+
+  if (err == Connection::SEND_FAILED) {
+    std::cout << "Send failed for unkown reason, could not send" << std::endl;
+  }
+
+  if (err == Connection::MSG_TOO_LARGE) {
+    std::cout << "Message too large, could not send" << std::endl;
+    return EXIT_SUCCESS;
+  }
+  
+  // Any connection failure is fatal
+  if (err == Connection::IRRECOVERABLE_ERROR) {
+    std::cout << "Could not send because connection failed" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  return EXIT_SUCCESS;
+}
+
+
+int _try_recieve_data(Connection* conn) {
+  if (conn->num_messages_available() <= 0) {
+    int err = conn->tick();
+    if (err == Connection::IRRECOVERABLE_ERROR) {
+      std::cout << "Failed to tick device" << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+
+
+  if (conn->num_messages_available() > 0) {
+    std::string msg = conn->pop_message();
+    enqueue_recieved_msg(msg);
+  }
+  return EXIT_SUCCESS;
 }

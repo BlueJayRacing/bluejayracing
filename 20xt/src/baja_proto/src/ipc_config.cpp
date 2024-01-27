@@ -20,13 +20,3 @@ const int StationIPC::unlink_queue(std::string q_fname)
   mq_unlink(q_fname.c_str());
   return EXIT_SUCCESS;
 }
-
-// The data dispatching thread will need to access a queue for each reciever
-const std::vector<int> StationIPC::get_rx_subsribers_qids()
-{
-  std::vector<int> qids = {
-      open_queue(RX_QUEUE_SIMULATOR),
-      open_queue(RX_QUEUE_LOGGER),
-  };
-  return qids;
-}
