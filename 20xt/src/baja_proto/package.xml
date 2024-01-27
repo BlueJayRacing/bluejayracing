@@ -1,7 +1,7 @@
 <package>
-    <name>station_ipc</name>
+    <name>baja_proto</name>
     <version>0.1.0</version>
-    <description>Base station IPC items</description>
+    <description>Protobuf items for Baja communication</description>
     <maintainer email="tannergladson@example.com">Tanner Gladson</maintainer>
     <license>MIT</license>
     <buildtool_depend>ament_cmake</buildtool_depend>
