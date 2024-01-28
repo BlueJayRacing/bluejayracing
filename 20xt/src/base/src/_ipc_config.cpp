@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <mqueue.h>
+#include <stdexcept>
 
 #include "ipc_config.h"
 
@@ -20,3 +21,12 @@ const int StationIPC::unlink_queue(std::string q_fname)
   mq_unlink(q_fname.c_str());
   return EXIT_SUCCESS;
 }
+
+const std::string get_message(mqd_t qid) {
+  throw std::runtime_error("Not implemented");
+}
+
+const int send_message(mqd_t qid, std::string msg) {
+  throw std::runtime_error("Not implemented");
+}
+
