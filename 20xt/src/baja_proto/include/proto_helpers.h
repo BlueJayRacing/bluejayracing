@@ -12,7 +12,7 @@ namespace BajaProtoHelpers {
         Observation::kCarStateFieldNumber,
     };
 
-  inline std::vector<int> get_set_field_ids(Observation& obs) {
+  inline std::vector<int> get_set_field_ids(const Observation& obs) {
     // Does not check the timestamp field
     std::vector<int> set_field_ids;
     const google::protobuf::Reflection *reflection = obs.GetReflection();
