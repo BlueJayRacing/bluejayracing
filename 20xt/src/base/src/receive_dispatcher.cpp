@@ -11,10 +11,21 @@ int main()
 {
   // Open the queues
   const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
+  if (radio_rx_queue == -1) {
+    std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
+    return EXIT_FAILURE;
+  }
+
   const std::vector<mqd_t> subscribed_rx_queues = {
     StationIPC::open_queue(StationIPC::LOGGER_RX_QUEUE),
     StationIPC::open_queue(StationIPC::SIMULATION_RX_QUEUE),
   };
+  for (int i = 0; i < subscribed_rx_queues.size(); i++) {
+    if (subscribed_rx_queues[i] == -1) {
+      std::cout << "Failed to get subscriber queue #" << i << " Errno " << errno << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
   
   // Main loop
   while (true) {

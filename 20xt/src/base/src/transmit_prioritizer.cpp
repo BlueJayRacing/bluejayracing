@@ -11,11 +11,23 @@
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
 int main()
 {
+  // Open queues
   const mqd_t radio_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
+  if (radio_queue == -1) {
+    std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
+    return EXIT_FAILURE;
+  }
+
   const std::vector<mqd_t> data_queues = {
     StationIPC::open_queue(StationIPC::RTK_CORRECTOR_TX_QUEUE),
     StationIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE),
   };
+  for (int i = 0; i < data_queues.size(); i++) {
+    if (data_queues[i] == -1) {
+      std::cout << "Failed to get data queue #" << i << " Errno " << errno << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
 
   // We're using POSIX queues, so sending a message is NOT STATELESS. Use the remainder to
   // store the data which we couldn't send in the previous iteration (but had to dequeue)

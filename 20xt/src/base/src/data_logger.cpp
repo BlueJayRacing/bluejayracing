@@ -6,7 +6,7 @@
 
 // An infinite loop which attempts to read bytes from an ipc queue
 int main() {
-  int qid = StationIPC::open_queue(StationIPC::RX_QUEUE_LOGGER);
+  int qid = StationIPC::open_queue(StationIPC::LOGGER_RX_QUEUE);
   if (qid == -1) {
     std::cout << "Failed to get queue ID" << std::endl;
     std::cout << "Errno: " << errno << std::endl;
