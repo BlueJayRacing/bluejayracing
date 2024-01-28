@@ -1,6 +1,7 @@
 #include <iostream>
 #include <mqueue.h>
 #include <unistd.h>
+#include <vector>
 
 #include "mains/receive_dispatcher.h"
 #include "baja_live_comm.pb.h"
