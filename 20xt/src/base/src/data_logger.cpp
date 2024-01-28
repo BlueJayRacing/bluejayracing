@@ -2,6 +2,7 @@
 #include <mqueue.h>
 #include <unistd.h>
 
+#include "mains/data_logger.h"
 #include "helpers/ipc_config.h"
 #include "baja_live_comm.pb.h"
 

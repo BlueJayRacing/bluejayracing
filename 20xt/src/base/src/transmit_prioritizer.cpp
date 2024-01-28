@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <vector>
 
+#include "mains/transmit_prioritizer.h"
 #include "baja_live_comm.pb.h"
 #include "helpers/ipc_config.h"
 #include "helpers/live_comm_factory.h"

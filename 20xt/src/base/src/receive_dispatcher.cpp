@@ -2,6 +2,7 @@
 #include <mqueue.h>
 #include <unistd.h>
 
+#include "mains/receive_dispatcher.h"
 #include "baja_live_comm.pb.h"
 #include "helpers/ipc_config.h"
 #include "proto_helpers.h"

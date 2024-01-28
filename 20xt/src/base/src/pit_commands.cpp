@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 
+#include "mains/pit_commands.h"
 #include "helpers/ipc_config.h"
 #include "baja_live_comm.pb.h"
 

@@ -3,8 +3,8 @@
 #include <thread>
 #include <chrono>
 
-#include "xbee_driver.h"
-#include "ipc/ipc_config.h"
+#include "mains/xbee_driver.h"
+#include "helpers/ipc_config.h"
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
 
