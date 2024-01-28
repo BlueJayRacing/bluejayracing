@@ -2,8 +2,9 @@
 #include <mqueue.h>
 #include <chrono>
 #include <thread>
+#include <vector>
 
-#include "ipc_config.h"
+#include "helpers/ipc_config.h"
 #include "baja_live_comm.pb.h"
 
 std::vector<Observation> get_dummy_observations(int n) {

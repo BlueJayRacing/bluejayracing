@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <iostream>
 
-#include "ipc_config.h"
+#include "helpers/ipc_config.h"
 
 const mqd_t StationIPC::open_queue(std::string q_fname)
 {

@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "baja_live_comm.pb.h"
-#include "ipc_config.h"
+#include "helpers/ipc_config.h"
 #include "helpers/live_comm_factory.h"
 
 
