@@ -12,7 +12,7 @@ const static MAX_SEND_RETRIES = 2;
 
 int main() {
   
-  // Continue with a normal loop and good practice
+  // Open the Xbee connection
   Connection* conn = new XBeeConnection();
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
@@ -20,25 +20,28 @@ int main() {
     err = conn->open(); // can try again
   }
   if (err == Connection::IRRECOVERABLE_ERROR) {
-    std::cout << "Connection could not be opened, exiting" << std::endl;
+    std::cout << "Xbee connection could not be opened, exiting" << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << "Connection initialized" << std::endl;
+  std::cout << "Xbee connection initialized" << std::endl;
 
+  // Open the IPC queues
+  const mqd_t tx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
+  const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
 
   while (true) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     std::cout << "." << std::endl;
 
     // Send
-    err = _try_transmit_data(conn);
+    err = _try_transmit_data(conn, tx_queue);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to transmit, exiting" << std::endl;
       return EXIT_FAILURE;
     }
 
     // Recieve
-    err = _try_recieve_data(conn);
+    err = _try_recieve_data(conn, rx_queue);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
       return EXIT_FAILURE;
@@ -50,12 +53,13 @@ int main() {
   return EXIT_SUCCESS;
 }
 
-int _try_transmit_data(Connection* conn) {
+int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
-  // TODO: Turn into dequeueing from a POSIX queue
-  std::string msg = get_message(tx_queues);
+  std::string msg = StationIPC::get_message(tx_queue);
+  if (msg.empty()) {
+    return EXIT_SUCCESS;
+  }
 
-  // TODO: make sure a message was recieved
   int err = conn->send(msg);
 
   // If full recoverable, wait only once
@@ -89,7 +93,7 @@ int _try_transmit_data(Connection* conn) {
 }
 
 
-int _try_recieve_data(Connection* conn) {
+int _try_recieve_data(Connection* conn, const mqd_t rx_queue) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
     if (err == Connection::IRRECOVERABLE_ERROR) {

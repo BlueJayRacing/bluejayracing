@@ -31,9 +31,16 @@ namespace StationIPC {
     .mq_curmsgs = 0,
   };
 
+  // Return codes detailed in POSIX message queues
   const mqd_t open_queue(std::string q_fname);
   const int close_queue(mqd_t qid);
   const int unlink_queue(std::string q_fname);
+
+  // Get a message from the queue, return empty string if no message
+  const std::string get_message(mqd_t qid);
+
+  // Send a message to the queue, return EXIT_FAILURE if failed
+  const int send_message(mqd_t qid, std::string msg);
 }
 
 #endif
