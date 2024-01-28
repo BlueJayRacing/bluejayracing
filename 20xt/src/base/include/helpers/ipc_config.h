@@ -45,7 +45,7 @@ namespace StationIPC {
     QUEUE_FULL,
     SEND_ERROR,
   };
-  const int send_message(mqd_t qid, std::string msg);
+  const int send_message(mqd_t qid, const std::string& msg);
 }
 
 #endif

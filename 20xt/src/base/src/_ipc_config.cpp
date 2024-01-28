@@ -36,7 +36,7 @@ const std::string StationIPC::get_message(mqd_t qid) {
   return std::string(buffer, bytes_read);
 }
 
-const int StationIPC::send_message(mqd_t qid, std::string payload) {
+const int StationIPC::send_message(mqd_t qid, const std::string& payload) {
   if (payload.size() > StationIPC::MAX_QUEUE_MSG_SIZE) {
     std::cerr << "ERROR: Message is too long" << std::endl;
     return SEND_ERROR;
