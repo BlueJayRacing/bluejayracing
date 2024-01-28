@@ -17,36 +17,39 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../baja_proto/bin
 )
 
+# Helping code
+file(GLOB_RECURSE HELPER_SOURCES "src/helpers/*.cpp")
+
 # TESTING
-add_executable(test tests/test.cpp)
+add_executable(test tests/test.cpp ${HELPER_SOURCES})
 target_link_libraries(test
     PUBLIC xbee_baja
     PUBLIC baja_proto    
 )
 
 # PIT COMMANDS
-add_executable(pit_commands src/pit_commands.cpp)
+add_executable(pit_commands src/pit_commands.cpp ${HELPER_SOURCES})
 target_link_libraries(pit_commands 
     PUBLIC xbee_baja
     PUBLIC baja_proto    
 )
 
 # TRANSMIT PRIORITIZER
-add_executable(transmit_prioritizer.cpp src/transmit_prioritizer.cpp)
+add_executable(transmit_prioritizer.cpp src/transmit_prioritizer.cpp ${HELPER_SOURCES})
 target_link_libraries(transmit_prioritizer.cpp 
     PUBLIC xbee_baja
     PUBLIC baja_proto    
 )
 
 # XBEE DRIVER 
-add_executable(xbee_driver src/xbee_driver.cpp)
+add_executable(xbee_driver src/xbee_driver.cpp ${HELPER_SOURCES})
 target_link_libraries(xbee_driver 
     PUBLIC xbee_baja
     PUBLIC baja_proto    
 ) 
 
 # RECIEVE DISPATCHER
-add_executable(receive_dispatcher src/receive_dispatcher.cpp)
+add_executable(receive_dispatcher src/receive_dispatcher.cpp ${HELPER_SOURCES})
 target_link_libraries(receive_dispatcher 
     PUBLIC xbee_baja
     PUBLIC baja_proto    
