@@ -36,10 +36,15 @@ namespace StationIPC {
   const int close_queue(mqd_t qid);
   const int unlink_queue(std::string q_fname);
 
-  // Get a message from the queue, return empty string if no message
+  // Get a message from the queue, return empty string if no message (check errno)
   const std::string get_message(mqd_t qid);
 
   // Send a message to the queue, return EXIT_FAILURE if failed
+  enum SendResult {
+    SUCCESS,
+    QUEUE_FULL,
+    SEND_ERROR,
+  };
   const int send_message(mqd_t qid, std::string msg);
 }
 

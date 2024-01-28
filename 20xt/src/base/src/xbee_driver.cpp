@@ -8,7 +8,7 @@
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
 
-const static MAX_SEND_RETRIES = 2;
+const static int MAX_SEND_RETRIES = 2;
 
 int main() {
   
@@ -60,9 +60,8 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
     return EXIT_SUCCESS;
   }
 
-  int err = conn->send(msg);
-
   // If full recoverable, wait only once
+  int err = conn->send(msg);
   for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
     std::this_thread::sleep_for(std::chrono::microseconds(1));
     err = conn->send(msg);
@@ -105,7 +104,13 @@ int _try_recieve_data(Connection* conn, const mqd_t rx_queue) {
 
   if (conn->num_messages_available() > 0) {
     std::string msg = conn->pop_message();
-    enqueue_recieved_msg(msg);
+    int err = StationIPC::send_message(rx_queue, msg);
+
+    // Xbee driver responsible for keeping queue recent
+    if (err == StationIPC::QUEUE_FULL) {
+      StationIPC::get_message(rx_queue);
+      StationIPC::send_message(rx_queue, msg);
+    }
   }
   return EXIT_SUCCESS;
 }

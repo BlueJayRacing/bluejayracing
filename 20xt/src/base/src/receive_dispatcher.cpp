@@ -36,7 +36,7 @@ void try_dispatch_recieved_data(ObservationQueue& shared_rx_queue, const std::ve
   for (mqd_t ipc_rx_queue : ipc_rx_queues) {
     err = mq_send(ipc_rx_queue, serialized_observation.c_str(), serialized_observation.length(), 0);
 
-    while (err == -1 && errno != EAGAIN) {
+    while (err == -1 && errno == EAGAIN) {
       mq_receive(ipc_rx_queue, buffer, StationIPC::MAX_MSG_SIZE, NULL); // Empty the queue!
       err = mq_send(ipc_rx_queue, serialized_observation.c_str(), serialized_observation.length(), 0);
     }
