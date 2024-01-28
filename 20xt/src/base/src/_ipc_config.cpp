@@ -28,5 +28,21 @@ const std::string get_message(mqd_t qid) {
 
 const int send_message(mqd_t qid, std::string msg) {
   throw std::runtime_error("Not implemented");
+
+      std::string payload = observations[i].SerializeAsString();
+    if (payload.size() > StationIPC::MAX_MSG_SIZE) {
+      std::cout << "Message is too long" << std::endl;
+    }
+
+    int err = mq_send(qid, payload.c_str(), payload.size(), 0);
+    while (err == -1 && errno == EAGAIN) {
+      std::cout << "Queue is full, waiting for empty queue" << std::endl;
+      std::this_thread::sleep_for(std::chrono::microseconds(1));
+      err = mq_send(qid, payload.c_str(), payload.size(), 0);
+    }
+
+    if (err == -1) {
+      std::cout << "Could not send the message. Errno " << errno << std::endl;
+    }
 }
 
