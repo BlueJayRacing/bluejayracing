@@ -16,12 +16,7 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi
     ${CMAKE_CURRENT_SOURCE_DIR}/../xbee_digi/bin
 )
-add_subdirectory(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../station_ipc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../station_ipc/bin
-)
 target_link_libraries(xbee_baja
     PUBLIC xbee_digi
-    PUBLIC station_ipc
     # Add any required libraries here
 )

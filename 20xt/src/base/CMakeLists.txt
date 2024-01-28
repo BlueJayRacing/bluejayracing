@@ -18,7 +18,7 @@ add_subdirectory(
 )
 
 # TESTING
-add_executable(test test/test.cpp)
+add_executable(test tests/test.cpp)
 target_link_libraries(test
     PUBLIC xbee_baja
     PUBLIC baja_proto    
@@ -31,16 +31,30 @@ target_link_libraries(pit_commands
     PUBLIC baja_proto    
 )
 
-# LOGGER
-add_executable(logger src/logger.cpp)
-target_link_libraries(logger 
+# TRANSMIT PRIORITIZER
+add_executable(transmit_prioritizer.cpp src/transmit_prioritizer.cpp)
+target_link_libraries(transmit_prioritizer.cpp 
     PUBLIC xbee_baja
     PUBLIC baja_proto    
 )
 
-# REMOTE COMM 
-add_executable(remote_comm src/remote_comm.cpp)
-target_link_libraries(remote_comm 
+# XBEE DRIVER 
+add_executable(xbee_driver src/xbee_driver.cpp)
+target_link_libraries(xbee_driver 
     PUBLIC xbee_baja
     PUBLIC baja_proto    
 ) 
+
+# RECIEVE DISPATCHER
+add_executable(receive_dispatcher src/receive_dispatcher.cpp)
+target_link_libraries(receive_dispatcher 
+    PUBLIC xbee_baja
+    PUBLIC baja_proto    
+)
+
+# LOGGER
+add_executable(data_logger src/data_logger.cpp)
+target_link_libraries(data_logger 
+    PUBLIC xbee_baja
+    PUBLIC baja_proto    
+)
