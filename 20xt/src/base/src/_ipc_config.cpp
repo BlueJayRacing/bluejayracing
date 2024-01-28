@@ -2,6 +2,7 @@
 #include <string>
 #include <mqueue.h>
 #include <stdexcept>
+#include <iostream>
 
 #include "ipc_config.h"
 
@@ -22,27 +23,33 @@ const int StationIPC::unlink_queue(std::string q_fname)
   return EXIT_SUCCESS;
 }
 
-const std::string get_message(mqd_t qid) {
-  throw std::runtime_error("Not implemented");
+const std::string StationIPC::get_message(mqd_t qid) {
+  char buffer[StationIPC::MAX_QUEUE_MSG_SIZE];
+  int bytes_read = mq_receive(qid, buffer, StationIPC::MAX_QUEUE_MSG_SIZE, NULL);
+  if (bytes_read == -1) {
+    if (errno == EAGAIN) {
+      return ""; // empty queue
+    }
+    std::cerr << "ERROR: Could not read the message. Errno " << errno << std::endl;
+    return "";
+  }
+  return std::string(buffer, bytes_read);
 }
 
-const int send_message(mqd_t qid, std::string msg) {
-  throw std::runtime_error("Not implemented");
+const int StationIPC::send_message(mqd_t qid, std::string payload) {
+  if (payload.size() > StationIPC::MAX_QUEUE_MSG_SIZE) {
+    std::cerr << "ERROR: Message is too long" << std::endl;
+    return SEND_ERROR;
+  }
 
-      std::string payload = observations[i].SerializeAsString();
-    if (payload.size() > StationIPC::MAX_MSG_SIZE) {
-      std::cout << "Message is too long" << std::endl;
-    }
-
-    int err = mq_send(qid, payload.c_str(), payload.size(), 0);
-    while (err == -1 && errno == EAGAIN) {
-      std::cout << "Queue is full, waiting for empty queue" << std::endl;
-      std::this_thread::sleep_for(std::chrono::microseconds(1));
-      err = mq_send(qid, payload.c_str(), payload.size(), 0);
-    }
-
-    if (err == -1) {
-      std::cout << "Could not send the message. Errno " << errno << std::endl;
-    }
+  int err = mq_send(qid, payload.c_str(), payload.size(), 0);
+  while (err == -1 && errno == EAGAIN) {
+    return QUEUE_FULL;
+  }
+  if (err == -1) {
+    std::cerr << "ERROR: Could not send the message. Errno " << errno << std::endl;
+    return SEND_ERROR;
+  }
+  return SUCCESS;
 }
 
