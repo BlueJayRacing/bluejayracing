@@ -2,6 +2,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <mqueue.h>
+#include <unistd.h>
 
 #include "mains/xbee_driver.h"
 #include "helpers/ipc_config.h"

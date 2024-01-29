@@ -35,8 +35,8 @@ target_link_libraries(pit_commands
 )
 
 # TRANSMIT PRIORITIZER
-add_executable(transmit_prioritizer.cpp src/transmit_prioritizer.cpp ${HELPER_SOURCES})
-target_link_libraries(transmit_prioritizer.cpp 
+add_executable(transmit_prioritizer src/transmit_prioritizer.cpp ${HELPER_SOURCES})
+target_link_libraries(transmit_prioritizer
     PUBLIC xbee_baja
     PUBLIC baja_proto    
 )
@@ -56,7 +56,7 @@ target_link_libraries(receive_dispatcher
 )
 
 # LOGGER
-add_executable(data_logger src/data_logger.cpp)
+add_executable(data_logger src/data_logger.cpp ${HELPER_SOURCES})
 target_link_libraries(data_logger 
     PUBLIC xbee_baja
     PUBLIC baja_proto    
