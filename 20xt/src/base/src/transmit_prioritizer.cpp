@@ -61,7 +61,7 @@ std::string build_message(Observation* remainder_buffer, const Observation& star
   int latest_queue = 0;
 
   while (true) {
-    int latest_queue = get_next_data(&data, latest_queue, data_queues);
+    latest_queue = get_next_data(&data, latest_queue, data_queues);
     if (latest_queue == -1) {
       data = Observation();
       break;
