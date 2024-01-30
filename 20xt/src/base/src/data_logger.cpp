@@ -18,7 +18,7 @@ int main() {
   // Main loop
   while (true) {
     usleep(100000);
-    std::cout << "Logger is running" << std::endl;
+    std::cout << "data logger is running..." << std::endl;
     std::string msg = StationIPC::get_message(rx_queue);
     if (msg == "") {
       continue;

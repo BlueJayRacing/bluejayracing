@@ -32,7 +32,7 @@ int main()
   // Main loop
   while (true) {
     usleep(100000);
-    std::cout << "Dispatcher running" << std::endl;
+    std::cout << "dispatcher running..." << std::endl;
     try_dispatch_recieved_data(radio_rx_queue, subscribed_rx_queues);
   }
   return 0;

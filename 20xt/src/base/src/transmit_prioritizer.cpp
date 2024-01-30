@@ -34,7 +34,7 @@ int main()
   // store the data which we couldn't send in the previous iteration (but had to dequeue)
   Observation remainder;
   while (true) {
-    std::cout << "Transmit prioritizer running" << std::endl;
+    std::cout << "transmit prioritizer running..." << std::endl;
     usleep(100000);
     std::string msg = build_message(&remainder, remainder, data_queues);
 
@@ -82,18 +82,17 @@ std::string build_message(Observation* remainder_buffer, const Observation& star
 
 // Retrieve an Observation data from the tx queues, if any data available in any queue. Start
 // from the queue after the one which was last used. Return -1 if no data available
-int get_next_data(Observation* data_buffer, int prev_index, const std::vector<mqd_t> &tx_queues) {
-  int i = (prev_index + 1) % tx_queues.size();
-
-  while (i != prev_index) {
-    std::string data = StationIPC::get_message(tx_queues[i]);
+int get_next_data(Observation* data_buffer, const int prev_index, const std::vector<mqd_t> &tx_queues) {
+  // We need to try every queue again, with previous index as lowest priority
+  for (int i = 1; i <= tx_queues.size(); i++){
+    int queue_index = (i + prev_index) % tx_queues.size();
+    std::string data = StationIPC::get_message(tx_queues[queue_index]);
     if (data.empty()) {
-      i = (i + 1) % tx_queues.size();
       continue;
     }
 
     data_buffer->ParseFromString(data);
-    return i;
+    return queue_index;
   }
   return -1;
 }

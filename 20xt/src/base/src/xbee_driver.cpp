@@ -33,7 +33,7 @@ int main() {
 
   while (true) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    std::cout << "." << std::endl;
+    std::cout << "xbee driver listening..." << std::endl;
 
     // Send
     err = _try_transmit_data(conn, tx_queue);
@@ -61,6 +61,7 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
   if (msg.empty()) {
     return EXIT_SUCCESS;
   }
+  std::cout << "Retrieved message from IPC, sending to Xbee" << std::endl;
 
   // If full recoverable, wait only once
   int err = conn->send(msg);
@@ -105,6 +106,7 @@ int _try_recieve_data(Connection* conn, const mqd_t rx_queue) {
 
 
   if (conn->num_messages_available() > 0) {
+    std::cout << "Message available from Xbee" << std::endl;
     std::string msg = conn->pop_message();
     int err = StationIPC::send_message(rx_queue, msg);
 
