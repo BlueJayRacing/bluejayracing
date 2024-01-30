@@ -25,12 +25,8 @@ int main () {
     return EXIT_FAILURE;
   }
 
-  // Get the dummy data
-  const int NUM_OBSERVATIONS = 10;
-  std::vector<Observation> observations = get_dummy_observations(NUM_OBSERVATIONS);
-
-  for (true) {
-    usleep(10000)
+  while (true) {
+    usleep(10000);
     // Let's send a message!
     std::string payload = get_dummy_observation().SerializeAsString();
     int err = StationIPC::send_message(rx_queue, payload);
