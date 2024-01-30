@@ -26,7 +26,7 @@ int main () {
   }
 
   while (true) {
-    usleep(10000);
+    usleep(100000);
     // Let's send a message!
     std::string payload = get_dummy_observation().SerializeAsString();
     int err = StationIPC::send_message(rx_queue, payload);
