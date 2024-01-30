@@ -23,7 +23,7 @@ RUN rm /tmp/cmake-install.sh
 RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
 
 # Set the working directory
-WORKDIR /20xt_ws/
+WORKDIR /20xt_ws/build
 
 # Start the workspace
 CMD ["/bin/bash"]
