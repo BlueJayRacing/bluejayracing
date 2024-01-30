@@ -8,6 +8,7 @@
 #include "helpers/ipc_config.h"
 #include "helpers/live_comm_factory.h"
 
+static Observation* remainder_data = nullptr;
 
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
 int main()
@@ -30,18 +31,29 @@ int main()
     }
   }
 
-  // We're using POSIX queues, so sending a message is NOT STATELESS. Use the remainder to
-  // store the data which we couldn't send in the previous iteration (but had to dequeue)
-  Observation remainder;
+  // We're using POSIX queues, so sending a message is NOT STATELESS
   while (true) {
+    usleep(1000000);
     std::cout << "transmit prioritizer running..." << std::endl;
-    usleep(100000);
-    std::string msg = build_message(&remainder, remainder, data_queues);
+    std::string msg = build_message(data_queues);
+    if (msg.empty()) {
+      continue;
+    }
+
+    // DEBUG
+    std::cout << "built and enqueuing message of size " << msg.size() << std::endl;
+    LiveComm live_comm;
+    live_comm.ParseFromString(msg);
+    std::cout << live_comm.DebugString() << std::endl;
+    // END DEBUG
 
     int result = StationIPC::send_message(radio_queue, msg);
     if (result == StationIPC::QUEUE_FULL) {
       StationIPC::get_message(radio_queue);
-      StationIPC::send_message(radio_queue, msg);
+      result = StationIPC::send_message(radio_queue, msg);
+    }
+    if (result == StationIPC::SEND_ERROR) {
+      std::cerr << "Could not enqeue message" << std::endl;
     }
   }
 
@@ -49,34 +61,40 @@ int main()
 }
 
 // Prioritization logic can go in here
-std::string build_message(Observation* remainder_buffer, const Observation& starter, const std::vector<mqd_t> &data_queues)
+std::string build_message(const std::vector<mqd_t> &data_queues)
 {
-  // Starting message
   LiveCommFactory factory = LiveCommFactory();
-  factory.add_observation(starter);
-  std::string valid_msg = factory.get_live_comm().SerializeAsString();
+  std::string valid_msg = "";
+
+  // One entry, we should consume the left over data
+  if (remainder_data != nullptr) {
+    factory.add_observation(*remainder_data);
+    remainder_data = nullptr;
+    valid_msg = factory.get_live_comm().SerializeAsString();
+  }
 
   // Keep adding to the message
-  Observation data;
-  int latest_queue = 0;
-
+  int previous_queue = 0;
   while (true) {
-    latest_queue = get_next_data(&data, latest_queue, data_queues);
-    if (latest_queue == -1) {
-      data = Observation();
+    // Collect next data point
+    Observation data;
+    previous_queue = get_next_data(&data, previous_queue, data_queues);
+    if (previous_queue == -1) {
       break;
     }
-    factory.add_observation(data);
 
+    // Attemp to pack the next data point
+    factory.add_observation(data);
     std::string test_message = factory.get_live_comm().SerializeAsString();
     if (!is_valid_radio_message(test_message))
     {
-      break;
+      remainder_data->CopyFrom(data);
+      break; // Could not use dequed data, save for next time
     }
+
+    // This message is valid!
     valid_msg = test_message;
   }
-
-  remainder_buffer->CopyFrom(data);
   return valid_msg;
 }
 
