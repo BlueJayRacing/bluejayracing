@@ -1,0 +1,6 @@
+Transmission speed of Default MTU: 10000 uint8_t values in 1.2 seconds or 8.3 kB/sec - connection breaks down for some reason before 100 seconds
+Transmission speed of Default MTU w/ 1 millisecond delay between writeValue: 10000 uint8_t values in 1.6 seconds or 6.25 kB/sec - does not break down after 100 seconds
+Transmission speed of Default MTU w/ 200 microsecond delay between writeValue: 10000 uint8_t values in 1.4 seconds or 7.142 kB/sec - does break down before 100 seconds
+
+Transmission speed of Default MTU w/ 300 microsecond delay between writeValue: 10000 uint8_t values in 1.45 seconds or 6.9 kB/sec - does not break down after 200 seconds
+
