@@ -16,7 +16,7 @@ int main() {
   Connection* conn = new XBeeConnection();
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    usleep(100000);
     err = conn->open(); // can try again
   }
   if (err == Connection::IRRECOVERABLE_ERROR) {
@@ -64,7 +64,7 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
   // If full recoverable, wait only once
   int err = conn->send(msg);
   for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
-    std::this_thread::sleep_for(std::chrono::microseconds(1));
+   usleep(100000);
     err = conn->send(msg);
     iter++;
   }
