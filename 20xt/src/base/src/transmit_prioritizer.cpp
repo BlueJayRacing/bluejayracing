@@ -61,7 +61,7 @@ int main()
 }
 
 // Prioritization logic can go in here
-std::string build_message(const std::vector<mqd_t> &data_queues)
+std::string build_message(const std::vector<mqd_t>& data_queues)
 {
   LiveCommFactory factory = LiveCommFactory();
   std::string valid_msg = "";
