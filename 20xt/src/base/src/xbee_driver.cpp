@@ -1,7 +1,5 @@
 #include <string>
 #include <iostream>
-#include <thread>
-#include <chrono>
 #include <mqueue.h>
 #include <unistd.h>
 
@@ -32,7 +30,7 @@ int main() {
   const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
 
   while (true) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    usleep(100000);
     std::cout << "xbee driver listening..." << std::endl;
 
     // Send

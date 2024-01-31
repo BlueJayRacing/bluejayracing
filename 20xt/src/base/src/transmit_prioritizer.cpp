@@ -33,7 +33,7 @@ int main()
 
   // We're using POSIX queues, so sending a message is NOT STATELESS
   while (true) {
-    usleep(1000000);
+    usleep(100000);
     std::cout << "transmit prioritizer running..." << std::endl;
     std::string msg = build_message(data_queues);
     if (msg.empty()) {
