@@ -22,8 +22,19 @@ RUN /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-$CMAKE_VERSION
 RUN rm /tmp/cmake-install.sh
 RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
 
-# Set the working directory
-WORKDIR /20xt_ws/build
+# Set up build and run scripts
+WORKDIR /20xt_ws/
+
+RUN printf "#!/bin/bash \
+\ncmake -S /20xt_ws/src/base/ -B ./bin/ \
+\ncmake --build ./bin/ \n" > ./build.sh
+
+RUN printf "#!/bin/bash \
+\n ./bin/data_logger > output.txt \
+\n  \n" > ./run_programs.sh
+
+RUN printf "#!/bin/bash" > ./run_tests.sh
 
 # Start the workspace
 CMD ["/bin/bash"]
+

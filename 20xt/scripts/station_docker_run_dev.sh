@@ -12,7 +12,7 @@ fi
 if ! docker ps | grep -q station_docker; then
     docker run \
         -id \
-        --mount type=bind,source=$SCRIPTPATH/../.station_build_cache,target=/20xt_ws/build \
+        --mount type=bind,source=$SCRIPTPATH/../.station_build_cache,target=/20xt_ws/bin \
         --mount type=bind,source=$SCRIPTPATH/../src,target=/20xt_ws/src \
         -it --device=/dev/ttyS0 \
         station_docker > /dev/null
