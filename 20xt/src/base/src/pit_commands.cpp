@@ -7,4 +7,5 @@
 
 // We want to produce a series of dummy Communcation values to the TX queue
 int main () {
+  std::cout << "pit commands not implemented" << std::endl;
 }

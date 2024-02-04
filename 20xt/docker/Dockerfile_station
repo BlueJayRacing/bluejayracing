@@ -2,7 +2,7 @@ FROM debian:latest
 
 # Update package lists
 RUN apt update && \
-    apt-get install -y build-essential git curl software-properties-common lsb-release make protobuf-compiler
+    apt-get install -y build-essential git curl software-properties-common lsb-release make protobuf-compiler procps
 
 RUN apt-get update && \
     apt-get upgrade -y
@@ -12,7 +12,7 @@ ENV CMAKE_VERSION=3.28.1
 RUN apt-get remove --purge --auto-remove -y cmake
 RUN apt-get update && \
     apt-get -y install build-essential wget
-
+ 
 RUN rm -rf /var/lib/apt/lists/*
 RUN wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-aarch64.sh \
       -q -O /tmp/cmake-install.sh
@@ -22,18 +22,33 @@ RUN /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-$CMAKE_VERSION
 RUN rm /tmp/cmake-install.sh
 RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
 
-# Set up build and run scripts
+# Workspace setup
 WORKDIR /20xt_ws/
+RUN mkdir logs
 
+# We want script for automatically building
 RUN printf "#!/bin/bash \
 \ncmake -S /20xt_ws/src/base/ -B ./bin/ \
-\ncmake --build ./bin/ \n" > ./build.sh
+\ncmake --build ./bin/ \n" > ./build_all.sh && chmod +x ./build_all.sh
+
+# We want a script for launching all programs and logging
+RUN printf "#!/bin/bash \n\
+pkill -f data_logger \n\
+pkill -f receive_dispatcher \n\
+pkill -f transmit_prioritizer \n\
+pkill -f xbee_driver \n\
+pkill -f pit_commands \n" > ./kill_programs.sh && chmod +x ./kill_programs.sh
 
 RUN printf "#!/bin/bash \
-\n ./bin/data_logger > output.txt \
-\n  \n" > ./run_programs.sh
+\n ./kill_programs.sh\
+\n bin/data_logger          > '$(date +logs/%Y-%m-%d_%H-%M-%S_data_logger.txt)' 2>&1 & \
+\n bin/receive_dispatcher   > '$(date +logs/%Y-%m-%d_%H-%M-%S_receive_dispatcher.txt)' 2>&1 & \
+\n bin/transmit_prioritizer > '$(date +logs/%Y-%m-%d_%H-%M-%S_transmcit_prioritizer.txt)' 2>&1 & \
+\n bin/xbee_driver          > '$(date +logs/%Y-%m-%d_%H-%M-%S_xbee_driver.txt)' 2>&1 & \
+\n bin/pit_commands \
+\n  \n" > ./run_programs.sh && chmod +x ./run_programs.sh
 
-RUN printf "#!/bin/bash" > ./run_tests.sh
+RUN printf "#!/bin/bash" > ./run_tests.sh && chmod +x ./run_tests.sh
 
 # Start the workspace
 CMD ["/bin/bash"]
