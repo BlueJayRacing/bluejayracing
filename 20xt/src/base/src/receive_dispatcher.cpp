@@ -11,6 +11,7 @@
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
 int main()
 {
+  std::cout << "starting receive dispatcher" << std::endl;
   // Open the queues
   const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
   if (radio_rx_queue == -1) {
@@ -32,7 +33,6 @@ int main()
   // Main loop
   while (true) {
     usleep(100000);
-    std::cout << "dispatcher running..." << std::endl;
     try_dispatch_recieved_data(radio_rx_queue, subscribed_rx_queues);
   }
   return 0;

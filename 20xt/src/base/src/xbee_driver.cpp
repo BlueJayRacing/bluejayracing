@@ -11,6 +11,7 @@
 const static int MAX_SEND_RETRIES = 2;
 
 int main() {
+  std::cout << "starting xbee driver..." << std::endl;
   
   // Open the Xbee connection
   Connection* conn = new XBeeConnection();
@@ -31,8 +32,6 @@ int main() {
 
   while (true) {
     usleep(100000);
-    std::cout << "xbee driver listening..." << std::endl;
-
     // Send
     err = _try_transmit_data(conn, tx_queue);
     if (err == EXIT_FAILURE) {

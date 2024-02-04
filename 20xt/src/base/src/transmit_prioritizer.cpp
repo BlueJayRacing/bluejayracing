@@ -13,6 +13,8 @@ static Observation* remainder_data = nullptr;
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
 int main()
 {
+  std::cout << "starting transmit prioritizer" << std::endl;
+  
   // Open queues
   const mqd_t radio_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
   if (radio_queue == -1) {
@@ -34,7 +36,6 @@ int main()
   // We're using POSIX queues, so sending a message is NOT STATELESS
   while (true) {
     usleep(100000);
-    std::cout << "transmit prioritizer running..." << std::endl;
     std::string msg = build_message(data_queues);
     if (msg.empty()) {
       continue;

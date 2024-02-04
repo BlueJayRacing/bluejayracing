@@ -8,6 +8,8 @@
 
 // An infinite loop which attempts to read bytes from an ipc queue
 int main() {
+  std::cout << "starting data logger..." << std::endl;
+  
   // Open queue
   int rx_queue = StationIPC::open_queue(StationIPC::LOGGER_RX_QUEUE);
   if (rx_queue == -1) {
@@ -18,7 +20,6 @@ int main() {
   // Main loop
   while (true) {
     usleep(100000);
-    std::cout << "data logger is running..." << std::endl;
     std::string msg = StationIPC::get_message(rx_queue);
     if (msg == "") {
       continue;
