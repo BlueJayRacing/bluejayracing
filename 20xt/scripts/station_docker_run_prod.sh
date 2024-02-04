@@ -18,4 +18,11 @@ if ! docker ps | grep -q station_docker; then
         station_docker > /dev/null
 fi
 
-docker container exec -it $(docker ps | grep station_docker | awk '{print $NF}') /bin/bash -c "echo Launching Container!; echo; ./run_programs.sh; exec bash"
+docker container exec -it $(docker ps | grep station_docker | awk '{print $NF}') /bin/bash -c "\
+    echo 'Launching container and building...'; \
+    ./build_all.sh; \
+    echo; \
+    echo 'starting applications in background...'; \
+    echo; \
+    ./run_programs.sh; \
+    exec bash"
