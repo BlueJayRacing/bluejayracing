@@ -7,11 +7,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-humble-perception=0.10.0-1* \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install sudo
+RUN apt-get update && apt-get install -y sudo python3-pip
 
 ARG USER=dock
+ARG PASSWD=dock
 
-RUN useradd -d /home/$USER -m -s /bin/bash $USER && echo "$USER:$USER" | chpasswd && adduser $USER sudo
+RUN useradd -d /home/$USER -m -s /bin/bash $USER && echo "$USER:$PASSWD" | chpasswd && adduser $USER sudo
 
 
 
@@ -19,13 +20,11 @@ RUN mkdir -p 20xt_ws/src
 
 RUN chown -R dock:dock 20xt_ws
 
+RUN echo "dock ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
 USER dock
 
 RUN touch ~/.sudo_as_admin_successful
-    
-
-
-# RUN setfacl -m u:username:rwx myfolder
 
 RUN chmod -R +rwx 20xt_ws
 
@@ -35,8 +34,24 @@ RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
     rosdep install -i --from-path src --rosdistro humble -y && \
     colcon build
 
+RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd 20xt_ws && \
+    git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup && \
+    sudo apt-get update && \
+    rosdep update && \
+    rosdep install --from-paths src --ignore-src -y
+    
+RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd 20xt_ws && \
+    colcon build && \
+    source /20xt_ws/install/setup.bash && \
+    ros2 run micro_ros_setup create_firmware_ws.sh host && \
+    ros2 run micro_ros_setup build_firmware.sh && \
+    ros2 run micro_ros_setup create_agent_ws.sh && \
+    ros2 run micro_ros_setup build_agent.sh'
+    
+
 RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
-# RUN echo 'bash /ros_entrypoint.sh' >> /home/$USER/.bashrc
 
 
 
