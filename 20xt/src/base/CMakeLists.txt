@@ -27,6 +27,18 @@ target_link_libraries(test_produce_pit_commands
     PUBLIC baja_proto    
 )
 
+add_executable(test_stress_rx_dispatcher tests/test_stress_rx_dispatcher.cpp ${HELPER_SOURCES})
+target_link_libraries(test_stress_rx_dispatcher
+    PUBLIC xbee_baja
+    PUBLIC baja_proto    
+)
+
+add_executable(test_stress_tx_prioritizer tests/test_stress_tx_prioritizer.cpp ${HELPER_SOURCES})
+target_link_libraries(test_stress_tx_prioritizer
+    PUBLIC xbee_baja
+    PUBLIC baja_proto    
+)
+
 # PIT COMMANDS
 add_executable(pit_commands src/pit_commands.cpp ${HELPER_SOURCES})
 target_link_libraries(pit_commands 

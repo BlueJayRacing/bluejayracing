@@ -12,8 +12,7 @@
 // sends 100 byte messages to the radio queue. Intended to stress test
 // the XBee
 
-static const std::string TEST_MESSAGE = "This is a 100 byte string yk. It is like writing an essay and trying to get the exact 100 word count"
-static Observation* remainder_data = nullptr;
+static const std::string TEST_MESSAGE = "This is a 100 byte string yk. It is like writing an essay and trying to get the exact 100 word count";
 
 int main()
 {

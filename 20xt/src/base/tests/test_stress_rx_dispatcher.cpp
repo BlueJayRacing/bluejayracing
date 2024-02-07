@@ -29,7 +29,7 @@ int main()
     std::string msg = StationIPC::get_message(radio_rx_queue);
     bytes_read_this_window += msg.size();
 
-    time_elapsed = std::chrono::high_resolution_clock::now() - start;
+    auto time_elapsed = std::chrono::high_resolution_clock::now() - start;
     if (time_elapsed.count() >= 30.0) {
       std::cout << bytes_read_this_window << "bytes read in last 30 seconds"  << std::endl;
       bytes_read_this_window = 0;
