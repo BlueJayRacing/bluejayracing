@@ -1,0 +1,11 @@
+Format:              Position | Velocity | Acceleration
+Estimates for time 1:   0.5, 1, 1, 
+Estimates for time 2:   2, 2, 1, 
+Estimates for time 3:   4.5, 3, 1, 
+Estimates for time 4:   8, 4, 1, 
+Estimates for time 5:   12.5, 5, 1, 
+Estimates for time 6:   18, 6, 1, 
+Estimates for time 7:   24.5, 7, 1, 
+Estimates for time 8:   32, 8, 1, 
+Estimates for time 9:   40.5, 9, 1, 
+Estimates for time 10:   50, 10, 1, 
