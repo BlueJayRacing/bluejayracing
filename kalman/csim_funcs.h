@@ -9,6 +9,7 @@
 #include <iostream>
 #include <fstream>
 #include <random>
+#include <sstream>
 #include <string>
 #include <eigen3/Eigen/Dense>
 #include <vector>
@@ -30,11 +31,32 @@ using Eigen::aligned_allocator;
 class Filter {
 
     public:
+
+    void cycleXest(int n);
+
+    void cyclePCov(int n);
+
+    void cycleK(int n);
+
+    void cyclePost(int n);
+
+    void cycleX(int n);
     
     void mainLoop(int n);
 
-    Filter(int dimensions[], vector<double> initial);
+    Filter(int dimensions[], vector<double> initial, MatrixXd a, MatrixXd b, MatrixXd h, MatrixXd p, MatrixXd q, MatrixXd r);
+
+    VectorXd getx(int n) {return x[n];}
+    VectorXd getxest(int n) {return xest[n];}
+
+    void setY(int n, int i, double y) {Y[n][i] = y;}
+    void setU(int n, int i, double u) {U[n][i] = u;}
+
+    void setInputs(std::istringstream * ss1, std::istringstream * ss2, int n);
+
+
     
+    private:
 
     int dm;
 

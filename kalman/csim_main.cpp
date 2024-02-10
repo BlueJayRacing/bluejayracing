@@ -1,6 +1,5 @@
 #include <cstdio>
 //#include <eigen3/Eigen/src/Core/Matrix.h>
-
 #include <iostream>
 #include <fstream>
 #include <random>
@@ -38,61 +37,59 @@ int main(int argc, char** argv ) {
     int dm = 3;  //dimension count, can change for later
     int m = 1;
     int u = 1;
+    int dim[] = {dm, m, u}; //list of dimensions
 
     std::default_random_engine rgen;
-    std::normal_distribution<double> normal(0,1); //setting up random normal
+    std::normal_distribution<double> normal(0,1); //setting up random normal (if we need it)
 
-    int a[] = {dm, m, u}; //list of dimensions
     vector<double> initial = {0,0,1};
+
+    Eigen::MatrixXd a {{1,1,.5},
+                    {0,1,1},
+                    {0,0,1}};
+
+    Eigen::MatrixXd b(dm, u);
+    b << .5,1,1;
+
+    Eigen::MatrixXd h(m, dm); 
+    h << 0,0,1;
+
+    Eigen::MatrixXd p {{1,0,0},
+                    {0,1,0},
+                    {0,0,.0025}};
+
+    MatrixXd q = MatrixXd::Identity(dm, dm)*.0025;
+
+    MatrixXd r = MatrixXd::Identity(m, m)*.0025;
+
     
-    Filter f_nep(a, initial);
-    (f_nep.Y).push_back(VectorXd(m));
-    (f_nep.U).push_back(VectorXd(u));
-    for (int j=0; j<m; j++) 
-        f_nep.Y[0](j) = 0;
-    for (int j=0; j<u; j++) 
-        f_nep.U[0](j) = 0;
+    Filter f_nep(dim, initial, a, b, h, p, q, r);
+
+
 
     int n = 1;
     string line;
     string line2;
-
     out << "Format:              Position | Velocity | Acceleration\n";
-
     while (std::getline(measures, line) && std::getline(controls, line2)) {
 
         //cout << line << endl << line2 << endl;
         std::istringstream iss(line);
         std::istringstream iss2(line2);
-        string word;
-        int i=0;
-        (f_nep.Y).push_back(VectorXd(m));
-        (f_nep.U).push_back(VectorXd(u));
-
-        while(iss >> word)          //measurements into Y[n]
-        {
-            //cout << "scanning in element " << word << endl;
-            f_nep.Y[n](i++) = stod(word);
-        }
-        i = 0;
-        while(iss2 >> word)         //controls into U[n]
-            f_nep.U[n](i++) = stod(word);
-        //cout << f_nep.Y[n] << "    " << f_nep.U[n] << endl;
-
+        f_nep.setInputs(&iss, &iss2, n);
 
         f_nep.mainLoop(n);
-
 
         //below part is printing the values at each spot: completely optional and not entirely set up.
         out << "Estimates for time " << n << ":   ";
         for (int i=0; i<dm; i++)
-            out << f_nep.x[n](i) << ", ";//write estimates to file here
+            out << f_nep.getx(n)(i) << ", ";//write estimates to file here
         out << endl;
         preout << "Predictions for time " << n << ":   ";
         for (int i=0; i<dm; i++)
-            preout << f_nep.xest[n](i) << ", ";//write predictions to file here
+            preout << f_nep.getxest(n)(i) << ", ";//write predictions to file here
         preout << endl;
-        
+
         n++;
     }
     return 0;
