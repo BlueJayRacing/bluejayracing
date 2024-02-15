@@ -7,16 +7,15 @@
 #include "helpers/ipc_config.h"
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
+#include "xbee/xbee_baja_serial_config.h"
 
-#define XBEE_DRIVER_MAX_SEND_RETRIES = 2;
-
-static const std::string LINUX_SERIAL_DEVICE_ID = "/dev/ttyS0";
+#define XBEE_DRIVER_MAX_SEND_RETRIES 2
 
 int main() {
   std::cout << "starting xbee driver..." << std::endl;
   
   // Open the Xbee connection
-  Connection* conn = new XBeeConnection();
+  Connection* conn = new XBeeConnection(XbeeBajaSerialConfig::STATION_DEVICE, XbeeBajaSerialConfig::BAUDRATE);
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
     usleep(100000);
@@ -54,6 +53,7 @@ int main() {
   return EXIT_SUCCESS;
 }
 
+/* Makes best effort to send a message if messages are available (retries on failure) */
 int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
   std::string msg = StationIPC::get_message(tx_queue);
@@ -64,7 +64,7 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
   // If full recoverable, wait only once
   int err = conn->send(msg);
-  for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
+  for (int iter = 2; iter <= XBEE_DRIVER_MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
    usleep(100000);
     err = conn->send(msg);
     iter++;
@@ -93,7 +93,7 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
   return EXIT_SUCCESS;
 }
 
-
+/* Attmepts to recieve data, dispatches if data available */
 int _try_recieve_data(Connection* conn, const mqd_t rx_queue) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
