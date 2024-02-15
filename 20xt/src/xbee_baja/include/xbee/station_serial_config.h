@@ -1,6 +1,8 @@
 #ifndef STATION_SERIAL_XBEE_CONFIG_H
 #define STATION_SERIAL_XBEE_CONFIG_H
 
+
+// TODO: Turn this into a portable xbee_serial_config.h instead
   namespace StationSerialXbeeConfig {
     static const int XBEE_BAJA_BAUDRATE = 921600;
     static const int XBEE_BAJA_PARITY = 0;

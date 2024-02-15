@@ -8,7 +8,9 @@
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
 
-const static int MAX_SEND_RETRIES = 2;
+#define XBEE_DRIVER_MAX_SEND_RETRIES = 2;
+
+static const std::string LINUX_SERIAL_DEVICE_ID = "/dev/ttyS0";
 
 int main() {
   std::cout << "starting xbee driver..." << std::endl;

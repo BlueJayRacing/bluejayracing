@@ -26,6 +26,9 @@ RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
 WORKDIR /20xt_ws/
 RUN mkdir logs
 
+# TODO: write these scripts in the /scripts/ directory and
+# have them copied into the docker
+
 # We want script for automatically building
 RUN printf "#!/bin/bash \
 \ncmake -S /20xt_ws/src/base/ -B ./bin/ \

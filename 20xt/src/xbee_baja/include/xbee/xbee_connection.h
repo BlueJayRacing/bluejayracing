@@ -12,6 +12,8 @@ extern "C" {
   #include "platform_config.h"
 }
 
+// TODO: modify the class such that you must pass in
+// the serial device
 class XBeeConnection : public Connection {
 public:
   XBeeConnection();
@@ -21,6 +23,7 @@ public:
   bool is_open() const override; // Check if this object is open
   void close() override; // Disconnect from XBee device abstraction
 
+  // TODO: add code contracts to these functions
   Status tx_status() override; // Status of last transmission/connection
   Status send(const std::string msg) override;
 
