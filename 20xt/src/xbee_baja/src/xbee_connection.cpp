@@ -68,7 +68,7 @@ Connection::Status XBeeConnection::tx_status()
 
 Connection::Status XBeeConnection::send(const std::string msg)
 {
-  if (msg.length() > XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE)
+  if (msg.length() > XBEE_BAJA_MAX_PAYLOAD_SIZE)
   {
     return MSG_TOO_LARGE;
   }

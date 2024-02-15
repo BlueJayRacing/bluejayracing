@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 
+// These are firmware settings found in the Xbee
 #define XBEE_BAJA_MAX_PAYLOAD_SIZE 100
 #define XBEE_BAJA_CM = 0x3FFFFFFFFFFFF;
 #define XBEE_BAJA_HP 0
