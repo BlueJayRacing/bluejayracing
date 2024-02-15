@@ -1,26 +1,22 @@
 #ifndef XBEE_BAJA_NETWORK_CONFIGS_H
 #define XBEE_BAJA_NETWORK_CONFIGS_H
 
-// TODO: Turn these into defines for faster runtime
-namespace XbeeBajaNetworkConfig {
-  // TODO: Break these configs into serial & network config headers
-  struct cmd {
-  const char* name;
-  const int value;
-  };
+#include <string>
+#include <map>
 
-  static const long XBEE_BAJA_CM = 0x3FFFFFFFFFFFF; // Channel mask
-  static const int MAX_PAYLOAD_SIZE = 100; // bytes
+#define XBEE_BAJA_MAX_PAYLOAD_SIZE 100
+#define XBEE_BAJA_CM = 0x3FFFFFFFFFFFF;
+#define XBEE_BAJA_HP 0
+#define XBEE_BAJA_TX 2
+#define XBEE_BAJA_BR 1
+#define XBEE_BAJA_AP 1
+#define XBEE_BAJA_ID 2015
+#define XBEE_BAJA_MT 0
 
-  static const struct cmd XBEE_BAJA_CONFIGS[] = {
-  {"HP", 0},
-  {"TX", 2},
-  {"BR", 1},
-  {"AP", 1},
-  {"ID", 2015},
-  {"MT", 0},
-  {"NP", 100},
+namespace XbeeBajaSerialConfig {
+  static const int BAUDRATE = 921600;
+  static const char* STATION_DEVICE = "/dev/ttyUSB0";
+  static const char* CAR_DEVICE = "PUT CAR DEVICE HERE";
 };
-}
 
 #endif
