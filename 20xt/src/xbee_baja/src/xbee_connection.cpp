@@ -14,7 +14,8 @@ extern "C"
 #include "platform_config.h"
 }
 
-XBeeConnection::XBeeConnection()
+XBeeConnection::XBeeConnection(const std::string serial_device, const int baudrate)
+  : serial_device(serial_device), baudrate(baudrate)
 {
   // Frame handlers must be dynamically allocated so that
   // the xbee library can access them
@@ -215,7 +216,7 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
 
 Connection::Status XBeeConnection::init_baja_xbee()
 {
-  this->serial = XBeeConnection::init_serial();
+  this->serial = XBeeConnection::init_serial(this->serial_device, this->baudrate);
 
   int err = xbee_dev_init(&xbee, &serial, NULL, NULL, xbee_frame_handlers);
   if (err)
@@ -259,18 +260,18 @@ Connection::Status XBeeConnection::init_baja_xbee()
   return SUCCESS;
 }
 
-xbee_serial_t XBeeConnection::init_serial()
+xbee_serial_t XBeeConnection::init_serial(const std::string serial_device, const int baudrate)
 {
   // We want to start with a clean slate
   xbee_serial_t serial;
   std::memset(&serial, 0, sizeof(serial));
 
   // Set the baudrate and device ID.
-  serial.baudrate = StationSerialXbeeConfig::XBEE_BAJA_BAUDRATE;
+  serial.baudrate = baudrate;
 
   std::strncpy(
     serial.device,
-    StationSerialXbeeConfig::LINUX_SERIAL_DEVICE_ID.c_str(),
+    serial_device.c_str(),
     sizeof(serial.device)
   );
   return serial;
