@@ -39,7 +39,7 @@ int main()
 }
 
 
-// Dispatch the data recieved over radio
+/* Check the radio rx queue for incoming data, copy and dispatch to subscribers */
 void try_dispatch_recieved_data(const mqd_t& radio_rx_queue, const std::vector<mqd_t> &ipc_rx_queues)
 {
   std::string msg = StationIPC::get_message(radio_rx_queue);
