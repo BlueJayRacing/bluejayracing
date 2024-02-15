@@ -26,7 +26,7 @@ RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
 WORKDIR /20xt_ws/
 RUN mkdir logs
 
-# TODO: copy the build scripts from ../scripts to /20xt_ws/
+# Copy the build scripts from ../scripts to /20xt_ws/
 COPY ./station_proc* /20xt_ws/
 
 
