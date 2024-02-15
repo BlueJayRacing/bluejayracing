@@ -14,10 +14,6 @@
 #define XBEE_BAJA_ID 2015
 #define XBEE_BAJA_MT 0
 
-namespace XbeeBajaSerialConfig {
-  static const int BAUDRATE = 921600;
-  static const char* STATION_DEVICE = "/dev/ttyUSB0";
-  static const char* CAR_DEVICE = "PUT CAR DEVICE HERE";
-};
+
 
 #endif
