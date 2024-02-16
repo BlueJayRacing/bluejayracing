@@ -13,15 +13,15 @@ int main()
 {
   std::cout << "starting receive dispatcher" << std::endl;
   // Open the queues
-  const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
+  const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, true);
   if (radio_rx_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
   const std::vector<mqd_t> subscribed_rx_queues = {
-    StationIPC::open_queue(StationIPC::LOGGER_RX_QUEUE),
-    StationIPC::open_queue(StationIPC::SIMULATION_RX_QUEUE),
+    StationIPC::open_queue(StationIPC::LOGGER_RX_QUEUE, false),
+    StationIPC::open_queue(StationIPC::SIMULATION_RX_QUEUE, false),
   };
   for (int i = 0; i < subscribed_rx_queues.size(); i++) {
     if (subscribed_rx_queues[i] == -1) {
@@ -31,9 +31,9 @@ int main()
   }
   
   // Main loop
+  std::cout << "entering main loop..." << std::endl;
   while (true) {
-    usleep(100000);
-    try_dispatch_recieved_data(radio_rx_queue, subscribed_rx_queues);
+    try_dispatch_recieved_data(radio_rx_queue, subscribed_rx_queues); // Blocking
   }
   return 0;
 }
@@ -42,7 +42,7 @@ int main()
 /* Check the radio rx queue for incoming data, copy and dispatch to subscribers */
 void try_dispatch_recieved_data(const mqd_t& radio_rx_queue, const std::vector<mqd_t> &ipc_rx_queues)
 {
-  std::string msg = StationIPC::get_message(radio_rx_queue);
+  std::string msg = StationIPC::get_message(radio_rx_queue); // Blocking
   if (msg == "") {
     return;
   }
