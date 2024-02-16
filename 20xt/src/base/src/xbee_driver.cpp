@@ -28,8 +28,8 @@ int main() {
   std::cout << "Xbee connection initialized" << std::endl;
 
   // Open the IPC queues
-  const mqd_t tx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
-  const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
+  const mqd_t tx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
+  const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
 
   while (true) {
     usleep(100000);

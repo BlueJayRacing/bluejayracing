@@ -13,7 +13,7 @@ int main()
 {
   std::cout << "starting receive dispatcher" << std::endl;
   // Open the queues
-  const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
+  const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
   if (radio_rx_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;

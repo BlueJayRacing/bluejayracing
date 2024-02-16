@@ -19,7 +19,7 @@ Observation get_dummy_observation() {
 // We want to produce a series of dummy Communcation values to the TX queue
 int main () {
   // Open the message queue, return if it fails
-  mqd_t rx_queue = StationIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE);
+  mqd_t rx_queue = StationIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE, false);
   if (rx_queue == -1) {
     std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
