@@ -4,7 +4,6 @@
 #include <string>
 #include "xbee/xbee_connection.h"
 #include "xbee/xbee_baja_network_config.h"
-#include "xbee/station_serial_config.h"
 
 extern "C"
 {

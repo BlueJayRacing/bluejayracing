@@ -1,7 +1,4 @@
 Instructions for station:
 `./station_docker_run_dev.sh`
-
-```
-cmake /20xt_ws/src/base/
-cmake --build .
-```
+`./station_proc_build.sh`
+`./station_proc_run.sh`
