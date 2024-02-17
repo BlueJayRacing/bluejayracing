@@ -18,22 +18,20 @@ int main()
   std::cout << "starting stress test prioritzer" << std::endl;
   
   // Open queues
-  const mqd_t radio_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
+  const mqd_t radio_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, true);
   if (radio_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
-  // We're using POSIX queues, so sending a message is NOT STATELESS
+  int i = 0;
   while (true) {
-    int result = StationIPC::send_message(radio_queue, TEST_MESSAGE);
-    if (result == StationIPC::QUEUE_FULL) {
-      StationIPC::get_message(radio_queue);
-      result = StationIPC::send_message(radio_queue, TEST_MESSAGE);
-    }
+    int result = StationIPC::send_message(radio_queue, TEST_MESSAGE); // Blocking
     if (result == StationIPC::SEND_ERROR) {
       std::cerr << "Could not enqeue message" << std::endl;
     }
+    i++;
+    std::cout << "Sent message " << i << std::endl;
   }
 
   return EXIT_SUCCESS;

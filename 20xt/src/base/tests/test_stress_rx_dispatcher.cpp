@@ -17,7 +17,7 @@ int main()
 {
   std::cout << "starting receive dispatcher" << std::endl;
   // Open the queues
-  const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
+  const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, true);
   if (radio_rx_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
@@ -28,7 +28,7 @@ int main()
   auto start = std::chrono::high_resolution_clock::now();
 
   while (true) {
-    std::string msg = StationIPC::get_message(radio_rx_queue);
+    std::string msg = StationIPC::get_message(radio_rx_queue); // blocking
     bytes_read_this_window += msg.size();
 
     auto time_elapsed = std::chrono::high_resolution_clock::now() - start;
