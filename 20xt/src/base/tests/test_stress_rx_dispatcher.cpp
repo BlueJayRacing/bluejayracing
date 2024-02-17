@@ -11,6 +11,8 @@
 // This is the recieve logic for stress testing the XBee. It mocks
 // the rx dispatching program
 
+/* This program mocks the rx dispatching program, and serves as the
+  receive logic for stress testing the Xbee. */
 int main()
 {
   std::cout << "starting receive dispatcher" << std::endl;

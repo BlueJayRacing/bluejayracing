@@ -8,12 +8,11 @@
 #include "helpers/ipc_config.h"
 #include "helpers/live_comm_factory.h"
 
-// Use this process to mock the transmit prioritizer program. Always
-// sends 100 byte messages to the radio queue. Intended to stress test
-// the XBee
 
 static const std::string TEST_MESSAGE = "This is a 100 byte string yk. It is like writing an essay and trying to get the exact 100 word count";
 
+/* This process mocks the transmit_prioritizer program. Always sends 100 byte messages
+  to the radio transmit queue. Intended to be used to stress test the Xbee */
 int main()
 {
   std::cout << "starting stress test prioritzer" << std::endl;
