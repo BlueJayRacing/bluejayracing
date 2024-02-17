@@ -27,18 +27,15 @@ int main()
   int bytes_read_this_window;
   auto start = std::chrono::high_resolution_clock::now();
 
-  int msg_num = 0;
+  int WINDOW_SIZE = 5;
   while (true) {
     std::string msg = StationIPC::get_message(radio_rx_queue); // blocking
-    
-    msg_num++;
-    std::cout << "Received message " << msg_num << std::endl;
     bytes_read_this_window += msg.size();
 
     auto time_elapsed = std::chrono::high_resolution_clock::now() - start;
     auto time_elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(time_elapsed).count();
-    if (time_elapsed_seconds >= 30) {
-      std::cout << bytes_read_this_window << " bytes read in last 30 seconds"  << std::endl;
+    if (time_elapsed_seconds >= WINDOW_SIZE) {
+      std::cout << "Received at rate of " << bytes_read_this_window / WINDOW_SIZE << " bytes/second" << std::endl;
       bytes_read_this_window = 0;
       start = std::chrono::high_resolution_clock::now();
     }
