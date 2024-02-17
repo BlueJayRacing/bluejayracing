@@ -5,7 +5,7 @@
 
 namespace XbeeBajaSerialConfig {
   static const int BAUDRATE = 921600;
-  static const std::string STATION_DEVICE = "/dev/ttyUSB0";
+  static const std::string STATION_DEVICE = "/dev/ttyS0";
   static const std::string CAR_DEVICE = "PUT CAR DEVICE HERE";
 };
 
