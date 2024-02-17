@@ -23,10 +23,7 @@ int main() {
     if (msg == "") {
       continue;
     }
-
-    Observation data;
-    data.ParseFromString(msg); 
-    std::cout << "Recieved data: " << data.DebugString() << std::endl;
+    
     LiveComm live_comm;
     live_comm.ParseFromString(msg);
     std::cout << live_comm.DebugString() << std::endl;
