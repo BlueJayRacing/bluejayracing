@@ -39,5 +39,6 @@ int main()
       bytes_read_this_window = 0;
       start = std::chrono::high_resolution_clock::now();
     }
+  }
   return 0;
 }
