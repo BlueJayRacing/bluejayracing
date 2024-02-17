@@ -18,8 +18,8 @@ XBeeConnection::XBeeConnection(const std::string serial_device, const int baudra
 {
   // Frame handlers must be dynamically allocated so that
   // the xbee library can access them
-  rx_queue = new std::queue<std::string>();
-  xbee_frame_handlers = new xbee_dispatch_table_entry_t[] {
+  this->rx_queue = new std::queue<std::string>();
+  this->xbee_frame_handlers = new xbee_dispatch_table_entry_t[] {
     {XBEE_FRAME_TRANSMIT_STATUS, 0, &XBeeConnection::tx_status_handler, this},
     {XBEE_FRAME_RECEIVE, 0, &XBeeConnection::receive_handler, this},
     XBEE_FRAME_HANDLE_LOCAL_AT,
@@ -29,14 +29,14 @@ XBeeConnection::XBeeConnection(const std::string serial_device, const int baudra
 
 XBeeConnection::~XBeeConnection()
 {
-  delete rx_queue;
-  delete xbee_frame_handlers;
+  delete this->rx_queue;
+  delete this->xbee_frame_handlers;
 }
 
 Connection::Status XBeeConnection::open()
 {
   xbee_dev_t xbee;
-  int err = init_baja_xbee();
+  int err = this->init_baja_xbee();
   if (err != SUCCESS)
   {
     return IRRECOVERABLE_ERROR;
@@ -48,7 +48,7 @@ Connection::Status XBeeConnection::open()
 
 bool XBeeConnection::is_open() const
 {
-  return conn_open;
+  return this->conn_open;
 }
 
 void XBeeConnection::close()
@@ -142,13 +142,13 @@ int XBeeConnection::num_messages_available() const
 
 std::string XBeeConnection::pop_message()
 {
-  if (rx_queue->size() == 0)
+  if (this->rx_queue->size() == 0)
   {
     return NULL;
   }
 
-  std::string msg = rx_queue->front();
-  rx_queue->pop();
+  std::string msg = this->rx_queue->front();
+  this->rx_queue->pop();
   return msg;
 }
 
