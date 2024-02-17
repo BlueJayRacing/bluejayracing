@@ -34,14 +34,14 @@ int main() {
   while (true) {
     usleep(100000);
     // Send
-    err = _try_transmit_data(conn, tx_queue);
+    err = try_transmit_data(conn, tx_queue);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to transmit, exiting" << std::endl;
       return EXIT_FAILURE;
     }
 
     // Recieve
-    err = _try_recieve_data(conn, rx_queue);
+    err = try_recieve_data(conn, rx_queue);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
       return EXIT_FAILURE;
@@ -54,7 +54,7 @@ int main() {
 }
 
 /* Makes best effort to send a message if messages are available (retries on failure) */
-int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
+int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
   std::string msg = StationIPC::get_message(tx_queue);
   if (msg.empty()) {
@@ -94,7 +94,7 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 }
 
 /* Attmepts to recieve data, dispatches if data available */
-int _try_recieve_data(Connection* conn, const mqd_t rx_queue) {
+int try_recieve_data(Connection* conn, const mqd_t rx_queue) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
     if (err == Connection::IRRECOVERABLE_ERROR) {

@@ -123,7 +123,7 @@ Connection::Status XBeeConnection::tick()
   if (err == -EBUSY)
   {
     std::cout << "Could not tick XBee, already being ticked" << std::endl;
-    return IRRECOVERABLE_ERROR;
+    return RECOVERABLE_ERROR;
   }
   if (err == -EIO)
   {
