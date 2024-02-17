@@ -7,6 +7,7 @@
 #include "baja_live_comm.pb.h"
 #include "helpers/ipc_config.h"
 #include "helpers/live_comm_factory.h"
+#include "xbee/xbee_baja_network_config.h"
 
 static Observation* remainder_data = nullptr;
 
@@ -16,15 +17,15 @@ int main()
   std::cout << "starting transmit prioritizer" << std::endl;
   
   // Open queues
-  const mqd_t radio_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
+  const mqd_t radio_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
   if (radio_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
   const std::vector<mqd_t> data_queues = {
-    StationIPC::open_queue(StationIPC::RTK_CORRECTOR_TX_QUEUE),
-    StationIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE),
+    StationIPC::open_queue(StationIPC::RTK_CORRECTOR_TX_QUEUE, false),
+    StationIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE, false),
   };
   for (int i = 0; i < data_queues.size(); i++) {
     if (data_queues[i] == -1) {
@@ -61,7 +62,7 @@ int main()
   return EXIT_SUCCESS;
 }
 
-// Prioritization logic can go in here
+/* Scan through outgoing-data queues and build a payload. Return empty str if not data found */
 std::string build_message(const std::vector<mqd_t>& data_queues)
 {
   LiveCommFactory factory = LiveCommFactory();
@@ -99,8 +100,8 @@ std::string build_message(const std::vector<mqd_t>& data_queues)
   return valid_msg;
 }
 
-// Retrieve an Observation data from the tx queues, if any data available in any queue. Start
-// from the queue after the one which was last used. Return -1 if no data available
+/* Retrieve an Observation data from the tx queues, if any data available in any queue. Start
+   from the queue after the one which was last used. Return -1 if no data available */
 int get_next_data(Observation* data_buffer, const int prev_index, const std::vector<mqd_t> &tx_queues) {
   // We need to try every queue again, with previous index as lowest priority
   for (int i = 1; i <= tx_queues.size(); i++){
@@ -119,7 +120,7 @@ int get_next_data(Observation* data_buffer, const int prev_index, const std::vec
 bool is_valid_radio_message(std::string msg)
 {  
   // Must not be an empty message
-  if (msg.length() == 0 || msg.length() > StationIPC::MAX_RADIO_MSG_SIZE)
+  if (msg.length() == 0 || msg.length() > XBEE_BAJA_MAX_PAYLOAD_SIZE)
   {
     return false;
   }

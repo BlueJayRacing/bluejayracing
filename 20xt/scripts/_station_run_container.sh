@@ -7,6 +7,9 @@ if ! docker images | grep -q station_docker; then
     sh $SCRIPTPATH/station_docker_build.sh
 fi
 
+mkdir -p $SCRIPTPATH/../.station_build_cache
+mkdir -p $SCRIPTPATH/../.station_logs
+
 if ! docker ps | grep -q station_docker; then
     docker run \
         -id \

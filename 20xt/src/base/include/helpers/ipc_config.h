@@ -23,7 +23,7 @@ namespace StationIPC {
 
 
   const int QUEUE_MODE = 0644;
-  const int QUEUE_FLAGS = O_CREAT | O_RDWR | O_NONBLOCK;
+  const int QUEUE_FLAGS = O_CREAT | O_RDWR;
   const mq_attr QUEUE_ATTRIBUTES = {
     .mq_flags = 0,
     .mq_maxmsg = 10,
@@ -32,12 +32,13 @@ namespace StationIPC {
   };
 
   // Return codes detailed in POSIX message queues
-  const mqd_t open_queue(std::string q_fname);
+  const mqd_t open_queue(std::string q_fname, bool blocking);
   const int close_queue(mqd_t qid);
   const int unlink_queue(std::string q_fname);
 
   // Get a message from the queue, return empty string if no message. Non blocking
   const std::string get_message(mqd_t qid);
+  const int num_messages_available(mqd_t qid);
 
   // Send a message to the queue
   enum SendResult {

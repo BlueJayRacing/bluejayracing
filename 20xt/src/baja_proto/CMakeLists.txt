@@ -1,5 +1,7 @@
 # Minimum required CMake version
 cmake_minimum_required(VERSION 3.28)
+project(baja_proto VERSION 1.0.0)
+
 
 # get all of the source and headers by globbing through the src directory
 file(GLOB_RECURSE SOURCES "src/*.cpp")

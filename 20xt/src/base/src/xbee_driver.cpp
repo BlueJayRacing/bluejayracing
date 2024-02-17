@@ -7,14 +7,15 @@
 #include "helpers/ipc_config.h"
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
+#include "xbee/xbee_baja_serial_config.h"
 
-const static int MAX_SEND_RETRIES = 2;
+#define XBEE_DRIVER_MAX_SEND_RETRIES 2
 
 int main() {
   std::cout << "starting xbee driver..." << std::endl;
   
   // Open the Xbee connection
-  Connection* conn = new XBeeConnection();
+  Connection* conn = new XBeeConnection(XbeeBajaSerialConfig::STATION_DEVICE, XbeeBajaSerialConfig::BAUDRATE);
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
     usleep(100000);
@@ -27,20 +28,20 @@ int main() {
   std::cout << "Xbee connection initialized" << std::endl;
 
   // Open the IPC queues
-  const mqd_t tx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
-  const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
+  const mqd_t tx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
+  const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
 
   while (true) {
     usleep(100000);
     // Send
-    err = _try_transmit_data(conn, tx_queue);
+    err = try_transmit_data(conn, tx_queue);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to transmit, exiting" << std::endl;
       return EXIT_FAILURE;
     }
 
     // Recieve
-    err = _try_recieve_data(conn, rx_queue);
+    err = try_recieve_data(conn, rx_queue);
     if (err == EXIT_FAILURE) {
       std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
       return EXIT_FAILURE;
@@ -52,7 +53,8 @@ int main() {
   return EXIT_SUCCESS;
 }
 
-int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
+/* Makes best effort to send a message if messages are available (retries on failure) */
+int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
   std::string msg = StationIPC::get_message(tx_queue);
   if (msg.empty()) {
@@ -62,7 +64,7 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
   // If full recoverable, wait only once
   int err = conn->send(msg);
-  for (int iter = 2; iter <= MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
+  for (int iter = 2; iter <= XBEE_DRIVER_MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
    usleep(100000);
     err = conn->send(msg);
     iter++;
@@ -91,8 +93,8 @@ int _try_transmit_data(Connection* conn, const mqd_t tx_queue) {
   return EXIT_SUCCESS;
 }
 
-
-int _try_recieve_data(Connection* conn, const mqd_t rx_queue) {
+/* Attmepts to recieve data, dispatches if data available */
+int try_recieve_data(Connection* conn, const mqd_t rx_queue) {
   if (conn->num_messages_available() <= 0) {
     int err = conn->tick();
     if (err == Connection::IRRECOVERABLE_ERROR) {

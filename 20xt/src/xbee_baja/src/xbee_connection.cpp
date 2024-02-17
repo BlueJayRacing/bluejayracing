@@ -4,7 +4,6 @@
 #include <string>
 #include "xbee/xbee_connection.h"
 #include "xbee/xbee_baja_network_config.h"
-#include "xbee/station_serial_config.h"
 
 extern "C"
 {
@@ -14,12 +13,13 @@ extern "C"
 #include "platform_config.h"
 }
 
-XBeeConnection::XBeeConnection()
+XBeeConnection::XBeeConnection(const std::string serial_device, const int baudrate)
+  : serial_device(serial_device), baudrate(baudrate)
 {
   // Frame handlers must be dynamically allocated so that
   // the xbee library can access them
-  rx_queue = new std::queue<std::string>();
-  xbee_frame_handlers = new xbee_dispatch_table_entry_t[] {
+  this->rx_queue = new std::queue<std::string>();
+  this->xbee_frame_handlers = new xbee_dispatch_table_entry_t[] {
     {XBEE_FRAME_TRANSMIT_STATUS, 0, &XBeeConnection::tx_status_handler, this},
     {XBEE_FRAME_RECEIVE, 0, &XBeeConnection::receive_handler, this},
     XBEE_FRAME_HANDLE_LOCAL_AT,
@@ -29,14 +29,14 @@ XBeeConnection::XBeeConnection()
 
 XBeeConnection::~XBeeConnection()
 {
-  delete rx_queue;
-  delete xbee_frame_handlers;
+  delete this->rx_queue;
+  delete this->xbee_frame_handlers;
 }
 
 Connection::Status XBeeConnection::open()
 {
   xbee_dev_t xbee;
-  int err = init_baja_xbee();
+  int err = this->init_baja_xbee();
   if (err != SUCCESS)
   {
     return IRRECOVERABLE_ERROR;
@@ -48,7 +48,7 @@ Connection::Status XBeeConnection::open()
 
 bool XBeeConnection::is_open() const
 {
-  return conn_open;
+  return this->conn_open;
 }
 
 void XBeeConnection::close()
@@ -67,7 +67,7 @@ Connection::Status XBeeConnection::tx_status()
 
 Connection::Status XBeeConnection::send(const std::string msg)
 {
-  if (msg.length() > XbeeBajaNetworkConfig::MAX_PAYLOAD_SIZE)
+  if (msg.length() > XBEE_BAJA_MAX_PAYLOAD_SIZE)
   {
     return MSG_TOO_LARGE;
   }
@@ -123,7 +123,7 @@ Connection::Status XBeeConnection::tick()
   if (err == -EBUSY)
   {
     std::cout << "Could not tick XBee, already being ticked" << std::endl;
-    return IRRECOVERABLE_ERROR;
+    return RECOVERABLE_ERROR;
   }
   if (err == -EIO)
   {
@@ -142,13 +142,13 @@ int XBeeConnection::num_messages_available() const
 
 std::string XBeeConnection::pop_message()
 {
-  if (rx_queue->size() == 0)
+  if (this->rx_queue->size() == 0)
   {
     return NULL;
   }
 
-  std::string msg = rx_queue->front();
-  rx_queue->pop();
+  std::string msg = this->rx_queue->front();
+  this->rx_queue->pop();
   return msg;
 }
 
@@ -215,7 +215,7 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
 
 Connection::Status XBeeConnection::init_baja_xbee()
 {
-  this->serial = XBeeConnection::init_serial();
+  this->serial = XBeeConnection::init_serial(this->serial_device, this->baudrate);
 
   int err = xbee_dev_init(&xbee, &serial, NULL, NULL, xbee_frame_handlers);
   if (err)
@@ -259,18 +259,18 @@ Connection::Status XBeeConnection::init_baja_xbee()
   return SUCCESS;
 }
 
-xbee_serial_t XBeeConnection::init_serial()
+xbee_serial_t XBeeConnection::init_serial(const std::string serial_device, const int baudrate)
 {
   // We want to start with a clean slate
   xbee_serial_t serial;
   std::memset(&serial, 0, sizeof(serial));
 
   // Set the baudrate and device ID.
-  serial.baudrate = StationSerialXbeeConfig::XBEE_BAJA_BAUDRATE;
+  serial.baudrate = baudrate;
 
   std::strncpy(
     serial.device,
-    StationSerialXbeeConfig::LINUX_SERIAL_DEVICE_ID.c_str(),
+    serial_device.c_str(),
     sizeof(serial.device)
   );
   return serial;
