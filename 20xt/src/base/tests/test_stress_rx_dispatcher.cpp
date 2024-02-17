@@ -27,9 +27,12 @@ int main()
   int bytes_read_this_window;
   auto start = std::chrono::high_resolution_clock::now();
 
+  int msg_num = 0;
   while (true) {
     std::string msg = StationIPC::get_message(radio_rx_queue); // blocking
-    std::cout << "Received message: " << msg << std::endl;
+    
+    msg_num++;
+    std::cout << "Received message " << msg_num << std::endl;
     bytes_read_this_window += msg.size();
 
     auto time_elapsed = std::chrono::high_resolution_clock::now() - start;

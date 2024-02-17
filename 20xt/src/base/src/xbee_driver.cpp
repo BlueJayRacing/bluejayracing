@@ -32,7 +32,7 @@ int main() {
   const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
 
   while (true) {
-    usleep(100000);
+    usleep(10000);
     // Send
     err = try_transmit_data(conn, tx_queue);
     if (err == EXIT_FAILURE) {
@@ -64,8 +64,10 @@ int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
   // If full recoverable, wait only once
   int err = conn->send(msg);
-  for (int iter = 2; iter <= XBEE_DRIVER_MAX_SEND_RETRIES || err == Connection::QUEUE_FULL || err == Connection::SEND_FAILED; iter++) {
-   usleep(100000);
+  int iter = 1;
+  while (iter <= XBEE_DRIVER_MAX_SEND_RETRIES && err == Connection::QUEUE_FULL) {
+    std::cout << "Xbee serial queue full, waiting and retrying" << std::endl;
+    usleep(100000);
     err = conn->send(msg);
     iter++;
   }
