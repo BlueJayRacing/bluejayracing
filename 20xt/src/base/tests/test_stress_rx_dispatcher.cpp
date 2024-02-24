@@ -27,7 +27,7 @@ int main()
   int bytes_read_this_window;
   auto start = std::chrono::high_resolution_clock::now();
 
-  int WINDOW_SIZE = 5;
+  int WINDOW_SIZE = 5; // seconds
   int msg_num = 0;
   while (true) {
     std::string msg = StationIPC::get_message(radio_rx_queue); // blocking

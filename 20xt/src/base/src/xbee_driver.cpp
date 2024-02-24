@@ -17,8 +17,8 @@
     #error "RF_RATE must be defined and be 0, 1, or 2"
 #endif
 #if RF_RATE == 0
-  #define POLLING_INTERVAL 250000 // useconds
-  #define FULL_QUEUE_WAIT_TIME 2500000 // useconds
+  #define POLLING_INTERVAL 120000 // useconds
+  #define FULL_QUEUE_WAIT_TIME 1200000 // useconds
 #elif RF_RATE == 1
   #define POLLING_INTERVAL 20000 // useconds
   #define FULL_QUEUE_WAIT_TIME 200000 // useconds
