@@ -11,7 +11,7 @@
 
 #define XBEE_DRIVER_MAX_SEND_RETRIES 2
 
-#define RF_RATE 2 // 0: 10 kb/s, 1: 110 kb/s, 2: 250 kb/s
+#define RF_RATE 0 // 0: 10 kb/s, 1: 110 kb/s, 2: 250 kb/s
 
 #ifndef RF_RATE
     #error "RF_RATE must be defined and be 0, 1, or 2"
