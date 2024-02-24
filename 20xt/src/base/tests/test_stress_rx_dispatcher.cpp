@@ -35,7 +35,11 @@ int main()
     auto time_elapsed = std::chrono::high_resolution_clock::now() - start;
     auto time_elapsed_seconds = std::chrono::duration_cast<std::chrono::seconds>(time_elapsed).count();
     if (time_elapsed_seconds >= WINDOW_SIZE) {
-      std::cout << "Received at rate of " << bytes_read_this_window / WINDOW_SIZE << " bytes/second" << std::endl;
+      // Get the current time
+      std::time_t now = std::time(0);
+      char* dt = std::ctime(&now);
+
+      std::cout << "Received at rate of " << bytes_read_this_window / WINDOW_SIZE << " bytes/second at time " << dt;
       bytes_read_this_window = 0;
       start = std::chrono::high_resolution_clock::now();
     }
