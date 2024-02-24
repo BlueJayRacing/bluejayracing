@@ -11,6 +11,24 @@
 
 #define XBEE_DRIVER_MAX_SEND_RETRIES 2
 
+#define RF_RATE 2 // 0: 10 kb/s, 1: 110 kb/s, 2: 250 kb/s
+
+#ifndef RF_RATE
+    #error "RF_RATE must be defined and be 0, 1, or 2"
+#endif
+#if RF_RATE == 0
+  #define POLLING_INTERVAL 250000 // useconds
+  #define FULL_QUEUE_WAIT_TIME 2500000 // useconds
+#elif RF_RATE == 1
+  #define POLLING_INTERVAL 20000 // useconds
+  #define FULL_QUEUE_WAIT_TIME 200000 // useconds
+#elif RF_RATE == 2
+  #define POLLING_INTERVAL 10000 // useconds
+  #define FULL_QUEUE_WAIT_TIME 100000 // useconds
+#else
+  #error "RF_RATE must be defined and be 0, 1, or 2"
+#endif
+
 int main() {
   std::cout << "starting xbee driver..." << std::endl;
   
@@ -32,7 +50,7 @@ int main() {
   const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
 
   while (true) {
-    usleep(10000);
+    usleep(POLLING_INTERVAL);
     // Send
     err = try_transmit_data(conn, tx_queue);
     if (err == EXIT_FAILURE) {
@@ -67,7 +85,7 @@ int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
   int iter = 1;
   while (iter <= XBEE_DRIVER_MAX_SEND_RETRIES && err == Connection::QUEUE_FULL) {
     std::cout << "Xbee serial queue full, waiting and retrying" << std::endl;
-    usleep(100000);
+    usleep(FULL_QUEUE_WAIT_TIME);
     err = conn->send(msg);
     iter++;
   }
