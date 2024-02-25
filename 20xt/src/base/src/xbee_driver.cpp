@@ -33,7 +33,7 @@ int main() {
   std::cout << "starting xbee driver..." << std::endl;
   
   // Open the Xbee connection
-  Connection* conn = new XBeeConnection(XbeeBajaSerialConfig::STATION_DEVICE, XbeeBajaSerialConfig::BAUDRATE);
+  Connection* conn = new XBeeConnection(XbeeBajaSerialConfig::STATION_DEVICE, XbeeBajaSerialConfig::BAUDRATE, XbeeBajaSerialConfig::CONGESTION_CONTROL_WINDOW);
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
     usleep(100000);

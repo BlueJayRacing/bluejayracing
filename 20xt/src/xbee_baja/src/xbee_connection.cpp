@@ -13,8 +13,8 @@ extern "C"
 #include "platform_config.h"
 }
 
-XBeeConnection::XBeeConnection(const std::string serial_device, const int baudrate)
-  : serial_device(serial_device), baudrate(baudrate)
+XBeeConnection::XBeeConnection(const std::string serial_device, const int baudrate, const int cwnd_size)
+  : serial_device(serial_device), baudrate(baudrate), cwnd_size(cwnd_size)
 {
   // Frame handlers must be dynamically allocated so that
   // the xbee library can access them
@@ -59,10 +59,10 @@ void XBeeConnection::close()
   return;
 }
 
-Connection::Status XBeeConnection::tx_status()
+int XBeeConnection::num_queued_for_tx()
 {
   this->tick();
-  return this->send_succeeded ? SUCCESS : RECOVERABLE_ERROR;
+  return this->last_queued_frame_id - this->last_acked_frame_id;
 }
 
 Connection::Status XBeeConnection::send(const std::string msg)
@@ -70,6 +70,10 @@ Connection::Status XBeeConnection::send(const std::string msg)
   if (msg.length() > XBEE_BAJA_MAX_PAYLOAD_SIZE)
   {
     return MSG_TOO_LARGE;
+  }
+  if (this->num_queued_for_tx() >= this->cwnd_size)
+  {
+    return QUEUE_FULL;
   }
   
   // XBee library expects char* for payload
@@ -81,10 +85,10 @@ Connection::Status XBeeConnection::send(const std::string msg)
   // the library doesn't directly implement this frame type. isntead
   // we use the explicit frame type and set destination address to
   // broadcast
-  this->latest_tx_frame_id += 1;
+  this->last_queued_frame_id += 1;
   xbee_header_transmit_explicit_t frame_out_header = {
     .frame_type = XBEE_FRAME_TRANSMIT_EXPLICIT,
-    .frame_id = this->latest_tx_frame_id,
+    .frame_id = this->last_queued_frame_id,
     .ieee_address = *WPAN_IEEE_ADDR_BROADCAST,
     .network_address_be = 0xFFFE, // "Reserved"
     .source_endpoint = WPAN_ENDPOINT_DIGI_DATA,
@@ -160,24 +164,22 @@ int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
   
   if (frame == nullptr)
   {
-    std::cout << "Received null TX status frame" << std::endl;
+    std::cerr << "Received null TX status frame" << std::endl;
     return -EINVAL;
   }
 
   if (frame_length < offsetof(xbee_frame_transmit_status_t, delivery))
   {
-    std::cout << "Received TX status frame too short" << std::endl;
+    std::cerr << "Received TX status frame too short" << std::endl;
     return -EBADMSG;
   }
 
-  if (frame->delivery == XBEE_TX_DELIVERY_SUCCESS)
+  if (frame->delivery != XBEE_TX_DELIVERY_SUCCESS)
   {
-    this_conn->send_succeeded = false;
+    std::cerr << "Xbee recieved bad transmit request frame" << std::endl;
     return -EBADMSG;
-  } else 
-  {
-    this_conn->send_succeeded = true;
   }
+  this_conn->last_acked_frame_id = frame->frame_id;
   return 0;
 }
 

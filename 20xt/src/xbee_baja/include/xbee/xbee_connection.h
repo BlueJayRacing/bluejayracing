@@ -14,7 +14,7 @@ extern "C" {
 
 class XBeeConnection : public Connection {
 public:
-  XBeeConnection(const std::string serial_device, const int baudrate);
+  XBeeConnection(const std::string serial_device, const int baudrate, const int cwnd_size);
   ~XBeeConnection();
 
   Status open() override; // Open a connection or return failure
@@ -22,7 +22,7 @@ public:
   void close() override; // Disconnect from XBee device abstraction
 
   Status send(const std::string msg) override; // Makes full attempt to broadcast message over radio
-  Status tx_status() override; // Status of last transmission/connection
+  virtual int num_queued_for_tx() override; // Number of transmission requests sent to Xbee that haven't been ack'd by xbee
   
   Status tick() override; // Tick the Xbee to check if any messages have been buffered
   int num_messages_available() const override; // Will not be accurate unless tick() has been called
@@ -32,14 +32,19 @@ private:
   const std::string serial_device;
   const int baudrate;
   bool conn_open;
-  bool send_succeeded;
+
+  // The Xbee doesn't inform us when serial buffer is full, so
+  // we are adding a congestion control window to prevent overflowing
+  // the xbee serial buffer. We will allow the user to query the number
+  // of outstanding messages.
+  const int cwnd_size; // congestion control window
+  int last_queued_frame_id;
+  int last_acked_frame_id;
   
   // We want the user of this connection to be able to retrieve
   // a single message at a time, but the XBee library may return
   // multiple with a single tick. We'll store them in a queue
   std::queue<std::string>* rx_queue;
-  uint8_t latest_tx_frame_id;
-
 
   // The Digi library will store pointers to the frame handlers
   // and serial objects, so be cautious when changing live
