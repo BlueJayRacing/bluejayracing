@@ -21,7 +21,7 @@ public:
   virtual bool is_open() const = 0;
   virtual void close() = 0;
 
-  virtual int num_queued_for_tx() = 0;
+  virtual int num_msgs_queued_for_tx() = 0;
   virtual Status send(const std::string msg) = 0;
 
   virtual Status tick() = 0;

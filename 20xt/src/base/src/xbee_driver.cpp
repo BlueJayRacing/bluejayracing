@@ -59,11 +59,11 @@ int main() {
     }
 
     // Recieve
-    err = try_recieve_data(conn, rx_queue);
-    if (err == EXIT_FAILURE) {
-      std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
-      return EXIT_FAILURE;
-    }
+    // err = try_recieve_data(conn, rx_queue);
+    // if (err == EXIT_FAILURE) {
+    //   std::cout << "Connection failed when trying to recieve, exiting" << std::endl;
+    //   return EXIT_FAILURE;
+    // }
   }
  
   // Cleanup

@@ -22,7 +22,7 @@ public:
   void close() override; // Disconnect from XBee device abstraction
 
   Status send(const std::string msg) override; // Makes full attempt to broadcast message over radio
-  virtual int num_queued_for_tx() override; // Number of transmission requests sent to Xbee that haven't been ack'd by xbee
+  virtual int num_msgs_queued_for_tx() override; // Number of transmission requests sent to Xbee that haven't been ack'd by xbee
   
   Status tick() override; // Tick the Xbee to check if any messages have been buffered
   int num_messages_available() const override; // Will not be accurate unless tick() has been called
@@ -37,9 +37,10 @@ private:
   // we are adding a congestion control window to prevent overflowing
   // the xbee serial buffer. We will allow the user to query the number
   // of outstanding messages.
-  const int cwnd_size; // congestion control window
-  int last_queued_frame_id;
-  int last_acked_frame_id;
+  const int CWND_SIZE; // congestion control window
+  unsigned int num_queued_for_tx;
+  uint8_t last_acked_frame_id;
+
   
   // We want the user of this connection to be able to retrieve
   // a single message at a time, but the XBee library may return

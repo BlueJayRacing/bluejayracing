@@ -14,7 +14,7 @@ extern "C"
 }
 
 XBeeConnection::XBeeConnection(const std::string serial_device, const int baudrate, const int cwnd_size)
-  : serial_device(serial_device), baudrate(baudrate), cwnd_size(cwnd_size)
+  : serial_device(serial_device), baudrate(baudrate), CWND_SIZE(cwnd_size), num_queued_for_tx(0), last_acked_frame_id(0)
 {
   // Frame handlers must be dynamically allocated so that
   // the xbee library can access them
@@ -59,10 +59,10 @@ void XBeeConnection::close()
   return;
 }
 
-int XBeeConnection::num_queued_for_tx()
+int XBeeConnection::num_msgs_queued_for_tx()
 {
   this->tick();
-  return this->last_queued_frame_id - this->last_acked_frame_id;
+  return this->num_queued_for_tx;
 }
 
 Connection::Status XBeeConnection::send(const std::string msg)
@@ -71,10 +71,23 @@ Connection::Status XBeeConnection::send(const std::string msg)
   {
     return MSG_TOO_LARGE;
   }
-  if (this->num_queued_for_tx() >= this->cwnd_size)
+
+  if (this->num_queued_for_tx >= this->CWND_SIZE)
   {
-    return QUEUE_FULL;
+    std::cout << "window full, so ticking" << std::endl;
+    this->tick();
+    if (this->num_queued_for_tx >= this->CWND_SIZE)
+    {
+      return QUEUE_FULL; // Still full after tick :(
+    }
   }
+  
+
+  std::cout << "trying to send frame ID " << this->last_acked_frame_id + this->num_queued_for_tx + 1 << std::endl;
+  std::cout << "With last ack from " << (int) this->last_acked_frame_id << std::endl;
+  std::cout << "With num queued for tx " << this->num_queued_for_tx << std::endl;
+  std::cout << "And congestion window " << this->CWND_SIZE << std::endl << std::endl;
+  
   
   // XBee library expects char* for payload
   int payload_size = msg.length();
@@ -85,10 +98,10 @@ Connection::Status XBeeConnection::send(const std::string msg)
   // the library doesn't directly implement this frame type. isntead
   // we use the explicit frame type and set destination address to
   // broadcast
-  this->last_queued_frame_id += 1;
+  uint8_t frame_id = this->last_acked_frame_id + this->num_queued_for_tx + 1;
   xbee_header_transmit_explicit_t frame_out_header = {
     .frame_type = XBEE_FRAME_TRANSMIT_EXPLICIT,
-    .frame_id = this->last_queued_frame_id,
+    .frame_id = frame_id,
     .ieee_address = *WPAN_IEEE_ADDR_BROADCAST,
     .network_address_be = 0xFFFE, // "Reserved"
     .source_endpoint = WPAN_ENDPOINT_DIGI_DATA,
@@ -113,6 +126,8 @@ Connection::Status XBeeConnection::send(const std::string msg)
     std::cout << "Irrecoverable error when transmitting" << std::endl;
     return IRRECOVERABLE_ERROR;
   }
+
+  this->num_queued_for_tx += 1;
   return SUCCESS;
 }
 
@@ -179,6 +194,24 @@ int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
     std::cerr << "Xbee recieved bad transmit request frame" << std::endl;
     return -EBADMSG;
   }
+
+  // Need to adjust both num outstanding and last acked frame id. Handle the edge case
+  // where the frame_id is less than the last acked frame id (i.e. overflow occured)
+  std::cout << "Received ack for frame " << frame->frame_id << std::endl;
+  
+  unsigned int real_frame_id = frame->frame_id;
+  if (frame->frame_id < this_conn->last_acked_frame_id)
+  {
+    real_frame_id += 256;
+  }
+
+
+  if ((this_conn->last_acked_frame_id + this_conn->num_queued_for_tx) < real_frame_id)
+  {
+    return 0; // Ack from an old frame, already accounted for
+  }
+  
+  this_conn->num_queued_for_tx -= (real_frame_id - this_conn->last_acked_frame_id);
   this_conn->last_acked_frame_id = frame->frame_id;
   return 0;
 }
