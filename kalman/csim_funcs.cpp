@@ -27,18 +27,18 @@ using Eigen::RowVectorXd;
 Filter::Filter(int dimensions[], vector<double> initial, MatrixXd a, MatrixXd b, MatrixXd h, MatrixXd p, MatrixXd q, MatrixXd r)
 {
 
-    dm = dimensions[0];
+    dm = dimensions[0]; //sets dimensions to those given
     m = dimensions[1];
     u = dimensions[2];
 
-    (Y).push_back(VectorXd(m));
+    (Y).push_back(VectorXd(m)); //pushes back first inputs for calculations
     (U).push_back(VectorXd(u));
     for (int j=0; j<m; j++) 
         Y[0](j) = 0;
     for (int j=0; j<u; j++) 
         U[0](j) = 0;
 
-    x.push_back(VectorXd(dm));
+    x.push_back(VectorXd(dm));      //pushes back initial state/estimate for calculations
     xest.push_back(VectorXd(dm));
     for (int i=0; i<(int)initial.size(); i++)
         x[0](i) = initial[i];
@@ -51,12 +51,12 @@ Filter::Filter(int dimensions[], vector<double> initial, MatrixXd a, MatrixXd b,
     //H turns an x estimate format (dm x 1) to a y format (m x 1), so H is (m x dm)
     //takes a state prediction and turns it into what the sensors should get if that were the true state
 
-// std::vector<Matrix<double,4,1>, Eigen::aligned_allocator<Matrix<double,4,1> > >
+    // std::vector<Matrix<double,4,1>, Eigen::aligned_allocator<Matrix<double,4,1> > >
     K.push_back(MatrixXd::Zero(dm,m));
     P.push_back(MatrixXd(dm,dm));  //covariance matrix (we dont set this initially?)
     BasisChange.push_back(MatrixXd(dm,dm));
 
-    P[0] = p;
+    P[0] = p;     //sets assumed P matrix
 
     Q = q; //covariance matrix for B (quoting aaren)
 
@@ -86,12 +86,8 @@ void Filter::setInputs(std::istringstream * ss1, std::istringstream * ss2, int n
 void Filter::cycleXest(int n)
 {
     xest.push_back(VectorXd(dm));
-    //cout << A << B << x[n-1] << U[n-1];
-    xest[n] = A*x[n-1] + B*U[n-1]; //        q? whats q??? apparently q is just the output from an N(0, Q) (vector?)
-        //estimates for this state, n given n-1
-        // possibly change to being Xest(n|n-1) and at the beginning of the loop instead (this change was made)
-
-}
+    xest[n] = A*x[n-1] + B*U[n-1];              //estimates for this state, n given n-1
+}        
 
 void Filter::cyclePCov(int n)
 {
@@ -102,15 +98,16 @@ void Filter::cyclePCov(int n)
 void Filter::cycleK(int n)
 {
     K.push_back(MatrixXd(dm,dm));
-    MatrixXd K1 = PriorCov[n-1] * H.transpose();
+    MatrixXd K1 = PriorCov[n-1] * H.transpose();            //cycles K, but in two lines (K is Kalman gain)
     K[n] = K1 * (H*PriorCov[n-1]*H.transpose() + R).inverse();
 }
 
 void Filter::cyclePost(int n)
 {
-    BasisChange.push_back(MatrixXd(dm,dm));
+    BasisChange.push_back(MatrixXd(dm,dm));//calculates change of basis matrix ahead of time
     BasisChange[n] = I-K[n]*H; 
-    P.push_back(MatrixXd(dm,dm));
+
+    P.push_back(MatrixXd(dm,dm));           //gets posterior covariance estimate
     P[n] = BasisChange[n] * PriorCov[n-1] * BasisChange[n].transpose() + K[n]*R*(K[n]).transpose();
 }
 

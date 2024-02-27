@@ -12,7 +12,6 @@ using std::cin; using std::cout;
 using std::ofstream;
 using std::ifstream;
 using std::string;
-using std::cerr;
 using std::vector;
 using std::endl;
 
@@ -21,8 +20,10 @@ using Eigen::VectorXd;
 
 
 int main(int argc, char** argv ) {
+    argc++; //ignore
 
-    argc++;
+
+    //setting up inputs for measured estimates and controls, outputs for estimation in present and prediction of future state
     ifstream measures;
     ifstream controls;
     ofstream out;
@@ -32,53 +33,70 @@ int main(int argc, char** argv ) {
     out.open("est.txt"); //change to csv later on
     preout.open("predictions.txt");
 
+
     //set of inputs: 0-2: all positions 3-8: all velocities and accelerations, same pattern
-    //9-
-    int dm = 3;  //dimension count, can change for later
-    int m = 1;
-    int u = 1;
-    int dim[] = {dm, m, u}; //list of dimensions
+    //9-10: pressure and temperature
+    //11-18: angular positions and velocities of wheels
 
-    std::default_random_engine rgen;
-    std::normal_distribution<double> normal(0,1); //setting up random normal (if we need it)
 
+    //Set properties of the kalman filter below
+
+    int dm = 3;     //dimension count, can change for later
+    int m = 1;      //observed state counts
+    int u = 1;      //control count
+    int dim[] = {dm, m, u}; 
+
+    
+
+    //Set your initial state estimate HERE
     vector<double> initial = {0,0,1};
 
+    //set A (dm x dm State update matrix)
     Eigen::MatrixXd a {{1,1,.5},
                     {0,1,1},
                     {0,0,1}};
 
+    //set B (dm x u Control matrix)
     Eigen::MatrixXd b(dm, u);
     b << .5,1,1;
 
+    //set H (m x dm Observation matrix)
     Eigen::MatrixXd h(m, dm); 
     h << 0,0,1;
 
+    //set P (dm x dm state covariance matrix)
     Eigen::MatrixXd p {{1,0,0},
                     {0,1,0},
                     {0,0,.0025}};
 
+    //set Q (adds noise)
     MatrixXd q = MatrixXd::Identity(dm, dm)*.0025;
 
+    //set R (covariance matrix for sensor noise)
     MatrixXd r = MatrixXd::Identity(m, m)*.0025;
 
-    
+
     Filter f_nep(dim, initial, a, b, h, p, q, r);
 
 
 
-    int n = 1;
+
+    std::default_random_engine rgen;
+    std::normal_distribution<double> normal(0,1); //setting up random normal (if we need it for testing)
+
+    int n = 1; //counts step number
     string line;
     string line2;
     out << "Format:              Position | Velocity | Acceleration\n";
-    while (std::getline(measures, line) && std::getline(controls, line2)) {
+    while (std::getline(measures, line) && std::getline(controls, line2)) { //continues as long as inputs go
 
-        //cout << line << endl << line2 << endl;
         std::istringstream iss(line);
         std::istringstream iss2(line2);
-        f_nep.setInputs(&iss, &iss2, n);
+        f_nep.setInputs(&iss, &iss2, n);    //loads input values into object
 
-        f_nep.mainLoop(n);
+        f_nep.mainLoop(n);  //calls main loop, does calculations
+
+
 
         //below part is printing the values at each spot: completely optional and not entirely set up.
         out << "Estimates for time " << n << ":   ";
@@ -95,7 +113,10 @@ int main(int argc, char** argv ) {
     return 0;
 }
 
-//x[n] = xest[n] + K[n]*(Y[n] - H*xest[n]); //change Y[n] to Y[n-1]??
+//Past code for reference (if anything goes wrong)
+
+
+        //x[n] = xest[n] + K[n]*(Y[n] - H*xest[n]); //change Y[n] to Y[n-1]??
 
 
         // PriorCov[n] = (A*P[n]*A.transpose() + q); //Prior covariance, using P(n)
