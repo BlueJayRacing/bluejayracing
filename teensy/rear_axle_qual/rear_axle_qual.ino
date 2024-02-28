@@ -28,6 +28,7 @@ const int chipSelect = BUILTIN_SDCARD;
 //  choose your sensor
 ADS1115 ADS0(0x48);
 ADS1115 ADS1(0x49);
+ADS1115 ADS3(0x4A);
 
 int ADS_INT_0 = 2;
 int ADS_INT_1 = 3;
@@ -37,6 +38,7 @@ uint16_t count = 0;
 
 uint16_t value0 = 0;
 uint16_t value1 = 0;
+uint16_t value3 = 0;
 
 uint16_t prev  = 0;
 uint32_t lastTime = 0;
@@ -57,10 +59,11 @@ void setup()
 {
 
   Serial.begin(115200);
+  Serial.println("alive");
   
-  if (!SD.begin(chipSelect)) {
+  while (!SD.begin(chipSelect)) {
     Serial.println("could not open sd");
-    return;
+    delay(10);
   }
 
   setSyncProvider(getTeensy3Time);
@@ -80,7 +83,7 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(ADS_INT_1), adsReady1, RISING);
 
   ADS0.begin();
-  ADS0.setGain(16);      //  6.144 volt
+  ADS0.setGain(8);      //  6.144 volt
   ADS0.setDataRate(2);  //  0 = slow   4 = medium   7 = fast
   
   //  SET ALERT RDY PIN (QueConvert mode)
@@ -94,7 +97,7 @@ void setup()
 //  ADS0.readADC(0);      //  first read to trigger
 
   ADS1.begin();
-  ADS1.setGain(16);      //  6.144 volt
+  ADS1.setGain(8);      //  6.144 volt
   ADS1.setDataRate(2);  //  0 = slow   4 = medium   7 = fast
   //  SET ALERT RDY PIN (QueConvert mode)
   //  set the MSB of the Hi_thresh register to 1
@@ -105,6 +108,13 @@ void setup()
   ADS1.setMode(0);      //  continuous mode
   ADS1.requestADC_Differential_0_1();
 //  ADS1.readADC(0);      //  first read to trigger
+
+  ADS3.begin();
+  ADS3.setGain(0);      
+  ADS3.setDataRate(2); 
+  ADS3.setMode(0); 
+  ADS3.requestADC(0);
+//  ADS3.requestADC_Differential_0_1();
 }
 
 
@@ -120,12 +130,16 @@ void loop() {
     file.print(",");
     file.print(ADS0.toVoltage(value0),9);
     file.print(",");
-    file.println(ADS1.toVoltage(value1),9);
+    file.print(ADS1.toVoltage(value1),9);
+    file.print(",");
+    file.println(ADS3.toVoltage(value3),9);
     Serial.print(now0 - last0);
     Serial.print(",\tV0:");
-    Serial.print(10000*(ADS0.toVoltage(value0)),9);
+    Serial.print(1000000*(ADS0.toVoltage(value0)),9);
     Serial.print(",\tV1:"); 
-    Serial.println(10000*(ADS1.toVoltage(value1)),9);
+    Serial.print(1000000*(ADS1.toVoltage(value1)),9);
+    Serial.print(",\tV3:"); 
+    Serial.println(3000*((ADS3.toVoltage(value3))-.5)/4,9);
     count++;
   }
   
@@ -160,6 +174,7 @@ bool handleConversion0()
 {
   if (RDY0 == false) return false;
   value0 = ADS0.getValue();
+  value3 = ADS3.getValue();
   RDY0 = false;
   return true;
 }
@@ -168,6 +183,7 @@ bool handleConversion1()
 {
   if (RDY1 == false) return false;
   value1 = ADS1.getValue();
+  
   RDY1 = false;
   return true;
 }
