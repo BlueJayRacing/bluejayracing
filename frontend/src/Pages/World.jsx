@@ -32,7 +32,7 @@ function World(props) {
     <>
       <Canvas camera={{ fov: 75, position: [10, 10, -10]}} frameloop="demand" dpr={2}>
 		    <Stars />
-		    <ambientLight intensity={.5} />
+		    <ambientLight intensity={.1} />
 		    <spotLight position={[100, 15, 10]} angle={0.3} />
 
 				<Perspective cameraPosition={cameraPosition} thirdPerson={thirdPerson}/>

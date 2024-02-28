@@ -23,10 +23,10 @@ function RearCorner (props) {
   }
 
 
-  return debug && (
+  return debug && ( 
     <group>
       <group scale={scale_new} rotation={rotation} position={position}>
-          <mesh geometry={mesh}><meshLambertMaterial color="red" /></mesh>
+          {/* <mesh geometry={mesh}><meshLambertMaterial color="red" /></mesh> */}
           
         </group>
     </group>

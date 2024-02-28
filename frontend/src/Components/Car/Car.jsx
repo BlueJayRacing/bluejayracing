@@ -1,5 +1,7 @@
 import { useBox, useRaycastVehicle } from "@react-three/cannon";
 import { STLLoader } from 'three/examples/jsm/loaders/STLLoader';
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader";
 import { useFrame, useLoader} from '@react-three/fiber';
 import "../../../style.css";
 import { useRef, useEffect } from 'react';
@@ -17,11 +19,20 @@ function Car(props) {
 
   let mesh = useLoader(
     STLLoader,
+    // GLTFLoader,
     '../models/lowpolyframe.STL'
     // './3DBenchy.stl'
+    // '../models/20XT_render.glb'
   );
 
-	const position = [0, .15, 0];
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.5/');
+  dracoLoader.setDecoderConfig({ type: 'js' });
+  const gltf = useLoader(GLTFLoader, './public/models/20XT_render.glb', loader => {
+    loader.setDRACOLoader(dracoLoader);
+  });
+
+	const position = [0, .2, 0];
   
 	let scale = [.00025,.00025,.00025];
   
@@ -40,7 +51,7 @@ function Car(props) {
 
 	const [chassisBody, chassisApi] = useBox(() => ({
     args: chassisBodyArgs,
-    mass: 750,
+    mass: 22500,
     position,
   }), useRef(null));
 
@@ -82,7 +93,13 @@ function Car(props) {
 		<group ref={vehicle} name="vehicle" >
       <group ref={chassisBody} name="chassisBody">
         <group scale={scale} rotation={rotation} position={[0, -.025, 0]} >
-          <mesh geometry={mesh}><meshLambertMaterial color="red" /></mesh>
+          {/* <mesh geometry={mesh}><meshLambertMaterial color="red" /></mesh> */}
+          <primitive 
+            object={gltf.scene} 
+            scale={[35, 35, 35]} // Scale the model to 1.5 times its original size
+            rotation={[0, Math.PI/2, 0]} // Rotate the model 45 degrees on the Y-axis
+            position={[0, 0, 950]} // Position the model at the origin
+          />
         </group>
         <FrontCorner scale={scale} flip={true}/>
         <FrontCorner scale={scale} flip={false}/>
