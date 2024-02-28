@@ -1,16 +1,17 @@
-#include "initFreeRtosClient.h"
+#include "WiFiFreeRtosClient.h"
 
 namespace crt
 {
   //global data queue that is to be shared by the sendValue and recordValue class
-  xQueueHandle data_queue = xQueueCreate(4000, sizeof(uint16_t));
+  xQueueHandle data_queue = xQueueCreate(20000, sizeof(uint16_t));
 
-  sendValue::sendValue(const char *taskName, unsigned int taskPriority, unsigned int taskSizeBytes, unsigned int taskCoreNumber, char* address, char* serviceUUID, char* charUUID) :
+  sendValue::sendValue(const char *taskName, unsigned int taskPriority, unsigned int taskSizeBytes, unsigned int taskCoreNumber, char* ssid, char* pswd, char* ip) :
 	Task(taskName, taskPriority, taskSizeBytes, taskCoreNumber)
 	{
     //creates a new BLECLIENT and starts the freeRTOS Task
-    this->bleClient = new BLECLIENT(address, serviceUUID, charUUID);
-    bleClient->startBLE();
+    this->mqttSubscriber = new WiFiMQTT(ssid, pswd, ip, 1883);
+    this->mqttSubscriber->beginWifi();
+    this->mqttSubscriber->beginMQTT();
 		start();
 	}
 	
@@ -22,37 +23,27 @@ namespace crt
 
   //The FreeRTOS Task for sendValue that is constantly running through the for loop
   void sendValue::main(){
+    char topic[] = "testTopic";
+    uint8_t msg[150];
+    unsigned int length = 100;
     uint16_t recieved = 0;
-    uint8_t dataArray[20];
     uint8_t leftByte;
     uint8_t rightByte;
-    Serial.println("sendValue main called");
-    vTaskDelay(10000); // wait for other threads to have started up as well.
-    Serial.println("Prepare send values");
-    for (;;){
-      if (uxQueueMessagesWaiting(data_queue) >= 1600){
-        if (!(bleClient->isConnected())){
-          bleClient->connectToServer();
-        }
-        for(int i = 0; i < 60; i ++){
-          for(int j = 0; j < 10; j ++){
+
+    for(;;) {
+      if (uxQueueMessagesWaiting(data_queue) >= 5000){
+        for (int i = 0; i < 100; i++) {
+          for (int j = 0; j < 50; j++){
             xQueueReceive(data_queue, &recieved, 1000);
-            Serial.println(recieved);
             leftByte = ((uint8_t) recieved & 0xff);
             rightByte = ((uint8_t) recieved >> 8);
-            dataArray[2*j] = rightByte;
-            dataArray[2*j + 1] = leftByte;
-            /*
-            Serial.println(recieved);
-            Serial.println(leftByte);
-            Serial.println(rightByte);
-            */
+            msg[2*j] = rightByte;
+            msg[2*j + 1] = leftByte;
           }
-          bleClient->getDataCharacteristic()->writeValue(dataArray, 20);
-          vTaskDelay(10);
+          
+          mqttSubscriber->sendMQTTMessage(topic, msg, length);
         }
       }
-      vTaskDelay(200);
     }
   }//end main
 
@@ -76,7 +67,7 @@ namespace crt
     Serial.println("RecordValue main called");
 		vTaskDelay(10000); // wait for other threads to have started up as well.
     
-		bleADS1115 ads1115 = bleADS1115(2, 16, 7);
+		xADS1115 ads1115 = xADS1115(2, 16, 7);
 
     ads1115.beginADS();
     Serial.println("ADS started");
@@ -84,9 +75,8 @@ namespace crt
 		for (;;){
       value = abs(ads1115.handleConversion());
       if (value != NULL){
-        value += 256;
         count ++;
-        if (count % 10000 == 0){
+        if (count % 1720 == 0){
           Serial.println(millis());
         }
         xQueueSend(data_queue, &value, 1000);

@@ -42,6 +42,7 @@ void setup_wifi() {
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
+  WiFi.setMinSecurity(WIFI_AUTH_OPEN);
   WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {

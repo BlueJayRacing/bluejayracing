@@ -1,1 +1,2 @@
-# travis
+# Wifi.h link: https://github.com/espressif/esp-idf/blob/4d90eedb6ef32ff949c6f298a3d845f9f07bac92/components/esp_wifi/include/esp_private/wifi.h#L4 
+# PubSubClient.h link: https://github.com/knolleary/pubsubclient
