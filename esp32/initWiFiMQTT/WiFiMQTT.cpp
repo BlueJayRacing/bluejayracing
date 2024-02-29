@@ -1,11 +1,13 @@
 #include "WifiMQTT.h"
 
+#define MIN_SECURITY WIFI_AUTH_OPEN
+
 WiFiMQTT::WiFiMQTT(char* wifi_ssid, char* wifi_pswd, char* mqtt_server_ip, int mqtt_server_port) {
     this->wifi_ssid = wifi_ssid;
     this->wifi_pswd = wifi_pswd;
     this->mqtt_server_ip = mqtt_server_ip;
     this->mqtt_server_port = mqtt_server_port;
-    this->client = new PubSubClient(espClient);
+    this->client = new PubSubClient(esp_client);
 }
 
 void WiFiMQTT::beginWifi() {
@@ -14,7 +16,7 @@ void WiFiMQTT::beginWifi() {
     Serial.print("Connecting to ");
     Serial.println(this->wifi_ssid);
 
-    WiFi.setMinSecurity(WIFI_AUTH_OPEN);
+    WiFi.setMinSecurity(MIN_SECURITY);
     WiFi.begin(this->wifi_ssid, this->wifi_pswd);
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -33,19 +35,18 @@ void WiFiMQTT::beginMQTT() {
     client->setCallback(callback);
     client->connect("ESP8266Client");
     while (!client->connected()) {
-      Serial.print(".");
-      delay(1);
+      Serial.println("MQTT still connecting...");
+      delay(4);
     }
-    Serial.println();
 }
 
-void WiFiMQTT::callback(char* topic, byte* message, unsigned int length) {
+void WiFiMQTT::callback(char* topic, byte* message, unsigned int message_length) {
   Serial.print("Message arrived on topic: ");
   Serial.print(topic);
   Serial.print(". Message: ");
   String messageTemp;
   
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < message_length; i++) {
     Serial.print((char)message[i]);
     messageTemp += (char)message[i];
   }
@@ -53,8 +54,8 @@ void WiFiMQTT::callback(char* topic, byte* message, unsigned int length) {
   Serial.println();
 }
 
-void WiFiMQTT::sendMQTTMessage(char* topic, uint8_t* message, unsigned int length) {
-    client->publish(topic, message, length);
+void WiFiMQTT::sendMQTTMessage(char* topic, uint8_t* message, unsigned int message_length) {
+    client->publish(topic, message, message_length);
 }
 
 void WiFiMQTT::reconnectMQTT() {

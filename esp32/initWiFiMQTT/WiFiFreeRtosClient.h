@@ -3,10 +3,9 @@
 #include <crt_CleanRTOS.h>
 #include "WiFiMQTT.h"
 #include "xADS1115.h"
-// This file demonstrates the use of a single task.
 
-#ifndef WiFiFreeRtosClient_h
-#define WiFiFreeRtosClient_h
+#ifndef WIFIFREERTOSCLIENT_H
+#define WIFIFREERTOSCLIENT_H
 
 namespace crt
 {
@@ -29,7 +28,6 @@ namespace crt
 		recordValue(const char *taskName, unsigned int taskPriority, unsigned int taskSizeBytes, unsigned int taskCoreNumber);
 	private:
 		void main();
-    int count;
 	};
 }
 

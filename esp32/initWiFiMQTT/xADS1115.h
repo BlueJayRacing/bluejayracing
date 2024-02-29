@@ -1,21 +1,20 @@
 #include <ADS1X15.h>
 
-#ifndef xADS1115_H
-#define xADS1115_H
+#ifndef XADS1115_H
+#define XADS1115_H
 
 class xADS1115{
   public:
-    xADS1115(int intruptPin, int gain, int dataRate);
+    xADS1115(int ads_intrupt_pin, int gain, int data_rate);
     void beginADS();
     int16_t handleConversion();
     static void makeADSReady();
   private:
     ADS1115 ADS;
-    int ADS_INTRUPT_PIN;
+    int ads_intrupt_pin;
     int gain;
-    int dataRate;
-    static bool adsReady;
-    static int count;
+    int data_rate;
+    static bool ads_ready;
 };
 
 #endif

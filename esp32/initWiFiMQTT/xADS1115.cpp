@@ -1,23 +1,26 @@
 #include "xADS1115.h"
 
-bool xADS1115::adsReady = false;
-int xADS1115::count = 0;
+#define SDA -1
+#define SCL -1
+#define WIRE_FREQ 400000
 
-xADS1115::xADS1115(int intruptPin, int gain, int dataRate){
-  this->ADS_INTRUPT_PIN = intruptPin;
-  this->gain = gain;
-  this->dataRate = dataRate;
+bool xADS1115::ads_ready = false;
+
+xADS1115::xADS1115(int ads_intrupt_pin, int gain, int data_rate){
   ADS = ADS1115(0x48);
+  this->ads_intrupt_pin = ads_intrupt_pin;
+  this->gain = gain;
+  this->data_rate = data_rate;
 }
 
 void xADS1115::beginADS(){
-  Wire.begin(-1, -1, 400000);
-  pinMode(ADS_INTRUPT_PIN, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ADS_INTRUPT_PIN), xADS1115::makeADSReady, RISING);
+  Wire.begin(SDA, SCL, WIRE_FREQ);
+  pinMode(ads_intrupt_pin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(ads_intrupt_pin), xADS1115::makeADSReady, RISING);
 
   ADS.begin();
-  ADS.setGain(16);      //  6.144 volt
-  ADS.setDataRate(7);  //  0 = slow   4 = medium   7 = fast
+  ADS.setGain(gain);      //  6.144 volt
+  ADS.setDataRate(data_rate);  //  0 = slow   4 = medium   7 = fast
   //  SET ALERT RDY PIN (QueConvert mode)
   //  set the MSB of the Hi_thresh register to 1
   ADS.setComparatorThresholdHigh(0x8000);
@@ -28,26 +31,16 @@ void xADS1115::beginADS(){
   ADS.requestADC_Differential_0_1();
 
   Serial.println("ADS0 modes set");
-
-  int value0 = ADS.readADC(0);      //  first read to trigger
-  Serial.println(value0);
 }
 
 void xADS1115::makeADSReady(){
-  adsReady = true;
-  /*
-  if (count % 10000 == 0){
-    Serial.print("Time: ");
-    Serial.println(millis());
-  }
-  */
+  ads_ready = true;
 }
 
 int16_t xADS1115::handleConversion(){
-  if (adsReady == false){
+  if (ads_ready == false){
      return NULL;
-  } else {
-    adsReady = false;
-    return ADS.getValue();
   }
+  ads_ready = false;
+  return ADS.getValue();
 }

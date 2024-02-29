@@ -2,6 +2,9 @@
 #include <PubSubClient.h>
 #include <Wire.h>
 
+#ifndef WIFIMQTT_H
+#define WIFIMQTT_H
+
 class WiFiMQTT {
     public:
         WiFiMQTT(char* wifi_ssid, char* wifi_pswd, char* mqtt_server_ip, int mqtt_server_port);
@@ -20,6 +23,8 @@ class WiFiMQTT {
         char* mqtt_server_ip;
         int mqtt_server_port;
         PubSubClient* client;
-        WiFiClient espClient;
+        WiFiClient esp_client;
         static void callback(char* topic, byte* message, unsigned int length);
 };
+
+#endif
