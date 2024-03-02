@@ -20,11 +20,11 @@
   #define POLLING_INTERVAL 120000 // useconds
   #define FULL_QUEUE_WAIT_TIME 480000 // useconds
 #elif RF_RATE == 1
-  #define POLLING_INTERVAL 20000 // useconds
-  #define FULL_QUEUE_WAIT_TIME 200000 // useconds
+  #define POLLING_INTERVAL 12000 // useconds
+  #define FULL_QUEUE_WAIT_TIME 48000 // useconds
 #elif RF_RATE == 2
-  #define POLLING_INTERVAL 10000 // useconds
-  #define FULL_QUEUE_WAIT_TIME 100000 // useconds
+  #define POLLING_INTERVAL 6000 // useconds
+  #define FULL_QUEUE_WAIT_TIME 24000 // useconds
 #else
   #error "RF_RATE must be defined and be 0, 1, or 2"
 #endif
