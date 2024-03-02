@@ -197,7 +197,7 @@ int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
 
   // Need to adjust both num outstanding and last acked frame id. Handle the edge case
   // where the frame_id is less than the last acked frame id (i.e. overflow occured)
-  std::cout << "Received ack for frame " << frame->frame_id << std::endl;
+  std::cout << "Received ack for frame " << (int) frame->frame_id << std::endl;
   
   unsigned int real_frame_id = frame->frame_id;
   if (frame->frame_id < this_conn->last_acked_frame_id)

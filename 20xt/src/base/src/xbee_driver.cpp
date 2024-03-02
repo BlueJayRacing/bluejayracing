@@ -18,7 +18,7 @@
 #endif
 #if RF_RATE == 0
   #define POLLING_INTERVAL 120000 // useconds
-  #define FULL_QUEUE_WAIT_TIME 1200000 // useconds
+  #define FULL_QUEUE_WAIT_TIME 240000 // useconds
 #elif RF_RATE == 1
   #define POLLING_INTERVAL 20000 // useconds
   #define FULL_QUEUE_WAIT_TIME 200000 // useconds
