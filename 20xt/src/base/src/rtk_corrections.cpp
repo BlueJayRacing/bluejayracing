@@ -7,11 +7,19 @@
 #include "helpers/ipc_config.h"
 #include "baja_live_comm.pb.h"
 
-// To be implemented, currently gets dummy RTK correction
-Observation get_rtk_correction() {
-  RTKCorrection* comm = new RTKCorrection();
+std::string read_raw_rtcm() {
+  // To be implemented, currently returns a dummy string
+  return "My string of bytes";
+}
+
+Observation build_rtk_correction() {
+  std::string read_raw_rtcm();
+  
+  RTKCorrection* correction = new RTKCorrection();
+  correction->set_rtk_correction("My string of bytes");
+
   Observation obs;
-  obs.set_allocated_communication(comm);
+  obs.set_allocated_rtk_correction(correction);
   return obs;
 }
 
@@ -26,7 +34,7 @@ int main () {
 
   while (true) {
     // Should be a blocking call which retrieves an Observation with an RTK correction
-    std::string payload = get_rtk_correction().serialize_as_string();
+    std::string payload = build_rtk_correction().serialize_as_string();
 
     int err = StationIPC::send_message(tx_queue, payload);
     if (err == StationIPC::QUEUE_FULL) {
