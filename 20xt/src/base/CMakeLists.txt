@@ -46,6 +46,13 @@ target_link_libraries(pit_commands
     PUBLIC baja_proto    
 )
 
+# RTK Corrections
+add_executable(rtk_corrections src/rtk_corrections.cpp ${HELPER_SOURCES})
+target_link_libraries(rtk_corrections 
+    PUBLIC xbee_baja
+    PUBLIC baja_proto    
+)
+
 # TRANSMIT PRIORITIZER
 add_executable(transmit_prioritizer src/transmit_prioritizer.cpp ${HELPER_SOURCES})
 target_link_libraries(transmit_prioritizer
