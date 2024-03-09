@@ -9,7 +9,7 @@
 int count = 0;
 int totCount = 0;
 char msg[150];
-char topic[] = "testTopic";
+char topic[] = "testTopic/4";
 
 QoSWiFiMQTT* mqtt_client;
 
