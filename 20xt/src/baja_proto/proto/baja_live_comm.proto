@@ -76,7 +76,7 @@ message CarState {
 }
 
 message RTKCorrection {
-    
+    bytes rtk_correction = 1;
 }
 
 message Observation {
