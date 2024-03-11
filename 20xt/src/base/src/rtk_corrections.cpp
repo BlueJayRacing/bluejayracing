@@ -8,7 +8,8 @@
 #include "baja_live_comm.pb.h"
 
 std::string read_raw_rtcm() {
-  // To be implemented, currently returns a dummy string
+  // TODO: return the exact string of bytes which need to be re-emitted into the
+  // GPS on the car
   return "My string of bytes";
 }
 
