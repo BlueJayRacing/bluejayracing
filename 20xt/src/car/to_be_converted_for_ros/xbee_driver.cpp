@@ -29,10 +29,14 @@
   #error "RF_RATE must be defined and be 0, 1, or 2"
 #endif
 
+int init(Connection* &conn, mqd_t &tx_queue, mqd_t &rx_queue);
+int spin(Connection* &conn, const mqd_t &tx_queue, const mqd_t &rx_queue);
+int try_transmit_data(Connection* conn, const mqd_t tx_queue);
+int try_recieve_data(Connection* conn, const mqd_t rx_queue);
 
 int init(Connection* &conn, mqd_t &tx_queue, mqd_t &rx_queue) {
   // Open the Xbee connection
-  Connection* conn = new XBeeConnection(XbeeBajaSerialConfig::STATION_DEVICE, XbeeBajaSerialConfig::BAUDRATE, XbeeBajaSerialConfig::CONGESTION_CONTROL_WINDOW);
+  Connection* conn = new XBeeConnection(XbeeBajaSerialConfig::CAR_DEVICE, XbeeBajaSerialConfig::BAUDRATE, XbeeBajaSerialConfig::CONGESTION_CONTROL_WINDOW);
   int err = conn->open();
   while (err == Connection::RECOVERABLE_ERROR) {
     usleep(100000);
@@ -44,14 +48,16 @@ int init(Connection* &conn, mqd_t &tx_queue, mqd_t &rx_queue) {
   }
   std::cout << "Xbee connection initialized" << std::endl;
 
-  // Open the IPC queues
-  mqd_t tx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
-  mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
+  // TODO: Needs Migrated to ROS
+  // Open the IPC queues. This will be connecting to ROS topics
+  mqd_t tx_queue = open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE);
+  mqd_t rx_queue = open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE);
+  // END TODO
 }
 
-int spin() {
+int spin(Connection* &conn, const mqd_t &tx_queue, const mqd_t &rx_queue) {
   // Send
-  err = try_transmit_data(conn, tx_queue);
+  int err = try_transmit_data(conn, tx_queue);
   if (err == EXIT_FAILURE) {
     std::cout << "Connection failed when trying to transmit, exiting" << std::endl;
     return EXIT_FAILURE;
@@ -68,16 +74,17 @@ int spin() {
 int main() {
   std::cout << "starting xbee driver..." << std::endl;
   Connection* conn;
-  const mqd_t tx_queue;
-  const mqd_t rx_queue;
-  int success = init(&conn, &tx_queue, &rx_queue);
+  mqd_t tx_queue;
+  mqd_t rx_queue;
+
+  int success = init(conn, tx_queue, rx_queue);
   if (success == EXIT_FAILURE) {
     return EXIT_FAILURE;
   }
   
   while (true) {
     usleep(POLLING_INTERVAL);
-    spin();
+    spin(conn, tx_queue, rx_queue);
   }
  
   // Cleanup
@@ -88,11 +95,14 @@ int main() {
 /* Makes best effort to send a message if messages are available (retries on failure) */
 int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
+  // TODO: Needs migrated to ROS
+  // Non-blocking attempt to retrieve a message from the to-transmit queue. Return
+  // from function if no message is available
   std::string msg = StationIPC::get_message(tx_queue);
   if (msg.empty()) {
     return EXIT_SUCCESS;
   }
-  std::cout << "Retrieved message from IPC, sending to Xbee" << std::endl;
+  // END TODO
 
   // If full recoverable, wait only once
   int err = conn->send(msg);
@@ -141,13 +151,16 @@ int try_recieve_data(Connection* conn, const mqd_t rx_queue) {
   if (conn->num_messages_available() > 0) {
     std::cout << "Message available from Xbee" << std::endl;
     std::string msg = conn->pop_message();
+    
+    // TODO: Needs migrated to ROS
+    // In a non-blocking fashion, attempt to pass on the messages recieved from the radio
+    // ie, this will probably be publishing to ROS topic(s)
     int err = StationIPC::send_message(rx_queue, msg);
-
-    // Xbee driver responsible for keeping queue recent
     if (err == StationIPC::QUEUE_FULL) {
       StationIPC::get_message(rx_queue);
       StationIPC::send_message(rx_queue, msg);
     }
+    // END TODO
   }
   return EXIT_SUCCESS;
 }
