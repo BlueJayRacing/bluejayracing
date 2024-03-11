@@ -14,10 +14,10 @@ std::string read_raw_rtcm() {
 }
 
 Observation build_rtk_correction() {
-  std::string rtcm_correction read_raw_rtcm();
+  std::string rtk_correction read_raw_rtcm();
   
   RTKCorrection* correction = new RTKCorrection();
-  correction->set_rtk_correction(rtcm_correction);
+  correction->set_rtk_correction(rtk_correction);
 
   Observation obs;
   obs.set_allocated_rtk_correction(correction);
