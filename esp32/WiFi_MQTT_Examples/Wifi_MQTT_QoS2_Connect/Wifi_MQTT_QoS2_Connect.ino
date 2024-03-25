@@ -8,7 +8,8 @@
 #define wifi_auto_connect true
 int count = 0;
 int totCount = 0;
-char msg[150];
+int msgCount = 0;
+uint8_t msg[100];
 char topic[] = "testTopic/4";
 
 QoSWiFiMQTT* mqtt_client;
@@ -25,17 +26,16 @@ void setup() {
 }
 
 void loop() {
-  for (int i = 0; i < 100; i++){
-    msg[i] = count + 'A';
+  msg[0] = msgCount;
+  for (int i = 1; i < 100; i++){
+    msg[i] = count;
     count ++;
-    count = count % 26;
     totCount++;
-    if (totCount % 10000 == 0){
-      Serial.println(millis());
-    }
   }
+  msgCount++;
 
-  mqtt_client->publishMQTT(topic, msg, 2);
+  mqtt_client->publishMQTT(topic, msg, 100, 2);
+  delay(3);
 }
 
 //65000

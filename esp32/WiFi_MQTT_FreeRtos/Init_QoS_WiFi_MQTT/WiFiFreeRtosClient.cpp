@@ -1,12 +1,11 @@
 #include "WiFiFreeRtosClient.h"
 
-#define RTOS_QUEUE_SIZE 20000
+#define RTOS_QUEUE_SIZE 50000
 #define MQTT_PORT 1883
 #define MQTT_MESSAGE_LENGTH 50
 #define MQTT_SEND_MESSAGE_THRESHHOLD RTOS_QUEUE_SIZE / 10
+#define CS_PIN 5
 #define INTRUPT_PIN 2
-#define GAIN 16
-#define DATA_RATE 7
 
 namespace crt
 {
@@ -20,6 +19,7 @@ namespace crt
     this->mqtt_client = new QoSWiFiMQTT(ssid, pswd, MQTT_PORT, ip, true);
     this->mqtt_client->connectToWiFi();
     this->mqtt_client->connectToMQTT();
+    uint8_t arr[4] = {1, 2, 3, 4};
 		start();
 	}
 	
@@ -39,16 +39,18 @@ namespace crt
 
     for(;;) {
       if (uxQueueMessagesWaiting(dataQueue) >= MQTT_SEND_MESSAGE_THRESHHOLD){
-        for (int i = 0; i < MQTT_SEND_MESSAGE_THRESHHOLD / MQTT_MESSAGE_LENGTH; i++) {
+        Serial.println("Sending...");
+        for (int i = 0; i < MQTT_SEND_MESSAGE_THRESHHOLD / MQTT_MESSAGE_LENGTH + 1; i++) {
           for (int j = 0; j < MQTT_MESSAGE_LENGTH; j++){
             xQueueReceive(dataQueue, &recieved, 1000);
-            leftByte = ((uint8_t) recieved & 0xff);
-            rightByte = ((uint8_t) recieved >> 8);
+            leftByte = (recieved & 0xff);
+            rightByte = (recieved >> 8);
             msg[2*j] = rightByte;
             msg[2*j + 1] = leftByte;
           }
           
           mqtt_client->publishMQTT(topic, msg, MQTT_MESSAGE_LENGTH * 2, 2);
+          delay(3);
         }
       }
     }
@@ -71,18 +73,18 @@ namespace crt
     uint16_t value = 0;
     int numValues = 0;
     Serial.println("RecordValue main called");
-		vTaskDelay(5000); // wait for other threads to have started up as well.
+		vTaskDelay(10000); // wait for other threads to have started up as well.
     
-		xADS1115 ads1115 = xADS1115(INTRUPT_PIN, GAIN, DATA_RATE);
+		xADS1120 ads1120 = xADS1120();
 
-    ads1115.beginADS();
+    ads1120.begin(CS_PIN, INTRUPT_PIN);
     Serial.println("ADS started");
 
 		for (;;){
-      value = abs(ads1115.handleConversion());
+      value = ads1120.readADC();
       if (value != NULL){
         numValues ++;
-        if (numValues % 1720 == 0){
+        if (numValues % 2000 == 0){
           Serial.println(millis());
         }
         xQueueSend(dataQueue, &value, 1000);

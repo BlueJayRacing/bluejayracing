@@ -29,11 +29,14 @@ void QoSWiFiMQTT::connectToWiFi() {
 void QoSWiFiMQTT::connectToMQTT() {
   Serial.print("Checking WiFi connection...");
   while (!wifiConnected) {
-    delay(5000);
+    delay(3000);
   }
 
   Serial.print("Connecting to MQTT...");
   mqtt_client->connect();
+  while(!mqttConnected) {
+    delay(3000);
+  }
 }
 
 void QoSWiFiMQTT::publishMQTT(char* topic, uint8_t* message, int length, int QoS) {
@@ -108,6 +111,7 @@ void QoSWiFiMQTT::onMQTTDisconnect(espMqttClientTypes::DisconnectReason reason) 
   Serial.println("Disconnected from MQTT");
   mqttConnected = false;
 }
+
 
 
 

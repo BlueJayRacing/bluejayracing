@@ -14,7 +14,8 @@ class QoSWiFiMQTT {
         void unsubscribeMQTT(char* topic);
         bool isConnected();
     private:
-        void setUpMQTTCallbacks();        static void wifiEvent(WiFiEvent_t event);
+        void setUpMQTTCallbacks();
+        static void wifiEvent(WiFiEvent_t event);
         static void onMQTTConnect(bool sessionPresent);
         static void onMQTTMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
         static void onMQTTPublish(uint16_t packetId);

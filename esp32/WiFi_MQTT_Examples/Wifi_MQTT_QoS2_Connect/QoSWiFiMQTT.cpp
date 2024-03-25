@@ -4,6 +4,7 @@
 
 bool QoSWiFiMQTT::wifiConnected = false;
 bool QoSWiFiMQTT::mqttConnected = false;
+int QoSWiFiMQTT::numPub = 0;
 
 QoSWiFiMQTT::QoSWiFiMQTT(char* wifi_ssid, char* wifi_pswd, int mqtt_port, uint8_t* mqtt_ip_addr, bool wifi_auto_reconnect = false) {
   this->wifi_ssid = wifi_ssid;
@@ -36,11 +37,11 @@ void QoSWiFiMQTT::connectToMQTT() {
   mqtt_client->connect();
 }
 
-void QoSWiFiMQTT::publishMQTT(char* topic, char* message, int QoS) {
+void QoSWiFiMQTT::publishMQTT(char* topic, uint8_t* message, int length, int QoS) {
   while (!mqttConnected) {
     delay(100);
   }
-  mqtt_client->publish(topic, QoS, false, message);
+  mqtt_client->publish(topic, QoS, false, message, length);
 }
 
 void QoSWiFiMQTT::subscribeMQTT(char* topic, int QoS) {
@@ -87,6 +88,10 @@ void QoSWiFiMQTT::onMQTTMessage(const espMqttClientTypes::MessageProperties& pro
 
 void QoSWiFiMQTT::onMQTTPublish(uint16_t packetId) {
   //Serial.println("onMQTTPublish");
+  numPub++;
+  if (numPub % 100 == 0) {
+    Serial.println(millis());
+  }
 }
 
 void QoSWiFiMQTT::onMQTTUnsubscribe(uint16_t packetId) {

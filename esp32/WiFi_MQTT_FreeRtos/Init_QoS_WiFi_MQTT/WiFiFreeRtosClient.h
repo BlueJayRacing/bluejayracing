@@ -2,7 +2,7 @@
 
 #include <crt_CleanRTOS.h>
 #include "QoSWiFiMQTT.h"
-#include "xADS1115.h"
+#include "xADS1120.hpp"
 
 #ifndef WIFIFREERTOSCLIENT_H
 #define WIFIFREERTOSCLIENT_H
