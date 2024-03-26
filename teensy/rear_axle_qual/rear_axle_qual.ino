@@ -28,7 +28,8 @@ const int chipSelect = BUILTIN_SDCARD;
 //  choose your sensor
 ADS1115 ADS0(0x48);
 ADS1115 ADS1(0x49);
-ADS1115 ADS3(0x4A);
+ADS1115 ADS2(0x4A);
+ADS1115 ADS3(0x4B);
 
 int ADS_INT_0 = 2;
 int ADS_INT_1 = 3;
@@ -38,6 +39,7 @@ uint16_t count = 0;
 
 uint16_t value0 = 0;
 uint16_t value1 = 0;
+uint16_t value2 = 0;
 uint16_t value3 = 0;
 
 uint16_t prev  = 0;
@@ -109,6 +111,12 @@ void setup()
   ADS1.requestADC_Differential_0_1();
 //  ADS1.readADC(0);      //  first read to trigger
 
+  ADS2.begin();
+  ADS2.setGain(0);      
+  ADS2.setDataRate(2); 
+  ADS2.setMode(0); 
+  ADS2.requestADC(0);
+
   ADS3.begin();
   ADS3.setGain(0);      
   ADS3.setDataRate(2); 
@@ -132,14 +140,18 @@ void loop() {
     file.print(",");
     file.print(ADS1.toVoltage(value1),9);
     file.print(",");
+    file.print(ADS1.toVoltage(value1),9);
+    file.print(",");
     file.println(ADS3.toVoltage(value3),9);
     Serial.print(now0 - last0);
     Serial.print(",\tV0:");
-    Serial.print(1000000*(ADS0.toVoltage(value0)),9);
+    Serial.print(ADS0.toVoltage(value0),9);
     Serial.print(",\tV1:"); 
-    Serial.print(1000000*(ADS1.toVoltage(value1)),9);
+    Serial.print(ADS1.toVoltage(value1),9);
+    Serial.print(",\tV2:"); 
+    Serial.println(ADS3.toVoltage(value3),9);
     Serial.print(",\tV3:"); 
-    Serial.println(3000*((ADS3.toVoltage(value3))-.5)/4,9);
+    Serial.println(ADS3.toVoltage(value3),9);
     count++;
   }
   
@@ -174,6 +186,7 @@ bool handleConversion0()
 {
   if (RDY0 == false) return false;
   value0 = ADS0.getValue();
+  value2 = ADS3.getValue();
   value3 = ADS3.getValue();
   RDY0 = false;
   return true;
