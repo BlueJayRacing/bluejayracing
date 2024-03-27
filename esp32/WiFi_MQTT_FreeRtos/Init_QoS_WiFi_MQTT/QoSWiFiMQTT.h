@@ -6,8 +6,7 @@
 
 class QoSWiFiMQTT {
     public:
-        QoSWiFiMQTT(char* wifi_ssid, char* wifi_pswd, int mqtt_port, uint8_t* mqtt_ip_addr, bool wifi_auto_reconnect);
-        void connectToWiFi();
+        QoSWiFiMQTT(int mqtt_port, uint8_t* mqtt_ip_addr, bool wifi_auto_reconnect);
         void connectToMQTT();
         void publishMQTT(char* topic, uint8_t* message, int length, int QoS);
         void subscribeMQTT(char* topic, int QoS);
@@ -15,7 +14,6 @@ class QoSWiFiMQTT {
         bool isConnected();
     private:
         void setUpMQTTCallbacks();
-        static void wifiEvent(WiFiEvent_t event);
         static void onMQTTConnect(bool sessionPresent);
         static void onMQTTMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total);
         static void onMQTTPublish(uint16_t packetId);
@@ -24,11 +22,8 @@ class QoSWiFiMQTT {
         static void onMQTTDisconnect(espMqttClientTypes::DisconnectReason reason);
         espMqttClient* mqtt_client;
         IPAddress* mqtt_ip_addr;
-        char* wifi_ssid;
-        char* wifi_pswd;
         int mqtt_port;
         bool wifi_auto_reconnect;
-        static bool wifiConnected;
         static bool mqttConnected;
 };
 

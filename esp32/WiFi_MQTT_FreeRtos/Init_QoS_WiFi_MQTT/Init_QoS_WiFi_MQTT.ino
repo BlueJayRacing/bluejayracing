@@ -1,4 +1,5 @@
 #include "WiFiFreeRtosClient.h"
+#include <WiFi.h>
 
 void setup() {
   Serial.begin(115200);
@@ -7,10 +8,18 @@ void setup() {
   char ssid[] = "piWifi";
   char pswd[] = "bluejayracing";
   uint8_t ip[] = {10, 42, 0, 1};
+  WiFi.begin(ssid, pswd); 
+  WiFi.setAutoReconnect(true);
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("Still connecting");
+    delay(4000);
+  }
+
   //Create a recordValue object which records a value to be sent by the sendValue object
   crt::recordValue recordValueTask("recordValue", 2 /*priority*/, 40000 /*stackBytes*/, ARDUINO_RUNNING_CORE);
   //Create a sendValue object which creates a BLECLIENT object and a thread to send values to that client 
-  crt::sendValue sendValueTask("sendValue", 2 /*priority*/, 40000 /*stackBytes*/, ARDUINO_RUNNING_CORE, ssid, pswd, ip);
+  crt::sendValue sendValueTask("sendValue", 2 /*priority*/, 40000 /*stackBytes*/, ARDUINO_RUNNING_CORE, ip);
 }
 
 void loop() {

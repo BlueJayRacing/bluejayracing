@@ -3,7 +3,7 @@
   Lucas Etchezuri 30/06/2020
 */
 #define CS_PIN 5
-#define DATA_READY_PIN 2
+#define DATA_READY_PIN 4
 
 #include "xADS1120.hpp"
 

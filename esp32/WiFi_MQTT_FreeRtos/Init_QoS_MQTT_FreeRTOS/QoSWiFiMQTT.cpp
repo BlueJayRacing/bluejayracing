@@ -2,25 +2,39 @@
 
 #define MIN_SECURITY WIFI_AUTH_OPEN
 
+bool QoSWiFiMQTT::wifiConnected = false;
 bool QoSWiFiMQTT::mqttConnected = false;
 
-QoSWiFiMQTT::QoSWiFiMQTT(int mqtt_port, uint8_t* mqtt_ip_addr, bool wifi_auto_reconnect = false) {
+QoSWiFiMQTT::QoSWiFiMQTT(char* wifi_ssid, char* wifi_pswd, int mqtt_port, uint8_t* mqtt_ip_addr, bool wifi_auto_reconnect = false) {
+  this->wifi_ssid = wifi_ssid;
+  this->wifi_pswd = wifi_pswd;
   this->mqtt_port = mqtt_port;
+  this->wifi_auto_reconnect = wifi_auto_reconnect;
   this->mqtt_client = new espMqttClient();
   setUpMQTTCallbacks();
+  WiFi.onEvent(wifiEvent);
+  WiFi.setMinSecurity(MIN_SECURITY);
 
   IPAddress ip_address(10, 42, 0, 1);
+
+  WiFi.setAutoReconnect(this->wifi_auto_reconnect);
   mqtt_client->setServer(ip_address, mqtt_port);
 }
 
+void QoSWiFiMQTT::connectToWiFi() {
+  Serial.print("Connecting to Wi-Fi...");
+  WiFi.begin(this->wifi_ssid, this->wifi_pswd);
+}
+
 void QoSWiFiMQTT::connectToMQTT() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Reconnecting WiFi");
-    delay(4000);
+  Serial.print("Checking WiFi connection...");
+  while (!wifiConnected) {
+    delay(3000);
   }
+
   Serial.print("Connecting to MQTT...");
   mqtt_client->connect();
-  while(!mqttConnected) {
+  while (!mqttConnected) {
     delay(3000);
   }
 }
@@ -53,6 +67,23 @@ void QoSWiFiMQTT::setUpMQTTCallbacks() {
   mqtt_client->onPublish(onMQTTPublish);
 }
 
+void QoSWiFiMQTT::wifiEvent(WiFiEvent_t event) {
+  Serial.printf("[WiFi-event] event: %d\n", event);
+  switch (event) {
+    case SYSTEM_EVENT_STA_GOT_IP:
+      Serial.println("WiFi connected");
+      Serial.println("IP address: ");
+      Serial.println(WiFi.localIP());
+      wifiConnected = true;
+      break;
+    case SYSTEM_EVENT_STA_DISCONNECTED:
+      wifiConnected = false;
+      break;
+    default:
+      break;
+  }
+}
+
 void QoSWiFiMQTT::onMQTTMessage(const espMqttClientTypes::MessageProperties& properties, const char* topic, const uint8_t* payload, size_t len, size_t index, size_t total) {
   Serial.println("onMQTTMessage");
 }
@@ -80,7 +111,3 @@ void QoSWiFiMQTT::onMQTTDisconnect(espMqttClientTypes::DisconnectReason reason) 
   Serial.println("Disconnected from MQTT");
   mqttConnected = false;
 }
-
-
-
-

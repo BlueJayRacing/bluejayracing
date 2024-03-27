@@ -13,11 +13,13 @@ namespace crt
   class sendValue : public Task
 	{
 	public:
-  	sendValue(const char *taskName, unsigned int taskPriority, unsigned int taskSizeBytes, unsigned int taskCoreNumber, char* ssid, char* pswd, uint8_t* ip);
+  	sendValue(const char *taskName, unsigned int taskPriority, unsigned int taskSizeBytes, unsigned int taskCoreNumber, uint8_t* ip_address);
 		static void StaticMain(void *pParam);
 	private:
 		void main();
-    QoSWiFiMQTT* mqtt_client;
+    char* ssid;
+    char* pswd;
+    uint8_t* ip_address;
 	};
 
   //Class object to create FREERTOS task that records values to be sent by sendValue to a BLECLIENT
