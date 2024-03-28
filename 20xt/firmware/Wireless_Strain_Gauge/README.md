@@ -10,7 +10,6 @@ Arduino IDE through Sketch > Manage Libraries > Add .ZIP Library.
 - https://github.com/bertmelis/espMqttClient
 - https://github.com/LucasEtchezuri/Arduino-ADS1120
 
-
 The following Arduino IDE libraries need to be installed, and that can be done through the Library Manager:
 - CleanRTOS by Marius Versteegen (ver. 0.08)
 - Adafruit BusIO by Adafruit (ver. 1.15.0)
