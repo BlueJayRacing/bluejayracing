@@ -5,8 +5,8 @@
 
 #include "mains/transmit_prioritizer.h"
 #include "baja_live_comm.pb.h"
-#include "helpers/ipc_config.h"
-#include "helpers/live_comm_factory.h"
+#include "ipc_config.h"
+#include "live_comm_factory.h"
 #include "xbee/xbee_baja_network_config.h"
 
 static Observation* remainder_data = nullptr;
@@ -17,15 +17,15 @@ int main()
   std::cout << "starting transmit prioritizer" << std::endl;
   
   // Open queues
-  const mqd_t radio_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
+  const mqd_t radio_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
   if (radio_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
   const std::vector<mqd_t> data_queues = {
-    StationIPC::open_queue(StationIPC::RTK_CORRECTOR_TX_QUEUE, false),
-    StationIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE, false),
+    BajaIPC::open_queue(StationIPC::RTK_CORRECTOR_TX_QUEUE, false),
+    BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE, false),
   };
   for (int i = 0; i < data_queues.size(); i++) {
     if (data_queues[i] == -1) {
@@ -49,12 +49,12 @@ int main()
     std::cout << live_comm.DebugString() << std::endl;
     // END DEBUG
 
-    int result = StationIPC::send_message(radio_queue, msg);
-    if (result == StationIPC::QUEUE_FULL) {
-      StationIPC::get_message(radio_queue);
-      result = StationIPC::send_message(radio_queue, msg);
+    int result = BajaIPC::send_message(radio_queue, msg);
+    if (result == BajaIPC::QUEUE_FULL) {
+      BajaIPC::get_message(radio_queue);
+      result = BajaIPC::send_message(radio_queue, msg);
     }
-    if (result == StationIPC::SEND_ERROR) {
+    if (result == BajaIPC::SEND_ERROR) {
       std::cerr << "Could not enqeue message" << std::endl;
     }
   }
@@ -106,7 +106,7 @@ int get_next_data(Observation* data_buffer, const int prev_index, const std::vec
   // We need to try every queue again, with previous index as lowest priority
   for (int i = 1; i <= tx_queues.size(); i++){
     int queue_index = (i + prev_index) % tx_queues.size();
-    std::string data = StationIPC::get_message(tx_queues[queue_index]);
+    std::string data = BajaIPC::get_message(tx_queues[queue_index]);
     if (data.empty()) {
       continue;
     }

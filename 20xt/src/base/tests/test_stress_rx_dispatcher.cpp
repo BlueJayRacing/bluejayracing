@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "mains/receive_dispatcher.h"
-#include "helpers/ipc_config.h"
+#include "ipc_config.h"
 #include "proto_helpers.h"
 
 // This is the recieve logic for stress testing the XBee. It mocks
@@ -17,7 +17,7 @@ int main()
 {
   std::cout << "starting receive dispatcher" << std::endl;
   // Open the queues
-  const mqd_t radio_rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, true);
+  const mqd_t radio_rx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, true);
   if (radio_rx_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
@@ -30,7 +30,7 @@ int main()
   int WINDOW_SIZE = 5; // seconds
   int msg_num = 0;
   while (true) {
-    std::string msg = StationIPC::get_message(radio_rx_queue); // blocking
+    std::string msg = BajaIPC::get_message(radio_rx_queue); // blocking
     msg_num++;
     bytes_read_this_window += msg.size();
 

@@ -86,7 +86,7 @@ message Observation {
     optional Timestamp timestamp = 4;
     optional AnalogChannel analog_ch = 5;
     optional CarState car_state = 6;
-    optoinal RTKCorrection rtk_correction = 7;
+    optional RTKCorrection rtk_correction = 7;
 }
 
 message LiveComm {

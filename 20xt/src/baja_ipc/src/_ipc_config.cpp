@@ -4,10 +4,10 @@
 #include <stdexcept>
 #include <iostream>
 
-#include "helpers/ipc_config.h"
+#include "ipc_config.h"
 
 /* Open a POSIX message queue. You can choose to open as blocking or not */
-const mqd_t StationIPC::open_queue(std::string q_fname, bool blocking)
+const mqd_t BajaIPC::open_queue(std::string q_fname, bool blocking)
 {
   if (blocking) {
     return mq_open(q_fname.c_str(), QUEUE_FLAGS, QUEUE_MODE, &QUEUE_ATTRIBUTES);
@@ -25,22 +25,24 @@ const int num_messages_available(mqd_t qid) {
   return attr.mq_curmsgs;
 }
 
-const int StationIPC::close_queue(mqd_t qid)
+/* Close the queue from your process' perspective. Does not destroy queue. */
+const int BajaIPC::close_queue(mqd_t qid)
 {
   mq_close(qid);
-  return EXIT_SUCCESS;
+  return 0;
 }
 
-const int StationIPC::unlink_queue(std::string q_fname)
+/* Destroys the queue. Likely unnecessary, will break your processes if called concurently */
+const int BajaIPC::unlink_queue(std::string q_fname)
 {
   mq_unlink(q_fname.c_str());
-  return EXIT_SUCCESS;
+  return 0;
 }
 
-/* Attempt to enqueue a message. If queue is non-blocking, will eturn empty str if queue empty */
-const std::string StationIPC::get_message(mqd_t qid) {
-  char buffer[StationIPC::MAX_QUEUE_MSG_SIZE];
-  int bytes_read = mq_receive(qid, buffer, StationIPC::MAX_QUEUE_MSG_SIZE, NULL);
+/* Attempt to enqueue a message. If queue is non-blocking, will return empty str if queue empty */
+const std::string BajaIPC::get_message(mqd_t qid) {
+  char buffer[BajaIPC::MAX_QUEUE_MSG_SIZE];
+  int bytes_read = mq_receive(qid, buffer, BajaIPC::MAX_QUEUE_MSG_SIZE, NULL);
   if (bytes_read == -1) {
     if (errno == EAGAIN) {
       return ""; // empty queue
@@ -52,8 +54,8 @@ const std::string StationIPC::get_message(mqd_t qid) {
 }
 
 /* Attempt to enqueue a message. If queue is non-blocking, may return QUEUE_FULL */
-const int StationIPC::send_message(mqd_t qid, const std::string& payload) {
-  if (payload.size() > StationIPC::MAX_QUEUE_MSG_SIZE) {
+const int BajaIPC::send_message(mqd_t qid, const std::string& payload) {
+  if (payload.size() > BajaIPC::MAX_QUEUE_MSG_SIZE) {
     std::cerr << "ERROR: Message is too long" << std::endl;
     return SEND_ERROR;
   }

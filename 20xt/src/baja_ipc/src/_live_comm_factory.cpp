@@ -1,5 +1,5 @@
 #include "baja_live_comm.pb.h"
-#include "helpers/live_comm_factory.h"
+#include "live_comm_factory.h"
 #include "proto_helpers.h"
 
 

@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 #include "mains/data_logger.h"
-#include "helpers/ipc_config.h"
+#include "ipc_config.h"
 #include "baja_live_comm.pb.h"
 
 // An infinite loop which attempts to read bytes from an ipc queue
@@ -11,7 +11,7 @@ int main() {
   std::cout << "starting data logger..." << std::endl;
   
   // Open queue
-  int rx_queue = StationIPC::open_queue(StationIPC::LOGGER_RX_QUEUE, true);
+  int rx_queue = BajaIPC::open_queue(StationIPC::LOGGER_RX_QUEUE, true);
   if (rx_queue == -1) {
     std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
@@ -19,7 +19,7 @@ int main() {
 
   // Main loop
   while (true) {
-    std::string msg = StationIPC::get_message(rx_queue); // Blocking
+    std::string msg = BajaIPC::get_message(rx_queue); // Blocking
     if (msg == "") {
       continue;
     }

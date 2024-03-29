@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "mains/xbee_driver.h"
-#include "helpers/ipc_config.h"
+#include "ipc_config.h"
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
 #include "xbee/xbee_baja_serial_config.h"
@@ -98,7 +98,7 @@ int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
   // TODO: Needs migrated to ROS
   // Non-blocking attempt to retrieve a message from the to-transmit queue. Return
   // from function if no message is available
-  std::string msg = StationIPC::get_message(tx_queue);
+  std::string msg = BajaIPC::get_message(tx_queue);
   if (msg.empty()) {
     return EXIT_SUCCESS;
   }
@@ -157,7 +157,7 @@ int try_recieve_data(Connection* conn, const mqd_t rx_queue) {
     // ie, this will probably be publishing to ROS topic(s)
     int err = StationIPC::send_message(rx_queue, msg);
     if (err == StationIPC::QUEUE_FULL) {
-      StationIPC::get_message(rx_queue);
+      BajaIPC::get_message(rx_queue);
       StationIPC::send_message(rx_queue, msg);
     }
     // END TODO

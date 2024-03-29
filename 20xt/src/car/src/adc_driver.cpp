@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 
-#include "mains/pit_commands.h"
+#include "mains/adc_driver.h"
 #include "ipc_config.h"
 #include "baja_live_comm.pb.h"
 
@@ -19,7 +19,7 @@ Observation get_dummy_observation() {
 // We want to produce a series of dummy Communcation values to the TX queue
 int main () {
   // Open the message queue, return if it fails
-  mqd_t rx_queue = BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE, false);
+  mqd_t rx_queue = BajaIPC::open_queue(CarIPC::the_queue_name_goes_here, false);
   if (rx_queue == -1) {
     std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
@@ -28,17 +28,7 @@ int main () {
   while (true) {
     usleep(1000000);
     // Let's send a message!
-    std::string payload = get_dummy_observation().SerializeAsString();
+    std::string payload = get_my_data_as_string();
     int err = StationIPC::send_message(rx_queue, payload);
-    if (err == StationIPC::QUEUE_FULL) {
-      std::cout << "Queue is full, dequeing before enqueing" << std::endl;
-      BajaIPC::get_message(rx_queue);
-      err = StationIPC::send_message(rx_queue, payload);
-    }
-
-    if (err == StationIPC::SEND_ERROR) {
-      std::cerr << "Could not send the message" << std::endl;
-    }
-    std::cout << "Sent pit command to IPC queue" << std::endl;
   }
 }

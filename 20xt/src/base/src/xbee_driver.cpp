@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "mains/xbee_driver.h"
-#include "helpers/ipc_config.h"
+#include "ipc_config.h"
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
 #include "xbee/xbee_baja_serial_config.h"
@@ -46,8 +46,8 @@ int main() {
   std::cout << "Xbee connection initialized" << std::endl;
 
   // Open the IPC queues
-  const mqd_t tx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
-  const mqd_t rx_queue = StationIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
+  const mqd_t tx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
+  const mqd_t rx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
 
   while (true) {
     usleep(POLLING_INTERVAL);
@@ -74,7 +74,7 @@ int main() {
 /* Makes best effort to send a message if messages are available (retries on failure) */
 int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
 
-  std::string msg = StationIPC::get_message(tx_queue);
+  std::string msg = BajaIPC::get_message(tx_queue);
   if (msg.empty()) {
     return EXIT_SUCCESS;
   }
@@ -131,7 +131,7 @@ int try_recieve_data(Connection* conn, const mqd_t rx_queue) {
 
     // Xbee driver responsible for keeping queue recent
     if (err == StationIPC::QUEUE_FULL) {
-      StationIPC::get_message(rx_queue);
+      BajaIPC::get_message(rx_queue);
       StationIPC::send_message(rx_queue, msg);
     }
   }
