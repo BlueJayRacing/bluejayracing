@@ -8,14 +8,6 @@
 #include "ipc_config.h"
 #include "baja_live_comm.pb.h"
 
-Observation get_dummy_observation() {
-  Communication* comm = new Communication();
-  comm->set_instruction(Communication_DriverInstruction::Communication_DriverInstruction_STOP_FOR_PIT);
-  Observation obs;
-  obs.set_allocated_communication(comm);
-  return obs;
-}
-
 // We want to produce a series of dummy Communcation values to the TX queue
 int main () {
   // Open the message queue, return if it fails
