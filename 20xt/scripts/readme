@@ -1,0 +1,4 @@
+Instructions for station:
+`./station_docker_run_dev.sh`
+`./station_proc_build.sh`
+`./station_proc_run.sh`
