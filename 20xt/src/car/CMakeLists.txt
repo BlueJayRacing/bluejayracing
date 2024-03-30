@@ -61,7 +61,6 @@ target_link_libraries(mqtt_client
 # BROKER
 add_executable(broker src/broker.cpp ${HELPER_SOURCES})
 target_link_libraries(broker
-    PUBLIC paho-mqtt3c
     PUBLIC baja_proto  
     PUBLIC baja_ipc 
 )
@@ -69,15 +68,20 @@ target_link_libraries(broker
 # SD WRITER
 add_executable(sd_writer src/sd_writer.cpp ${HELPER_SOURCES})
 target_link_libraries(sd_writer
-    PUBLIC paho-mqtt3c
     PUBLIC baja_proto  
     PUBLIC baja_ipc 
 )
 
-# MQTT CLIENT
+# TRANSMIT PRIORITIZER
 add_executable(transmit_prioritizer src/transmit_prioritizer.cpp ${HELPER_SOURCES})
 target_link_libraries(transmit_prioritizer
-    PUBLIC paho-mqtt3c
+    PUBLIC baja_proto  
+    PUBLIC baja_ipc 
+)
+
+# XBEE DRIVER
+add_executable(xbee_driver src/xbee_driver.cpp ${HELPER_SOURCES})
+target_link_libraries(xbee_driver
     PUBLIC baja_proto  
     PUBLIC baja_ipc 
 )
