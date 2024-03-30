@@ -1,16 +1,9 @@
 #!/bin/bash
 
-echo "TODO: Script not yet implemented. Examples below"
-
 bash ./car_proc_kill.sh
 
-adc_driver
-mqtt_client
-transmit_prioritizer
-broker
-sd_writer
-
-
-# bin/data_logger          > $(date +logs/%Y-%m-%d_%H-%M-%S_data_logger.txt) 2>&1 &
-# bin/receive_dispatcher   > $(date +logs/%Y-%m-%d_%H-%M-%S_receive_dispatcher.txt) 2>&1 &
-# ...
+bin/adc_driver             > $(date +logs/%Y-%m-%d_%H-%M-%S_adc_driver.txt) 2>&1 &
+bin/mqtt_client            > $(date +logs/%Y-%m-%d_%H-%M-%S_mqtt_client.txt) 2>&1 &
+bin/transmit_prioritizer   > $(date +logs/%Y-%m-%d_%H-%M-%S_transmit_prioritizer.txt) 2>&1 &
+bin/broker                 > $(date +logs/%Y-%m-%d_%H-%M-%S_broker.txt) 2>&1 &
+bin/sd_writer              > $(date +logs/%Y-%m-%d_%H-%M-%S_sd_writer.txt) 2>&1 &
