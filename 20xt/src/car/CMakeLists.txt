@@ -51,3 +51,27 @@ target_link_libraries(mqtt_client
     PUBLIC baja_proto  
     PUBLIC baja_ipc 
 )
+
+# BROKER
+add_executable(broker src/broker.cpp ${HELPER_SOURCES})
+target_link_libraries(broker
+    PUBLIC paho-mqtt3c
+    PUBLIC baja_proto  
+    PUBLIC baja_ipc 
+)
+
+# SD WRITER
+add_executable(sd_writer src/sd_writer.cpp ${HELPER_SOURCES})
+target_link_libraries(sd_writer
+    PUBLIC paho-mqtt3c
+    PUBLIC baja_proto  
+    PUBLIC baja_ipc 
+)
+
+# MQTT CLIENT
+add_executable(transmit_prioritizer src/transmit_prioritizer.cpp ${HELPER_SOURCES})
+target_link_libraries(transmit_prioritizer
+    PUBLIC paho-mqtt3c
+    PUBLIC baja_proto  
+    PUBLIC baja_ipc 
+)
