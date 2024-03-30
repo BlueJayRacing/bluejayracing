@@ -11,7 +11,7 @@ int main() {
   std::cout << "starting data logger..." << std::endl;
   
   // Open queue
-  int rx_queue = BajaIPC::open_queue(StationIPC::LOGGER_RX_QUEUE, true);
+  const mqd_t rx_queue = BajaIPC::open_queue(StationIPC::LOGGER_RX_QUEUE, true);
   if (rx_queue == -1) {
     std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;

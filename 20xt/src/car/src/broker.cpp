@@ -26,6 +26,7 @@ int main()
     }
   }
 
+  // TODO: We need to treat different subscribers differently
   const std::vector<mqd_t> subscriber_queues = {
     // Add queues here...
   };
