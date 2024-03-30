@@ -30,7 +30,7 @@ add_subdirectory(
 file(GLOB_RECURSE HELPER_SOURCES "src/helpers/*.cpp")
 
 # TEST - ADC DRIVER
-add_executable(adc_driver_test src/adc_driver_test.cpp ${HELPER_SOURCES})
+add_executable(adc_driver_test tests/adc_driver_test.cpp ${HELPER_SOURCES})
 target_link_libraries(adc_driver_test 
     PUBLIC baja_proto  
     PUBLIC baja_ipc    
