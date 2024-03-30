@@ -15,5 +15,7 @@ if ! docker ps | grep -q car_docker; then
         --mount type=bind,source=$SCRIPTPATH/../.car_logs,target=/20xt_ws/logs \
         --mount type=bind,source=$SCRIPTPATH/../src,target=/20xt_ws/src \
         -it --device=/dev/ttyS0 \
+        -it --device=/dev/i2c-1 \
+        --network=host \
         car_docker > /dev/null
 fi
