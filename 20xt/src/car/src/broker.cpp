@@ -26,28 +26,29 @@ int main()
     }
   }
 
-  // TODO: We need to treat different subscribers differently
-  const std::vector<mqd_t> subscriber_queues = {
-    // Add queues here...
-  };
-  for (int i = 0; i < subscriber_queues.size(); i++) {
-    if (subscriber_queues[i] == -1) {
-      std::cout << "Failed to get subscriber queue #" << i << " Errno " << errno << std::endl;
-      return EXIT_FAILURE;
-    }
+  // Subscribed Queues
+  const mqd_t to_transmit_queue = BajaIPC::open_queue(CarIPC::BROKER_TO_TRANSMIT_PRIORITIZER_QUEUE, false);
+  if (to_transmit_queue == -1) {
+    std::cout << "Failed to get broker-to-transmit-prioritizer queue" << " Errno " << errno << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  const mqd_t sd_writer_queue = BajaIPC::open_queue(CarIPC::BROKER_TO_SD_WRITER_QUEUE, false);
+  if (sd_writer_queue == -1) {
+    std::cout << "Failed to get broker-to-sd-writer queue" << " Errno " << errno << std::endl;
+    return EXIT_FAILURE;
   }
   
   // Main loop
   std::cout << "entering main loop..." << std::endl;
   while (true) {
-    try_broker_data(producer_queues, subscriber_queues);
+    try_broker_data(producer_queues, to_transmit_queue, sd_writer_queue);
   }
   return 0;
 }
 
-
 /* Check the producer queues, copy and dispatch to subscribers */
-void try_broker_data(const std::vector<mqd_t>& producer_queues, const std::vector<mqd_t> &subscriber_queues)
+void try_broker_data(const std::vector<mqd_t>& producer_queues, const mqd_t to_transmit_queue, const mqd_t sd_writer_queue)
 {
   for (mqd_t producer_qid : producer_queues) {
     std::string msg = BajaIPC::get_message(producer_qid);
@@ -55,14 +56,8 @@ void try_broker_data(const std::vector<mqd_t>& producer_queues, const std::vecto
       continue; // Empty Queue
     }
 
-    // Dispatch to every subscribed proccess
-    for (mqd_t subscriber_qid : subscriber_queues) {
-      // As a producer, empty the queue if it's full
-      int err = BajaIPC::send_message(subscriber_qid, msg);
-      if (err == BajaIPC::QUEUE_FULL) {
-        BajaIPC::get_message(subscriber_qid);
-        BajaIPC::send_message(subscriber_qid, msg);
-      }
-    }
+    // The radio can't handle all of it anyways, TODO: Should we subsample to increase performance?
+    BajaIPC::send_message(to_transmit_queue, msg);
+    BajaIPC::send_message(sd_writer_queue, msg);
   }
 }
