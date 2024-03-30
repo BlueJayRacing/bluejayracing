@@ -50,8 +50,9 @@ void try_dispatch_recieved_data(const mqd_t& radio_rx_queue, const std::vector<m
   // Must dispatch to every subscribed proccess
   std::cout << "Dispatching recieved data" << std::endl;
   for (mqd_t ipc_rx_queue : ipc_rx_queues) {
-    
     // As a producer, empty the queue if it's full
+
+    // TODO: This should be parsing the LiveComm into a vector of observations, then pasting those
     int err = BajaIPC::send_message(ipc_rx_queue, msg);
     if (err == BajaIPC::QUEUE_FULL) {
       BajaIPC::get_message(ipc_rx_queue);

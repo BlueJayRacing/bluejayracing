@@ -24,9 +24,9 @@ int main() {
       continue;
     }
     
-    LiveComm live_comm;
-    live_comm.ParseFromString(msg);
-    std::cout << live_comm.DebugString() << std::endl;
+    Observation observation;
+    observation.ParseFromString(msg);
+    std::cout << observation.DebugString() << std::endl;
   }
   return EXIT_SUCCESS;
 }
