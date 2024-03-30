@@ -17,6 +17,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <mqueue.h>
+#include <vector>
+#include <unistd.h>
+
+#include "ipc_config.h"
+#include "baja_live_comm.pb.h"
 #include "MQTTClient.h"
 
 #define ADDRESS     "tcp://mqtt.eclipseprojects.io:1883"
@@ -27,7 +33,7 @@
 #define TIMEOUT     10000L
 
 volatile MQTTClient_deliveryToken deliveredtoken;
-
+mqd_t rx_queue;
 void delivered(void *context, MQTTClient_deliveryToken dt)
 {
     printf("Message with token value %d delivery confirmed\n", dt);
@@ -36,9 +42,11 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
 {
-    printf("Message arrived\n");
-    printf("     topic: %s\n", topicName);
-    printf("   message: %.*s\n", message->payloadlen, (char*)message->payload);
+    //printf("Message arrived\n");
+    //printf("     topic: %s\n", topicName);
+    std::string string_payload((uint8_t*) message->payload, ((uint8_t*) message->payload) + message->payloadlen);
+    int err = BajaIPC::send_message(rx_queue, string_payload);
+
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
     return 1;
@@ -55,6 +63,13 @@ int main(int argc, char* argv[])
 {
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    rx_queue = BajaIPC::open_queue(CarIPC::MQTT_CLIENT_TO_AGGR_QUEUE, false);
+
+    if (rx_queue == -1) {
+    	std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
+    	return EXIT_FAILURE;
+    }
+
     int rc;
 
     if ((rc = MQTTClient_create(&client, ADDRESS, CLIENTID,

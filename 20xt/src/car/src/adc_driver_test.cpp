@@ -12,16 +12,22 @@ int main () {
   // Open the message queue, return if it fails
   mqd_t rx_queue = BajaIPC::open_queue(CarIPC::MQTT_CLIENT_TO_AGGR_QUEUE, false);
   if (rx_queue == -1) {
-    std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
+    std::cout << "Failed to get queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
   while (true) {
     usleep(1000000);
-    // Let's send a message!
-    std::cout << "Sending message!" << std::endl;
-    std::string payload = "hello";
-    int err = BajaIPC::send_message(rx_queue, payload);
-    std::cout << "Sent message!" << std::endl;
+    // Let's receive a message!
+    std::string payload = BajaIPC::get_message(rx_queue);
+
+    if (payload == "") {
+	std::cout << "Message empty!" << std::endl;
+	continue;
+    }
+
+    std::cout << "Payload: " << payload << std::endl;
+  }
 }
-}
+
+
