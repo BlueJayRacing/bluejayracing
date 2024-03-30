@@ -21,8 +21,8 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../baja_ipc/bin
 )
 add_subdirectory(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../rtk
-    ${CMAKE_CURRENT_SOURCE_DIR}/../rtk/bin
+    ${CMAKE_CURRENT_SOURCE_DIR}/../baja_rtk
+    ${CMAKE_CURRENT_SOURCE_DIR}/../baja_rtk/bin
 )
 
 # Helping code
@@ -34,7 +34,7 @@ target_link_libraries(test_produce_pit_commands
     PUBLIC xbee_baja
     PUBLIC baja_proto  
     PUBLIC baja_ipc
-    PUBLIC rtk
+    PUBLIC baja_rtk
 )
 
 add_executable(test_stress_rx_dispatcher tests/test_stress_rx_dispatcher.cpp ${HELPER_SOURCES})
@@ -42,7 +42,7 @@ target_link_libraries(test_stress_rx_dispatcher
     PUBLIC xbee_baja
     PUBLIC baja_proto    
     PUBLIC baja_ipc  
-    PUBLIC rtk
+    PUBLIC baja_rtk
 )
 
 add_executable(test_stress_tx_prioritizer tests/test_stress_tx_prioritizer.cpp ${HELPER_SOURCES})
@@ -50,7 +50,7 @@ target_link_libraries(test_stress_tx_prioritizer
     PUBLIC xbee_baja
     PUBLIC baja_proto 
     PUBLIC baja_ipc  
-    PUBLIC rtk   
+    PUBLIC baja_rtk   
 )
 
 # PIT COMMANDS
@@ -59,7 +59,7 @@ target_link_libraries(pit_commands
     PUBLIC xbee_baja
     PUBLIC baja_proto  
     PUBLIC baja_ipc  
-    PUBLIC rtk  
+    PUBLIC baja_rtk  
 )
 
 # RTK Corrections
@@ -68,7 +68,7 @@ target_link_libraries(rtk_corrections
     PUBLIC xbee_baja
     PUBLIC baja_proto 
     PUBLIC baja_ipc  
-    PUBLIC rtk   
+    PUBLIC baja_rtk   
 )
 
 # TRANSMIT PRIORITIZER
@@ -77,7 +77,7 @@ target_link_libraries(transmit_prioritizer
     PUBLIC xbee_baja
     PUBLIC baja_proto   
     PUBLIC baja_ipc
-    PUBLIC rtk   
+    PUBLIC baja_rtk   
 )
 
 # XBEE DRIVER 
@@ -86,7 +86,7 @@ target_link_libraries(xbee_driver
     PUBLIC xbee_baja
     PUBLIC baja_proto  
     PUBLIC baja_ipc    
-    PUBLIC rtk
+    PUBLIC baja_rtk
 ) 
 
 # RECIEVE DISPATCHER
@@ -95,7 +95,7 @@ target_link_libraries(receive_dispatcher
     PUBLIC xbee_baja
     PUBLIC baja_proto 
     PUBLIC baja_ipc   
-    PUBLIC rtk  
+    PUBLIC baja_rtk  
 )
 
 # LOGGER
@@ -104,5 +104,5 @@ target_link_libraries(data_logger
     PUBLIC xbee_baja
     PUBLIC baja_proto
     PUBLIC baja_ipc   
-    PUBLIC rtk   
+    PUBLIC baja_rtk   
 )

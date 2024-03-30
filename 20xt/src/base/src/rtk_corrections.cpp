@@ -11,11 +11,14 @@
 
 
 
-#define SERIAL_PORT "/dev/ttyACM0"
+#define SERIAL_PORT "/dev/ttyACM0" // TODO: Change to correct device
 
 std::string read_raw_rtcm(serialib *serial) { // return the first RTCM message it finds
   uint8_t last = 0x00;
   uint8_t cur;
+
+  //int     readBytes   (void *buffer, unsigned int maxNbBytes,const unsigned int timeOut_ms=0, unsigned int sleepDuration_us=100);
+
   while (true) {
     serial->readBytes((void *) &cur, 1);
     if (last == 0xd3 && (cur >> 2) == 0x00) { // continue reading until a message is found
@@ -34,7 +37,7 @@ std::string read_raw_rtcm(serialib *serial) { // return the first RTCM message i
   length += 3; // add 3 for parity
   uint8_t *data = (uint8_t *) malloc((length + 3) * sizeof(uint8_t)); // add another 3 for the first three bytes
   try {
-    if (serial->readBytes((void *) (data + 3)) != length) {
+    if (serial->readBytes((void *) (data + 3), length) != length) { // TODO: Jonathan, can you check this line? I had to fix it
       throw -1;
     }
   }catch(int num){
@@ -83,7 +86,7 @@ int main() {
 
   while (true) {
     // Should be a blocking call which retrieves an Observation with an RTK correction
-    std::string payload = build_rtk_correction(&serial).serialize_as_string();
+    std::string payload = build_rtk_correction(&serial).SerializeAsString();
 
     int err = BajaIPC::send_message(tx_queue, payload);
     if (err == BajaIPC::QUEUE_FULL) {

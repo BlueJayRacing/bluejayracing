@@ -3,9 +3,7 @@ SCRIPTPATH=$(dirname "$SCRIPT")
 
 echo $SCRIPTPATH
 
-if ! docker images | grep -q station_docker; then
-    sh $SCRIPTPATH/station_docker_build.sh
-fi
+sh $SCRIPTPATH/station_docker_build.sh
 
 mkdir -p $SCRIPTPATH/../.station_build_cache
 mkdir -p $SCRIPTPATH/../.station_logs

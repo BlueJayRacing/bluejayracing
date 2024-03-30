@@ -5,4 +5,4 @@ bin/receive_dispatcher   > $(date +logs/%Y-%m-%d_%H-%M-%S_receive_dispatcher.txt
 bin/transmit_prioritizer > $(date +logs/%Y-%m-%d_%H-%M-%S_transmit_prioritizer.txt) 2>&1 &
 bin/xbee_driver          > $(date +logs/%Y-%m-%d_%H-%M-%S_xbee_driver.txt) 2>&1 &
 bin/rtk_corrections      > $(date +logs/%Y-%m-%d_%H-%M-%S_rtk_corrections.txt) 2>&1 &
-bin/pit_commands
+bin/pit_commands         > $(date +logs/%Y-%m-%d_%H-%M-%S_pit_commands.txt) 2>&1 &

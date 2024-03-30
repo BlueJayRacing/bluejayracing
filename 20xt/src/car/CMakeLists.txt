@@ -29,6 +29,14 @@ add_subdirectory(
 # Helping code
 file(GLOB_RECURSE HELPER_SOURCES "src/helpers/*.cpp")
 
+# TEST - ADC DRIVER
+add_executable(adc_driver_test src/adc_driver_test.cpp ${HELPER_SOURCES})
+target_link_libraries(adc_driver_test 
+    PUBLIC baja_proto  
+    PUBLIC baja_ipc    
+)
+
+
 # ADC DRIVER
 add_executable(adc_driver src/adc_driver.cpp ${HELPER_SOURCES})
 target_link_libraries(adc_driver 
@@ -36,8 +44,10 @@ target_link_libraries(adc_driver
     PUBLIC baja_ipc    
 )
 
-
+# MQTT CLIENT
 add_executable(mqtt_client src/mqtt_client.c ${HELPER_SOURCES})
 target_link_libraries(mqtt_client
     PUBLIC paho-mqtt3c
+    PUBLIC baja_proto  
+    PUBLIC baja_ipc 
 )

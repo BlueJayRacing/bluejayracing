@@ -58,7 +58,7 @@ namespace CarIPC {
   // Queues of Observation objects to be TRANSMITTED to station
 
   // Queues of Observation objects RECEIVED from the station
-
+  const std::string MQTT_CLIENT_TO_AGGR_QUEUE = "/mqtt_client_to_aggr_queue";
 }
 
 #endif
