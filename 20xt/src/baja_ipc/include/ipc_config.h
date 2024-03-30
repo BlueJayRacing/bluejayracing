@@ -55,10 +55,15 @@ namespace CarIPC {
   const std::string XBEE_DRIVER_TO_TX_QUEUE = "/xbee_driver_tx_queue";
   const std::string XBEE_DRIVER_RX_QUEUE = "/xbee_driver_rx_queue";
 
-  // Queues of Observation objects to be TRANSMITTED to station
+  // Queues of Observation objects to be PRIORITZED for transmission
 
   // Queues of Observation objects RECEIVED from the station
-  const std::string MQTT_CLIENT_TO_AGGR_QUEUE = "/mqtt_client_to_aggr_queue";
+
+  // Queues of data bound towards BROKER
+  const std::string MQTT_CLIENT_TO_BROKER_QUEUE = "/mqtt_client_to_broker_queue";
+  const std::string ADC_DRIVER_TO_BROKER_QUEUE = "/adc_driver_to_broker_queue";
+  const std::string BROKER_TO_SD_WRITER_QUEUE = "/broker_to_sd_writer_queue";
 }
+
 
 #endif

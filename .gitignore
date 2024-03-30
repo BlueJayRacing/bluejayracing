@@ -69,5 +69,6 @@ coverity
 samples/rabbit/main-node_discovery.c
 samples/rabbit/my_config.h
 **/bin*
+**/build
 **.pb.cc
 **.pb.h
