@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include "mains/transmit_prioritizer.h"
 #include "baja_live_comm.pb.h"
 #include "ipc_config.h"
 
@@ -25,8 +24,8 @@ int main()
 
   int i = 0;
   while (true) {
-    int result = StationIPC::send_message(radio_queue, TEST_MESSAGE); // Blocking
-    if (result == StationIPC::SEND_ERROR) {
+    int result = BajaIPC::send_message(radio_queue, TEST_MESSAGE); // Blocking
+    if (result == BajaIPC::SEND_ERROR) {
       std::cerr << "Could not enqeue message" << std::endl;
     }
     i++;

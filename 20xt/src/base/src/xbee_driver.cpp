@@ -127,12 +127,12 @@ int try_recieve_data(Connection* conn, const mqd_t rx_queue) {
   if (conn->num_messages_available() > 0) {
     std::cout << "Message available from Xbee" << std::endl;
     std::string msg = conn->pop_message();
-    int err = StationIPC::send_message(rx_queue, msg);
+    int err = BajaIPC::send_message(rx_queue, msg);
 
     // Xbee driver responsible for keeping queue recent
-    if (err == StationIPC::QUEUE_FULL) {
+    if (err == BajaIPC::QUEUE_FULL) {
       BajaIPC::get_message(rx_queue);
-      StationIPC::send_message(rx_queue, msg);
+      BajaIPC::send_message(rx_queue, msg);
     }
   }
   return EXIT_SUCCESS;

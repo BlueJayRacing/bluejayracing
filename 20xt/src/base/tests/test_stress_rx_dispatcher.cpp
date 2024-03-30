@@ -4,7 +4,6 @@
 #include <chrono>
 #include <vector>
 
-#include "mains/receive_dispatcher.h"
 #include "ipc_config.h"
 #include "proto_helpers.h"
 

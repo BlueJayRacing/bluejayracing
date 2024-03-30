@@ -29,14 +29,14 @@ int main () {
     usleep(1000000);
     // Let's send a message!
     std::string payload = get_dummy_observation().SerializeAsString();
-    int err = StationIPC::send_message(rx_queue, payload);
-    if (err == StationIPC::QUEUE_FULL) {
+    int err = BajaIPC::send_message(rx_queue, payload);
+    if (err == BajaIPC::QUEUE_FULL) {
       std::cout << "Queue is full, dequeing before enqueing" << std::endl;
       BajaIPC::get_message(rx_queue);
-      err = StationIPC::send_message(rx_queue, payload);
+      err = BajaIPC::send_message(rx_queue, payload);
     }
 
-    if (err == StationIPC::SEND_ERROR) {
+    if (err == BajaIPC::SEND_ERROR) {
       std::cerr << "Could not send the message" << std::endl;
     }
     std::cout << "Sent pit command to IPC queue" << std::endl;

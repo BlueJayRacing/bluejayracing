@@ -5,10 +5,11 @@
 #include <cassert>
 
 #include "mains/pit_commands.h"
+#include "serialib.h"
 #include "ipc_config.h"
 #include "baja_live_comm.pb.h"
 
-#include "mains/serialib.h"
+
 
 #define SERIAL_PORT "/dev/ttyACM0"
 

@@ -155,10 +155,10 @@ int try_recieve_data(Connection* conn, const mqd_t rx_queue) {
     // TODO: Needs migrated to ROS
     // In a non-blocking fashion, attempt to pass on the messages recieved from the radio
     // ie, this will probably be publishing to ROS topic(s)
-    int err = StationIPC::send_message(rx_queue, msg);
-    if (err == StationIPC::QUEUE_FULL) {
+    int err = BajaIPC::send_message(rx_queue, msg);
+    if (err == BajaIPC::QUEUE_FULL) {
       BajaIPC::get_message(rx_queue);
-      StationIPC::send_message(rx_queue, msg);
+      BajaIPC::send_message(rx_queue, msg);
     }
     // END TODO
   }
