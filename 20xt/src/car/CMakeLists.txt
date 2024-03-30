@@ -23,7 +23,12 @@ add_subdirectory(
 
 add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../paho_mqtt
-    ${CMAKE_CURRENT_SOURCE_DIR}/../bin
+    ${CMAKE_CURRENT_SOURCE_DIR}/../paho_mqtt/bin
+)
+
+add_subdirectory(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ads1115
+    ${CMAKE_CURRENT_SOURCE_DIR}/../ads1115/bin
 )
 
 # Helping code
@@ -42,6 +47,7 @@ add_executable(adc_driver src/adc_driver.cpp ${HELPER_SOURCES})
 target_link_libraries(adc_driver 
     PUBLIC baja_proto  
     PUBLIC baja_ipc    
+    PUBLIC ads1115
 )
 
 # MQTT CLIENT
