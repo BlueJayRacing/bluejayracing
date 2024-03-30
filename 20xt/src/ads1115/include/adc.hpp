@@ -2,8 +2,8 @@
 #define ADC_HPP
 
 #include "adafruit_ads.hpp"
-#include "../../communication/i2c_dev.hpp"
-#include "../interfaces/sensor_interface.hpp"
+#include "i2c_dev.hpp"
+#include "sensor_interface.hpp"
 #include "ADS1115.hpp"
 
 class ADC: public SensorInterface {
