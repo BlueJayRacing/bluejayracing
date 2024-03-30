@@ -39,7 +39,7 @@ int main()
   // Main loop
   std::cout << "entering main loop..." << std::endl;
   while (true) {
-    try_broker_data(producer_queues, subscriber_queues)
+    try_broker_data(producer_queues, subscriber_queues);
   }
   return 0;
 }
