@@ -21,13 +21,23 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../baja_ipc/bin
 )
 
+add_subdirectory(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../paho_mqtt
+    ${CMAKE_CURRENT_SOURCE_DIR}/../bin
+)
+
 # Helping code
 file(GLOB_RECURSE HELPER_SOURCES "src/helpers/*.cpp")
 
 # ADC DRIVER
 add_executable(adc_driver src/adc_driver.cpp ${HELPER_SOURCES})
-target_link_libraries(pit_commands 
+target_link_libraries(adc_driver 
     PUBLIC baja_proto  
     PUBLIC baja_ipc    
 )
 
+
+add_executable(mqtt_client src/mqtt_client.c ${HELPER_SOURCES})
+target_link_libraries(mqtt_client
+    PUBLIC paho-mqtt3c
+)
