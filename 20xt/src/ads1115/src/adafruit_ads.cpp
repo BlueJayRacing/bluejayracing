@@ -30,7 +30,7 @@
 /**************************************************************************/
 #include "adafruit_ads.hpp"
 
-#include "../../communication/i2c_dev.hpp"
+#include "i2c_dev.hpp"
 
 
 
