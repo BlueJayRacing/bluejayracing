@@ -20,6 +20,7 @@ void setup()
 void loop()
 {
 	uint16_t val = ads->readADC();
+  Serial.println(val);
 
   if (val != NULL) {
     count++;
@@ -28,5 +29,6 @@ void loop()
       Serial.println(millis());
     }
   }
+  delay(400);
 }
 
