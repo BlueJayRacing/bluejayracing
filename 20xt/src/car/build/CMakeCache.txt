@@ -402,7 +402,7 @@ baja_ipc_IS_TOP_LEVEL:STATIC=OFF
 baja_ipc_SOURCE_DIR:STATIC=/20xt_ws/src/baja_ipc
 
 //Value Computed by CMake
-baja_proto_BINARY_DIR:STATIC=/20xt_ws/src/baja_proto/bin
+baja_proto_BINARY_DIR:STATIC=/20xt_ws/src/baja_proto/bin_for_ipc
 
 //Value Computed by CMake
 baja_proto_IS_TOP_LEVEL:STATIC=OFF
@@ -584,7 +584,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=8
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=9
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 {
     MQTTClient client;
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-    rx_queue = BajaIPC::open_queue(CarIPC::MQTT_CLIENT_TO_AGGR_QUEUE, false);
+    rx_queue = BajaIPC::open_queue(CarIPC::MQTT_CLIENT_TO_BROKER_QUEUE, false);
 
     if (rx_queue == -1) {
     	std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;

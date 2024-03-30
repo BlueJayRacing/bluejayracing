@@ -45,7 +45,7 @@ target_link_libraries(adc_driver
 )
 
 # MQTT CLIENT
-add_executable(mqtt_client src/mqtt_client.c ${HELPER_SOURCES})
+add_executable(mqtt_client src/mqtt_client.cpp ${HELPER_SOURCES})
 target_link_libraries(mqtt_client
     PUBLIC paho-mqtt3c
     PUBLIC baja_proto  
