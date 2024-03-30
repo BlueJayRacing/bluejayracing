@@ -1,5 +1,3 @@
-#include <ADS1120.h>
-
 #include "src/ads_mqtt_freertos/ads_mqtt_freertos.h"
 #include <WiFi.h>
 
