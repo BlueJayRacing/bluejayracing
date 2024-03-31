@@ -1,5 +1,3 @@
-#include <ADS1120.h>
-
 #include "src/ads_mqtt_freertos/ads_mqtt_freertos.h"
 #include <WiFi.h>
 
@@ -13,7 +11,7 @@ void setup() {
   WiFi.begin(ssid, pswd); 
   WiFi.setAutoReconnect(true);
 
-  if (WiFi.status() != WL_CONNECTED) {
+  while (WiFi.status() != WL_CONNECTED) {
     Serial.println("Still connecting");
     delay(4000);
   }

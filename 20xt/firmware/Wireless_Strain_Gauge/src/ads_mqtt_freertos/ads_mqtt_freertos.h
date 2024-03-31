@@ -3,6 +3,8 @@
 
 
 #include <crt_CleanRTOS.h>
+#include <ESP32Time.h>
+
 #include "../qos_mqtt/qos_mqtt.h"
 #include "../ads_1120/ads_1120.h"
 
