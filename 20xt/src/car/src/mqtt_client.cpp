@@ -44,8 +44,19 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
 {
     //printf("Message arrived\n");
     //printf("     topic: %s\n", topicName);
-    std::string string_payload((uint8_t*) message->payload, ((uint8_t*) message->payload) + message->payloadlen);
-    int err = BajaIPC::send_message(rx_queue, string_payload);
+    Timestamp* timestamp = new Timestamp();
+    timestamp->set_ts(0); // TODO: Gotta get correct timestamp
+
+    std::string raw_data = std::string((char*) message->payload, message->payloadlen);
+    AnalogChannel* channel = new AnalogChannel();
+    channel->set_channel_type(AnalogChannel::SHOCK_LEN_FRONT_RIGHT); // TODO: Gotta get correct channel type
+    channel->set_encoded_analog_points(raw_data);
+
+    Observation observation;
+    observation.set_allocated_timestamp(timestamp);
+    observation.set_allocated_analog_ch(channel);
+
+    int err = BajaIPC::send_message(rx_queue, observation.SerializeAsString());
 
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
