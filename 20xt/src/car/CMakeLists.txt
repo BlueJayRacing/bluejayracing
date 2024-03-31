@@ -80,8 +80,8 @@ target_link_libraries(transmit_prioritizer
 )
 
 # XBEE DRIVER
-add_executable(xbee_driver src/xbee_driver.cpp ${HELPER_SOURCES})
-target_link_libraries(xbee_driver
-    PUBLIC baja_proto  
-    PUBLIC baja_ipc 
-)
+# add_executable(xbee_driver src/xbee_driver.cpp ${HELPER_SOURCES})
+# target_link_libraries(xbee_driver
+#     PUBLIC baja_proto  
+#     PUBLIC baja_ipc 
+# )

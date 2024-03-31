@@ -94,3 +94,24 @@ void ADC::swap_mux() {
   
   ads.startADCReading(current_mux, true);
 }
+
+
+void ADC::swap_channel(int channel) {
+  switch (channel) {
+    case 0:
+      current_mux = ADS1X15_REG_CONFIG_MUX_SINGLE_0;
+      break;
+    case 1:
+      current_mux = ADS1X15_REG_CONFIG_MUX_SINGLE_1;
+      break;
+    case 2:
+      current_mux = ADS1X15_REG_CONFIG_MUX_SINGLE_2;
+      break;
+    case 3: 
+      current_mux = ADS1X15_REG_CONFIG_MUX_SINGLE_3;
+      break;
+    default:
+      break;
+  }
+  ads.startADCReading(current_mux, true);
+}

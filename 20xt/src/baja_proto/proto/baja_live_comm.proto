@@ -44,6 +44,11 @@ message AnalogChannel {
         STEERING_DATA = 11;
         TACHOMETER = 12;
         POWER_USE = 13;
+
+        BRAKE_PRESSURE_FRONT = 14;
+        BRAKE_PRESSURE_REAR = 15;
+
+        NONE = 16;
     }
     ChannelType channel_type = 1;
     bytes encoded_analog_points = 2;

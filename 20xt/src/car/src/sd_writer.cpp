@@ -87,6 +87,7 @@ int main() {
 
   for (int i = 0; i < NUM_FIELDS; i++) {
     f[i].close();
+
   }
   return EXIT_SUCCESS;
 }
