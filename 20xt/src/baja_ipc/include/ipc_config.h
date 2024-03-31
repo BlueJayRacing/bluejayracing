@@ -52,11 +52,8 @@ namespace StationIPC {
 
 namespace CarIPC {
   // Queues of LiveComm objects recieved from the car or bound to the car
-  const std::string XBEE_DRIVER_TO_TX_QUEUE = "/xbee_driver_tx_queue";
-  const std::string XBEE_DRIVER_RX_QUEUE = "/xbee_driver_rx_queue";
-
-  // Queues of Observation objects RECEIVED from the station
-  const std::string XBEE_DRIVER_TO_RECEIVE_DISPATCHER_QUEUE = "/xbee_driver_to_receive_dispatcher_queue";
+  const std::string PRIORITIZER_TO_XBEE_DRIVER = "/prioritizer_to_xbee_driver";
+  const std::string XBEE_DRIVER_TO_RX_DISPATCH = "/xbee_driver_to_rx_dispatch";
 
   // Queues of Observation objects bound towards broker (PRODUCERS)
   const std::string MQTT_CLIENT_TO_BROKER_QUEUE = "/mqtt_client_to_broker_queue";

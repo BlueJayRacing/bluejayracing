@@ -76,7 +76,8 @@ target_link_libraries(sd_writer
 add_executable(transmit_prioritizer src/transmit_prioritizer.cpp ${HELPER_SOURCES})
 target_link_libraries(transmit_prioritizer
     PUBLIC baja_proto  
-    PUBLIC baja_ipc 
+    PUBLIC baja_ipc
+    PUBLIC xbee_baja
 )
 
 # XBEE DRIVER
@@ -84,4 +85,5 @@ add_executable(xbee_driver src/xbee_driver.cpp ${HELPER_SOURCES})
 target_link_libraries(xbee_driver
     PUBLIC baja_proto  
     PUBLIC baja_ipc 
+    PUBLIC xbee_baja
 )
