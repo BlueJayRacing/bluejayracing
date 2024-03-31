@@ -62,7 +62,7 @@ std::string build_message(const mqd_t queue_from_broker)
   // One entry, we should consume the left over data
   if (remainder_data != nullptr) {
     Observation* buffer = live_comm.add_observations();
-    buffer->CopyFrom(remainder_data);
+    buffer->CopyFrom(*remainder_data);
 
     remainder_data = nullptr;
     valid_msg = live_comm.SerializeAsString();
@@ -73,7 +73,7 @@ std::string build_message(const mqd_t queue_from_broker)
     // Collect next data point
     Observation data = get_next_data(queue_from_broker); // Blocking
     Observation* buffer = live_comm.add_observations();
-    data->CopyFrom(buffer);
+    buffer->CopyFrom(data);
 
     // Test if we can pack in
     std::string test_message = live_comm.SerializeAsString();

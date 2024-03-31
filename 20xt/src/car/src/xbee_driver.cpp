@@ -3,7 +3,7 @@
 #include <mqueue.h>
 #include <unistd.h>
 
-#include "mains/xbee_driver.h"
+#include "xbee_driver.h"
 #include "ipc_config.h"
 #include "interfaces/connection.h"
 #include "xbee/xbee_connection.h"
