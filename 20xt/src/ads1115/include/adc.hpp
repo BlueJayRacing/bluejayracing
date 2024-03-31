@@ -17,6 +17,7 @@ public:
   
   std::vector<double> read();
   void swap_mux();
+  void swap_channel(int channel);
   void reset();
   
 private:
