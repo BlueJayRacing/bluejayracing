@@ -23,7 +23,7 @@ int main()
     return EXIT_FAILURE;
   }
   
-  const mqd_t queue_to_radio = BajaIPC::open_queue(CarIPC::PRIORITIZER_TO_XBEE_DRIVER, false);
+  const mqd_t queue_to_radio = BajaIPC::open_queue(CarIPC::PRIORITIZER_TO_XBEE_DRIVER, true);
   if (queue_to_radio == -1) {
     std::cout << "Failed to get to-radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
