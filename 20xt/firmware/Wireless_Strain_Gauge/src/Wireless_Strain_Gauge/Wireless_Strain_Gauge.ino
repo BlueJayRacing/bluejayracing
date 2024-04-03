@@ -1,4 +1,4 @@
-#include "src/ads_mqtt_freertos/ads_mqtt_freertos.h"
+#include "threads/ads_mqtt_freertos/ads_mqtt_freertos.h"
 #include <WiFi.h>
 
 void setup() {
@@ -7,11 +7,11 @@ void setup() {
 
   char ssid[] = "piWifi";
   char pswd[] = "bluejayracing";
-
   uint8_t broker_ip_address[] = {10, 42, 0, 1};
   WiFi.begin(ssid, pswd); 
   WiFi.setAutoReconnect(true);
-  while (WiFi.status() != WL_CONNECTED) {
+
+  if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Still connecting");
     delay(4000);
   }
