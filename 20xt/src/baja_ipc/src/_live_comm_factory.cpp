@@ -1,6 +1,5 @@
 #include "baja_live_comm.pb.h"
 #include "live_comm_factory.h"
-#include "proto_helpers.h"
 
 void LiveCommFactory::add_observation(const Observation& new_data)
 {
