@@ -38,16 +38,16 @@ namespace BajaIPC {
 
 namespace StationIPC {
   // Queues of LiveComm from the car or bound to the car
-  const std::string XBEE_DRIVER_TO_TX_QUEUE = "/xbee_driver_tx_queue";
-  const std::string XBEE_DRIVER_RX_QUEUE = "/xbee_driver_rx_queue";
+  const std::string PRIORITIZER_TO_XBEE_DRIVER = "/prioritizer_to_xbee_driver";
+  const std::string XBEE_DRIVER_TO_RECEIVE_DISPATCHER = "/xbee_driver_to_receive_dispatcher";
 
   // Queues of Observation data to be TRANSMITTED to car
-  const std::string RTK_CORRECTOR_TX_QUEUE = "/rtk_corrector_tx_queue";
-  const std::string PIT_COMMANDS_TX_QUEUE = "/pit_commands_tx_queue";
+  const std::string RTK_CORRECTOR_TO_PRIORITIZER = "/rtk_corrector_to_prioritizer";
+  const std::string PIT_COMMANDS_TO_PRIORITIZER = "/pit_commands_to_prioritizer";
 
   // Queues of Observation data RECEIVED from the car
-  const std::string LOGGER_RX_QUEUE = "/logger_rx_queue";
-  const std::string SIMULATION_RX_QUEUE = "/simulation_rx_queue";
+  const std::string RECEIVE_DISPATCHER_TO_DATA_LOGGER = "/receive_dispatcher_to_data_logger";
+  const std::string RECEIVE_DISPATCHER_TO_SIMULATOR = "/receive_dispatcher_to_simulator";
 }
 
 namespace CarIPC {

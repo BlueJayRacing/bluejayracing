@@ -13,15 +13,15 @@ int main()
 {
   std::cout << "starting receive dispatcher" << std::endl;
   // Open the queues
-  const mqd_t radio_rx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, true);
+  const mqd_t radio_rx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_RECEIVE_DISPATCHER, true);
   if (radio_rx_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
   const std::vector<mqd_t> subscribed_rx_queues = {
-    BajaIPC::open_queue(StationIPC::LOGGER_RX_QUEUE, false),
-    BajaIPC::open_queue(StationIPC::SIMULATION_RX_QUEUE, false),
+    BajaIPC::open_queue(StationIPC::RECEIVE_DISPATCHER_TO_DATA_LOGGER, false),
+    BajaIPC::open_queue(StationIPC::RECEIVE_DISPATCHER_TO_SIMULATOR, false),
   };
   for (int i = 0; i < subscribed_rx_queues.size(); i++) {
     if (subscribed_rx_queues[i] == -1) {

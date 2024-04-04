@@ -68,7 +68,7 @@ Observation build_rtk_correction(serialib *serial) {
 // We want to produce a series of dummy Communcation values to the TX queue
 int main() {
   // Open the message queue, return if it fails
-  mqd_t tx_queue = BajaIPC::open_queue(StationIPC::RTK_CORRECTOR_TX_QUEUE, false);
+  mqd_t tx_queue = BajaIPC::open_queue(StationIPC::RTK_CORRECTOR_TO_PRIORITIZER, false);
   if (tx_queue == -1) {
     std::cout << "Failed to get transmit queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;

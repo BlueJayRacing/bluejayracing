@@ -17,15 +17,15 @@ int main()
   std::cout << "starting transmit prioritizer" << std::endl;
   
   // Open queues
-  const mqd_t radio_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
+  const mqd_t radio_queue = BajaIPC::open_queue(StationIPC::PRIORITIZER_TO_XBEE_DRIVER, false);
   if (radio_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
   const std::vector<mqd_t> data_queues = {
-    BajaIPC::open_queue(StationIPC::RTK_CORRECTOR_TX_QUEUE, false),
-    BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE, false),
+    BajaIPC::open_queue(StationIPC::RTK_CORRECTOR_TO_PRIORITIZER, false),
+    BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TO_PRIORITIZER, false),
   };
   for (int i = 0; i < data_queues.size(); i++) {
     if (data_queues[i] == -1) {

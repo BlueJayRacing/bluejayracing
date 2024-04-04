@@ -16,7 +16,7 @@ int main()
   std::cout << "starting stress test prioritzer" << std::endl;
   
   // Open queues
-  const mqd_t radio_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, true);
+  const mqd_t radio_queue = BajaIPC::open_queue(StationIPC::PRIORITIZER_TO_XBEE_DRIVER, true);
   if (radio_queue == -1) {
     std::cout << "Failed to get radio queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;

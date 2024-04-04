@@ -46,8 +46,8 @@ int main() {
   std::cout << "Xbee connection initialized" << std::endl;
 
   // Open the IPC queues
-  const mqd_t tx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
-  const mqd_t rx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
+  const mqd_t tx_queue = BajaIPC::open_queue(StationIPC::PRIORITIZER_TO_XBEE_DRIVER, false);
+  const mqd_t rx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_RECEIVE_DISPATCHER, false);
 
   while (true) {
     usleep(POLLING_INTERVAL);

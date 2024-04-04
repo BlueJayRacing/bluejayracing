@@ -19,7 +19,7 @@ Observation get_dummy_observation() {
 // We want to produce a series of dummy Communcation values to the TX queue
 int main () {
   // Open the message queue, return if it fails
-  mqd_t rx_queue = BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TX_QUEUE, false);
+  mqd_t rx_queue = BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TO_PRIORITIZER, false);
   if (rx_queue == -1) {
     std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
