@@ -72,7 +72,7 @@ std::string build_message(const std::vector<mqd_t>& data_queues)
   if (remainder_data != nullptr) {
     factory.add_observation(*remainder_data);
     remainder_data = nullptr;
-    valid_msg = factory.get_live_comm().SerializeAsString();
+    valid_msg = factory.get_serialized_live_comm();
   }
 
   // Keep adding to the message
@@ -87,7 +87,7 @@ std::string build_message(const std::vector<mqd_t>& data_queues)
 
     // Attemp to pack the next data point
     factory.add_observation(data);
-    std::string test_message = factory.get_live_comm().SerializeAsString();
+    std::string test_message = factory.get_serialized_live_comm();
     if (!is_valid_radio_message(test_message))
     {
       remainder_data->CopyFrom(data);

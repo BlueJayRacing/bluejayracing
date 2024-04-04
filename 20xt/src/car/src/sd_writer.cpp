@@ -178,7 +178,7 @@ void log_analog_ch(ofstream& f, Observation& observation) {
 
     case AnalogChannel::BRAKE_PRESSURE_FRONT: channel_type = "BRAKE_PRESSURE_FRONT"; break;
     case AnalogChannel::BRAKE_PRESSURE_REAR: channel_type = "BRAKE_PRESSURE_REAR"; break;
-    case AnalogChannel::NONE: channel_type = "NONE"; break;
+    case AnalogChannel::MISCELLANEOUS: channel_type = "NONE"; break;
     default: channel_type = "";
   }
   string encoded_analog_points = to_string(deserializeDoubleFromBinaryStringCasting(ana.encoded_analog_points()));

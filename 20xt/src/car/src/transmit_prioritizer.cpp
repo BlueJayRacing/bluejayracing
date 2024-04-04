@@ -57,27 +57,23 @@ int main()
 /* Grab data from prioritzier and build a payload*/
 std::string build_message(const mqd_t queue_from_broker)
 {
-  LiveComm live_comm;
+  LiveCommFactory factory;
   std::string valid_msg = "";
 
-  // One entry, we should consume the left over data
+  // First entry, we should consume the left over data
   if (remainder_data != nullptr) {
-    Observation* buffer = live_comm.add_observations();
-    buffer->CopyFrom(*remainder_data);
-
+    factory.add_observation(*remainder_data);
     remainder_data = nullptr;
-    valid_msg = live_comm.SerializeAsString();
+    valid_msg = factory.get_serialized_live_comm();
   }
 
   // Keep adding to the message
   while (true) {
     // Collect next data point
     Observation data = get_next_data(queue_from_broker); // Blocking
-    Observation* buffer = live_comm.add_observations();
-    buffer->CopyFrom(data);
+    factory.add_observation(data);
 
-    // Test if we can pack in
-    std::string test_message = live_comm.SerializeAsString();
+    std::string test_message = factory.get_serialized_live_comm();
     if (!is_valid_radio_message(test_message))
     {
       // std::cout << "message is invalid to pack" << std::endl;
