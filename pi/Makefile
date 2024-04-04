@@ -2,7 +2,7 @@ CC := g++
 CONSERVATIVE_FLAGS = -std=c++20 -Wall -Wextra -pedantic
 DEBUGGING_FLAGS = -g -Ofast -pg
 IGNORE_FLAGS = -Wno-psabi -Wvla
-LINKING_FLAGS = -lpigpiod_if2 -lrt -pthread -lm
+LINKING_FLAGS = -lgps -lpigpiod_if2 -lrt -pthread -lm -lfmt
 CFLAGS = $(CONSERVATIVE_FLAGS) $(DEBUGGING_FLAGS) $(IGNORE_FLAGS) $(LINKING_FLAGS)
 
 
