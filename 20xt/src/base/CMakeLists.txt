@@ -25,9 +25,6 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../baja_rtk/bin
 )
 
-# Helping code
-file(GLOB_RECURSE HELPER_SOURCES "src/helpers/*.cpp")
-
 # TESTING CODES
 add_executable(test_produce_pit_commands tests/test_produce_pit_commands.cpp ${HELPER_SOURCES})
 target_link_libraries(test_produce_pit_commands

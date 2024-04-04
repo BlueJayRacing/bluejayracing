@@ -31,9 +31,6 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../ads1115/bin
 )
 
-# Helping code
-file(GLOB_RECURSE HELPER_SOURCES "src/helpers/*.cpp")
-
 # TEST - ADC DRIVER
 add_executable(adc_driver_test tests/adc_driver_test.cpp ${HELPER_SOURCES})
 target_link_libraries(adc_driver_test 
