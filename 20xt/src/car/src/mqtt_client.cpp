@@ -25,12 +25,21 @@
 #include "baja_live_comm.pb.h"
 #include "MQTTClient.h"
 
-#define ADDRESS     "tcp://mqtt.eclipseprojects.io:1883"
+#define ADDRESS     "localhost:1883"
 #define CLIENTID    "ExampleClientSub"
-#define TOPIC       "MQTT Examples"
+#define TOPIC       "esp32/+"
 #define PAYLOAD     "Hello World!"
-#define QOS         1
+#define QOS         2
 #define TIMEOUT     10000L
+
+
+std::string serializeDoubleToBinaryString(double value) {
+    // Cast the address of 'value' to a pointer to 'unsigned char'
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(&value);
+    // Construct a string from the binary data of 'value'
+    return std::string(p, p + sizeof(double));
+}
+
 
 volatile MQTTClient_deliveryToken deliveredtoken;
 mqd_t rx_queue;
@@ -41,22 +50,36 @@ void delivered(void *context, MQTTClient_deliveryToken dt)
 }
 
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *message)
-{
+{   
     //printf("Message arrived\n");
     //printf("     topic: %s\n", topicName);
-    Timestamp* timestamp = new Timestamp();
-    timestamp->set_ts(0); // TODO: Gotta get correct timestamp
+    uint32_t start_time = (*((uint8_t*) message->payload) << 24) + (*((uint8_t*) message->payload + 1) << 16) + (*((uint8_t*) message->payload + 2) << 8) + (*((uint8_t*) message->payload + 3)); 
 
-    std::string raw_data = std::string((char*) message->payload, message->payloadlen);
-    AnalogChannel* channel = new AnalogChannel();
-    channel->set_channel_type(AnalogChannel::SHOCK_LEN_FRONT_RIGHT); // TODO: Gotta get correct channel type
-    channel->set_encoded_analog_points(raw_data);
+    std::string msg;
 
-    Observation observation;
-    observation.set_allocated_timestamp(timestamp);
-    observation.set_allocated_analog_ch(channel);
+    for (int i = 0; i < 40; i++) {
+        Timestamp* timestamp = new Timestamp();
+        timestamp->set_ts(start_time + i);
+        uint16_t val = *(((uint8_t*) message->payload) + 4 + 2 * i) * 256 + *(((uint8_t*) message->payload) + 4 + 2 * i + 1);
+        printf("%d ", start_time + i);
+        printf("%d\n", val);
+        std::string data = serializeDoubleToBinaryString((double)val);
+        AnalogChannel* channel = new AnalogChannel();
+        channel->set_encoded_analog_points(data);
 
-    int err = BajaIPC::send_message(rx_queue, observation.SerializeAsString());
+        if (strcmp(topicName, "esp32/48:31:B7:3F:DA:90") == 0) {
+            channel->set_channel_type(AnalogChannel::AXLE_TORQUE_FRONT_RIGHT); // TODO: Gotta get correct channel type
+        } else if (strcmp(topicName, "esp32/84:FC:E6:00:92:DC") == 0) {
+    	    channel->set_channel_type(AnalogChannel::AXLE_TORQUE_REAR_RIGHT);
+        }
+
+        Observation observation;
+        observation.set_allocated_timestamp(timestamp);
+        observation.set_allocated_analog_ch(channel);
+        observation.SerializeToString(&msg);
+
+        int err = BajaIPC::send_message(rx_queue, msg);
+    }
 
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);

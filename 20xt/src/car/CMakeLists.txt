@@ -66,11 +66,11 @@ target_link_libraries(broker
 )
 
 # SD WRITER
-# add_executable(sd_writer src/sd_writer.cpp ${HELPER_SOURCES})
-# target_link_libraries(sd_writer
-#     PUBLIC baja_proto  
-#     PUBLIC baja_ipc 
-# )
+add_executable(sd_writer src/sd_writer.cpp ${HELPER_SOURCES})
+target_link_libraries(sd_writer
+    PUBLIC baja_proto  
+    PUBLIC baja_ipc 
+)
 
 # TRANSMIT PRIORITIZER
 add_executable(transmit_prioritizer src/transmit_prioritizer.cpp ${HELPER_SOURCES})

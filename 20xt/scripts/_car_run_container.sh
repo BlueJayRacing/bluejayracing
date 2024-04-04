@@ -2,8 +2,9 @@ SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
 echo $SCRIPTPATH
-
-sh $SCRIPTPATH/car_docker_build.sh
+if ! docker images | grep -q car_docker; then
+    sh $SCRIPTPATH/car_docker_build.sh
+fi
 
 mkdir -p $SCRIPTPATH/../.car_build_cache
 mkdir -p $SCRIPTPATH/../.car_logs

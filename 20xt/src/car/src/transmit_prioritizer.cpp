@@ -44,6 +44,7 @@ int main()
     std::cout << live_comm.DebugString() << std::endl;
     // END DEBUG
 
+    std::cout << "transmit send" << std::endl;
     int result = BajaIPC::send_message(queue_to_radio, msg);
     if (result == BajaIPC::SEND_ERROR) {
       std::cerr << "Could not enqeue message" << std::endl;
@@ -79,10 +80,12 @@ std::string build_message(const mqd_t queue_from_broker)
     std::string test_message = live_comm.SerializeAsString();
     if (!is_valid_radio_message(test_message))
     {
-      remainder_data->CopyFrom(data);
+      // std::cout << "message is invalid to pack" << std::endl;
+      // TODO: seems to be breaking
+      //remainder_data->CopyFrom(data);
+      // std::cout << "done copy" << std::endl;
       break; // Could not use dequed data, save for next time
     }
-
     // This message is valid!
     valid_msg = test_message;
   }

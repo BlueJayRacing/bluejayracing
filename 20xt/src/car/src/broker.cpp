@@ -50,14 +50,18 @@ int main()
 /* Check the producer queues, copy and dispatch to subscribers */
 void try_broker_data(const std::vector<mqd_t>& producer_queues, const mqd_t to_transmit_queue, const mqd_t sd_writer_queue)
 {
+  int i = 0;
   for (mqd_t producer_qid : producer_queues) {
     std::string msg = BajaIPC::get_message(producer_qid);
     if (msg == "") {
       continue; // Empty Queue
     }
 
+    
     // The radio can't handle all of it anyways, TODO: Should we subsample to increase performance?
-    BajaIPC::send_message(to_transmit_queue, msg);
+    if (i++ == 200) {
+      BajaIPC::send_message(to_transmit_queue, msg);
+    }
     BajaIPC::send_message(sd_writer_queue, msg);
   }
 }

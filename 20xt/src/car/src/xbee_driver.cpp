@@ -46,11 +46,13 @@ int main() {
   std::cout << "Xbee connection initialized" << std::endl;
 
   // Open the IPC queues
-  const mqd_t tx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_TO_TX_QUEUE, false);
-  const mqd_t rx_queue = BajaIPC::open_queue(StationIPC::XBEE_DRIVER_RX_QUEUE, false);
+  const mqd_t tx_queue = BajaIPC::open_queue(CarIPC::PRIORITIZER_TO_XBEE_DRIVER, false);
+  const mqd_t rx_queue = BajaIPC::open_queue(CarIPC::XBEE_DRIVER_TO_RX_DISPATCH, false);
 
   while (true) {
     usleep(POLLING_INTERVAL);
+    std::cout << "spinning" << std::endl;
+
     // Send
     err = try_transmit_data(conn, tx_queue);
     if (err == EXIT_FAILURE) {
@@ -73,9 +75,9 @@ int main() {
 
 /* Makes best effort to send a message if messages are available (retries on failure) */
 int try_transmit_data(Connection* conn, const mqd_t tx_queue) {
-
   std::string msg = BajaIPC::get_message(tx_queue);
   if (msg.empty()) {
+    std::cout << "try transmit failed" << std::endl;
     return EXIT_SUCCESS;
   }
   std::cout << "Retrieved message from IPC, sending to Xbee" << std::endl;
