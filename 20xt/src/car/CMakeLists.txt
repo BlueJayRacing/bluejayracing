@@ -22,8 +22,8 @@ add_subdirectory(
 )
 
 add_subdirectory(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../paho_mqtt
-    ${CMAKE_CURRENT_SOURCE_DIR}/../paho_mqtt/bin
+    ${CMAKE_CURRENT_SOURCE_DIR}/../paho.mqtt.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../paho.mqtt.c/bin
 )
 
 add_subdirectory(
