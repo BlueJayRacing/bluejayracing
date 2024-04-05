@@ -8,7 +8,7 @@ void ads_1120::begin(int cs_pin, int drdy_pin) {
   adc->setOpMode(0x02);          // Set Turbo Mode
   adc->setDataRate(0x06);        // Set Data rate 110.
   adc->setConversionMode(0x01);  // 1 = Continous Mode
-  adc->setMultiplexer(0x04);     // Set AIN1  & GND
+  adc->setMultiplexer(0x04);     // Set Differential
 }
 
 /*
