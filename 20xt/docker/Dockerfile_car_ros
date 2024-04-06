@@ -1,0 +1,57 @@
+# This is an auto generated Dockerfile for ros:perception
+# generated from docker_images_ros2/create_ros_image.Dockerfile.em
+FROM ros:humble-ros-base-jammy
+
+# install ros2 packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-perception=0.10.0-1* \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y sudo python3-pip
+
+ARG USER=dock
+ARG PASSWD=dock
+
+RUN useradd -d /home/$USER -m -s /bin/bash $USER && echo "$USER:$PASSWD" | chpasswd && adduser $USER sudo
+
+
+
+RUN mkdir -p 20xt_ws/src
+
+RUN chown -R dock:dock 20xt_ws
+
+RUN echo "dock ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+USER dock
+
+RUN touch ~/.sudo_as_admin_successful
+
+RUN chmod -R +rwx 20xt_ws
+
+RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd 20xt_ws && \
+    rosdep update && \
+    rosdep install -i --from-path src --rosdistro humble -y && \
+    colcon build
+
+RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd 20xt_ws && \
+    git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup && \
+    sudo apt-get update && \
+    rosdep update && \
+    rosdep install --from-paths src --ignore-src -y
+    
+RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd 20xt_ws && \
+    colcon build && \
+    source /20xt_ws/install/setup.bash && \
+    ros2 run micro_ros_setup create_firmware_ws.sh host && \
+    ros2 run micro_ros_setup build_firmware.sh && \
+    ros2 run micro_ros_setup create_agent_ws.sh && \
+    ros2 run micro_ros_setup build_agent.sh'
+    
+
+RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
+
+
+
