@@ -63,8 +63,10 @@ std::string build_message(const mqd_t queue_from_broker)
   // First entry, we should consume the left over data
   if (remainder_data != nullptr) {
     factory.add_observation(*remainder_data);
-    remainder_data = nullptr;
     valid_msg = factory.get_serialized_live_comm();
+
+    delete remainder_data;
+    remainder_data = nullptr;
   }
 
   // Keep adding to the message
@@ -76,10 +78,8 @@ std::string build_message(const mqd_t queue_from_broker)
     std::string test_message = factory.get_serialized_live_comm();
     if (!is_valid_radio_message(test_message))
     {
-      // std::cout << "message is invalid to pack" << std::endl;
-      // TODO: seems to be breaking
-      //remainder_data->CopyFrom(data);
-      // std::cout << "done copy" << std::endl;
+      remainder_data = new Observation();
+      remainder_data->CopyFrom(data);
       break; // Could not use dequed data, save for next time
     }
     // This message is valid!

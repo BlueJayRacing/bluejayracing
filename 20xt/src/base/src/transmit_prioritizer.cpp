@@ -9,6 +9,21 @@
 #include "live_comm_factory.h"
 #include "xbee/xbee_baja_network_config.h"
 
+#define RF_RATE 0 // 0: 10 kb/s, 1: 110 kb/s, 2: 250 kb/s
+
+#ifndef RF_RATE
+    #error "RF_RATE must be defined and be 0, 1, or 2"
+#endif
+#if RF_RATE == 0
+  #define POLLING_INTERVAL 120000 // useconds
+#elif RF_RATE == 1
+  #define POLLING_INTERVAL 12000 // useconds
+#elif RF_RATE == 2
+  #define POLLING_INTERVAL 6000 // useconds
+#else
+  #error "RF_RATE must be defined and be 0, 1, or 2"
+#endif
+
 static Observation* remainder_data = nullptr;
 
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
@@ -36,7 +51,7 @@ int main()
 
   // We're using POSIX queues, so sending a message is NOT STATELESS
   while (true) {
-    usleep(100000);
+    usleep(POLLING_INTERVAL);
     std::string msg = build_message(data_queues);
     if (msg.empty()) {
       continue;
@@ -44,9 +59,9 @@ int main()
 
     // DEBUG
     std::cout << "built and enqueuing message of size " << msg.size() << std::endl;
-    LiveComm live_comm;
-    live_comm.ParseFromString(msg);
-    std::cout << live_comm.DebugString() << std::endl;
+    // LiveComm live_comm;
+    // live_comm.ParseFromString(msg);
+    // std::cout << live_comm.DebugString() << std::endl;
     // END DEBUG
 
     int result = BajaIPC::send_message(radio_queue, msg);
@@ -71,13 +86,17 @@ std::string build_message(const std::vector<mqd_t>& data_queues)
   // One entry, we should consume the left over data
   if (remainder_data != nullptr) {
     factory.add_observation(*remainder_data);
-    remainder_data = nullptr;
     valid_msg = factory.get_serialized_live_comm();
+
+    delete remainder_data;
+    remainder_data = nullptr;
   }
 
   // Keep adding to the message
   int previous_queue = 0;
   while (true) {
+    usleep(POLLING_INTERVAL); // TODO: remove
+    
     // Collect next data point
     Observation data;
     previous_queue = get_next_data(&data, previous_queue, data_queues);
@@ -90,6 +109,7 @@ std::string build_message(const std::vector<mqd_t>& data_queues)
     std::string test_message = factory.get_serialized_live_comm();
     if (!is_valid_radio_message(test_message))
     {
+      remainder_data = new Observation();
       remainder_data->CopyFrom(data);
       break; // Could not use dequed data, save for next time
     }
