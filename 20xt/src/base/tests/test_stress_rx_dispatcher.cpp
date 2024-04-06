@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "ipc_config.h"
-#include "proto_helpers.h"
 
 // This is the recieve logic for stress testing the XBee. It mocks
 // the rx dispatching program

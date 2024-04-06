@@ -6,7 +6,6 @@
 #include "mains/receive_dispatcher.h"
 #include "baja_live_comm.pb.h"
 #include "ipc_config.h"
-#include "proto_helpers.h"
 
 // Serve as a distributer between the TRXProtoQueues and the POSIX mqueues
 int main()
