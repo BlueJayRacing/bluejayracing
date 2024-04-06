@@ -19,22 +19,17 @@ Observation get_dummy_observation() {
 // We want to produce a series of dummy Communcation values to the TX queue
 int main () {
   // Open the message queue, return if it fails
-  mqd_t rx_queue = BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TO_PRIORITIZER, false);
+  mqd_t rx_queue = BajaIPC::open_queue(StationIPC::PIT_COMMANDS_TO_PRIORITIZER, true);
   if (rx_queue == -1) {
     std::cout << "Failed to get recieve queue. Errno " << errno << std::endl;
     return EXIT_FAILURE;
   }
 
   while (true) {
-    usleep(1000000);
+    usleep(12000);
     // Let's send a message!
     std::string payload = get_dummy_observation().SerializeAsString();
-    int err = BajaIPC::send_message(rx_queue, payload);
-    if (err == BajaIPC::QUEUE_FULL) {
-      std::cout << "Queue is full, dequeing before enqueing" << std::endl;
-      BajaIPC::get_message(rx_queue);
-      err = BajaIPC::send_message(rx_queue, payload);
-    }
+    int err = BajaIPC::send_message(rx_queue, payload); // Blocking
 
     if (err == BajaIPC::SEND_ERROR) {
       std::cerr << "Could not send the message" << std::endl;
