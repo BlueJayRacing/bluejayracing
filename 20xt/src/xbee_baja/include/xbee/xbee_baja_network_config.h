@@ -1,25 +1,19 @@
 #ifndef XBEE_BAJA_NETWORK_CONFIGS_H
 #define XBEE_BAJA_NETWORK_CONFIGS_H
 
-  namespace XbeeBajaNetworkConfig {
-    // TODO: Break these configs into serial & network config headers
-    struct cmd {
-    const char* name;
-    const int value;
-    };
+#include <string>
+#include <map>
 
-    static const long XBEE_BAJA_CM = 0x3FFFFFFFFFFFF; // Channel mask
-    static const int MAX_PAYLOAD_SIZE = 100; // bytes
+// These are firmware settings found in the Xbee
+#define XBEE_BAJA_MAX_PAYLOAD_SIZE 100
+#define XBEE_BAJA_CM = 0x3FFFFFFFFFFFF;
+#define XBEE_BAJA_HP 0
+#define XBEE_BAJA_TX 2
+#define XBEE_BAJA_BR 1
+#define XBEE_BAJA_AP 1
+#define XBEE_BAJA_ID 2015
+#define XBEE_BAJA_MT 0
 
-    static const struct cmd XBEE_BAJA_CONFIGS[] = {
-    {"HP", 0},
-    {"TX", 2},
-    {"BR", 1},
-    {"AP", 1},
-    {"ID", 2015},
-    {"MT", 0},
-    {"NP", 100},
-  };
-}
+
 
 #endif

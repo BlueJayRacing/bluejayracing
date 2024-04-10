@@ -25,7 +25,7 @@ int main(/*int argc, char* argv[]*/) {
   temp << std::fixed << std::showpoint << std::setprecision(6);
 
   
-  int fd = open("/dev/i2c-5", O_RDWR);
+  int fd = open("/dev/i2c-13", O_RDWR);
   if (fd < 0) {
     char err[200];
     sprintf(err, "Failed to open i2c bus (%c) ", BUS_NAME);
@@ -37,8 +37,8 @@ int main(/*int argc, char* argv[]*/) {
   //ADC a = ADC(fd, 2, true);
 
   //torque
-  ADC a = ADC(fd, 0, false);
-  
+  ADC a = ADC(fd, 1, false);
+
   for (int i = 0; i < 100000000; i++) {
     vector<double> data = a.read();
     temp << data[0] << endl;
