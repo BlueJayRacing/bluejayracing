@@ -85,13 +85,15 @@ message RTKCorrection {
 }
 
 message Observation {
-    optional GPS gps = 1;
-    optional Localization localization = 2;
-    optional Communication communication = 3;
-    optional Timestamp timestamp = 4;
-    optional AnalogChannel analog_ch = 5;
-    optional CarState car_state = 6;
-    optional RTKCorrection rtk_correction = 7;
+    Timestamp timestamp = 1;
+    oneof data {
+        GPS gps = 2;
+        Localization localization = 3;
+        Communication communication = 4;
+        AnalogChannel analog_ch = 5;
+        CarState car_state = 6;
+        RTKCorrection rtk_correction = 7;     
+    }
 }
 
 message LiveComm {
