@@ -9,9 +9,7 @@
 #include "ipc_config.h"
 #include "baja_live_comm.pb.h"
 
-
-
-#define SERIAL_PORT "/dev/ttyACM0" // TODO: Change to correct device
+#define BAJA_RTK_SERIAL_PORT "/dev/ttyACM0" // TODO: Change to correct device, and change in _station_run_container.sh
 
 std::string read_raw_rtcm(serialib *serial) { // return the first RTCM message it finds
   uint8_t last = 0x00;
@@ -76,13 +74,13 @@ int main() {
 
   // Open the serial port, return if it fails
   serialib serial;
-  char port_error = serial.openDevice(SERIAL_PORT, 115200);
+  char port_error = serial.openDevice(BAJA_RTK_SERIAL_PORT, 115200);
   // If connection fails, return the error code otherwise, display a success message
   if (port_error != 1) {
-    std::cout << "Error Opening serial port " << SERIAL_PORT << std::endl;
+    std::cout << "Error Opening serial port " << BAJA_RTK_SERIAL_PORT << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << "Successful connection to " << SERIAL_PORT << std::endl;
+  std::cout << "Successful connection to " << BAJA_RTK_SERIAL_PORT << std::endl;
 
   while (true) {
     // Should be a blocking call which retrieves an Observation with an RTK correction
