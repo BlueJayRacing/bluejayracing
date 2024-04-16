@@ -26,7 +26,10 @@ int main() {
     
     Observation observation;
     observation.ParseFromString(msg);
-    std::cout << observation.DebugString() << std::endl;
+    
+    std::string json_string;
+    google::protobuf::util::MessageToJsonString(observation, &json_string);
+    std::cout << json_string << std::endl;
   }
   return EXIT_SUCCESS;
 }
