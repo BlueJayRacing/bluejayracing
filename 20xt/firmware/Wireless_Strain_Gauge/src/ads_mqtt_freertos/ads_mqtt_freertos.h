@@ -1,7 +1,6 @@
 #ifndef WIFIFREERTOSCLIENT_H
 #define WIFIFREERTOSCLIENT_H
 
-
 #include <crt_CleanRTOS.h>
 #include <ESP32Time.h>
 
@@ -10,27 +9,31 @@
 
 namespace crt
 {
-  //Class object to create FREERTOS task that sends values to a BLECLIENT
-  class send_value : public Task
+	class send_value : public Task
 	{
 	public:
-  	send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t* ip_address);
+		send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t *ip_address);
 		static void StaticMain(void *p_param);
+
 	private:
 		void main();
-    char* ssid;
-    char* pswd;
-    uint8_t* broker_ip_address;
+		void create_publish_topic(char *publish_topic);
+		void copy_time_to_message(uint8_t *message, uint32_t time);
+		void copy_data_to_message(uint8_t *message, uint16_t *data);
+		char *ssid;
+		char *pswd;
+		uint8_t *broker_ip_address;
 	};
 
-  //Class object to create FREERTOS task that records values to be sent by sendValue to a BLECLIENT
 	class record_value : public Task
 	{
 	public:
 		static void StaticMain(void *p_param);
 		record_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number);
+
 	private:
 		void main();
+		uint32_t get_rtc_millis(ESP32Time &rtc);
 	};
 }
 
