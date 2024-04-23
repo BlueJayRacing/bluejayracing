@@ -15,6 +15,8 @@ public:
 
   void write(int x, int y, std::vector<char> data);
   void reset();
+
+  void createChar(uint8_t location, uint8_t charmap[]);
   
 private:
   int fd;
@@ -30,6 +32,8 @@ private:
 
   void write_character(int line, int pos, char content);
   void write_line(int line, std::string content);
+
+  
   
 
 };

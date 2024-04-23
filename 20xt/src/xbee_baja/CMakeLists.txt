@@ -1,6 +1,8 @@
 # Minimum required CMake version
 cmake_minimum_required(VERSION 3.12)
 
+project(xbee_baja)
+
 set(SOURCES
     src/queue_manage.cpp 
     src/station_driver.cpp 

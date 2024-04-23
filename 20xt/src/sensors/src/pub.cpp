@@ -36,6 +36,7 @@ class PublisherNode: public rclcpp::Node
 
       // Publish the message
       publisher_->publish(message);
+      
     }
 
     // Timer objects allow a node to perform a specific action at a specified rate or at a specific time in the future

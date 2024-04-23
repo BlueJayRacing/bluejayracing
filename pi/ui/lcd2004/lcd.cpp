@@ -60,7 +60,7 @@ void LCD::send_command(int comm) {
 	buf = comm & 0xF0;
 	buf |= 0x04;			// RS = 0, RW = 0, EN = 1
 	write_word(buf);
-	usleep(2000);
+	usleep(5000);
 	buf &= 0xFB;			// Make EN = 0
 	write_word(buf);
 
@@ -68,7 +68,7 @@ void LCD::send_command(int comm) {
 	buf = (comm & 0x0F) << 4;
 	buf |= 0x04;			// RS = 0, RW = 0, EN = 1
 	write_word(buf);
-	usleep(2000);
+	usleep(5000);
 	buf &= 0xFB;			// Make EN = 0
 	write_word(buf);
 }
@@ -79,10 +79,10 @@ void LCD::send_data(int data){
 	buf = data & 0xF0;
 	buf |= 0x05;			// RS = 1, RW = 0, EN = 1
 	write_word(buf);
-	usleep(2000);
+	usleep(5000);
 	buf &= 0xFB;			// Make EN = 0
 	write_word(buf);
-	//usleep(2);
+	usleep(2);
 
 	// Send bit3-0 secondly
 	buf = (data & 0x0F) << 4;
@@ -99,15 +99,27 @@ void LCD::clear() {
 
 void LCD::write(int x, int y, vector<char> data){
 	if (x < 0)  x = 0;
-	if (x > 15) x = 15;
+	if (x > 20) x = 20;
 	if (y < 0)  y = 0;
-	if (y > 1)  y = 1;
+	if (y > 3)  y = 3;
+
+	int lines[] = {0x80, 0xC0, 0x94, 0xD4};
 
 	// Move cursor
-	int reg = 0x80 + 0x40 * y + x;
+	int reg = lines[y] + x;
 	send_command(reg);
 	
 	for (int i = 0; i < (int)data.size(); i++){
 		send_data(data[i]);
 	}
+
+
+}
+
+void LCD::createChar(uint8_t location, uint8_t charmap[]) {
+    location &= 0x7; // Ensure the location is 0-7
+    send_command(0x40 | (location << 3)); // Set CGRAM address
+    for (int i = 0; i < 8; i++) {
+        send_data(charmap[i]); // Write character map to CGRAM
+    }
 }

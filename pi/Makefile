@@ -6,7 +6,7 @@ LINKING_FLAGS = -lgps -lpigpiod_if2 -lrt -pthread -lm -lfmt
 CFLAGS = $(CONSERVATIVE_FLAGS) $(DEBUGGING_FLAGS) $(IGNORE_FLAGS) $(LINKING_FLAGS)
 
 
-all: main accel_test adc_test gps_test gyro_test gps_test spi_test imu_test multiple_adc_test linpot_test
+all: main accel_test adc_test gps_test gyro_test gps_test spi_test imu_test multiple_adc_test linpot_test mag_test
 
 
 accel_test: tests/accel_test.cpp accelerometer.o i2c_dev.o
@@ -51,11 +51,28 @@ dro_test2: tests/dro_test2.cpp adc.o i2c_dev.o adafruit_ads.o lcd.o
 torque_test: tests/torque_test.cpp adc.o i2c_dev.o adafruit_ads.o
 	$(CXX) -o torque_test tests/torque_test.cpp adc.o i2c_dev.o adafruit_ads.o $(CFLAGS)
 
+lucas_test: tests/lucas_test.cpp lcd.o i2c_dev.o accelerometer.o
+	$(CXX) -o lucas_test tests/lucas_test.cpp lcd.o i2c_dev.o accelerometer.o $(CFLAGS)
+
+aviel_test: tests/aviel_test.cpp lcd.o i2c_dev.o accelerometer.o
+	$(CXX) -o avie_test tests/aviel_test.cpp lcd.o i2c_dev.o accelerometer.o $(CFLAGS)
+
+eguan_test: tests/eguan_test.cpp lcd.o i2c_dev.o accelerometer.o
+	$(CXX) -o eguan_test tests/eguan_test.cpp lcd.o i2c_dev.o accelerometer.o $(CFLAGS)
+akshaya_test: tests/akshaya_test.cpp lcd.o i2c_dev.o accelerometer.o
+	$(CXX) -o akshaya_test tests/akshaya_test.cpp lcd.o i2c_dev.o accelerometer.o $(CFLAGS)
+
+realtime_mag: tests/realtime_mag.cpp i2c_dev.o magnetometer.o
+	$(CXX) -o realtime_mag tests/realtime_mag.cpp i2c_dev.o magnetometer.o $(CFLAGS)
+
 realtime_accel: tests/realtime_accel.cpp i2c_dev.o accelerometer.o
 	$(CXX) -o realtime_accel tests/realtime_accel.cpp i2c_dev.o accelerometer.o $(CFLAGS)
 
 realtime_imu: tests/realtime_imu.cpp imu.o spi_pigpio.o
 	$(CXX) -o realtime_imu tests/realtime_imu.cpp imu.o spi_pigpio.o $(CFLAGS)
+
+mag_test: tests/mag_test.cpp magnetometer.o i2c_dev.o
+	$(CXX) -o mag_test tests/mag_test.cpp magnetometer.o i2c_dev.o $(CFLAGS)
 
 main: main.cpp adc.o gps.o imu.o lcd.o i2c_dev.o adafruit_ads.o spi_pigpio.o realtime.o 
 	$(CXX) -o main main.cpp adc.o gps.o imu.o lcd.o i2c_dev.o adafruit_ads.o spi_pigpio.o realtime.o $(CFLAGS)
@@ -90,6 +107,9 @@ lcd.o: ui/lcd2004/lcd.cpp ui/lcd2004/lcd.hpp
 
 realtime.o: concurrency/realtime.cpp concurrency/realtime.hpp
 	$(CXX) -c concurrency/realtime.cpp $(CFLAGS)
+
+magnetometer.o: sensors/LIS3MDL/magnetometer.cpp sensors/LIS3MDL/magnetometer.hpp sensors/LIS3MDL/LIS3MDL.hpp
+	$(CXX) -c sensors/LIS3MDL/magnetometer.cpp $(CFLAGS)
 
 clean:
 	rm -rf *.o *.gch *out *~ accel_test gyro_test main adc_test spi_test gps_test imu_test multiple_adc_test linpot_test vr_test lcd_test torque_test

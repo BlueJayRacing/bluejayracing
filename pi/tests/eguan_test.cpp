@@ -1,6 +1,8 @@
 #include "../ui/lcd2004/lcd.hpp"
+#include "../sensors/ISM330DHCX/accelerometer.hpp"
 #include <iostream>
 #include <vector>
+#include <unistd.h>
 
 using std::vector;
 using std::string;
@@ -8,6 +10,9 @@ using std::cerr;
 using std::cout;
 using std::endl;
 using std::to_string;
+
+// TODO: Added definition for BUS_NAME as place holder
+int BUS_NAME = 0x0;
 
 string outvec(vector<double> v) {
   string out = "";
@@ -115,11 +120,15 @@ uint8_t pj9[] = {
 int main(/*int argc, char* argv[]*/) {
 
   int fd = open("/dev/i2c-1", O_RDWR);
+
+  LCD l = LCD(fd);
+    
   if (fd < 0) {
-    cerr <<"Failed to open i2c bus (%c) ";
+    char err[200];
+    sprintf(err, "Failed to open i2c bus (%c) ", BUS_NAME);
   }
   
-  LCD l = LCD(fd);
+  Accelerometer a = Accelerometer(fd, 0);
   
   l.createChar(0b00000000, pj1);
   l.createChar(0b00000001, pj2);
@@ -130,26 +139,20 @@ int main(/*int argc, char* argv[]*/) {
   l.createChar(0b00000110, pj7);
   l.createChar(0b00000111, pj8);
 
+  vector<double> data = a.read();
 
-  
-  string s1 = string(1, 0b00000000)+string(1, 0b00000001)+string(1, 0b00000010)+string(1, 0b00000000)+string(1, 0b00000001)+string(1, 0b00000010)+string(1, 0b00000000)+string(1, 0b00000001)+string(1, 0b00000010)+ string(1, 0b00000000)+string(1, 0b00000001)+string(1, 0b00000010)+string(1, 0b00000000)+string(1, 0b00000001)+string(1, 0b00000010)+string(1, 0b00000000)+string(1, 0b00000001)+string(1, 0b00000010);
-  string s2 = string(1, 0b00000011)+string(1, 0b00000100)+string(1, 0b00000101)+string(1, 0b00000011)+string(1, 0b00000100)+string(1, 0b00000101)+string(1, 0b00000011)+string(1, 0b00000100)+string(1, 0b00000101)+string(1, 0b00000011)+string(1, 0b00000100)+string(1, 0b00000101)+string(1, 0b00000011)+string(1, 0b00000100)+string(1, 0b00000101)+string(1, 0b00000011)+string(1, 0b00000100)+string(1, 0b00000101);
-  string s3 = string(1, 0b00000110)+string(1, 0b00000111)+string(1, 0b11010010)+string(1, 0b00000110)+string(1, 0b00000111)+string(1, 0b00001000)+string(1, 0b00000110)+string(1, 0b00000111)+string(1, 0b00001000)+string(1, 0b00000110)+string(1, 0b00000111)+string(1, 0b00001000)+string(1, 0b00000110)+string(1, 0b00000111)+string(1, 0b00001000)+string(1, 0b00000110)+string(1, 0b00000111)+string(1, 0b00001000);
-  string s4 = "party rocker";
+  for (int i = 0; i < 100; i++) {
+    vector<double> data = a.read();
+    string s1 = std::to_string(data[0]);
+    string s2 = std::to_string(data[1]);
+    string s3 = std::to_string(data[2]);
 
+    l.write(0, 0, vector<char>(s1.begin(), s1.end()));
+    l.write(0, 1, vector<char>(s2.begin(), s2.end()));
+    l.write(0, 2, vector<char>(s3.begin(), s3.end()));
 
-
-
-  // string s1 = "ben leherh is a jayz";
-  // string s2 = "small littler"+string(1, 0b11000011)+ string(1, 0b00000001);;
-  // string s3 = "bunny and";
-  // string s4 = "he is demanding";
-  
-  // row, column
-  l.write(0, 0, vector<char>(s1.begin(), s1.end()));
-	l.write(0, 1, vector<char>(s2.begin(), s2.end()));
-	l.write(0, 2, vector<char>(s3.begin(), s3.end()));
-	l.write(0, 3, vector<char>(s4.begin(), s4.end()));
+    sleep(1);
+  }
 
 
   close(fd);
