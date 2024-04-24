@@ -5,8 +5,8 @@
 #define MESSAGE_DATA_LENGTH 40
 #define MQTT_MESSAGE_LENGTH MESSAGE_DATA_LENGTH * 2 + 4
 #define MQTT_SEND_MESSAGE_THRESHHOLD RTOS_QUEUE_SIZE / 20
-#define CS_PIN 5
-#define INTRUPT_PIN 4
+#define CS_PIN 3
+#define INTRUPT_PIN 2
 #define MQTT_QoS 2
 
 namespace crt
@@ -18,8 +18,9 @@ namespace crt
   } message;
 
   xQueueHandle data_queue = xQueueCreate(RTOS_QUEUE_SIZE, sizeof(message));
+  bool flag = false;
 
-  send_value::send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t *broker_ip_address) : Task(task_name, task_priority, task_size_bytes, task_core_number)
+  send_value::send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t *broker_ip_address, record_value &recordValueTask) : Task(task_name, task_priority, task_size_bytes, task_core_number), record_value_task(recordValueTask)
   {
     this->broker_ip_address = broker_ip_address;
     start();
@@ -37,13 +38,27 @@ namespace crt
     message recieved;
 
     char publish_topic[25];
+    char mqtt_message[25];
+    char subscribe_topic[] = "esp32/send";
     create_publish_topic(publish_topic);
 
     qos_mqtt mqtt_client = qos_mqtt(MQTT_PORT, broker_ip_address, true);
     mqtt_client.connect_mqtt();
+    mqtt_client.subscribe_mqtt(subscribe_topic, MQTT_QoS);
 
     for (;;)
     {
+      mqtt_client.get_last_message(mqtt_message);
+      if ((strcmp(mqtt_message, "send") == 0) && mqtt_client.is_connected()) {
+        flag = true;
+      } else {
+        flag = false;
+        if (!mqtt_client.is_connected()) {
+          mqtt_client.connect_mqtt();
+          mqtt_client.subscribe_mqtt(subscribe_topic, MQTT_QoS);        
+        }
+      }
+
       if (uxQueueMessagesWaiting(data_queue) >= MQTT_SEND_MESSAGE_THRESHHOLD)
       {
         Serial.println("Sending...");
@@ -66,6 +81,7 @@ namespace crt
     const char *topicFooter = WiFi.macAddress().c_str();
     strcpy(publish_topic, topicHeader);
     strcat(publish_topic, topicFooter);
+    Serial.println(publish_topic);
   }
 
   void send_value::copy_time_to_message(uint8_t *message, uint32_t time)
@@ -91,7 +107,7 @@ namespace crt
     THIS->main();
   }
 
-  record_value::record_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number) : Task(task_name, task_priority, task_size_bytes, task_core_number)
+  record_value::record_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number) : Task(task_name, task_priority, task_size_bytes, task_core_number), can_record(this)
   {
     start(); // starts main()
   }
@@ -100,7 +116,9 @@ namespace crt
   {
     uint16_t value = 0;
     int num_values = 0;
-    vTaskDelay(10000); // Wait for other threads to start up
+    while (flag == false) {
+      vTaskDelay(1);
+    }
     ESP32Time rtc(0);
 
     ads_1120 ads1120 = ads_1120();
@@ -111,6 +129,7 @@ namespace crt
     Serial.println("ADS started");
     rtc.setTime(0, 0, 1, 1, 1, 2021);
     msg.milliseconds = get_rtc_millis(rtc);
+    uint32_t last_time = get_rtc_millis(rtc);
 
     for (;;)
     {
@@ -121,6 +140,7 @@ namespace crt
         num_values++;
         if (num_values % MESSAGE_DATA_LENGTH == 0)
         {
+          Serial.println("Value read");
           num_values = 0;
           if (!uxQueueSpacesAvailable(data_queue))
           {
@@ -130,6 +150,15 @@ namespace crt
           msg.milliseconds = get_rtc_millis(rtc);
         }
       }
+
+      if (get_rtc_millis(rtc) - last_time > 2000 && !flag) {
+        Serial.println("RecordValue: Waiting for flag");
+        while (flag == false) {
+          vTaskDelay(1);
+        }
+        Serial.println("RecordValue: Flag set");
+        last_time = get_rtc_millis(rtc);
+      }
       vTaskDelay(1);
     }
   }
@@ -137,5 +166,10 @@ namespace crt
   uint32_t record_value::get_rtc_millis(ESP32Time &rtc)
   {
     return rtc.getMillis() + rtc.getSecond() * 1000 + rtc.getMinute() * 60000 + (rtc.getHour() - 1) * 3600000;
+  }
+
+  void record_value::set_flag()
+  {
+    can_record.set();
   }
 };

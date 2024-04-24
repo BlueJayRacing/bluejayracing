@@ -16,7 +16,7 @@ void setup()
   // Create a recordValue object which records a value to be sent by the sendValue object
   crt::record_value recordValueTask("recordValue", 2 /*priority*/, 40000 /*stackBytes*/, ARDUINO_RUNNING_CORE);
   // Create a sendValue object which creates a BLECLIENT object and a thread to send values to that client
-  crt::send_value sendValueTask("sendValue", 2 /*priority*/, 40000 /*stackBytes*/, ARDUINO_RUNNING_CORE, broker_ip_address);
+  crt::send_value sendValueTask("sendValue", 2 /*priority*/, 40000 /*stackBytes*/, ARDUINO_RUNNING_CORE, broker_ip_address, recordValueTask);
 }
 
 void loop()

@@ -13,6 +13,7 @@ public:
     void subscribe_mqtt(char *topic, int QoS);
     void unsubscribe_mqtt(char *topic);
     bool is_connected();
+    void get_last_message(char* array);
 
 private:
     void set_up_mqtt_callbacks();
@@ -27,6 +28,7 @@ private:
     int mqtt_port;
     bool wifi_auto_reconnect;
     static bool mqtt_connected;
+    static char last_message[25];
 };
 
 #endif

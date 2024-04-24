@@ -1,6 +1,7 @@
 #include "qos_mqtt.h"
 
 bool qos_mqtt::mqtt_connected = false;
+char qos_mqtt::last_message[25] = "nosend";
 
 qos_mqtt::qos_mqtt(int mqtt_port, uint8_t *mqtt_ip_addr, bool wifi_auto_reconnect = false)
 {
@@ -39,6 +40,11 @@ void qos_mqtt::publish_mqtt(char *topic, uint8_t *message, int length, int QoS)
 
 void qos_mqtt::subscribe_mqtt(char *topic, int QoS)
 {
+  if (!mqtt_connected)
+  {
+    connect_mqtt();
+  }
+
   mqtt_client->subscribe(topic, QoS);
 }
 
@@ -64,6 +70,11 @@ void qos_mqtt::set_up_mqtt_callbacks()
 
 void qos_mqtt::on_mqtt_message(const espMqttClientTypes::MessageProperties &properties, const char *topic, const uint8_t *payload, size_t len, size_t index, size_t total)
 {
+  Serial.println("Message recieved");
+  for (int i = 0; i < 25; i++) {
+    last_message[i] = '\0';
+  }
+  strncpy(last_message, (char*) payload, len);
 }
 
 void qos_mqtt::on_mqtt_publish(uint16_t packetId)
@@ -90,4 +101,9 @@ void qos_mqtt::on_mqtt_disconnect(espMqttClientTypes::DisconnectReason reason)
   Serial.println("");
   Serial.println("Disconnected from MQTT");
   mqtt_connected = false;
+}
+
+void qos_mqtt::get_last_message(char* array) {
+  strncpy(array, last_message, 25);
+  return;
 }
