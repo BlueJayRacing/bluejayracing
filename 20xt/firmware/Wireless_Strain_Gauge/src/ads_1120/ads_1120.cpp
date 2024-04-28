@@ -7,9 +7,10 @@ void ads_1120::begin(int cs_pin, int drdy_pin)
   attachInterrupt(digitalPinToInterrupt(drdy_pin), ads_1120::interrupt, FALLING);
   adc->setGain(1);              // Set gain 1.  Possible values are 1, 2, 4, 8, 16, 32, 64, 128.
   adc->setOpMode(0x02);         // Set Turbo Mode
-  adc->setDataRate(0x06);       // Set Data rate 110.
+  adc->setDataRate(0x06);       // Set Data rate 110. 2k SPS @ Turbo Mode
   adc->setConversionMode(0x01); // 1 = Continous Mode
-  adc->setMultiplexer(0x04);    // Set Differential
+  adc->setVoltageRef(1);        // Voltage Reference is External on REFP0 and REFN0 inputs
+  adc->setMultiplexer(0x09);    // Recording Differential Between | AIN1 | AVSS |
 }
 
 /*

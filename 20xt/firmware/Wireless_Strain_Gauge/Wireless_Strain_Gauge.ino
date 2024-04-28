@@ -6,7 +6,7 @@ void setup()
   Serial.begin(115200);
   delay(1000);
 
-  char ssid[] = "piWifi";
+  char ssid[] = "bjr_wireless_axle_host";
   char pswd[] = "bluejayracing";
 
   uint8_t broker_ip_address[] = {10, 42, 0, 1};

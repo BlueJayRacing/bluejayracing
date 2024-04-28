@@ -1,12 +1,12 @@
 #include "ads_mqtt_freertos.h"
 
-#define RTOS_QUEUE_SIZE 200
+#define RTOS_QUEUE_SIZE 1000
 #define MQTT_PORT 1883
 #define MESSAGE_DATA_LENGTH 40
 #define MQTT_MESSAGE_LENGTH MESSAGE_DATA_LENGTH * 2 + 4
-#define MQTT_SEND_MESSAGE_THRESHHOLD RTOS_QUEUE_SIZE / 20
-#define CS_PIN 3
-#define INTRUPT_PIN 2
+#define MQTT_SEND_MESSAGE_THRESHHOLD RTOS_QUEUE_SIZE / 100
+#define CS_PIN 5
+#define INTRUPT_PIN 4
 #define MQTT_QoS 2
 
 namespace crt
@@ -140,7 +140,6 @@ namespace crt
         num_values++;
         if (num_values % MESSAGE_DATA_LENGTH == 0)
         {
-          Serial.println("Value read");
           num_values = 0;
           if (!uxQueueSpacesAvailable(data_queue))
           {
@@ -151,7 +150,7 @@ namespace crt
         }
       }
 
-      if (get_rtc_millis(rtc) - last_time > 2000 && !flag) {
+      if (get_rtc_millis(rtc) - last_time > 30000 && !flag) {
         Serial.println("RecordValue: Waiting for flag");
         while (flag == false) {
           vTaskDelay(1);
