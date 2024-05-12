@@ -13,10 +13,6 @@ target_include_directories(data_logging PUBLIC
 )
 
 # Recursively link any dependencies
-add_subdirectory(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../baja_proto
-    ${CMAKE_CURRENT_SOURCE_DIR}/../baja_proto/bin_for_ipc
-)
 target_link_libraries(data_logging
     # Add any required libraries here
 )

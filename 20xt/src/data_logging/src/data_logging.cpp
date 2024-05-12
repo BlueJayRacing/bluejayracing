@@ -1,0 +1,153 @@
+#include <fstream>
+#include <string>
+#include <iostream>
+#include <map>
+#include <filesystem>
+#include <vector>
+#include <bitset>
+#include "data_logging.h"
+#include "_channel_description.h"
+
+using namespace BajaDataLogging;
+using std::ofstream;
+using std::ifstream;
+using std::string;
+
+typedef std::map<string, ChannelDescription> ChannelMap;
+
+BajaDataWriter::BajaDataWriter(string log_directory)
+{
+  // Check if log directory exists, if not create it
+  if (!std::filesystem::exists(log_directory)) {
+    std::filesystem::create_directory(log_directory);
+  }
+  this->read_or_create_config();
+  this->open_new_data_file();
+}
+
+int BajaDataWriter::add_channel(
+    string channel_name,
+    string unit_of_measurement,
+    string scale_factor_decimal, // string representation, eg "2350.024"
+    string time_unit,
+    string num_bits_per_sample)
+{
+  std::string all_strings = channel_name + unit_of_measurement + scale_factor_decimal + time_unit + num_bits_per_sample;
+  if (all_strings.find(',') != std::string::npos 
+      || all_strings.find(':') != std::string::npos 
+      || all_strings.find('"') != std::string::npos
+      || all_strings.find(' ') != std::string::npos
+      || all_strings.find('\n') != std::string::npos
+      || all_strings.find('{') != std::string::npos
+      || all_strings.find('}') != std::string::npos
+      ) {
+    throw std::runtime_error("Cannot use a specific set characters in any of the strings");
+  }
+
+  // channel does not already exist
+  if (channel_map.find(channel_name) != channel_map.end()) {
+    throw std::runtime_error("Channel already exists");
+  }
+
+  // num_bits_per_sample is <= DATA_BITS_PER_SAMPLE
+  if (std::stoi(num_bits_per_sample) > DATA_BITS_PER_SAMPLE) {
+    throw std::runtime_error("num_bits_per_sample is limited, see code for the constant");
+  }
+
+  // Store the channel and update the config
+  uint8_t channel_id = channel_map.size();
+  ChannelDescription channel_description(channel_name, unit_of_measurement, scale_factor_decimal, time_unit, num_bits_per_sample, channel_id);
+  channel_map.insert({channel_name, channel_description});
+  this->overwrite_config();
+  return 0;
+}
+
+int BajaDataWriter::write_uint16(string channel_name, uint16_t data, uint64_t timestamp)
+{
+  // Check if channel exists
+  auto iter = channel_map.find(channel_name);
+  if (iter == channel_map.end()) {
+    throw std::runtime_error("Channel does not exist");
+  }
+  ChannelDescription channel_description = (*iter).second;
+
+  // Concatenate data into binary string
+  std::bitset<8> channel_id_bits(channel_description.channel_id);
+  std::bitset<16> pad_bits(0);
+  std::bitset<16> data_bits(data);
+  std::bitset<64> timestamp_bits(timestamp);
+  std::string binary_string = channel_id_bits.to_string() + data_bits.to_string() + timestamp_bits.to_string();
+
+  // Write the binary string
+  this->current_data_file.write(binary_string.c_str(), binary_string.size());
+  this->current_data_file_size += binary_string.size();
+
+  // If the file is too large, open a new one
+  if (current_data_file_size > APPROX_MAX_DATA_FILE_SIZE) {
+    this->open_new_data_file();
+  }
+  return 0;
+}
+
+int BajaDataWriter::read_or_create_config()
+{
+  // If config file DNE, create an empty file
+  if (!std::filesystem::exists(log_directory + "/" + CONFIG_FILE_NAME)) {
+    std::ofstream empty_file(log_directory + "/" + CONFIG_FILE_NAME);
+    if (!empty_file.is_open()) {
+      throw std::runtime_error("Could not create empty file");
+    }
+    empty_file.close();
+  }
+
+  ifstream config_file(log_directory + "/" + CONFIG_FILE_NAME);
+  if (!config_file.is_open()) {
+    throw std::runtime_error("Could not open config file");
+  }
+
+  // Split the file by new-lines and add it to jsons
+  std::vector<std::string> jsons;
+  std::string line;
+  while (std::getline(config_file, line)) {
+    jsons.push_back(line);
+  }
+
+  // for each json in lines, create a ChannelDescription and add to channel_map
+  for (std::string json : jsons) {
+    try {
+      ChannelDescription channel_description(json);
+      channel_map.insert({channel_description.channel_name, channel_description});
+    } catch (std::invalid_argument) {
+      std::cerr << "Invalid json in config file, completely overwriting with empty config. Invalid json: " << json << std::endl;
+      this->channel_map.clear();
+      this->overwrite_config();
+      continue;
+    }
+  }
+  config_file.close();
+  return 0;
+}
+
+int BajaDataWriter::overwrite_config()
+{
+  ofstream config_file(log_directory + "/" + CONFIG_FILE_NAME);
+  if (!config_file.is_open()) {
+    throw std::runtime_error("Could not open config file");
+  }
+
+  // New-line delineated JSONs
+  for (auto& [channel_name, channel_description] : channel_map) {
+    config_file << channel_description.to_json() << std::endl;
+  }
+  config_file.close();
+  return 0;
+}
+
+int BajaDataWriter::open_new_data_file()
+{
+  this->current_data_file.close();
+  this->current_data_file_size = 0;
+  this->current_data_file_num++;
+  this->current_data_file.open(DATA_FILE_PREFIX + std::to_string(current_data_file_num) + DATA_FILE_EXTENSION);
+  return 0;
+}
