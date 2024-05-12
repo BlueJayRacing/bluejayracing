@@ -47,12 +47,20 @@ target_link_libraries(adc_driver
     PUBLIC ads1115
 )
 
-# MQTT CLIENT
+# MQTT CLIENT SUBSCRIBE
 add_executable(mqtt_client src/mqtt_client.cpp ${HELPER_SOURCES})
 target_link_libraries(mqtt_client
     PUBLIC paho-mqtt3c
     PUBLIC baja_proto  
     PUBLIC baja_ipc 
+)
+
+# MQTT CLIENT PUBLISH
+add_executable(mqtt_client_publish src/mqtt_client_publish.cpp ${HELPER_SOURCES})
+target_link_libraries(mqtt_client_publish
+    PUBLIC paho-mqtt3c
+    PUBLIC baja_proto
+    PUBLIC baja_ipc
 )
 
 # BROKER

@@ -1,13 +1,13 @@
 <package>
-    <name>baja_proto</name>
+    <name>ipc</name>
     <version>0.1.0</version>
-    <description>Protobuf items for Baja communication</description>
+    <description>ADS1115 Packaged based on adafruit structure and independent hardware code</description>
     <maintainer email="awong69@jhu.edu">Aaren Wong</maintainer>
-    <maintainer email="tannergladson@example.com">Tanner Gladson</maintainer>
     <license>MIT</license>
     <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
+  <depend>comms</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

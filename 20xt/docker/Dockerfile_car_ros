@@ -1,22 +1,68 @@
 # This is an auto generated Dockerfile for ros:perception
 # generated from docker_images_ros2/create_ros_image.Dockerfile.em
-FROM ros:humble-ros-base-jammy
+# FROM ros:humble-perception-jammy
+FROM ros:humble-perception
+# FROM osrf/ros:humble-desktop-full
+
+SHELL ["/bin/bash", "-c"]
+
+# Custom CMake install to get v3.28
+ENV CMAKE_VERSION=3.28.1
+RUN apt-get remove -y cmake
+RUN apt-get update && \
+    apt-get -y install build-essential wget
+RUN rm -rf /var/lib/apt/lists/*
+RUN wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-aarch64.sh \
+      -q -O /tmp/cmake-install.sh
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+RUN chmod u+x /tmp/cmake-install.sh
+RUN mkdir /opt/cmake-$CMAKE_VERSION -p
+RUN /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-$CMAKE_VERSION
+RUN rm /tmp/cmake-install.sh
+RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
+
 
 # install ros2 packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-humble-perception=0.10.0-1* \
+    ros-humble-desktop* \
+    ros-humble-navigation2 ros-humble-nav2-bringup \
+    ros-humble-slam-toolbox ros-humble-robot-localization \
+    ros-humble-xacro \
+    ros-humble-irobot-create-msgs \
+    ros-humble-teleop-twist-joy ros-humble-teleop-twist-keyboard \
+    python3-colcon-common-extensions \
+    ros-humble-tf-transformations python3-rosdep2 \
+    nano emacs joystick\
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y sudo python3-pip
+
+   
+RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps
+
+#humble packages
+RUN apt-get update && apt-get install -y \
+    ros-humble-realsense2-camera \
+    ros-humble-realsense2-description \
+    ros-humble-image-transport \
+    ros-humble-cv-bridge \
+    ros-humble-vision-opencv \
+    ffmpeg
+
+# ros2 packages
+RUN sudo apt-get update && apt-get install -y sudo python3-pip ros-humble-joint-state-publisher-gui ros-humble-robot-state-publisher ros-humble-teleop-twist-keyboard unzip
+RUN sudo apt-get install -y sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools ros-humble-ros2-control ros-humble-ros2-controllers ros-humble-ur ros-humble-navigation2 ros-humble-nav2-bringup ros-humble-librealsense2* ros-humble-realsense2*
+RUN sudo updatedb
 
 ARG USER=dock
 ARG PASSWD=dock
 
 RUN useradd -d /home/$USER -m -s /bin/bash $USER && echo "$USER:$PASSWD" | chpasswd && adduser $USER sudo
 
+RUN usermod -aG dialout dock
 
-
-RUN mkdir -p 20xt_ws/src
+RUN mkdir -p /20xt_ws/src
 
 RUN chown -R dock:dock 20xt_ws
 
@@ -24,34 +70,37 @@ RUN echo "dock ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 USER dock
 
+
+
 RUN touch ~/.sudo_as_admin_successful
 
 RUN chmod -R +rwx 20xt_ws
 
 RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
-    cd 20xt_ws && \
+    cd /20xt_ws && \
     rosdep update && \
     rosdep install -i --from-path src --rosdistro humble -y && \
     colcon build
 
 RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
-    cd 20xt_ws && \
+    cd /20xt_ws && \
     git clone -b $ROS_DISTRO https://github.com/micro-ROS/micro_ros_setup.git src/micro_ros_setup && \
     sudo apt-get update && \
     rosdep update && \
     rosdep install --from-paths src --ignore-src -y
     
 RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
-    cd 20xt_ws && \
+    cd /20xt_ws && \
     colcon build && \
+    ls /20xt_ws/install && \
     source /20xt_ws/install/setup.bash && \
-    ros2 run micro_ros_setup create_firmware_ws.sh host && \
-    ros2 run micro_ros_setup build_firmware.sh && \
     ros2 run micro_ros_setup create_agent_ws.sh && \
-    ros2 run micro_ros_setup build_agent.sh'
+    ros2 run micro_ros_setup build_agent.sh && \
+    source /20xt_ws/install/local_setup.bash '
     
+
 
 RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
 
 
-
+WORKDIR /20xt_ws/

@@ -61,17 +61,25 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
         Timestamp* timestamp = new Timestamp();
         timestamp->set_ts(start_time + i);
         uint16_t val = *(((uint8_t*) message->payload) + 4 + 2 * i) * 256 + *(((uint8_t*) message->payload) + 4 + 2 * i + 1);
-        printf("%d ", start_time + i);
-        printf("%d\n", val);
+        printf("%d, ", start_time + i);
+        printf("%d, ", val);
         std::string data = serializeDoubleToBinaryString((double)val);
         AnalogChannel* channel = new AnalogChannel();
         channel->set_encoded_analog_points(data);
 
-        if (strcmp(topicName, "esp32/48:31:B7:3F:DA:90") == 0) {
-            channel->set_channel_type(AnalogChannel::AXLE_TORQUE_FRONT_RIGHT); // TODO: Gotta get correct channel type
-        } else if (strcmp(topicName, "esp32/84:FC:E6:00:92:DC") == 0) {
-    	    channel->set_channel_type(AnalogChannel::AXLE_TORQUE_REAR_RIGHT);
-        }
+        if (strcmp(topicName, "esp32/EC:DA:3B:BE:91:00") == 0) {
+            channel->set_channel_type(AnalogChannel::AXLE_TORQUE_FRONT_LEFT); // TODO: Gotta get correct channel type
+            printf("%s,\n", "front_left");
+        } else if (strcmp(topicName, "esp32/48:31:B7:3F:C0:D0") == 0) {
+    	    channel->set_channel_type(AnalogChannel::AXLE_TORQUE_FRONT_RIGHT);
+            printf("%s,\n", "front_right");
+        } else if (strcmp(topicName, "esp32/EC:DA:3B:BE:93:78") == 0) {
+            channel->set_channel_type(AnalogChannel::AXLE_TORQUE_REAR_LEFT);
+            printf("%s,\n", "rear_left");
+        } else if (strcmp(topicName, "esp32/EC:DA:3B:BE:75:30") == 0) {
+	    channel->set_channel_type(AnalogChannel::AXLE_TORQUE_REAR_RIGHT);
+            printf("%s,\n", "rear_right");
+	    }
 
         Observation observation;
         observation.set_allocated_timestamp(timestamp);
@@ -143,6 +151,7 @@ int main(int argc, char* argv[])
     	do
     	{
         	ch = getchar();
+            usleep(10000);
     	} while (ch!='Q' && ch != 'q');
 
         if ((rc = MQTTClient_unsubscribe(client, TOPIC)) != MQTTCLIENT_SUCCESS)

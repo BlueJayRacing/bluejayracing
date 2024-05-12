@@ -2,7 +2,7 @@
 
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
-docker build -t car_docker -f $SCRIPTPATH/../docker/Dockerfile_car $SCRIPTPATH
+docker buildx build --platform="arm64" -t car_docker_ros -f $SCRIPTPATH/../docker/Dockerfile_car_ros $SCRIPTPATH
 
 if docker ps | grep -q car_docker; then
     sh $SCRIPTPATH/clean_docker_car.sh
