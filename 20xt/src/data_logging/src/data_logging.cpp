@@ -4,7 +4,6 @@
 #include <map>
 #include <filesystem>
 #include <vector>
-#include <bitset>
 #include "data_logging.h"
 #include "_channel_description.h"
 
@@ -15,7 +14,11 @@ using std::string;
 
 typedef std::map<string, ChannelDescription> ChannelMap;
 
-BajaDataWriter::BajaDataWriter(string log_directory)
+BajaDataWriter::BajaDataWriter(const string log_directory) : 
+  log_directory(log_directory),
+  config_file_path(log_directory + "/" + CONFIG_FILE_NAME),
+  current_data_file_num(-1),
+  current_data_file_size(0)
 {
   // Check if log directory exists, if not create it
   if (!std::filesystem::exists(log_directory)) {
@@ -69,21 +72,20 @@ int BajaDataWriter::write_uint16(string channel_name, uint16_t data, uint64_t ti
   if (iter == channel_map.end()) {
     throw std::runtime_error("Channel does not exist");
   }
-  ChannelDescription channel_description = (*iter).second;
+  uint8_t channel_id = (*iter).second.channel_id;
+  uint16_t padding = 0;
 
-  // Concatenate data into binary string
-  std::bitset<8> channel_id_bits(channel_description.channel_id);
-  std::bitset<16> pad_bits(0);
-  std::bitset<16> data_bits(data);
-  std::bitset<64> timestamp_bits(timestamp);
-  std::string binary_string = channel_id_bits.to_string() + data_bits.to_string() + timestamp_bits.to_string();
+  int entry_size = sizeof(channel_id) + sizeof(padding) + sizeof(data) + sizeof(timestamp);
 
-  // Write the binary string
-  this->current_data_file.write(binary_string.c_str(), binary_string.size());
-  this->current_data_file_size += binary_string.size();
+  // write the binary
+  this->current_data_file.write(reinterpret_cast<const char*>(&channel_id), sizeof(channel_id));
+  this->current_data_file.write(reinterpret_cast<const char*>(&padding), sizeof(padding));
+  this->current_data_file.write(reinterpret_cast<const char*>(&data), sizeof(data));
+  this->current_data_file.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
+  this->current_data_file_size += entry_size;
 
-  // If the file is too large, open a new one
-  if (current_data_file_size > APPROX_MAX_DATA_FILE_SIZE) {
+  // If another entry would overflow the file, open a new one
+  if (current_data_file_size > MAX_DATA_FILE_SIZE - entry_size) {
     this->open_new_data_file();
   }
   return 0;
@@ -92,15 +94,16 @@ int BajaDataWriter::write_uint16(string channel_name, uint16_t data, uint64_t ti
 int BajaDataWriter::read_or_create_config()
 {
   // If config file DNE, create an empty file
-  if (!std::filesystem::exists(log_directory + "/" + CONFIG_FILE_NAME)) {
-    std::ofstream empty_file(log_directory + "/" + CONFIG_FILE_NAME);
+  if (!std::filesystem::exists(this->config_file_path)) {
+    std::cout << "config file does not exist, creating it\n";
+    std::ofstream empty_file(this->config_file_path);
     if (!empty_file.is_open()) {
       throw std::runtime_error("Could not create empty file");
     }
     empty_file.close();
   }
 
-  ifstream config_file(log_directory + "/" + CONFIG_FILE_NAME);
+  ifstream config_file(this->config_file_path);
   if (!config_file.is_open()) {
     throw std::runtime_error("Could not open config file");
   }
@@ -130,13 +133,13 @@ int BajaDataWriter::read_or_create_config()
 
 int BajaDataWriter::overwrite_config()
 {
-  ofstream config_file(log_directory + "/" + CONFIG_FILE_NAME);
+  ofstream config_file(this->config_file_path);
   if (!config_file.is_open()) {
     throw std::runtime_error("Could not open config file");
   }
 
   // New-line delineated JSONs
-  for (auto& [channel_name, channel_description] : channel_map) {
+  for (auto& [channel_name, channel_description] : this->channel_map) {
     config_file << channel_description.to_json() << std::endl;
   }
   config_file.close();
@@ -148,6 +151,8 @@ int BajaDataWriter::open_new_data_file()
   this->current_data_file.close();
   this->current_data_file_size = 0;
   this->current_data_file_num++;
-  this->current_data_file.open(DATA_FILE_PREFIX + std::to_string(current_data_file_num) + DATA_FILE_EXTENSION);
+  std::cout << "current data file num: " << this->current_data_file_num << std::endl; // TODO: remove after debugging (hard on performance)
+  string data_file_path = this->log_directory + "/" + DATA_FILE_PREFIX + std::to_string(this->current_data_file_num) + DATA_FILE_EXTENSION;
+  this->current_data_file.open(data_file_path);
   return 0;
 }

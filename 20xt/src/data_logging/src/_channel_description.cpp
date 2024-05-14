@@ -114,6 +114,6 @@ std::string ChannelDescription::to_json()
          "\"scale_factor_decimal\":\"" + this->scale_factor_decimal + "\","
          "\"time_unit\":\"" + this->time_unit + "\","
          "\"num_bits_per_sample\":\"" + this->num_bits_per_sample + "\","
-         "\"channel_id\":\"" + std::to_string(this->channel_id) + "\","
+         "\"channel_id\":\"" + std::to_string(this->channel_id) + "\""
          "}";
 }
