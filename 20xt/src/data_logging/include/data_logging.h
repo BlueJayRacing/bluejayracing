@@ -3,15 +3,13 @@
 
 #include <fstream>
 #include <string>
-#include <map>
+#include <vector>
 #include "_channel_description.h"
-
 using std::string;
 using std::ofstream;
-
 namespace BajaDataLogging {
 
-typedef std::map<string, ChannelDescription> ChannelMap;
+
 const string CONFIG_FILE_NAME = "meta_data_config.json";
 const string DATA_FILE_EXTENSION = ".bin";
 const string DATA_FILE_PREFIX = "data_";
@@ -22,8 +20,10 @@ const int DATA_BITS_PER_SAMPLE = 32; // Must be 16, 32, 64, etc
 class BajaDataWriter
 {
 public:
+  /* A class for logging channel data. Stores everything in LITTLE-ENDIAN*/
   BajaDataWriter(string log_directory);
 
+  /* Return an integer which will identify this channel */
   int add_channel(
       string channel_name,
       string unit_of_measurement,
@@ -31,12 +31,13 @@ public:
       string time_unit,
       string num_bits_per_sample);
 
-  int write_uint16(string channel_name, uint16_t data, uint64_t timestamp);
+  int write_uint16(uint8_t channel_id, uint16_t data, uint64_t timestamp);
+  void clear_config();
 
 private:
   const string log_directory;
   const string config_file_path;
-  ChannelMap channel_map; // If too slow can replace with vector I guess
+  std::vector<ChannelDescription> channels;
   ofstream current_data_file;
   int current_data_file_num;
   int current_data_file_size; // bytes
@@ -49,6 +50,7 @@ private:
 class BajaDataReader
 {
 };
+
 
 } // endnamespace
 

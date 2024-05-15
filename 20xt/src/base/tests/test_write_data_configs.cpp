@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <vector>
-
+#include <cassert>
 #include "data_logging.h"
 
 using std::cout;
@@ -14,20 +14,23 @@ int main()
 
   std::string LOG_DIR = cwd_str + "/logs";
   std::string CHANNEL_NAME_1 = "adc_1";
+  std::string CHANNEL_NAME_2 = "adc_2";
 
   std::cout << "Logging into directory: " << LOG_DIR << std::endl;
 
   /* Initialization Tests */
   BajaDataLogging::BajaDataWriter writer(LOG_DIR);
+  writer.clear_config();
   try {
-    writer.write_uint16("non-existant-chanenl", 255, 652);
+    writer.write_uint16(0 /* non-existant channel */, 255, 652);
     throw std::runtime_error("Test failed: can't write before adding channel");
   } catch (std::runtime_error) {
     cout << "test passed: cannot write before adding channel\n";
   }
 
   /* Config Editing Tests */
-  writer.add_channel(CHANNEL_NAME_1, "volts", "1.0", "miliseconds", "16");
+  uint8_t channel_id_1 = writer.add_channel(CHANNEL_NAME_1, "volts", "1.0", "miliseconds", "16");
+  assert(channel_id_1 == 0); // otherwise tests will fail
   cout << "test passed: added a channel\n";
 
   try {
@@ -51,17 +54,25 @@ int main()
     cout << "test passed: cannot have more than 32 bits of data per sample\n";
   }
 
-
-  /* Data writing tests */
+  /* Data writing tests w/ example outputs*/
   try {
-    writer.write_uint16("non-existant-chanenl", 255, 652);
+    writer.write_uint16(165 /* non-existant channel */, 255, 652);
     throw std::runtime_error("Test failed: cannot write to a channel which does not exist");
   } catch (std::runtime_error) {
     cout << "test passed: cannot write to a channel which does not exist\n";
   }
 
-  writer.write_uint16(CHANNEL_NAME_1, 65535, 0);
-  cout << "test passed: wrote a uint16\n";
-  
+  writer.write_uint16(channel_id_1 /*00*/, 65535 /*ff ff*/, 0 /*00 00 00 00 00 00 00 00*/); 
+  cout << "test passed: wrote a 1st uint16\n";
+  writer.write_uint16(channel_id_1 /*00*/, 61455 /*0f f0*/, 0 /*00 00 00 00 00 00 00 00*/);
+  cout << "test passed: wrote a 2nd uint16\n";
+  writer.write_uint16(channel_id_1 /*00*/, 61455 /*ff ff*/, 18374686479671623680 /*00 00 00 00 00 00 00 ff*/);
+  cout << "test passed: wrote a 3rd uint16\n";
+
+  uint8_t channel_id_2 = writer.add_channel(CHANNEL_NAME_2, "volts", "1.0", "miliseconds", "16");
+  assert(channel_id_2 == (uint8_t) 1); // otherwise tests will break
+  writer.write_uint16(channel_id_2 /*01*/, 65535 /*ff ff*/, 0 /*00 00 00 00 00 00 00 00*/);
+  cout << "test passed: wrote a 4th uint16\n";
+
   return 0;
 }

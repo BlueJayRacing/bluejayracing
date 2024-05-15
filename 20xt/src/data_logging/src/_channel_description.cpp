@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <iostream>
 #include "_channel_description.h"
 
 using std::string;
@@ -29,6 +30,7 @@ ChannelDescription::ChannelDescription(string source_json)
 {
   // Remove all spaces and new-lines from the json
   source_json = remove_white_space(source_json);
+  source_json = source_json.substr(1, source_json.size() - 2); // remove curly braces
 
   // generate vector by splitting by commas
   std::vector<std::string> entries = split(source_json, ',');
@@ -98,6 +100,7 @@ int ChannelDescription::assign_value(std::string attribute, std::string value)
     }
     catch (std::invalid_argument)
     {
+      std::cerr << "could not convert channel_id to int" << std::endl;
       return -1;
     }
   }

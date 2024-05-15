@@ -1,7 +1,6 @@
 #include <fstream>
 #include <string>
 #include <iostream>
-#include <map>
 #include <filesystem>
 #include <vector>
 #include "data_logging.h"
@@ -12,7 +11,6 @@ using std::ofstream;
 using std::ifstream;
 using std::string;
 
-typedef std::map<string, ChannelDescription> ChannelMap;
 
 BajaDataWriter::BajaDataWriter(const string log_directory) : 
   log_directory(log_directory),
@@ -48,8 +46,10 @@ int BajaDataWriter::add_channel(
   }
 
   // channel does not already exist
-  if (channel_map.find(channel_name) != channel_map.end()) {
-    throw std::runtime_error("Channel already exists");
+  for (const auto& channel_desc : this->channels) {
+    if (channel_desc.channel_name == channel_name) {
+      throw std::runtime_error("Channel already exists");
+    }
   }
 
   // num_bits_per_sample is <= DATA_BITS_PER_SAMPLE
@@ -58,30 +58,34 @@ int BajaDataWriter::add_channel(
   }
 
   // Store the channel and update the config
-  uint8_t channel_id = channel_map.size();
+  uint8_t channel_id = this->channels.size();
   ChannelDescription channel_description(channel_name, unit_of_measurement, scale_factor_decimal, time_unit, num_bits_per_sample, channel_id);
-  channel_map.insert({channel_name, channel_description});
+  this->channels.push_back(channel_description);
   this->overwrite_config();
-  return 0;
+  return channel_id;
 }
 
-int BajaDataWriter::write_uint16(string channel_name, uint16_t data, uint64_t timestamp)
+void BajaDataWriter::clear_config() {
+  std::cout << "clearing the config as instructed" << std::endl;
+  this->channels.clear();
+  this->overwrite_config();
+}
+
+int BajaDataWriter::write_uint16(uint8_t channel_id, uint16_t data, uint64_t timestamp)
 {
   // Check if channel exists
-  auto iter = channel_map.find(channel_name);
-  if (iter == channel_map.end()) {
+  if (channel_id >= channels.size()) {
     throw std::runtime_error("Channel does not exist");
   }
-  uint8_t channel_id = (*iter).second.channel_id;
-  uint16_t padding = 0;
 
+  uint16_t padding = 0;
   int entry_size = sizeof(channel_id) + sizeof(padding) + sizeof(data) + sizeof(timestamp);
 
   // write the binary
-  this->current_data_file.write(reinterpret_cast<const char*>(&channel_id), sizeof(channel_id));
-  this->current_data_file.write(reinterpret_cast<const char*>(&padding), sizeof(padding));
-  this->current_data_file.write(reinterpret_cast<const char*>(&data), sizeof(data));
-  this->current_data_file.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp));
+  this->current_data_file.write(reinterpret_cast<const char*>(&channel_id), sizeof(channel_id)); // 2 hex
+  this->current_data_file.write(reinterpret_cast<const char*>(&padding), sizeof(padding)); // 4 hex
+  this->current_data_file.write(reinterpret_cast<const char*>(&data), sizeof(data)); // 4 hex
+  this->current_data_file.write(reinterpret_cast<const char*>(&timestamp), sizeof(timestamp)); // 16 hex
   this->current_data_file_size += entry_size;
 
   // If another entry would overflow the file, open a new one
@@ -119,10 +123,11 @@ int BajaDataWriter::read_or_create_config()
   for (std::string json : jsons) {
     try {
       ChannelDescription channel_description(json);
-      channel_map.insert({channel_description.channel_name, channel_description});
-    } catch (std::invalid_argument) {
-      std::cerr << "Invalid json in config file, completely overwriting with empty config. Invalid json: " << json << std::endl;
-      this->channel_map.clear();
+      channels.push_back(channel_description);
+    } catch (const std::invalid_argument& e) {
+      std::cerr << "Invalid json in config file, completely overwriting with empty config. Reason: " << e.what() << std::endl; 
+      std::cerr << "Invalid json: " << json << std::endl;
+      this->channels.clear();
       this->overwrite_config();
       continue;
     }
@@ -139,7 +144,7 @@ int BajaDataWriter::overwrite_config()
   }
 
   // New-line delineated JSONs
-  for (auto& [channel_name, channel_description] : this->channel_map) {
+  for (auto& channel_description : this->channels) {
     config_file << channel_description.to_json() << std::endl;
   }
   config_file.close();
@@ -151,7 +156,6 @@ int BajaDataWriter::open_new_data_file()
   this->current_data_file.close();
   this->current_data_file_size = 0;
   this->current_data_file_num++;
-  std::cout << "current data file num: " << this->current_data_file_num << std::endl; // TODO: remove after debugging (hard on performance)
   string data_file_path = this->log_directory + "/" + DATA_FILE_PREFIX + std::to_string(this->current_data_file_num) + DATA_FILE_EXTENSION;
   this->current_data_file.open(data_file_path);
   return 0;
