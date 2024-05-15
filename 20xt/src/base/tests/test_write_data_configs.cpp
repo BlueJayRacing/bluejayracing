@@ -74,5 +74,13 @@ int main()
   writer.write_uint16(channel_id_2 /*01*/, 65535 /*ff ff*/, 0 /*00 00 00 00 00 00 00 00*/);
   cout << "test passed: wrote a 4th uint16\n";
 
+  /* Opens second file when needed */
+  const int num_bytes_per_sample = (8 + 16 + 16 + 64) / 8;
+  const int num_samples_needed = BajaDataLogging::MAX_DATA_FILE_SIZE / num_bytes_per_sample;
+  for (int i=0; i <= num_samples_needed; i++) {
+    writer.write_uint16(channel_id_1, 65535, 0);
+  }
+  cout << "test ? passed: check if there is a second file\n";
+
   return 0;
 }

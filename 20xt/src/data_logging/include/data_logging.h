@@ -13,7 +13,7 @@ namespace BajaDataLogging {
 const string CONFIG_FILE_NAME = "meta_data_config.json";
 const string DATA_FILE_EXTENSION = ".bin";
 const string DATA_FILE_PREFIX = "data_";
-const int MAX_DATA_FILE_SIZE = 100000000; // 100 mb
+const int MAX_DATA_FILE_SIZE = 100000000; // 100 MB
 const int DATA_BITS_PER_SAMPLE = 32; // Must be 16, 32, 64, etc
 
 
