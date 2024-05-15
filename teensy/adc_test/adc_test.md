@@ -1,0 +1,1 @@
+Use the custom TeensyADS1120 Library that is found in the libraries folder.

@@ -1,4 +1,4 @@
-#include "xADS1120.hpp"
+#include "adc_test.hpp"
 
 void xADS1120::begin(int clk_pin, int miso_pin, int mosi_pin, int cs_pin, int drdy_pin, int spi_num) {
   adc = new TeensyADS1120();
@@ -11,7 +11,7 @@ void xADS1120::begin(int clk_pin, int miso_pin, int mosi_pin, int cs_pin, int dr
   adc->setVoltageRef(1);
 }
 
-int xADS1120::readADC() {
+uint16_t xADS1120::readADC() {
   return adc->read();
 }
 
@@ -21,6 +21,10 @@ int xADS1120::readADCSingle() {
 
 void xADS1120::setMultiplexer(int mux) {
   adc->setMultiplexer(mux);
+}
+
+uint8_t xADS1120::readRegister(uint8_t address) {
+  return adc->readRegister(address);
 }
 
 void xADS1120::reset() {

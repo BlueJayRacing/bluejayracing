@@ -18,9 +18,9 @@ namespace crt
   } message;
 
   xQueueHandle data_queue = xQueueCreate(RTOS_QUEUE_SIZE, sizeof(message));
-  bool flag = false;
+  bool send_flag = false;
 
-  send_value::send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t *broker_ip_address, record_value &recordValueTask) : Task(task_name, task_priority, task_size_bytes, task_core_number), record_value_task(recordValueTask)
+  send_value::send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t *broker_ip_address) : Task(task_name, task_priority, task_size_bytes, task_core_number)
   {
     this->broker_ip_address = broker_ip_address;
     start();
@@ -42,7 +42,7 @@ namespace crt
     char subscribe_topic[] = "esp32/send";
     create_publish_topic(publish_topic);
 
-    qos_mqtt mqtt_client = qos_mqtt(MQTT_PORT, broker_ip_address, true);
+    qos_mqtt mqtt_client(MQTT_PORT, broker_ip_address, true);
     mqtt_client.connect_mqtt();
     mqtt_client.subscribe_mqtt(subscribe_topic, MQTT_QoS);
 
@@ -50,9 +50,9 @@ namespace crt
     {
       mqtt_client.get_last_message(mqtt_message);
       if ((strcmp(mqtt_message, "send") == 0) && mqtt_client.is_connected()) {
-        flag = true;
+        send_flag = true;
       } else {
-        flag = false;
+        send_flag = false;
         if (!mqtt_client.is_connected()) {
           mqtt_client.connect_mqtt();
           mqtt_client.subscribe_mqtt(subscribe_topic, MQTT_QoS);        
@@ -107,7 +107,7 @@ namespace crt
     THIS->main();
   }
 
-  record_value::record_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number) : Task(task_name, task_priority, task_size_bytes, task_core_number), can_record(this)
+  record_value::record_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number) : Task(task_name, task_priority, task_size_bytes, task_core_number)
   {
     start(); // starts main()
   }
@@ -116,7 +116,7 @@ namespace crt
   {
     uint16_t value = 0;
     int num_values = 0;
-    while (flag == false) {
+    while (send_flag == false) {
       vTaskDelay(1);
     }
     ESP32Time rtc(0);
@@ -150,9 +150,9 @@ namespace crt
         }
       }
 
-      if (get_rtc_millis(rtc) - last_time > 30000 && !flag) {
+      if (get_rtc_millis(rtc) - last_time > 30000 && !send_flag) {
         Serial.println("RecordValue: Waiting for flag");
-        while (flag == false) {
+        while (send_flag == false) {
           vTaskDelay(1);
         }
         Serial.println("RecordValue: Flag set");
@@ -165,10 +165,5 @@ namespace crt
   uint32_t record_value::get_rtc_millis(ESP32Time &rtc)
   {
     return rtc.getMillis() + rtc.getSecond() * 1000 + rtc.getMinute() * 60000 + (rtc.getHour() - 1) * 3600000;
-  }
-
-  void record_value::set_flag()
-  {
-    can_record.set();
   }
 };

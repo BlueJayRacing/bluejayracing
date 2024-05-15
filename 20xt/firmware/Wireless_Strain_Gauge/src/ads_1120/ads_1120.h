@@ -12,13 +12,17 @@
 class ads_1120
 {
 public:
+    ads_1120(void);
     void begin(int cs_pin, int drdy_pin);
     uint16_t read_adc();
 
 private:
-    ADS1120 *adc;
-    static void interrupt();
-    static bool drdy_flag;
+    ADS1120 adc;
+    static void interrupt0();
+    static void interrupt1();
+    static bool drdy_flags[2];
+    static int adc_number;
+    int id;
 };
 
 #endif

@@ -23,8 +23,8 @@ private:
     static void on_mqtt_unsubscribe(uint16_t packetId);
     static void on_mqtt_subscribe(uint16_t packetId, const espMqttClientTypes::SubscribeReturncode *codes, size_t len);
     static void on_mqtt_disconnect(espMqttClientTypes::DisconnectReason reason);
-    espMqttClient *mqtt_client;
-    IPAddress *mqtt_ip_addr;
+    espMqttClient mqtt_client;
+    IPAddress mqtt_ip_addr;
     int mqtt_port;
     bool wifi_auto_reconnect;
     static bool mqtt_connected;

@@ -14,10 +14,8 @@ namespace crt
 	public:
 		static void StaticMain(void *p_param);
 		record_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number);
-		void set_flag();
 
 	private:
-		Flag can_record;
 		void main();
 		uint32_t get_rtc_millis(ESP32Time &rtc);
 	};
@@ -25,7 +23,7 @@ namespace crt
 	class send_value : public Task
 	{
 	public:
-		send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t *ip_address, record_value& recordValueTask);
+		send_value(const char *task_name, unsigned int task_priority, unsigned int task_size_bytes, unsigned int task_core_number, uint8_t *ip_address);
 		static void StaticMain(void *p_param);
 
 	private:
@@ -33,7 +31,6 @@ namespace crt
 		void create_publish_topic(char *publish_topic);
 		void copy_time_to_message(uint8_t *message, uint32_t time);
 		void copy_data_to_message(uint8_t *message, uint16_t *data);
-		record_value& record_value_task;
 		char *ssid;
 		char *pswd;
 		uint8_t *broker_ip_address;

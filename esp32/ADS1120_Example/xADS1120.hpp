@@ -6,7 +6,7 @@
 class xADS1120{
     public:
         void begin(int cs_pin, int drdy_pin);
-        uint16_t readADC();
+        int readADC();
     private:
         ADS1120* adc;
         static void interrupt();

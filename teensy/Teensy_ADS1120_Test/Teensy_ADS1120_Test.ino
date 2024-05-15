@@ -94,7 +94,7 @@ void setup() {
 }
 
 void loop() {
-  
+  /*
   if (hall_1_flag) {
     Serial.print("Hall 1: ");
     Serial.println(hall_counter_1);
@@ -107,17 +107,18 @@ void loop() {
     hall_2_flag = false;
     record(micros(), Channel::HALL2, hall_counter_2);
   }
-  /*
+  */
   if (adc_1_flag) {
     adc_1_flag = false;
     get_adc1_values();
   }
-  */
+  
+  
   if (adc_2_flag) {
     adc_2_flag = false;
     get_adc2_values();
   }
-
+  /*
   write_diff = micros() - write_now;
   if (write_diff > WRITE_TIME) {
     file.close();
@@ -131,6 +132,7 @@ void loop() {
     ads2->reset();
     adc_now = micros();
   }
+  */
 }
 
 void adc_interrupt_1() {
@@ -156,6 +158,7 @@ void hall_effect_interrupt_2() {
 void get_adc1_values() {
   static int adc1_mux = 0x8;
   int value = ads1->readADC();
+  //ads1->setMultiplexer(adc1_mux);
   Serial.println(value);
 
   if (value == 0 || value == 0xff) {
@@ -174,20 +177,14 @@ void get_adc1_values() {
   switch (adc1_mux) {
     case 0x8:
       record(now, Channel::LIMPOT1, value);
-      adc1_mux = 0x9;
-      break;
-    case 0x9:
-      record(now, Channel::GAUGE, value);
-      adc1_mux = 0xA;
       break;
   }
-  ads1->setMultiplexer(adc1_mux);
 }
 
 void get_adc2_values() {
   static int adc2_mux = 0x8;
   int value = ads2->readADC();
-  Serial.println(value);
+  ads2->setMultiplexer(adc2_mux);
   
   if (value == 0 || value == 0xff) {
     adc2_fail_count++;
@@ -215,7 +212,6 @@ void get_adc2_values() {
       record(now, Channel::AUX1, value);
       adc2_mux = 0x8;
   }
-  ads2->setMultiplexer(adc2_mux);
 }
 
 void record(uint32_t time, Channel channel, uint16_t value) {
