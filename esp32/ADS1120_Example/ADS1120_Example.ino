@@ -28,10 +28,10 @@ void loop()
   if (val != NULL) {
     count++;
     Serial.println(val);
-
+    /*
     if (count % 1000 == 0) {
       Serial.println(millis());
-    }
+    }*/
   }
   delay(40);
 }
