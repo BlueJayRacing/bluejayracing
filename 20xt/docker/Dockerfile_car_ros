@@ -89,6 +89,8 @@ RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
     rosdep update && \
     rosdep install --from-paths src --ignore-src -y
     
+
+
 RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
     cd /20xt_ws && \
     colcon build && \
@@ -97,7 +99,12 @@ RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
     ros2 run micro_ros_setup create_agent_ws.sh && \
     ros2 run micro_ros_setup build_agent.sh && \
     source /20xt_ws/install/local_setup.bash '
-    
+
+ADD src/rsp_baja 20xt_ws/src/rsp_baja
+
+RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd /20xt_ws && \
+    colcon build'
 
 
 RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
