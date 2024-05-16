@@ -2,6 +2,7 @@
 #define _CHANNEL_DESCRIPTION_H
 
 #include <string>
+#include <cstdint>
 
 class ChannelDescription
 {

@@ -53,7 +53,7 @@ class TeensyADS1120 : public SensorInterface {
     uint8_t ADS1120_MISO_PIN;
     uint8_t ADS1120_MOSI_PIN;
 
-    void reset(void) override;
+    void reset(void);
     uint16_t read(void) override;
 
     void writeRegister(uint8_t address, uint8_t value);
