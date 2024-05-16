@@ -24,6 +24,10 @@ add_subdirectory(
     ${CMAKE_CURRENT_SOURCE_DIR}/../baja_rtk
     ${CMAKE_CURRENT_SOURCE_DIR}/../baja_rtk/bin
 )
+add_subdirectory(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../data_logging
+    ${CMAKE_CURRENT_SOURCE_DIR}/../data_logging/bin
+)
 
 # TESTING CODES
 add_executable(test_produce_pit_commands tests/test_produce_pit_commands.cpp ${HELPER_SOURCES})
@@ -48,6 +52,11 @@ target_link_libraries(test_stress_tx_prioritizer
     PUBLIC baja_proto 
     PUBLIC baja_ipc  
     PUBLIC baja_rtk   
+)
+
+add_executable(test_write_data_configs tests/test_write_data_configs.cpp ${HELPER_SOURCES})
+target_link_libraries(test_write_data_configs
+    PUBLIC data_logging
 )
 
 # PIT COMMANDS
