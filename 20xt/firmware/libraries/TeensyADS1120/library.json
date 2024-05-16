@@ -1,0 +1,12 @@
+{
+  "name": "TeensyADS1120",
+  "keywords": "SPI, ADC, sensor",
+  "description": "Arduino Library for ADC ADS1120.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LucasEtchezuri/Arduino-ADS1120.git"
+  },
+  "version": "1.0.1", 
+  "frameworks": "arduino",
+  "platforms": ["atmelavr", "espressif8266", "espressif32"]
+}
