@@ -4,6 +4,7 @@
 #include <string>
 #include "xbee/xbee_connection.h"
 #include "xbee/xbee_baja_network_config.h"
+#include "xbee/xbee_baja_serial_config.h"
 
 extern "C"
 {
@@ -83,13 +84,6 @@ Connection::Status XBeeConnection::send(const std::string msg)
       return QUEUE_FULL; // Still full after tick :(
     }
   }
-  
-
-  std::cout << "trying to send frame ID " << this->last_acked_frame_id + this->num_queued_for_tx + 1 << std::endl;
-  std::cout << "With last ack from " << (int) this->last_acked_frame_id << std::endl;
-  std::cout << "With num queued for tx " << this->num_queued_for_tx << std::endl;
-  std::cout << "And congestion window " << this->CWND_SIZE << std::endl << std::endl;
-  
   
   // XBee library expects char* for payload
   int payload_size = msg.length();
@@ -199,8 +193,6 @@ int XBeeConnection::tx_status_handler(xbee_dev_t *xbee, const void FAR *raw,
 
   // Need to adjust both num outstanding and last acked frame id. Handle the edge case
   // where the frame_id is less than the last acked frame id (i.e. overflow occured)
-  std::cout << "Received ack for frame " << (int) frame->frame_id << std::endl;
-  
   unsigned int real_frame_id = frame->frame_id;
   if (frame->frame_id < this_conn->last_acked_frame_id)
   {
@@ -251,7 +243,8 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
 }
 
 Connection::Status XBeeConnection::init_default_xbee() {
-  this->serial = XBeeConnection::init_serial(this->serial_device, this->baudrate);
+  this->serial = XBeeConnection::init_serial(this->serial_device, XbeeBajaSerialConfig::FACTORY_BAUDRATE);
+
 }
 
 Connection::Status XBeeConnection::init_baja_xbee()
