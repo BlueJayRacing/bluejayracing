@@ -11,6 +11,7 @@ extern "C"
 #include "xbee/device.h"
 #include "xbee/atcmd.h"
 #include "xbee/wpan.h"
+#include "xbee/apply_profile.h"
 #include "platform_config.h"
 }
 
@@ -244,7 +245,7 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
 
 Connection::Status XBeeConnection::init_default_xbee() {
   this->serial = XBeeConnection::init_serial(this->serial_device, XbeeBajaSerialConfig::FACTORY_BAUDRATE);
-
+  
 }
 
 Connection::Status XBeeConnection::init_baja_xbee()
