@@ -4,7 +4,8 @@
 #include <string>
 
 namespace XbeeBajaSerialConfig {
-  static const int BAUDRATE = 921600;
+  static const int FACTORY_BAUDRATE = 9600;
+  static const int BAJA_BAUDRATE = 921600; // ours
   static const std::string STATION_DEVICE = "/dev/ttyAMA0";
   static const std::string CAR_DEVICE = "/dev/ttyAMA0";
 

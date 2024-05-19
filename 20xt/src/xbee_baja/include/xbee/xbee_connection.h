@@ -52,6 +52,7 @@ private:
   xbee_serial_t serial;
   xbee_dev_t xbee;
   xbee_dispatch_table_entry_t *xbee_frame_handlers;
+  Status init_default_xbee();
   Status init_baja_xbee();
 
   // Handle the dispatching of a received transmit status

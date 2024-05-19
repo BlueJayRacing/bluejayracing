@@ -31,6 +31,8 @@ XBeeConnection::~XBeeConnection()
 {
   delete this->rx_queue;
   delete this->xbee_frame_handlers;
+
+  // TODO: close the xbee abstraction
 }
 
 Connection::Status XBeeConnection::open()
@@ -246,6 +248,10 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
   std::string payload((char *)frame->payload, payload_len);
   this_conn->rx_queue->push(payload);
   return EXIT_SUCCESS;
+}
+
+Connection::Status XBeeConnection::init_default_xbee() {
+  this->serial = XBeeConnection::init_serial(this->serial_device, this->baudrate);
 }
 
 Connection::Status XBeeConnection::init_baja_xbee()
