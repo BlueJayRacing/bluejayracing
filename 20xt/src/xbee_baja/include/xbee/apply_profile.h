@@ -6,7 +6,6 @@
 #include "xbee/wpan.h"
 
 size_t chomp(char *line);
-int parse_profile(xbee_dev_t *xbee, const char *filename);
-
+int apply_profile(xbee_dev_t *xbee, const char *filename);
 
 #endif

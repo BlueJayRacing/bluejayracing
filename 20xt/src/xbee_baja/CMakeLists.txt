@@ -4,7 +4,7 @@ project(xbee_baja VERSION 1.0.0)
 
 # get all of the source and headers by globbing through the src directory
 if (NOT TARGET xbee_baja)
-    file(GLOB_RECURSE SOURCES "src/*.cpp")
+    file(GLOB_RECURSE SOURCES "src/*")
     file(GLOB_RECURSE HEADERS "include/**/*.h")
     add_library(xbee_baja STATIC ${SOURCES} ${HEADERS})
     target_include_directories(xbee_baja PUBLIC 

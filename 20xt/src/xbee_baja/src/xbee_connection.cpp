@@ -31,21 +31,27 @@ XBeeConnection::XBeeConnection(const std::string serial_device, const int baudra
 
 XBeeConnection::~XBeeConnection()
 {
+  this->close();
   delete this->rx_queue;
   delete this->xbee_frame_handlers;
-
-  // TODO: close the xbee abstraction
 }
 
 Connection::Status XBeeConnection::open()
 {
-  xbee_dev_t xbee;
-  int err = this->init_baja_xbee();
-  if (err != SUCCESS)
-  {
-    return IRRECOVERABLE_ERROR;
+  /* if can't connect, assume default settings and attempt to write baja settings */
+  if (this->init_baja_xbee() != SUCCESS) {
+    std::cout << "could not init baja xbee, attempting to init factory xbee" << std::endl;
+    if (this->init_factory_xbee() != SUCCESS)
+    {
+      std::cerr << "could not init default xbee" << std::endl;
+      return IRRECOVERABLE_ERROR;
+    }
+    if (this->write_baja_settings() != SUCCESS)
+    {
+      std::cerr << "could not write baja settings" << std::endl;
+      return IRRECOVERABLE_ERROR;
+    }
   }
-
   this->conn_open = true;
   return Connection::SUCCESS;
 }
@@ -57,8 +63,7 @@ bool XBeeConnection::is_open() const
 
 void XBeeConnection::close()
 {
-  // TODO: figure out how to destroy the xbee
-
+  xbee_ser_close(&(this->serial));
   this->conn_open = false;
   return;
 }
@@ -243,15 +248,18 @@ int XBeeConnection::receive_handler(xbee_dev_t *xbee, const void FAR *raw,
   return EXIT_SUCCESS;
 }
 
-Connection::Status XBeeConnection::init_default_xbee() {
+Connection::Status XBeeConnection::init_factory_xbee() {
   this->serial = XBeeConnection::init_serial(this->serial_device, XbeeBajaSerialConfig::FACTORY_BAUDRATE);
-  
+  return this->init_after_serial_open();
 }
 
 Connection::Status XBeeConnection::init_baja_xbee()
 {
   this->serial = XBeeConnection::init_serial(this->serial_device, this->baudrate);
+  return this->init_after_serial_open();
+}
 
+Connection::Status XBeeConnection::init_after_serial_open() {
   int err = xbee_dev_init(&xbee, &serial, NULL, NULL, xbee_frame_handlers);
   if (err)
   {
@@ -277,20 +285,9 @@ Connection::Status XBeeConnection::init_baja_xbee()
     printf("Error %d waiting for AT init to complete.\n", err);
     return IRRECOVERABLE_ERROR;
   }
-
   std::cout << "Initialized XBee AT layer" << std::endl;
   xbee_dev_dump_settings(&xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
-  std::cout << "Verifying XBee settings conform to Baja standard..." << std::endl;
-
-  err = XBeeConnection::write_baja_settings(&xbee);
-  if (err == IRRECOVERABLE_ERROR)
-  {
-    std::cout << "Xbee settings were not verified" << std::endl;
-    return IRRECOVERABLE_ERROR;
-  }
   xbee_dev_tick(&xbee);
-  std::cout << "XBee settings conform to Baja standards" << std::endl
-            << std::endl;
   return SUCCESS;
 }
 
@@ -311,22 +308,16 @@ xbee_serial_t XBeeConnection::init_serial(const std::string serial_device, const
   return serial;
 }
 
-Connection::Status XBeeConnection::write_baja_settings(xbee_dev_t *xbee)
+/* Write the Baja specific settings and re-open the serial port. Assumes this->xbee is init'd */
+Connection::Status XBeeConnection::write_baja_settings()
 {
-  // TODO: THis function is broken
-  // int err;
-  // // TODO: set channel mask (CM), which doesn't have a 32-bit value?
+  parse_profile(&this->xbee, XbeeBajaSerialConfig::XBEE_PROFILE_PATH.c_str());
 
-  // for (int i = 0; i < sizeof XBEE_BAJA_CONFIGS / sizeof XBEE_BAJA_CONFIGS[0]; i++) {
-  //   do {
-  //     err = xbee_cmd_simple(xbee, XBEE_BAJA_CONFIGS[i].name, XBEE_BAJA_CONFIGS[i].value);
-  //   } while (err == -EBUSY);
-  //   if (err == -EINVAL) {
-  //     printf("Error sending %s command. Invalid parameter\n", XBEE_BAJA_CONFIGS[i].name);
-  //     return EXIT_FAILURE;
-  //   }
-  //   printf("Set %s to %d\n", XBEE_BAJA_CONFIGS[i].name, XBEE_BAJA_CONFIGS[i].value);
-  // }
-  // xbee_cmd_execute(xbee, "WR", NULL, 0);
+  xbee_ser_close(&(this->serial));
+  if (this->init_baja_xbee() != SUCCESS)
+  {
+    std::cerr << "could not re-init the xbee after writing settings" << std::endl;
+    return IRRECOVERABLE_ERROR;
+  }
   return SUCCESS;
 }

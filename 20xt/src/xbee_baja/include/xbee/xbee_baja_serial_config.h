@@ -10,6 +10,8 @@ namespace XbeeBajaSerialConfig {
   static const std::string CAR_DEVICE = "/dev/ttyAMA0";
 
   static const int CONGESTION_CONTROL_WINDOW = 5;
+  
+  static const std::string XBEE_PROFILE_PATH = "/home/tanne/bluejayracing/20xt/src/xbee_baja/xctu_configs/baja_profile_5.18.2024.xpro";
 };
 
 #endif

@@ -30,11 +30,9 @@ size_t chomp(char *line)
   return length;
 }
 
-// Parse the .PRO file, and send AT commands to XBee device.
-// Will exit early if firmware version of XBee device does not match firmware
-// version listed in .PRO file.
-// 1) TODO: assumes the xbee already has had cmd_init_device() called on it
-int parse_profile(xbee_dev_t *xbee, const char *filename)
+// Parse the .PRO file, and send AT commands to XBee device. Assumes the xbee 
+// already has had cmd_init_device() called on it
+int apply_profile(xbee_dev_t *xbee, const char *filename)
 {
   FILE *profile = NULL;
   int status;
