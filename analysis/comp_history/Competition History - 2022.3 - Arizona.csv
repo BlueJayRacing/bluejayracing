@@ -1,0 +1,51 @@
+Rank,Car #,School,Team,Overall (1000),Overall Dynamic (300),Overall Static (300),Cost Event (100),Design (150),Sales Presentation (50),Acceleration (75),Maneuverability (75),Sled Pull (75),Suspension (75),Endurance (400),Adjustments,Registered,Passed Tech,Passed Tech On Time,Public Comments
+1,36,Univ of Michigan - Ann Arbor,Michigan Baja Racing,1009.21,237.81,291.4,91.4,130,70,70,69.24,61.91,36.65,400,80,TRUE,TRUE,TRUE,4WD Bonus
+2,41,Ecole de Technologie Superieure,Baja ETS,969.71,216.96,278.63,91.2,145,42.43,51.7,70,58.61,36.65,394.12,80,TRUE,TRUE,TRUE,4WD Bonus
+3,46,Rochester Institute of Technology,RIOT RACING,945.8,246.71,248.5,88,100,60.5,56.43,66.03,54.25,70,370.59,80,TRUE,TRUE,TRUE,4WD Bonus
+4,52,Oregon State Univ,Beaver Racing,923.85,221,246.38,87.2,110,49.18,37.46,66.61,61.22,55.71,376.47,80,TRUE,TRUE,TRUE,4WD Bonus
+5,33,Case Western Reserve Univ,CWRU Motorsports,905.11,230.12,224.4,79.4,70,75,65.79,67.34,62.71,34.27,370.59,80,TRUE,TRUE,TRUE,4WD Bonus
+6,53,Cornell Univ,Cornell Univ,884.17,181.95,239.87,82.4,100,57.47,66.78,65.19,15.71,34.27,382.35,80,TRUE,TRUE,TRUE,4WD Bonus
+7,48,Univ of Nevada - Las Vegas,Rebel Racing,821.91,187.8,240,100,70,70,64.84,41.31,45.13,36.52,394.12,0,TRUE,TRUE,TRUE,
+8,31,Johns Hopkins Univ,Blue Jay Racing,802.62,206.7,268.86,82.4,135,51.46,50.2,55.11,65.14,36.26,247.06,80,TRUE,TRUE,TRUE,4WD Bonus
+9,64,Youngstown State Univ,penguin baja racing,757.23,208.06,257.4,70.4,110,77,50.66,55.91,69.21,32.29,211.76,80,TRUE,TRUE,TRUE,4WD Bonus
+10,45,San Diego State Univ,Aztec Baja Racing,699.67,142.33,164.1,66.4,50,47.7,57.69,0,59.24,25.41,388.24,5,TRUE,TRUE,TRUE,4WD Bonus; Incorrect Driveline Documents
+12,67,McGill Univ,McGill Baja Racing,677,197.19,199.81,55.73,90,54.08,42.49,62.33,49.89,42.48,200,80,TRUE,FALSE,FALSE,4WD Bonus
+12,67,McGill Univ,McGill Baja Racing,677,197.19,199.81,55.73,90,54.08,42.49,62.33,49.89,42.48,200,80,TRUE,FALSE,FALSE,4WD Bonus
+13,21,Universidad De La Salle Bajio,Felinos,665.58,158.22,197.95,61.8,83,53.15,25.36,58.76,52.27,21.83,229.41,80,TRUE,TRUE,TRUE,4WD Bonus
+14,23,ITESM - Queretaro,Exergia Racing Team,650.96,197.14,165.59,78.4,40,47.19,53.24,59.35,58.36,26.2,288.24,0,TRUE,TRUE,TRUE,
+15,38,Univ of Maryland - Baltimore County,UMBC Racing,644.33,185.64,208.11,86.2,80,41.91,46.3,64.9,53.01,21.44,170.59,80,TRUE,TRUE,TRUE,4WD Bonus
+16,20,ITESM - Campus Guadalajara,Mad Rams,642.2,183.88,175.97,82,60,33.97,45.96,57.98,54.66,25.27,282.35,0,TRUE,TRUE,TRUE,
+17,80,Univ of Wisconsin - Madison,Badger Racing,595.04,156.11,235.4,84.8,90,60.6,55.11,50.47,26.19,24.35,123.53,80,TRUE,TRUE,TRUE,4WD Bonus
+18,78,Univ of Calif - Los Angeles,Bruin Racing Baja,547.78,146.19,188.65,60,70,58.65,21.21,56.6,46.81,21.57,152.94,60,TRUE,TRUE,TRUE,4WD Bonus
+19,51,New Mexico Inst of Mining & Tech,Dirty Miners,530.69,149.85,165.54,40.79,70,54.75,14.92,47.06,63.65,24.22,135.29,80,TRUE,TRUE,TRUE,4WD Bonus
+20,14,New Mexico State Univ,NMSU Motorsports,502.77,207.21,124.98,66.4,10,48.58,58.43,58.21,53.78,36.79,170.59,0,TRUE,TRUE,TRUE,
+21,84,Oklahoma Christian Univ,OC Baja Racing,493.22,125.39,81.94,0,40,41.94,27.08,0,66.16,32.16,205.88,80,TRUE,TRUE,TRUE,4WD Bonus
+22,68,Univ of San Diego,Torero Racing,456.12,113.33,107.5,13,40,54.5,29.47,0,60.56,23.29,235.29,0,TRUE,TRUE,TRUE,
+23,30,Univ of Arizona,Baja Wildcat Racing,439.64,68.72,196.8,46.8,80,70,25.39,0,22.03,21.3,94.12,80,TRUE,TRUE,TRUE,4WD Bonus
+24,89,New Jersey Institute of Technology,Highlander racing,430.95,117.85,115.44,0,60,55.44,40.19,0,56.1,21.57,117.65,80,TRUE,TRUE,TRUE,4WD Bonus
+25,19,Oregon Inst of Tech,OTR,392.35,92.24,155.4,62.4,40,53,0,9.38,46.2,36.65,64.71,80,TRUE,TRUE,TRUE,4WD Bonus
+26,42,Purdue Univ - Northwest,Purdue NW Baja Racing,372.27,104.12,115.2,32.2,10,73,23.7,0,58.85,21.57,152.94,0,TRUE,TRUE,TRUE,
+27,73,George Washington Univ,GW Baja,350.93,122.95,180.93,86.8,50,44.13,51.89,0,49.76,21.3,47.06,0,TRUE,TRUE,TRUE,
+28,74,Univ of Illinois - Chicago,SAE at UIC,339.7,100.61,115.56,49.2,20,46.36,37.46,0,42.64,20.51,123.53,0,TRUE,TRUE,TRUE,
+29,49,Cleveland State Univ,Vikings Racing,280.87,145.08,106.38,7,60,39.38,35.34,34.28,39.2,36.26,29.41,0,TRUE,TRUE,TRUE,
+30,56,Kettering Univ,Kettering BAJA Team,269.71,99.26,123.39,54,30,39.39,32.45,0,45.37,21.44,47.06,0,TRUE,TRUE,TRUE,
+31,77,FIME - UANL,UANL Racing Team,263.21,75.26,45.6,45.6,0,0,15.44,0,59.82,0,82.35,60,TRUE,TRUE,FALSE,4WD Bonus
+32,81,Southern Illinois Univ - Edwardville,Cougar Baja,254.83,200.69,42.37,0,0,42.37,45.19,63.93,70,21.57,11.76,0,TRUE,TRUE,TRUE,
+33,43,Univ of Missouri,Mizzou Baja SAE Racing,228.31,0,57.72,4,0,53.72,0,0,0,0,170.59,0,TRUE,TRUE,FALSE,No 4WD Bonus
+34,59,Southern Utah Univ,SUU BAJA Club,161.03,0,119.85,74.4,0,45.45,0,0,0,0,41.18,0,TRUE,TRUE,FALSE,No 4WD Bonus
+35,24,Mississippi State Univ,Mud Dawg Motorsports,116.71,0,116.71,48.4,20,48.31,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+36,18,NUST-School of Mechanical & Mfg Engrg,Team Markhor,82,0,82,12,0,70,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+37,17,Universidad La Salle,Aguilas la salle,76.69,0,76.69,20,0,56.69,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+38,58,Universidad Autonoma De Nuevo Leon,TigreMotors UANL,58.17,0,58.17,12,0,46.17,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+39,63,Vellore Institute of Technology Chennai,Team Saksham International,57.83,0,57.83,20,0,37.83,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+40,57,Wichita State Univ,Shocker Racing,54.19,0,54.19,0,0,54.19,0,0,0,0,0,0,TRUE,TRUE,FALSE,
+41,72,Kansas State Univ,Wildcat Offroad,53.65,0,53.65,11,0,42.65,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+42,25,Instituto Tecnologico de Chihuahua,Panteras Racing,49.91,0,49.91,6,0,43.91,0,0,0,0,0,0,TRUE,TRUE,FALSE,
+43,87,California State Univ - Los Angeles,Rugged Eagle Motorsports,49.2,0,49.2,0,0,49.2,0,0,0,0,0,0,TRUE,TRUE,TRUE,No 4WD Bonus
+44,85,Cetys Universidad,CMB Racing,39.89,0,39.89,0,0,39.89,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+45,1,Ecole de Technologie Superieure,Engine Tester #001,0,0,0,0,0,0,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+45,2,Rochester Institute of Technology,Engine Tester #002,0,0,0,0,0,0,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+45,3,Univ of Michigan - Ann Arbor,Engine Tester #003,0,0,0,0,0,0,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+45,4,Oklahoma Christian Univ,Engine Tester #004,0,0,0,0,0,0,0,0,0,0,0,0,TRUE,TRUE,TRUE,
+45,6,Oregon State Univ,Engine Tester #006,0,0,0,0,0,0,0,0,0,0,0,0,TRUE,FALSE,FALSE,
+45,199,Baja SAE National Tech,Test Car,0,0,0,0,0,0,0,0,0,0,0,0,TRUE,TRUE,FALSE,
