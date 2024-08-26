@@ -52,7 +52,14 @@ private:
   xbee_serial_t serial;
   xbee_dev_t xbee;
   xbee_dispatch_table_entry_t *xbee_frame_handlers;
+  Status init_factory_xbee();
   Status init_baja_xbee();
+  Status init_after_serial_open();
+  Status write_baja_settings();
+
+  // Return an initialized xbee_serial_t object
+  static xbee_serial_t init_serial(const std::string serial_device, const int baudrate);
+
 
   // Handle the dispatching of a received transmit status
   static int tx_status_handler(xbee_dev_t *xbee, const void FAR *raw, 
@@ -61,12 +68,6 @@ private:
   // Handle the dispatching of a received message. Adds the message to rx_queue
   static int receive_handler(xbee_dev_t *xbee, const void FAR *raw, 
                         uint16_t length, void FAR *conn_context);
-
-  // Return an initialized xbee_serial_t object
-  static xbee_serial_t init_serial(const std::string serial_device, const int baudrate);
-
-  // WIP: Write the baja Xbee network settings to the xbee device
-  static Status write_baja_settings(xbee_dev_t *xbee);
 };
 
 #endif // XBEE_CONNECTION_H

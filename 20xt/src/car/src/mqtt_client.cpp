@@ -75,8 +75,8 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
             printf("%s,\n", "front_right");
         } else if (strcmp(topicName, "esp32/EC:DA:3B:BE:93:78") == 0) {
             channel->set_channel_type(AnalogChannel::AXLE_TORQUE_REAR_LEFT);
-            printf("%s,\n", "rear_left");
-        } else if (strcmp(topicName, "esp32/EC:DA:3B:BE:75:30") == 0) {
+            printf("%s,\n", "rear_left");EC:DA:3B:BE:81:7C
+        } else if (strcmp(topicName, "esp32/EC:DA:3B:BE:81:7C") == 0) {
 	    channel->set_channel_type(AnalogChannel::AXLE_TORQUE_REAR_RIGHT);
             printf("%s,\n", "rear_right");
 	    }
