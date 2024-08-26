@@ -60,8 +60,14 @@ fig.suptitle('GPS')
 axs[0].set_title("gps coords")
 axs[1].set_title("lat plot")
 
-axs[0].scatter(lon, lat, s=1)
-axs[1].scatter(time, lat, s=1)
+
+a = 14870
+b = 15000
+
+print(len(time))
+
+axs[0].scatter(lon[a:b], lat[a:b], s=1)
+# axs[1].scatter(time[a:b], lat[a:b], s=1)
 
 plt.show()
 
