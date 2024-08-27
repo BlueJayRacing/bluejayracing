@@ -59,6 +59,8 @@ int main () {
     }
   };
 
+  return -1;
+
   while (true) {
     Observation obs;
     std::string msg;

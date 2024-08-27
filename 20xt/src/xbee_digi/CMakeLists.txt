@@ -153,11 +153,13 @@ if (NOT TARGET xbee_digi)
         ports/posix/platform_config.h
     )
 
+    # This library has been modified so it is only compatible with POSIX devices
+    target_compile_definitions(xbee_digi PUBLIC "POSIX")
+
     # Create library target
     add_library(xbee_digi STATIC ${SOURCES} ${HEADERS})
 
-    # This library has been modified so it is only compatible with POSIX devices
-    target_compile_definitions(xbee_digi PUBLIC "POSIX")
+    
     target_include_directories(xbee_digi PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/ports/posix
