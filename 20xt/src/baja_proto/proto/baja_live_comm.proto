@@ -22,7 +22,7 @@ message Localization {
 }
 
 message Timestamp {
-    float ts = 1;
+    uint64 ts = 1;
 }
 
 message AnalogChannel {
