@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
@@ -26,6 +26,10 @@ if ! docker ps | grep -q car_docker_ros; then
         -d $(docker ps | grep car_docker_ros | awk '{print $NF}') \
         /bin/bash \
         -c "source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch rpi_launch comp.launch.py"
+    docker container exec \
+        -d \
+        -w /20xt_ws/src/rsp_baja/endurance_bags \
+        $(docker ps | grep car_docker_ros | awk '{print $NF}') \
+        /bin/bash \
+        -c 'source /opt/ros/humble/setup.bash && source /20xt_ws/install/setup.bash && ros2 bag record -a --storage-preset-profile resilient'
 fi
-
-docker container exec -it $(docker ps | grep car_docker_ros | awk '{print $NF}') /bin/bash
