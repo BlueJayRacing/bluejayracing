@@ -48,7 +48,7 @@ jobs:
     - name: ESP-IDF build
       uses: espressif/esp-idf-ci-action@v1
       with:
-        esp_idf_version: v4.4
+        esp_idf_version: v5.1
         target: esp32c6
         path: '20xt/firmware/esp_idf/prod/wsg_mqtt'
 
