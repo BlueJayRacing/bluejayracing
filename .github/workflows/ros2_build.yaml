@@ -1,0 +1,29 @@
+name: ROS 2 Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./car/docker/Dockerfile_car_ros
+        push: false
+        load: true
+        tags: ros2_workspace:latest
+    
+    - name: Run build test in container
+      run: |
+        docker run --rm ros2_workspace:latest /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && cd /bjr_ws && colcon build"
