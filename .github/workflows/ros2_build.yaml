@@ -18,7 +18,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./car
         file: ./car/docker/Dockerfile_car_ros
         push: false
         load: true
