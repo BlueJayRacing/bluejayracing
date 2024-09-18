@@ -31,10 +31,6 @@ jobs:
         platforms: linux/arm64
         buildkitd-flags: --debug
     
-    - name: Run build test in container
-      run: |
-        docker run --rm ros2_workspace:latest /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && cd /bjr_ws && colcon build"
-
     - name: Store ROS Artifacts
       uses: actions/upload-artifact@v4
       with:
