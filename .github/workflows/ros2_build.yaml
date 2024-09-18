@@ -29,7 +29,7 @@ jobs:
     
     - name: Run build test in container
       run: |
-        docker run --rm bjr_docker_ros:latest /bin/bash -c "/car/scripts/build_test.sh"
+        docker run --rm ros2_workspace:latest /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && cd /bjr_ws && colcon build"
 
     - name: Store ROS Artifacts
       uses: actions/upload-artifact@v4
@@ -49,7 +49,7 @@ jobs:
       uses: espressif/esp-idf-ci-action@v1
       with:
         esp_idf_version: v4.4
-        target: esp32c3
+        target: esp32c6
         path: '20xt/firmware/esp_idf/prod/wsg_mqtt'
 
     - name: Archive ESP32 firmware
