@@ -1,7 +1,3 @@
-
-[submodule "20xt/src/rsp_baja"]
-	path = 20xt/src/rsp_baja
-	url = git@github.com:jhu-rsp/baja.git
 [submodule "20xt/src/paho.mqtt.c"]
 	path = 20xt/src/paho.mqtt.c
 	url = https://github.com/BlueJayRacing/paho.mqtt.c.git
