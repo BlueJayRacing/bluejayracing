@@ -13,6 +13,13 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
+        set-safe-directory: '*'
+    
+    - name: Remove private submodule
+      run: |
+        git submodule deinit -f -- 20xt/src/rsp_baja
+        rm -rf .git/modules/20xt/src/rsp_baja
+        git rm -f 20xt/src/rsp_baja
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -44,6 +51,13 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
+        set-safe-directory: '*'
+    
+    - name: Remove private submodule
+      run: |
+        git submodule deinit -f -- 20xt/src/rsp_baja
+        rm -rf .git/modules/20xt/src/rsp_baja
+        git rm -f 20xt/src/rsp_baja
 
     - name: ESP-IDF build
       uses: espressif/esp-idf-ci-action@v1
