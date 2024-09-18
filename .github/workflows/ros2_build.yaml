@@ -1,4 +1,4 @@
-name: ROS 2 Build
+name: Combined ROS2 and ESP32-C3 Firmware Build
 
 on:
   push:
@@ -7,10 +7,12 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build_ros:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -22,8 +24,36 @@ jobs:
         file: ./car/docker/Dockerfile_car_ros
         push: false
         load: true
-        tags: ros2_workspace:latest
+        tags: bjr_docker_ros:latest
+        platforms: linux/arm64
     
     - name: Run build test in container
       run: |
-        docker run --rm ros2_workspace:latest /bin/bash -c "source /opt/ros/$ROS_DISTRO/setup.bash && cd /bjr_ws && colcon build"
+        docker run --rm bjr_docker_ros:latest /bin/bash -c "/car/scripts/build_test.sh"
+
+    - name: Store ROS Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: ros-artifacts
+        path: /car/build
+
+  build_esp32:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: ESP-IDF build
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v4.4
+        target: esp32c3
+        path: '20xt/firmware/esp_idf/prod/wsg_mqtt'
+
+    - name: Archive ESP32 firmware
+      uses: actions/upload-artifact@v2
+      with:
+        name: esp32-firmware
+        path: 20xt/firmware/esp_idf/prod/wsg_mqtt/build/*.bin
