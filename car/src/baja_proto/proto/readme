@@ -1,0 +1,17 @@
+To compile your `.proto` files into usable C++ code, you need to use the Protocol Buffers compiler (`protoc`). Here's how you can do it:
+
+1. Install protobuf compiler
+
+```bash
+sudo apt get protobuf-compiler
+```
+
+2. Open a terminal and 
+
+3. Navigate to the directory with `.proto` file. Run the following command to generate the C++ code:
+
+```bash
+protoc --experimental_allow_proto3_optional --cpp_out=. baja_live_comm.proto
+```
+
+Remember to link against the protobuf library when compiling your program. If you're using g++, you can do this with `-lprotobuf`.
