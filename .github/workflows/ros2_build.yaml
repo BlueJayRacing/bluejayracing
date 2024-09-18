@@ -1,4 +1,4 @@
-name: Combined ROS2 and ESP32-C3 Firmware Build
+name: Combined ROS and ESP32-C3 Firmware Build
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
         docker run --rm bjr_docker_ros:latest /bin/bash -c "/car/scripts/build_test.sh"
 
     - name: Store ROS Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: ros-artifacts
         path: /car/build
@@ -53,7 +53,7 @@ jobs:
         path: '20xt/firmware/esp_idf/prod/wsg_mqtt'
 
     - name: Archive ESP32 firmware
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: esp32-firmware
         path: 20xt/firmware/esp_idf/prod/wsg_mqtt/build/*.bin
