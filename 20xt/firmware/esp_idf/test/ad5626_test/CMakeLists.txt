@@ -3,8 +3,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Linking the shared components directory to the project
-set(EXTRA_COMPONENT_DIRS    ${CMAKE_CURRENT_SOURCE_DIR}/../../components_c 
-                            ${CMAKE_CURRENT_SOURCE_DIR}/../../components_cpp
+set(EXTRA_COMPONENT_DIRS    ${CMAKE_CURRENT_SOURCE_DIR}/../../components
 #                           ${CMAKE_CURRENT_SOURCE_DIR}/../../microros_component
                             )
 
