@@ -1,0 +1,84 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="car">
+
+  <xacro:arg name="camera_on" default="false" />
+
+  <xacro:property name="wheel_base_inches" value="51.8" />
+  <xacro:property name="track_width_inches" value="50.35" />
+  <xacro:property name="wheel_width_inches" value="7" />
+  <xacro:property name="wheel_radius_inches" value="11.5" />
+  <xacro:property name="m_per_in" value="${(1/12) * (1/3) * 0.9144}" />
+
+  <xacro:include filename="$(find car_description)/urdf/chassis.xacro"/>
+  <xacro:include filename="$(find car_description)/urdf/wheel_macros.xacro"/>
+  <xacro:include filename="$(find car_description)/urdf/control.xacro"/>
+
+  <xacro:baja_bts_control prefix=""/>
+  <!-- <ros2_control name="driving_control" type="system">
+    <hardware>
+      <plugin>mock_components/GenericSystem</plugin>
+      <param name="calculate_dynamics">true</param>
+    </hardware>
+    <joint name="front_right_rotating_joint">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="front_left_rotating_joint">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="rear_right_rotating_joint">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="rear_left_rotating_joint">
+      <command_interface name="velocity"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </ros2_control> -->
+
+  <gazebo>
+    <plugin
+      filename="ignition-gazebo-joint-state-publisher-system"
+      name="gz::sim::systems::JointStatePublisher">
+    </plugin>
+    <plugin
+      filename='ignition-gazebo-sensors-system'
+      name='ignition::gazebo::systems::Sensors'>
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin
+      filename="ignition-gazebo-ackermann-steering-system"
+      name="gz::sim::systems::AckermannSteering">
+      <left_joint>front_left_rotating_joint</left_joint>
+      <left_joint>rear_left_rotating_joint</left_joint>
+      <right_joint>front_right_rotating_joint</right_joint>
+      <right_joint>rear_right_rotating_joint</right_joint>
+      <left_steering_joint>front_left_connector_joint</left_steering_joint>
+      <right_steering_joint>front_right_connector_joint</right_steering_joint>
+      <kingpin_width>${track_width_inches*m_per_in}</kingpin_width> <!--THIS PART IS STILL IN QUESTION-->
+      <steering_limit>0.2</steering_limit> <!--THIS PART IS STILL IN QUESTION-->
+      <wheel_base>${wheel_radius_inches*m_per_in}</wheel_base>
+      <wheel_separation>${track_width_inches*m_per_in}</wheel_separation>
+      <wheel_radius>${wheel_radius_inches*m_per_in}</wheel_radius>
+      <min_velocity>-1</min_velocity>
+      <max_velocity>17</max_velocity>
+      <min_acceleration>-10</min_acceleration>
+      <max_acceleration>5</max_acceleration>
+    </plugin>
+  </gazebo>
+
+  <xacro:chassis wheel_base_in="${wheel_base_inches}" front_dist_in="10.4" weight_car_lb="400" weight_wheel_lb="10" front_box_x_in="-21.5" front_box_z_in="19.33268" cam_on="$(arg camera_on)"/>
+  <xacro:wheel_connector f="1" r="1" parent_link="car_centroid" wheel_base_in="${wheel_base_inches}" track_width_in="${track_width_inches}" prefix="front_right"/>
+  <xacro:wheel prefix="front_right" width_in="${wheel_width_inches}" radius_in="${wheel_radius_inches}"/>
+  <xacro:wheel_connector f="1" r="0" parent_link="car_centroid" wheel_base_in="${wheel_base_inches}" track_width_in="${track_width_inches}" prefix="front_left"/>
+  <xacro:wheel prefix="front_left" width_in="${wheel_width_inches}" radius_in="${wheel_radius_inches}"/>
+  <xacro:wheel_connector f="0" r="1" parent_link="car_centroid" wheel_base_in="${wheel_base_inches}" track_width_in="${track_width_inches}" prefix="rear_right"/>
+  <xacro:wheel prefix="rear_right" width_in="${wheel_width_inches}" radius_in="${wheel_radius_inches}"/>
+  <xacro:wheel_connector f="0" r="0" parent_link="car_centroid" wheel_base_in="${wheel_base_inches}" track_width_in="${track_width_inches}" prefix="rear_left"/>
+  <xacro:wheel prefix="rear_left" width_in="${wheel_width_inches}" radius_in="${wheel_radius_inches}"/>
+  
+</robot>
