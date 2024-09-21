@@ -1,0 +1,16 @@
+{
+  "file_mappings": [
+    {
+      "file":"config.txt",
+      "location":"/boot/firmware/"
+    },
+    {
+      "file":"cmdline.txt",
+      "location":"/boot/firmware/"
+    },
+    {
+      "file":"mosquitto.conf",
+      "location":"/etc/mosquitto/"
+    }
+  ]
+}

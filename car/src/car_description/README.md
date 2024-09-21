@@ -1,0 +1,3 @@
+To ensure center of gravity:
+
+https://www.wolframalpha.com/input?i=system+equation+calculator&assumption=%7B%22F%22%2C+%22SolveSystemOf4EquationsCalculator%22%2C+%22equation1%22%7D+-%3E%22%284+%2810%29+11.5+%2B+19+b+%2B+10+f%29+%2F+400+%3D+7%22&assumption=%7B%22F%22%2C+%22SolveSystemOf4EquationsCalculator%22%2C+%22equation3%22%7D+-%3E%22%2814.8+b+%2B+36.3+o%29+%2F+400+%3D+51.8+%280.5+-+0.401%29%22&assumption=%22FSelect%22+-%3E+%7B%7B%22SolveSystemOf4EquationsCalculator%22%7D%2C+%22dflt%22%7D&assumption=%7B%22F%22%2C+%22SolveSystemOf4EquationsCalculator%22%2C+%22equation2%22%7D+-%3E%22b+%2B+c+%2B+o+%2B+f+%2B+4+%2810%29+%2B+4+%281%29+%3D+356%22&assumption=%7B%22F%22%2C+%22SolveSystemOf4EquationsCalculator%22%2C+%22equation4%22%7D+-%3E%22f+%3D+o%22
