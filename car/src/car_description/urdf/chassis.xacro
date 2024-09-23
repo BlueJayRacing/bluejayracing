@@ -1,0 +1,136 @@
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="rbiswas4_assignment5">
+
+  <xacro:macro name="chassis" params="wheel_base_in front_dist_in weight_car_lb weight_wheel_lb front_box_x_in front_box_z_in cam_on">
+
+    <xacro:property name="fraction_of_weight_for_reference_links" value="0.3" />
+    <xacro:property name="num_reference_links" value="3" />
+    <xacro:property name="mass_of_reference_link" value="${((weight_car_lb - 4*weight_wheel_lb) * fraction_of_weight_for_reference_links / num_reference_links) * 0.45359237}" />
+    <xacro:property name="com_fraction" value="0.401" />
+    <xacro:property name="m_per_in" value="${(1/12) * (1/3) * 0.9144}" />
+    <xacro:property name="kg_per_lb" value="0.45359237" />
+
+    <link name="base_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="${kg_per_lb*644292/5417}"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+    </link>
+
+    <joint name="centroid_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="car_centroid"/>
+      <origin xyz="${-(wheel_base_in/2 + front_dist_in + front_box_x_in) * m_per_in} 0 ${-19.33268*m_per_in}" rpy="0 0 0"/>
+    </joint>
+    <gazebo reference="centroid_joint">
+      <disableFixedJointLumping>true</disableFixedJointLumping>
+      <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
+
+    <link name="car_centroid">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="${kg_per_lb*4794828/27085}"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+    </link>
+
+    <joint name="cad_origin_joint" type="fixed">
+      <parent link="car_centroid"/>
+      <child link="cad_origin"/>
+      <origin xyz="${(wheel_base_in/2 + front_dist_in) * m_per_in} 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+    </joint>
+    <gazebo reference="cad_origin_joint">
+      <disableFixedJointLumping>true</disableFixedJointLumping>
+      <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
+
+    <link name="cad_origin">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="${kg_per_lb*217116/27085}"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+    </link>
+
+    <joint name="body_frame_joint" type="fixed">
+      <parent link="car_centroid"/>
+      <child link="body_frame"/>
+      <origin xyz="0 0 ${10*m_per_in}" rpy="0 0 0"/>
+    </joint>
+    <gazebo reference="body_frame_joint">
+      <disableFixedJointLumping>true</disableFixedJointLumping>
+      <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
+    
+    <link name="body_frame">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
+        <geometry>
+          <mesh filename="file://$(find car_description)/meshes/lowpolyframe.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+        <material name="Red">
+          <color rgba="0.5 0.5 0.5 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
+        <geometry>
+          <mesh filename="file://$(find car_description)/meshes/lowpolyframe.STL" scale="0.001 0.001 0.001"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 ${pi/2}"/>
+        <mass value="${kg_per_lb*217116/27085}"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+    </link>
+
+    <joint name="camera_origin_joint" type="fixed">
+      <parent link="car_centroid"/>
+      <child link="camera_origin"/>
+      <origin xyz="0.5 0 1.5" rpy="0 ${pi/6} 0"/>
+      <axis xyz="1 0 0"/>
+    </joint>
+    <gazebo reference="camera_origin_joint">
+      <disableFixedJointLumping>true</disableFixedJointLumping>
+      <preserveFixedJoint>true</preserveFixedJoint>
+    </gazebo>
+
+    <link name="camera_origin">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.0001"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+    </link>
+    <xacro:if value="${cam_on}">
+      <gazebo reference="camera_origin">
+        <sensor type="rgbd_camera" name="realsense">
+          <pose relative_to="camera_origin">0 0 0 0 0 0</pose>
+          <update_rate>30.0</update_rate>
+          <always_on>1</always_on>
+          <topic>realsense</topic>
+          <camera name="rgb">
+            <horizontal_fov>1.5708</horizontal_fov>
+            <image>
+              <width>1280</width>
+              <height>800</height>
+              <format>R8G8B8</format>
+            </image>
+            <clip>
+              <near>0.02</near>
+              <far>6</far>
+            </clip>
+            <depth_camera>
+              <output>depths</output>
+            </depth_camera>
+          </camera>
+        </sensor>
+      </gazebo>
+    </xacro:if>
+
+  </xacro:macro>
+
+</robot>
