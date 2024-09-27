@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <FreeRTOS_TEENSY4.h>
 
 #include "component_template.hpp"
+
 #include "ad5626.hpp"
 
 AD5626 ad5626;
@@ -12,12 +12,14 @@ void setup() {
   Serial.begin(115200);
   comp_temp_func();
 
-  ad5626.init(26, 25, -1);
+  SPI.begin();
+
+  ad5626.init(26, 25, -1, &SPI);
 }
 
 void loop() {
-  level += 1000;
-  Serial.println("Set new level");
+  level += 100;
+
   ad5626.setLevel(level);
   delay(1000);
 }

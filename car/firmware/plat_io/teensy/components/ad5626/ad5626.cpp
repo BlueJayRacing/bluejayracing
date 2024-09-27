@@ -7,8 +7,6 @@ void AD5626::init(int8_t t_cs_pin, int8_t t_ldac_pin, int8_t t_clr_pin, SPIClass
     m_ldac_pin = t_ldac_pin;
     m_clr_pin = t_clr_pin;
 
-    m_spi_host->begin();
-
     pinMode(m_cs_pin, OUTPUT);
     digitalWrite(m_cs_pin, HIGH);
 
@@ -25,22 +23,20 @@ void AD5626::init(int8_t t_cs_pin, int8_t t_ldac_pin, int8_t t_clr_pin, SPIClass
 void AD5626::setLevel(uint16_t t_dac_new_level)
 {
     uint8_t buf[2];
-    buf[0] = ((t_dac_new_level & 0x0F00) >> 4) | ((t_dac_new_level & 0x00F0) >> 4);
-    buf[1] = ((t_dac_new_level & 0x000F) << 4);
+    buf[0] = (t_dac_new_level & 0x0F00) >> 8;
+    buf[1] = t_dac_new_level & 0x00FF;
     uint8_t ret_buf[2];
 
-    SPISettings settings(5000000, MSBFIRST, SPI_MODE3);
+    SPISettings settings(1000000, MSBFIRST, SPI_MODE3);
 
     digitalWrite(m_cs_pin, LOW);
     m_spi_host->beginTransaction(settings);
 
-    m_spi_host->transfer((void*) buf, (void*) ret_buf, 12);
+    m_spi_host->transfer((void*) buf, (void*) ret_buf, 2);
 
     m_spi_host->endTransaction();
     digitalWrite(m_cs_pin, HIGH);
-
     digitalWrite(m_ldac_pin, LOW);
-    delay(1);
     digitalWrite(m_ldac_pin, HIGH);
 }
 
