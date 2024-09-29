@@ -54,18 +54,18 @@
 
 int32_t AD717X::setChannelStatus(uint8_t t_channel_id, bool t_channel_status)
 {
-    ad717x_st_reg *chn_register;
+    ad717x_st_reg *chn_reg;
 
     // Point to the Channel register
-    chn_register = getReg(AD717X_CHMAP0_REG + t_channel_id);
-    if (!chn_register)
+    chn_reg = getReg(AD717X_CHMAP0_REG + t_channel_id);
+    if (!chn_reg)
         return -EINVAL;
 
     if (t_channel_status)
         // Assign the Channel enable bit and write to channel register
-        chn_register->value |= AD717X_CHMAP_REG_CH_EN;
+        chn_reg->value |= AD717X_CHMAP_REG_CH_EN;
     else
-        chn_register->value &= ~(AD717X_CHMAP_REG_CH_EN);
+        chn_reg->value &= ~(AD717X_CHMAP_REG_CH_EN);
 
     int ret = writeRegister(AD717X_CHMAP0_REG + t_channel_id);
     if (ret < 0)
@@ -91,6 +91,7 @@ int32_t AD717X::setADCMode(enum ad717x_mode t_mode)
     adc_mode_reg->value |= AD717X_ADCMODE_REG_MODE(t_mode);
     if (writeRegister(AD717X_ADCMODE_REG) < 0)
         return -EINVAL;
+        
     device_.mode = t_mode;
 
     return 0;
@@ -155,16 +156,16 @@ int32_t AD717X::connectAnalogInput(uint8_t t_channel_id, union ad717x_analog_inp
 
 int32_t AD717X::assignSetup(uint8_t t_channel_id, uint8_t t_setup)
 {
-    ad717x_st_reg *p_register;
+    ad717x_st_reg *p_reg;
 
     // Retrieve the Channel Register
-    p_register = getReg(AD717X_CHMAP0_REG + t_channel_id);
-    if (!p_register)
+    p_reg = getReg(AD717X_CHMAP0_REG + t_channel_id);
+    if (!p_reg)
         return -EINVAL;
 
     // Assign set up to the chosen channel
-    p_register->value &= ~AD717X_CHMAP_REG_SETUP_SEL_MSK;
-    p_register->value |= AD717X_CHMAP_REG_SETUP_SEL(t_setup);
+    p_reg->value &= ~AD717X_CHMAP_REG_SETUP_SEL_MSK;
+    p_reg->value |= AD717X_CHMAP_REG_SETUP_SEL(t_setup);
 
     if (writeRegister(AD717X_CHMAP0_REG + t_channel_id) < 0)
         return -EINVAL;
@@ -199,6 +200,7 @@ int32_t AD717X::readRegister(uint8_t t_addr)
 {
     int32_t ret       = 0;
     uint8_t buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint8_t ret_buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     uint8_t i         = 0;
     uint8_t check8    = 0;
     uint8_t msgBuf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -212,42 +214,51 @@ int32_t AD717X::readRegister(uint8_t t_addr)
     buffer[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
                 AD717X_COMM_REG_RA(pReg->addr);
 
-    // // Read data from the device
-    // ret = no_os_spi_write_and_read(device_.spi_desc,
-    //                                buffer,
-    //                                ((device_.useCRC != AD717X_DISABLE) ? pReg->size + 1
-    //                                 : pReg->size) + 1);
+    spi_host_->beginTransaction(settings_);
+    digitalWrite(cs_pin_, LOW);
+
+    spi_host_->transfer(buffer, ret_buffer, (device_.useCRC != AD717X_DISABLE) ? pReg->size + 2
+                                     : pReg->size + 1);
+
+    digitalWrite(cs_pin_, HIGH);
+    spi_host_->endTransaction();
+    
     if(ret < 0)
         return ret;
 
     // Check the CRC
-    if(device_.useCRC == AD717X_USE_CRC) {
+    if(device_.useCRC == AD717X_USE_CRC)
+    {
         msgBuf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
                     AD717X_COMM_REG_RA(pReg->addr);
         for(i = 1; i < pReg->size + 2; ++i) {
-            msgBuf[i] = buffer[i];
+            msgBuf[i] = ret_buffer[i];
         }
         check8 = computeCRC8(msgBuf, pReg->size + 2);
     }
-    if(device_.useCRC == AD717X_USE_XOR) {
+    if(device_.useCRC == AD717X_USE_XOR)
+    {
         msgBuf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
                     AD717X_COMM_REG_RA(pReg->addr);
-        for(i = 1; i < pReg->size + 2; ++i) {
-            msgBuf[i] = buffer[i];
+        for(i = 1; i < pReg->size + 2; ++i)
+        {
+            msgBuf[i] = ret_buffer[i];
         }
         check8 = computeXOR8(msgBuf, pReg->size + 2);
     }
 
-    if(check8 != 0) {
+    if(check8 != 0)
+    {
         // ReadRegister checksum failed.
         return COMM_ERR;
     }
 
     // Build the result
     pReg->value = 0;
-    for(i = 1; i < pReg->size + 1; i++) {
+    for(i = 1; i < pReg->size + 1; i++)
+    {
         pReg->value <<= 8;
-        pReg->value += buffer[i];
+        pReg->value += ret_buffer[i];
     }
 
     return ret;
@@ -256,38 +267,44 @@ int32_t AD717X::readRegister(uint8_t t_addr)
 int32_t AD717X::writeRegister(uint8_t t_addr)
 {
     int32_t ret      = 0;
-    int32_t regValue = 0;
-    uint8_t wrBuf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    int32_t reg_val = 0;
+    uint8_t wr_buf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint8_t ret_buf[8];
     uint8_t i        = 0;
     uint8_t crc8     = 0;
-    ad717x_st_reg *preg;
+    ad717x_st_reg *p_reg;
 
-    preg = getReg(t_addr);
-    if (!preg)
+    p_reg = getReg(t_addr);
+    if (!p_reg)
         return INVALID_VAL;
 
     // Build the Command word
-    wrBuf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_WR |
-               AD717X_COMM_REG_RA(preg->addr);
+    wr_buf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_WR |
+               AD717X_COMM_REG_RA(p_reg->addr);
 
     // Fill the write buffer
-    regValue = preg->value;
-    for(i = 0; i < preg->size; i++) {
-        wrBuf[preg->size - i] = regValue & 0xFF;
-        regValue >>= 8;
+    reg_val = p_reg->value;
+    for(i = 0; i < p_reg->size; i++)
+    {
+        wr_buf[p_reg->size - i] = reg_val & 0xFF;
+        reg_val >>= 8;
     }
 
     // Compute the CRC
-    if(device_.useCRC != AD717X_DISABLE) {
-        crc8 = computeCRC8(wrBuf, preg->size + 1);
-        wrBuf[preg->size + 1] = crc8;
+    if(device_.useCRC != AD717X_DISABLE)
+    {
+        crc8 = computeCRC8(wr_buf, p_reg->size + 1);
+        wr_buf[p_reg->size + 1] = crc8;
     }
 
-    // // Write data to the device
-    // ret = no_os_spi_write_and_read(device_.spi_desc,
-    //                                wrBuf,
-    //                                (device_.useCRC != AD717X_DISABLE) ?
-    //                                preg->size + 2 : preg->size + 1);
+    spi_host_->beginTransaction(settings_);
+    digitalWrite(cs_pin_, LOW);
+
+    spi_host_->transfer(wr_buf, ret_buf, (device_.useCRC != AD717X_DISABLE) ? p_reg->size + 2
+                                     : p_reg->size + 1);
+
+    digitalWrite(cs_pin_, HIGH);
+    spi_host_->endTransaction();
 
     return ret;
 }
@@ -295,45 +312,71 @@ int32_t AD717X::writeRegister(uint8_t t_addr)
 int32_t AD717X::reset()
 {
     int32_t ret = 0;
-    uint8_t wrBuf[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t rst_buf[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    uint8_t ret_buf[8];
 
-    // ret = no_os_spi_write_and_read(device_.spi_desc,
-    //                                wrBuf,
-    //                                8);
+    spi_host_->beginTransaction(settings_);
+    digitalWrite(cs_pin_, LOW);
+
+    spi_host_->transfer(rst_buf, ret_buf, 8);
+
+    digitalWrite(cs_pin_, HIGH);
+    spi_host_->endTransaction();
 
     return ret;
 }
 
 int32_t AD717X::waitForReady(uint32_t t_timeout)
 {
-    ad717x_st_reg *statusReg;
+    ad717x_st_reg *status_reg;
     int32_t ret;
     int8_t ready = 0;
 
-    statusReg = getReg(AD717X_STATUS_REG);
-    if (!statusReg)
+    status_reg = getReg(AD717X_STATUS_REG);
+    if (!status_reg)
         return INVALID_VAL;
 
-    while(!ready && --t_timeout) {
+    while(!ready && --t_timeout)
+    {
         // Read the value of the Status Register
         ret = readRegister(AD717X_STATUS_REG);
         if(ret < 0)
             return ret;
 
         // Check the RDY bit in the Status Register
-        ready = (statusReg->value & AD717X_STATUS_REG_RDY) == 0;
+        ready = (status_reg->value & AD717X_STATUS_REG_RDY) == 0;
     }
 
     return t_timeout ? 0 : TIMEOUT;
 }
 
+ad717x_st_reg *AD717X::getReg(uint8_t reg_address)
+{
+	uint8_t i;
+	ad717x_st_reg *reg = 0;
+
+	if (!(&device_) || !device_.regs)
+		return 0;
+
+	for (i = 0; i < device_.num_regs; i++)
+    {
+		if (device_.regs[i].addr == reg_address)
+        {
+			reg = &device_.regs[i];
+			break;
+		}
+	}
+
+	return reg;
+}
+
 int32_t AD717X::readData(int32_t* t_p_data)
 {
-    ad717x_st_reg *dataReg;
+    ad717x_st_reg *data_reg;
     int32_t ret;
 
-    dataReg = getReg(AD717X_DATA_REG);
-    if (!dataReg)
+    data_reg = getReg(AD717X_DATA_REG);
+    if (!data_reg)
         return INVALID_VAL;
 
     // Update the data register length with respect to device and options
@@ -343,7 +386,7 @@ int32_t AD717X::readData(int32_t* t_p_data)
     ret |= readRegister(AD717X_DATA_REG);
 
     // Get the read result
-    *t_p_data = dataReg->value;
+    *t_p_data = data_reg->value;
 
     return ret;
 }
@@ -351,29 +394,29 @@ int32_t AD717X::readData(int32_t* t_p_data)
 int32_t AD717X::computeDataregSize()
 {
     ad717x_st_reg *reg_ptr;
-    ad717x_st_reg *datareg_ptr;
+    ad717x_st_reg *data_reg_ptr;
     uint16_t case_var;
 
     // Get interface mode register pointer
     reg_ptr = getReg(AD717X_IFMODE_REG);
     // Get data register pointer
-    datareg_ptr = getReg(AD717X_DATA_REG);
+    data_reg_ptr = getReg(AD717X_DATA_REG);
     case_var = reg_ptr->value & (AD717X_IFMODE_REG_DATA_STAT |
                                  AD717X_IFMODE_REG_DATA_WL16);
 
     // Compute data register size
-    datareg_ptr->size = 3;
+    data_reg_ptr->size = 3;
     if ((case_var & AD717X_IFMODE_REG_DATA_WL16) == AD717X_IFMODE_REG_DATA_WL16)
-        datareg_ptr->size--;
+        data_reg_ptr->size--;
     if ((case_var & AD717X_IFMODE_REG_DATA_STAT) == AD717X_IFMODE_REG_DATA_STAT)
-        datareg_ptr->size++;
+        data_reg_ptr->size++;
 
     // Get ID register pointer
     reg_ptr = getReg(AD717X_ID_REG);
 
     // If the part is 32/24 bit wide add a byte to the read
     if((reg_ptr->value & AD717X_ID_REG_MASK) == AD7177_2_ID_REG_VALUE)
-        datareg_ptr->size++;
+        data_reg_ptr->size++;
 
     return 0;
 }
@@ -383,13 +426,17 @@ uint8_t AD717X::computeCRC8(uint8_t * t_p_buf, uint8_t t_buf_size)
     uint8_t i   = 0;
     uint8_t crc = 0;
 
-    while(t_buf_size) {
-        for(i = 0x80; i != 0; i >>= 1) {
+    while(t_buf_size)
+    {
+        for(i = 0x80; i != 0; i >>= 1)
+        {
             if(((crc & 0x80) != 0) != ((*t_p_buf & i) !=
-                                       0)) { // MSB of CRC register XOR input Bit from Data
+                                       0))
+            { // MSB of CRC register XOR input Bit from Data
                 crc <<= 1;
                 crc ^= AD717X_CRC8_POLYNOMIAL_REPRESENTATION;
-            } else {
+            } else
+            {
                 crc <<= 1;
             }
         }
@@ -403,7 +450,8 @@ uint8_t AD717X::computeXOR8(uint8_t * t_p_buf, uint8_t t_buf_size)
 {
     uint8_t xor_value = 0;
 
-    while(t_buf_size) {
+    while(t_buf_size)
+    {
         xor_value ^= *t_p_buf;
         t_p_buf++;
         t_buf_size--;
@@ -413,18 +461,21 @@ uint8_t AD717X::computeXOR8(uint8_t * t_p_buf, uint8_t t_buf_size)
 
 int32_t AD717X::updateCRCSetting()
 {
-    ad717x_st_reg *interfaceReg;
+    ad717x_st_reg *interface_reg;
 
-    interfaceReg = getReg(AD717X_IFMODE_REG);
-    if (!interfaceReg)
+    interface_reg = getReg(AD717X_IFMODE_REG);
+    if (!interface_reg)
         return INVALID_VAL;
 
     // Get CRC State.
-    if(AD717X_IFMODE_REG_CRC_STAT(interfaceReg->value)) {
+    if(AD717X_IFMODE_REG_CRC_STAT(interface_reg->value))
+    {
         device_.useCRC = AD717X_USE_CRC;
-    } else if(AD717X_IFMODE_REG_XOR_STAT(interfaceReg->value)) {
+    } else if(AD717X_IFMODE_REG_XOR_STAT(interface_reg->value))
+    {
         device_.useCRC = AD717X_USE_XOR;
-    } else {
+    } else
+    {
         device_.useCRC = AD717X_DISABLE;
     }
 
@@ -438,7 +489,8 @@ int32_t AD717X::configureDeviceODR(uint8_t t_filtcon_id, uint8_t t_odr_sel)
 
     // Retrieve the FILTCON register
     filtcon_reg = getReg(AD717X_FILTCON0_REG + t_filtcon_id);
-    if (!filtcon_reg) {
+    if (!filtcon_reg)
+    {
         return -EINVAL;
     }
 
@@ -447,23 +499,28 @@ int32_t AD717X::configureDeviceODR(uint8_t t_filtcon_id, uint8_t t_odr_sel)
     filtcon_reg->value |= AD717X_FILT_CONF_REG_ODR(t_odr_sel);
 
     ret = writeRegister(AD717X_FILTCON0_REG + t_filtcon_id);
-    if (ret) {
+    if (ret)
+    {
         return ret;
     }
 
     return 0;
 }
 
-int32_t AD717X::init(ad717x_init_param t_init_param, SPIClass* t_spi_host)
+int32_t AD717X::init(ad717x_init_param t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin)
 {
     int32_t ret;
-    ad717x_st_reg *preg;
+    ad717x_st_reg *p_reg;
     uint8_t setup_index;
     uint8_t ch_index;
 
     device_.regs = t_init_param.regs;
     device_.num_regs = t_init_param.num_regs;
 	spi_host_ = t_spi_host;
+    cs_pin_ = t_cs_pin;
+
+    pinMode(cs_pin_, OUTPUT);
+    digitalWrite(cs_pin_, HIGH);
 
     // Reset the device interface.
     ret = reset();
@@ -486,20 +543,21 @@ int32_t AD717X::init(ad717x_init_param t_init_param, SPIClass* t_spi_host)
         return ret;
 
     // Initialize registers AD717X_GPIOCON_REG through AD717X_OFFSET0_REG
-    preg = getReg(AD717X_GPIOCON_REG);
-    if (!preg)
+    p_reg = getReg(AD717X_GPIOCON_REG);
+    if (!p_reg)
         return -1;
 
-    while (preg && preg->addr != AD717X_OFFSET0_REG) {
-        if (preg->addr == AD717X_ID_REG) {
-            preg++;
+    while (p_reg && p_reg->addr != AD717X_OFFSET0_REG)
+    {
+        if (p_reg->addr == AD717X_ID_REG) {
+            p_reg++;
             continue;
         }
 
-        ret = writeRegister(preg->addr);
+        ret = writeRegister(p_reg->addr);
         if (ret < 0)
             return ret;
-        preg++;
+        p_reg++;
     }
 
     // Read ID register to identify the part
@@ -509,7 +567,8 @@ int32_t AD717X::init(ad717x_init_param t_init_param, SPIClass* t_spi_host)
     device_.active_device = t_init_param.active_device;
     device_.num_channels = t_init_param.num_channels;
 
-    for (setup_index = 0; setup_index < t_init_param.num_setups; setup_index++) {
+    for (setup_index = 0; setup_index < t_init_param.num_setups; setup_index++)
+    {
         // Set Polarity
         ret = setPolarity(t_init_param.setups[setup_index].bi_unipolar, setup_index);
         if (ret < 0)
@@ -539,7 +598,8 @@ int32_t AD717X::init(ad717x_init_param t_init_param, SPIClass* t_spi_host)
 			return ret;
 
     // Connect Analog Inputs, Assign Setup, Disable all channels
-    for (ch_index = 0; ch_index < t_init_param.num_channels; ch_index++) {
+    for (ch_index = 0; ch_index < t_init_param.num_channels; ch_index++)
+    {
         ret = connectAnalogInput(ch_index,
                                  t_init_param.chan_map[ch_index].analog_inputs);
         if (ret < 0)

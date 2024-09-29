@@ -292,7 +292,7 @@ typedef struct {
 
 typedef struct {
 	/* Device Settings */
-	ad717x_st_reg		*regs;
+	ad717x_st_reg	*regs;
 	uint8_t			num_regs;
 	/* Active Device */
 	enum ad717x_device_type active_device;
@@ -540,11 +540,11 @@ typedef struct {
 class AD717X {
 public:
     // Constructor and destructor
-    AD717X();
+    AD717X() : spi_host_(&SPI2), settings_(10000000, MSBFIRST, SPI_MODE3) {};
     ~AD717X();
 
     // Member functions
-	int32_t init(ad717x_init_param t_init_param, SPIClass* t_spi_host);
+	int32_t init(ad717x_init_param t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
     ad717x_st_reg* getReg(uint8_t t_reg_address);
     int32_t readRegister(uint8_t t_addr);
     int32_t writeRegister(uint8_t t_addr);
@@ -567,6 +567,8 @@ public:
 private:
     ad717x_dev device_;
 	SPIClass* spi_host_;
+	SPISettings settings_;
+	int8_t cs_pin_;
 };
 
-#endif /* __AD717X_H__ */
+#endif /* _AD717X_H_ */
