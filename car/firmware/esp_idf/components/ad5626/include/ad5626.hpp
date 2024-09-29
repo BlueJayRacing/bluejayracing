@@ -13,9 +13,9 @@ class AD5626 {
         esp_err_t setLevel(const uint16_t t_new_dac_level);
         esp_err_t clearLevel(void);
     private:
-        spi_device_handle_t m_spi_dev;
-        gpio_num_t m_ldac_pin;
-        gpio_num_t m_clr_pin;
+        spi_device_handle_t spi_dev_;
+        gpio_num_t ldac_pin_;
+        gpio_num_t clr_pin_;
 };
 
 #endif

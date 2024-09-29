@@ -82,9 +82,8 @@ public:
   esp_err_t setDRDYmode(uint8_t t_value);
 
 private:
-  gpio_num_t m_cs_pin;
-  gpio_num_t m_drdy_pin;
-  spi_device_handle_t m_spi_dev;
+  gpio_num_t drdy_pin_;
+  spi_device_handle_t spi_dev_;
 };
 
 #endif

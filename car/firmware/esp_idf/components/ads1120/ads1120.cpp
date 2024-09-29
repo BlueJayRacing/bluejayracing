@@ -25,7 +25,7 @@ esp_err_t ADS1120::sendCommand(uint8_t t_command)
   t.tx_data[0] = t_command;
   t.length = 1 * 8;
 
-  ret = spi_device_polling_transmit(m_spi_dev, &t); // Transmit!
+  ret = spi_device_polling_transmit(spi_dev_, &t); // Transmit!
   if (ret != ESP_OK)
   {
     return ret;
@@ -45,7 +45,7 @@ esp_err_t ADS1120::writeRegister(uint8_t t_address, uint8_t t_value)
   t.tx_data[1] = t_value;
   t.length = 2 * 8; // 2 bytes
 
-  ret = spi_device_polling_transmit(m_spi_dev, &t); // Transmit!
+  ret = spi_device_polling_transmit(spi_dev_, &t); // Transmit!
   if (ret != ESP_OK)
   {
     return ret;
@@ -66,7 +66,7 @@ esp_err_t ADS1120::readRegister(uint8_t t_address, uint8_t *t_data)
   t.tx_data[0] = (ADS1120_CMD_RREG | (t_address << 2));
   t.tx_data[1] = ADS1120_SPI_MASTER_DUMMY;
 
-  ret = spi_device_polling_transmit(m_spi_dev, &t); // Transmit!
+  ret = spi_device_polling_transmit(spi_dev_, &t); // Transmit!
   if (ret != ESP_OK)
   {
     return ret;
@@ -79,11 +79,10 @@ esp_err_t ADS1120::readRegister(uint8_t t_address, uint8_t *t_data)
 esp_err_t ADS1120::init(gpio_num_t t_cs_pin, gpio_num_t t_drdy_pin, spi_host_device_t t_spi_host)
 {
   // Set pins up
-  m_cs_pin = t_cs_pin;
-  m_drdy_pin = t_drdy_pin;
+  drdy_pin_ = t_drdy_pin;
 
-  gpio_set_direction(m_cs_pin, GPIO_MODE_OUTPUT);
-  gpio_set_direction(m_drdy_pin, GPIO_MODE_INPUT);
+  gpio_set_direction(cs_pin_, GPIO_MODE_OUTPUT);
+  gpio_set_direction(drdy_pin_, GPIO_MODE_INPUT);
 
   spi_device_interface_config_t devcfg;
   memset(&devcfg, 0, sizeof(spi_device_interface_config_t));
@@ -94,11 +93,11 @@ esp_err_t ADS1120::init(gpio_num_t t_cs_pin, gpio_num_t t_drdy_pin, spi_host_dev
   devcfg.cs_ena_posttrans = ADS_CS_EN_POST_WAIT_CYCLES;
   devcfg.clock_speed_hz = ADS_SPI_CLOCK_SPEED_HZ;
   devcfg.input_delay_ns = ADS_SPI_INPUT_DELAY_NS;
-  devcfg.spics_io_num = m_cs_pin; // CS pin
+  devcfg.spics_io_num = cs_pin_; // CS pin
   devcfg.flags = 0;
   devcfg.queue_size = 1;
 
-  esp_err_t err = spi_bus_add_device(t_spi_host, &devcfg, &m_spi_dev);
+  esp_err_t err = spi_bus_add_device(t_spi_host, &devcfg, &spi_dev_);
   if (err != ESP_OK)
   {
     return err;
@@ -115,7 +114,7 @@ esp_err_t ADS1120::init(gpio_num_t t_cs_pin, gpio_num_t t_drdy_pin, spi_host_dev
 
 bool ADS1120::isDataReady()
 {
-  return !gpio_get_level(m_drdy_pin);
+  return !gpio_get_level(drdy_pin_);
 }
 
 esp_err_t ADS1120::readADC(uint16_t *t_data)
@@ -130,7 +129,7 @@ esp_err_t ADS1120::readADC(uint16_t *t_data)
   t.length = 2 * 8;   // 2 bytes
   t.rxlength = 2 * 8; // 2 bytes
 
-  ret = spi_device_polling_transmit(m_spi_dev, &t); // Transmit!
+  ret = spi_device_polling_transmit(spi_dev_, &t); // Transmit!
   if (ret != ESP_OK)
   {
     return ret;
