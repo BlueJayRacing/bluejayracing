@@ -13,13 +13,13 @@ class S35ML04G3 {
         esp_err_t transfer(const uint8_t op_code, const uint8_t* addr, const uint8_t addr_len, const uint8_t* data, 
                             uint16_t data_len, uint8_t* output, const uint16_t out_len, const uint8_t dummy_len);
         esp_err_t reset(void);
-        esp_err_t S35ML04G3::write_enable(void);
-        esp_err_t S35ML04G3::write_disable(void);
-        esp_err_t S35ML04G3::block_erase(const uint8_t* addr, const uint8_t addr_len);
-        esp_err_t S35ML04G3::block_erase(const uint8_t* addr, const uint8_t addr_len);
-        esp_err_t S35ML04G3::program_execute(const uint8_t* addr, const uint8_t addr_len);
-        esp_err_t S35ML04G3::page_read(const uint8_t* addr, const uint8_t addr_len);
-        esp_err_t S35ML04G3::read_buffer(const uint8_t* addr, const uint8_t addr_len, const uint8_t* data, const uint8_t data_len, const uint8_t* output, const uint8_t output_len);
+        esp_err_t write_enable(void);
+        esp_err_t write_disable(void);
+        esp_err_t block_erase(const uint8_t* addr, const uint8_t addr_len);
+        esp_err_t block_erase(const uint8_t* addr, const uint8_t addr_len);
+        esp_err_t program_execute(const uint8_t* addr, const uint8_t addr_len);
+        esp_err_t page_read(const uint8_t* addr, const uint8_t addr_len);
+        esp_err_t read_buffer(const uint8_t* addr, const uint8_t addr_len, const uint8_t* data, const uint8_t data_len, const uint8_t* output, const uint8_t output_len);
 
 
     private:
