@@ -1,44 +1,13 @@
 /**************************************************************************//**
-*   @file    AD717X.h
+*   @file    AD717X.hpp
 *   @brief   AD717X header file.
 *   	     Devices: AD7172-2, AD7172-4, AD7173-8, AD7175-2, AD7175-8, AD7176-2,
 *            AD7177-2, AD4111, AD4112, AD4114, AD4115, AD4116
-*   @author  acozma (andrei.cozma@analog.com)
+*   @author  tchen (travis.yu.chen@gmail.com)
+*			 Credit to the following for the base no_os AD717X librar:
+*			 acozma (andrei.cozma@analog.com)
 *            dnechita (dan.nechita@analog.com)
-*******************************************************************************
-* Copyright 2015(c) Analog Devices, Inc.
-*
-* All rights reserved.
-*
-* Redistribution and use in source and binary forms, with or without modification,
-* are permitted provided that the following conditions are met:
-*  - Redistributions of source code must retain the above copyright
-*    notice, this list of conditions and the following disclaimer.
-*  - Redistributions in binary form must reproduce the above copyright
-*    notice, this list of conditions and the following disclaimer in
-*    the documentation and/or other materials provided with the
-*    distribution.
-*  - Neither the name of Analog Devices, Inc. nor the names of its
-*    contributors may be used to endorse or promote products derived
-*    from this software without specific prior written permission.
-*  - The use of this software may or may not infringe the patent rights
-*    of one or more patent holders.  This license does not release you
-*    from the requirement that you obtain separate licenses from these
-*    patent holders to use this software.
-*  - Use of the software either in source or binary form, must be run
-*    on or directly connected to an Analog Devices Inc. component.
-*
-* THIS SOFTWARE IS PROVIDED BY ANALOG DEVICES "AS IS" AND ANY EXPRESS OR IMPLIED
-* WARRANTIES, INCLUDING, BUT NOT LIMITED TO, NON-INFRINGEMENT, MERCHANTABILITY
-* AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-* IN NO EVENT SHALL ANALOG DEVICES BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-* INTELLECTUAL PROPERTY RIGHTS, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-* ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-******************************************************************************/
+*******************************************************************************/
 #pragma once
 #ifndef _AD717X_HPP_
 #define _AD717X_HPP_
@@ -124,6 +93,18 @@ enum ad717x_analog_input {
 	AIN2 = 0x2,
 	AIN3 = 0x3,
 	AIN4 = 0x4,
+	AIN5 = 0x5,
+	AIN6 = 0x6,
+	AIN7 = 0x7,
+	AIN8 = 0x8,
+	AIN9 = 0x9,
+	AIN10 = 0x0A,
+	AIN11 = 0x0B,
+	AIN12 = 0x0C,
+	AIN13 = 0x0D,
+	AIN14 = 0x0E,
+	AIN15 = 0x0F,
+	AIN16 = 0x10,
 	TEMP_SENSOR_P = 0x11,
 	TEMP_SENSOR_M = 0x12,
 	AVDD_AVSS_P = 0x13,
@@ -168,7 +149,7 @@ enum ad717x_device_type {
  *@details Channel setup
 **/
 struct ad717x_channel_setup {
-	bool bi_unipolar;
+	bool bi_polar;
 	bool ref_buff;
 	bool input_buff;
 	enum ad717x_reference_source ref_source;
@@ -197,25 +178,27 @@ enum ad717x_order {
 /*
  *@enum ad717x_odr
  *@details Output data rate
+ * Note: only some data rates below are supported for each version of AD717X.
+ * Refer to the datasheet to know the exact output data rate mappings.
 **/
 enum ad717x_odr {
 	sps_31250_a = 0x0,
-	sps31250_b = 0x1,
+	sps_31250_b = 0x1,
 	sps_31250_c = 0x2,
 	sps_31250_d = 0x3,
-	sps31250_e = 0x4,
+	sps_31250_e = 0x4,
 	sps_31250_f = 0x5,
 	sps_15625 = 0x6,
-	sps_10417 = 0x7,
-	sps_5208 = 0x8,
-	sps_2957 = 0x9,
-	sps_1007 = 0xA,
-	sps_503 = 0xB,
-	sps_381 = 0xC,
+	sps_10000 = 0x7,
+	sps_5000 = 0x8,
+	sps_2500 = 0x9,
+	sps_1000 = 0xA,
+	sps_500 = 0xB,
+	sps_400 = 0xC,
 	sps_200 = 0xD,
 	sps_100 = 0xE,
-	sps_59 = 0xF,
-	sps_49 = 0x10,
+	sps_60 = 0xF,
+	sps_50 = 0x10,
 	sps_20 = 0x11,
 	sps_16 = 0x12,
 	sps_10 =0x13,
@@ -540,11 +523,11 @@ typedef struct {
 class AD717X {
 public:
     // Constructor and destructor
-    AD717X() : spi_host_(&SPI2), settings_(10000000, MSBFIRST, SPI_MODE3) {};
+    AD717X() : spi_host_(&SPI), settings_(10000000, MSBFIRST, SPI_MODE3) {memset(&device_, 0, sizeof(ad717x_dev));};
     ~AD717X();
 
     // Member functions
-	int32_t init(ad717x_init_param t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
+	int32_t init(ad717x_init_param* t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
     ad717x_st_reg* getReg(uint8_t t_reg_address);
     int32_t readRegister(uint8_t t_addr);
     int32_t writeRegister(uint8_t t_addr);

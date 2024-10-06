@@ -44,7 +44,6 @@
 
 #include "ad717x.hpp"
 
-#ifdef AD7175_8_INIT
 /*! Array holding the info for the AD7175_8 registers - address, initial value, size */
 ad717x_st_reg ad7175_8_regs[] = {
 	{ AD717X_STATUS_REG, 0x00, 1 },
@@ -143,7 +142,6 @@ ad717x_st_reg ad7175_8_regs[] = {
 	{AD717X_GAIN6_REG, 0, 3 },
 	{AD717X_GAIN7_REG, 0, 3 },
 };
-#endif
 
 #define AD7175_8_SLAVE_ID    1
 
