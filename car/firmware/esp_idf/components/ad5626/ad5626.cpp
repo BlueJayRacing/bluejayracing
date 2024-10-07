@@ -11,6 +11,16 @@ AD5626::AD5626()
 {
 }
 
+/***************************************************************************//**
+* @brief Initializes the AD5626.
+*
+* @param t_cs_pin   - The chip select pin.
+* @param t_ldac_pin - The load to register pin.
+* @param t_clr_pin  - The clear pin. (set to <0 if not used)
+* @param t_spi_host - The SPI host/bus that the device is on.
+*
+* @return Returns 0 for success or negative error code.
+*******************************************************************************/
 esp_err_t AD5626::init(const gpio_num_t t_cs_pin, const gpio_num_t t_ldac_pin, const gpio_num_t t_clr_pin, const spi_host_device_t t_spi_host)
 {
     ldac_pin_ = t_ldac_pin;
@@ -57,6 +67,13 @@ esp_err_t AD5626::init(const gpio_num_t t_cs_pin, const gpio_num_t t_ldac_pin, c
     return spi_bus_add_device(t_spi_host, &ad5626_cfg, &(spi_dev_));
 }
 
+/***************************************************************************//**
+* @brief Sets and loads the DAC with a 12-bit value.
+*
+* @param t_dac_new_level - The 12-bit value to be loaded onto the DAC register.
+*
+* @return Returns 0 for success or negative error code.
+*******************************************************************************/
 esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level)
 {
     spi_transaction_t t;
@@ -88,6 +105,12 @@ esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level)
     return ESP_OK;
 }
 
+/***************************************************************************//**
+* @brief Resets the DAC level to 0.
+*
+* @return Returns 0 for success or negative error code, specfically 
+* ESP_ERR_INVALID_STATE if the pin has not been set.
+*******************************************************************************/
 esp_err_t AD5626::clearLevel(void)
 {
     if (clr_pin_ < 0)

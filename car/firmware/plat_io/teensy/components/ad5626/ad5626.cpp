@@ -5,7 +5,7 @@
 *
 * @param t_cs_pin   - The chip select pin for the AD5626 device.
 * @param t_ldac_pin - The LDAC pin for the AD5626 device.
-* @param t_clr_pin  - The clear/reset pin for the AD5626 device.
+* @param t_clr_pin  - The clear/reset pin for the AD5626 device. (set to <0 if not used)
 * @param t_spi_host - The Arduino SPI Host instance/bus that the AD5626 device is on.
 *
 * @return Returns 0 for success or negative error code.
