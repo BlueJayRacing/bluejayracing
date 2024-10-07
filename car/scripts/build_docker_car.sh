@@ -8,6 +8,3 @@ if docker ps | grep -q car_docker; then
     sh $SCRIPTPATH/clean_docker_car.sh
 fi
 
-if ! ls $SCRIPTPATH/.. | grep -q build_cache; then
-    mkdir -p $SCRIPTPATH/../build_cache
-fi
