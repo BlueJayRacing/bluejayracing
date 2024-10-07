@@ -26,7 +26,7 @@ AD717X::~AD717X()
 *
 * @param t_init_param   - The structure that contains the device initial
 * 		                  parameters.
-* @param t_spi_host     - The Arduino SPI Host instance/bus taht the AD717X device is on.
+* @param t_spi_host     - The Arduino SPI Host instance/bus that the AD717X device is on.
 * @param t_cs_pin       - The chip select pin for the AD717X device.
 *
 * @return Returns 0 for success or negative error code.
