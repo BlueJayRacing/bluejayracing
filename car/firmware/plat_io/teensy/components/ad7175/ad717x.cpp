@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include "ad717x.hpp"
 
+#include "ad7175_8_regs.hpp"
+
 /* Error codes */
 #define INVALID_VAL -1 /* Invalid argument */
 #define COMM_ERR    -2 /* Communication error on receive */
@@ -38,8 +40,11 @@ int32_t AD717X::init(ad717x_init_param* t_init_param, SPIClass* t_spi_host, int8
     uint8_t setup_index;
     uint8_t ch_index;
 
-    device_.regs = t_init_param->regs;
-    device_.num_regs = t_init_param->num_regs;
+    ret = initRegs(t_init_param->active_device);
+    if (ret < 0) {
+        return ret;
+    }
+
 	spi_host_ = t_spi_host;
     cs_pin_ = t_cs_pin;
 
@@ -844,4 +849,19 @@ int32_t AD717X::singleRead(uint8_t t_id, int32_t *t_adc_raw_data)
 
 	/* Disable the current channel */
 	return setChannelStatus(t_id, false);
+}
+
+int32_t AD717X::initRegs(ad717x_device_type t_dev_type)
+{
+    switch (t_dev_type)
+    {
+        case ID_AD7175_8:
+            device_.regs = ad7175_8_regs;
+            device_.num_regs = sizeof(ad7175_8_regs) / sizeof(ad717x_st_reg);
+            break;
+        default:
+            return -1;
+    }
+
+    return 0;
 }

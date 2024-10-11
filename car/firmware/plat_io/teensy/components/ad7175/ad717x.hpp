@@ -274,9 +274,6 @@ typedef struct {
 } ad717x_dev;
 
 typedef struct {
-	/* Device Settings */
-	ad717x_st_reg	*regs;
-	uint8_t			num_regs;
 	/* Active Device */
 	enum ad717x_device_type active_device;
 	/* Reference Enable */
@@ -548,6 +545,7 @@ public:
     int32_t singleRead(uint8_t t_id, int32_t* t_adc_raw_data);
     int32_t configureDeviceODR(uint8_t t_filtcon_id, uint8_t t_odr_sel);
 private:
+	int32_t initRegs(ad717x_device_type t_dev_type);
     ad717x_dev device_;
 	SPIClass* spi_host_;
 	SPISettings settings_;

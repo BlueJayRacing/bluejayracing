@@ -1,12 +1,10 @@
 #include <Arduino.h>
 
-#include "ad7175_8_regs.hpp"
 #include "ad717x.hpp"
 
 #include "ad5626.hpp"
 
-#define ADC_CS_PIN 26
-#define ADC_NUM_CHANNELS 4
+#define ADC_CS_PIN 10
 
 #define CENTER 0x800000
 
@@ -14,6 +12,9 @@ AD717X ad7175;
 int32_t data_val;
 
 double voltage_val;
+
+int num = 0;
+int start_millis;
 
 void setup() {
 	Serial.begin(115200);
@@ -25,9 +26,6 @@ void setup() {
 	memset(&ad7175_params, 0, sizeof(ad717x_init_param));
 
 	/* Pass in device registers */
-	ad7175_params.regs = ad7175_8_regs;
-	ad7175_params.num_regs = sizeof(ad7175_8_regs) / sizeof(ad717x_st_reg);
-
 	ad7175_params.active_device = ID_AD7175_8;
 	ad7175_params.ref_en = true;
 
@@ -36,28 +34,29 @@ void setup() {
 
 	ad717x_analog_inputs chan_0_inputs;
 
-	chan_0_inputs.ainp.pos_analog_input = AIN10;
-	chan_0_inputs.ainp.neg_analog_input = AIN9;
+	chan_0_inputs.ainp.pos_analog_input = AIN13;
+	chan_0_inputs.ainp.neg_analog_input = REF_M;
 
 	ad7175_params.chan_map[0] = {true, 0, chan_0_inputs};
 
-	ad7175_params.setups[0] = {true, false, false, AVDD_AVSS};
+	ad7175_params.setups[0] = {false, false, false, AVDD_AVSS};
 
 	ad7175_params.pga[0] = 1;
 
-	ad7175_params.filter_configuration[0].odr = sps_10;
+	ad7175_params.filter_configuration[0].odr = sps_100;
 
 	ad7175_params.mode = CONTINUOUS;
 
   	ad7175.init(&ad7175_params, &SPI, ADC_CS_PIN);
+	start_millis = millis();
 }
 
 void loop() {
 	ad7175.waitForReady(0xFFFFFFFF);
 	ad7175.readData(&data_val);
 
-	voltage_val = ((double) (data_val - CENTER)) / 8388608 * 5;
-	Serial.print("New data value: ");
-	Serial.print(voltage_val);
-	Serial.println("\n");
+	voltage_val = ((double) (data_val)) / 16777216 * 5;
+	num++;
+
+	Serial.println(voltage_val, 6);
 }
