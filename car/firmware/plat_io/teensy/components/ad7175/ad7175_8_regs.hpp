@@ -44,8 +44,10 @@
 
 #include "ad717x.hpp"
 
+#define AD7175_NUM_REGISTERS 55
+
 /*! Array holding the info for the AD7175_8 registers - address, initial value, size */
-ad717x_st_reg ad7175_8_regs[] = {
+const std::vector<ad717x_st_reg> ad7175_8_regs = {{
 	{ AD717X_STATUS_REG, 0x00, 1 },
 	{ AD717X_ADCMODE_REG, 0x0000, 2 },
 	{
@@ -140,8 +142,8 @@ ad717x_st_reg ad7175_8_regs[] = {
 	{AD717X_GAIN4_REG, 0, 3 },
 	{AD717X_GAIN5_REG, 0, 3 },
 	{AD717X_GAIN6_REG, 0, 3 },
-	{AD717X_GAIN7_REG, 0, 3 },
-};
+	{AD717X_GAIN7_REG, 0, 3 }
+}};
 
 #define AD7175_8_SLAVE_ID    1
 

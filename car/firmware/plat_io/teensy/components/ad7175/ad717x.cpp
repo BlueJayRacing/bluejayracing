@@ -8,9 +8,10 @@
 *			 acozma (andrei.cozma@analog.com)
 *            dnechita (dan.nechita@analog.com)
 *******************************************************************************/
+#include <iostream>
 #include <stdlib.h>
-#include "ad717x.hpp"
 
+#include "ad717x.hpp"
 #include "ad7175_8_regs.hpp"
 
 /* Error codes */
@@ -33,14 +34,14 @@ AD717X::~AD717X()
 *
 * @return Returns 0 for success or negative error code.
 *******************************************************************************/
-int32_t AD717X::init(ad717x_init_param* t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin)
+int32_t AD717X::init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin)
 {
     int32_t ret;
-    ad717x_st_reg *p_reg;
+    ad717x_st_reg_t *p_reg;
     uint8_t setup_index;
     uint8_t ch_index;
 
-    ret = initRegs(t_init_param->active_device);
+    ret = initRegs(t_init_param.active_device);
     if (ret < 0) {
         return ret;
     }
@@ -93,54 +94,57 @@ int32_t AD717X::init(ad717x_init_param* t_init_param, SPIClass* t_spi_host, int8
     ret = readRegister(AD717X_ID_REG);
     if(ret < 0)
         return ret;
-    device_.active_device = t_init_param->active_device;
-    device_.num_channels = t_init_param->num_channels;
+    device_.active_device = t_init_param.active_device;
 
-    for (setup_index = 0; setup_index < t_init_param->num_setups; setup_index++)
+    for (setup_index = 0; setup_index < t_init_param.setups.size(); setup_index++)
     {
         // Set Polarity
-        ret = setPolarity(t_init_param->setups[setup_index].bi_polar, setup_index);
+        ret = setPolarity(t_init_param.setups.at(setup_index).setup.bi_polar, setup_index);
         if (ret < 0)
         	return ret;
 
         // Select the reference source
-        ret = setReferenceSource(t_init_param->setups[setup_index].ref_source, setup_index);
+        ret = setReferenceSource(t_init_param.setups.at(setup_index).setup.ref_source, setup_index);
         if (ret < 0)
 			return ret;
 
         // Enable reference and input buffers
-        ret = enableBuffers(t_init_param->setups[setup_index].input_buff,
-                            t_init_param->setups[setup_index].ref_buff,
+        ret = enableBuffers(t_init_param.setups.at(setup_index).setup.input_buff,
+                            t_init_param.setups.at(setup_index).setup.ref_buff,
                             setup_index);
         if (ret < 0)
 			return ret;
 
         ret = configureDeviceODR(setup_index,
-                                 t_init_param->filter_configuration[setup_index].odr);
+                                 t_init_param.setups.at(setup_index).filter_config.odr);
         if (ret < 0)
 			return ret;
+
+        ret = setGain(t_init_param.setups.at(setup_index).gain, setup_index);
+        if (ret < 0)
+            return ret;
     }
 
     // Set Conversion Mode
-    ret = setADCMode(t_init_param->mode);
+    ret = setADCMode(t_init_param.mode);
     if (ret < 0)
 			return ret;
 
     // Connect Analog Inputs, Assign Setup, Disable all channels
-    for (ch_index = 0; ch_index < t_init_param->num_channels; ch_index++)
+    for (ch_index = 0; ch_index < t_init_param.chan_map.size(); ch_index++)
     {
         ret = connectAnalogInput(ch_index,
-                                 t_init_param->chan_map[ch_index].analog_inputs);
+                                 t_init_param.chan_map[ch_index].inputs);
         if (ret < 0)
 			return ret;
 
         ret = assignSetup(ch_index,
-                          t_init_param->chan_map[ch_index].setup_sel);
+                          t_init_param.chan_map[ch_index].setup_sel);
         if (ret < 0)
 			return ret;
 
         ret = setChannelStatus(ch_index,
-                               t_init_param->chan_map[ch_index].channel_enable);
+                               t_init_param.chan_map[ch_index].channel_enable);
         if (ret < 0)
 			return ret;
     }
@@ -156,24 +160,22 @@ int32_t AD717X::init(ad717x_init_param* t_init_param, SPIClass* t_spi_host, int8
 *
 * @return A pointer to the register if found or 0.
 *******************************************************************************/
-ad717x_st_reg *AD717X::getReg(uint8_t t_reg_addr)
+ad717x_st_reg* AD717X::getReg(uint8_t t_reg_addr)
 {
 	uint8_t i;
-	ad717x_st_reg *reg = 0;
 
-	if (!(&device_) || !device_.regs)
-		return 0;
+	if (!(&device_) || device_.regs.size() == 0)
+		return nullptr;
 
-	for (i = 0; i < device_.num_regs; i++)
+	for (i = 0; i < device_.regs.size(); i++)
     {
 		if (device_.regs[i].addr == t_reg_addr)
         {
-			reg = &device_.regs[i];
-			break;
+			return &device_.regs[i];
 		}
 	}
 
-	return reg;
+	return nullptr;
 }
 
 /***************************************************************************//**
@@ -192,7 +194,7 @@ int32_t AD717X::readRegister(uint8_t t_addr)
     uint8_t i         = 0;
     uint8_t check8    = 0;
     uint8_t msgBuf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    ad717x_st_reg *pReg;
+    ad717x_st_reg_t *pReg;
 
     pReg = getReg(t_addr);
     if (!pReg)
@@ -269,7 +271,7 @@ int32_t AD717X::writeRegister(uint8_t t_addr)
     uint8_t ret_buf[8];
     uint8_t i        = 0;
     uint8_t crc8     = 0;
-    ad717x_st_reg *p_reg;
+    ad717x_st_reg_t *p_reg;
 
     p_reg = getReg(t_addr);
     if (!p_reg)
@@ -332,14 +334,14 @@ int32_t AD717X::reset()
 /***************************************************************************//**
 * @brief Waits until a new conversion result is available.
 *
-* @param t_timeout - Count representing the number of polls to be done until the
-*                    function returns if no new data is available.
+* @param t_timeout  - Count representing the number of polls to be done until the
+*                     function returns if no new data is available.
 *
 * @return Returns 0 for success or negative error code.
 *******************************************************************************/
 int32_t AD717X::waitForReady(uint32_t t_timeout)
 {
-    ad717x_st_reg *status_reg;
+    ad717x_st_reg_t *status_reg;
     int32_t ret;
     int8_t ready = 0;
 
@@ -370,7 +372,7 @@ int32_t AD717X::waitForReady(uint32_t t_timeout)
 *******************************************************************************/
 int32_t AD717X::readData(int32_t* t_p_data)
 {
-    ad717x_st_reg *data_reg;
+    ad717x_st_reg_t *data_reg;
     int32_t ret;
 
     data_reg = getReg(AD717X_DATA_REG);
@@ -397,8 +399,8 @@ int32_t AD717X::readData(int32_t* t_p_data)
 *******************************************************************************/
 int32_t AD717X::computeDataregSize()
 {
-    ad717x_st_reg *reg_ptr;
-    ad717x_st_reg *data_reg_ptr;
+    ad717x_st_reg_t *reg_ptr;
+    ad717x_st_reg_t *data_reg_ptr;
     uint16_t case_var;
 
     // Get interface mode register pointer
@@ -486,7 +488,7 @@ uint8_t AD717X::computeXOR8(uint8_t * t_p_buf, uint8_t t_buf_size)
 *******************************************************************************/
 int32_t AD717X::updateCRCSetting()
 {
-    ad717x_st_reg *interface_reg;
+    ad717x_st_reg_t *interface_reg;
 
     interface_reg = getReg(AD717X_IFMODE_REG);
     if (!interface_reg)
@@ -518,7 +520,7 @@ int32_t AD717X::updateCRCSetting()
 *******************************************************************************/
 int32_t AD717X::setChannelStatus(uint8_t t_channel_id, bool t_channel_status)
 {
-    ad717x_st_reg *chn_reg;
+    ad717x_st_reg_t *chn_reg;
 
     // Point to the Channel register
     chn_reg = getReg(AD717X_CHMAP0_REG + t_channel_id);
@@ -534,7 +536,6 @@ int32_t AD717X::setChannelStatus(uint8_t t_channel_id, bool t_channel_status)
     int ret = writeRegister(AD717X_CHMAP0_REG + t_channel_id);
     if (ret < 0)
         return ret;
-    device_.chan_map[t_channel_id].channel_enable = t_channel_status;
 
     return 0;
 }
@@ -548,7 +549,7 @@ int32_t AD717X::setChannelStatus(uint8_t t_channel_id, bool t_channel_status)
 ******************************************************************************/
 int32_t AD717X::setADCMode(enum ad717x_mode t_adc_mode)
 {
-    ad717x_st_reg *adc_mode_reg;
+    ad717x_st_reg_t *adc_mode_reg;
 
     // Retrieve the ADC Mode register
     adc_mode_reg = getReg(AD717X_ADCMODE_REG);
@@ -578,7 +579,7 @@ int32_t AD717X::setADCMode(enum ad717x_mode t_adc_mode)
 *****************************************************************************/
 int32_t AD717X::connectAnalogInput(uint8_t t_channel_id, union ad717x_analog_inputs t_analog_input)
 {
-    ad717x_st_reg *channel_reg;
+    ad717x_st_reg_t *channel_reg;
 
     // Retrieve the channel register
     channel_reg = getReg(AD717X_CHMAP0_REG + t_channel_id);
@@ -593,12 +594,9 @@ int32_t AD717X::connectAnalogInput(uint8_t t_channel_id, union ad717x_analog_inp
     case ID_AD4116:
         // Clear and Set the required analog input pair to channel
         channel_reg->value  &= ~AD717x_CHANNEL_INPUT_MASK;
-        channel_reg->value |= AD4111_CHMAP_REG_INPUT(t_analog_input.analog_input_pairs);
+        channel_reg->value |= AD4111_CHMAP_REG_INPUT(t_analog_input.input_pairs);
         if (writeRegister(AD717X_CHMAP0_REG + t_channel_id) < 0)
             return -EINVAL;
-
-        device_.chan_map[t_channel_id].analog_inputs.analog_input_pairs =
-            t_analog_input.analog_input_pairs;
         break;
 
     case ID_AD7172_4:
@@ -611,19 +609,14 @@ int32_t AD717X::connectAnalogInput(uint8_t t_channel_id, union ad717x_analog_inp
         // Select the Positive Analog Input
         channel_reg->value &= ~AD717X_CHMAP_REG_AINPOS_MSK;
         channel_reg->value |=  AD717X_CHMAP_REG_AINPOS(
-                               t_analog_input.ainp.pos_analog_input);
+                               t_analog_input.ainp.pos_input);
 
         // Select the Negative Analog Input
         channel_reg->value &= ~AD717X_CHMAP_REG_AINNEG_MSK;
         channel_reg->value |= AD717X_CHMAP_REG_AINNEG(
-                              t_analog_input.ainp.neg_analog_input);
+                              t_analog_input.ainp.neg_input);
         if (writeRegister(AD717X_CHMAP0_REG + t_channel_id) < 0)
             return -EINVAL;
-
-        device_.chan_map[t_channel_id].analog_inputs.ainp.pos_analog_input =
-            t_analog_input.ainp.pos_analog_input;
-        device_.chan_map[t_channel_id].analog_inputs.ainp.neg_analog_input =
-            t_analog_input.ainp.neg_analog_input;
         break;
 
     default:
@@ -643,7 +636,7 @@ int32_t AD717X::connectAnalogInput(uint8_t t_channel_id, union ad717x_analog_inp
 ******************************************************************************/
 int32_t AD717X::assignSetup(uint8_t t_channel_id, uint8_t t_setup)
 {
-    ad717x_st_reg *p_reg;
+    ad717x_st_reg_t *p_reg;
 
     // Retrieve the Channel Register
     p_reg = getReg(AD717X_CHMAP0_REG + t_channel_id);
@@ -656,7 +649,6 @@ int32_t AD717X::assignSetup(uint8_t t_channel_id, uint8_t t_setup)
 
     if (writeRegister(AD717X_CHMAP0_REG + t_channel_id) < 0)
         return -EINVAL;
-    device_.chan_map[t_channel_id].setup_sel = t_setup;
 
     return 0;
 }
@@ -671,7 +663,7 @@ int32_t AD717X::assignSetup(uint8_t t_channel_id, uint8_t t_setup)
 *****************************************************************************/
 int32_t AD717X::setPolarity(bool t_bipolar, uint8_t t_setup_id)
 {
-    ad717x_st_reg* setup_reg;
+    ad717x_st_reg_t* setup_reg;
 
     // Retrieve the SETUPCON Register
     setup_reg = getReg(AD717X_SETUPCON0_REG + t_setup_id);
@@ -686,7 +678,6 @@ int32_t AD717X::setPolarity(bool t_bipolar, uint8_t t_setup_id)
 
     if (writeRegister(AD717X_SETUPCON0_REG + t_setup_id) < 0)
         return -EINVAL;
-    device_.setups[t_setup_id].bi_polar = t_bipolar;
 
     return 0;
 }
@@ -699,10 +690,10 @@ int32_t AD717X::setPolarity(bool t_bipolar, uint8_t t_setup_id)
 * 
 * @return Returns 0 for success or negative error code in case of failure.
 ******************************************************************************/
-int32_t AD717X::setReferenceSource(enum ad717x_reference_source t_ref_source, uint8_t t_setup_id)
+int32_t AD717X::setReferenceSource(ad717x_ref_source_t t_ref_source, uint8_t t_setup_id)
 {
-	ad717x_st_reg* setup_reg;
-	ad717x_st_reg *adc_mode_reg;
+	ad717x_st_reg_t* setup_reg;
+	ad717x_st_reg_t *adc_mode_reg;
 
 	if (!&device_)
 		return -EINVAL;
@@ -718,7 +709,6 @@ int32_t AD717X::setReferenceSource(enum ad717x_reference_source t_ref_source, ui
 
 	if (writeRegister(AD717X_SETUPCON0_REG + t_setup_id) < 0)
 		return -EINVAL;
-	device_.setups[t_setup_id].ref_source = t_ref_source;
 
 	/* Enable the REF_EN Bit in case of Internal reference */
 	if (t_ref_source == INTERNAL_REF) {
@@ -776,9 +766,6 @@ int32_t AD717X::enableBuffers(bool t_inbuf_en, bool t_refbuf_en, uint8_t t_setup
 	if (writeRegister(AD717X_SETUPCON0_REG + t_setup_id) < 0)
 		return -EINVAL;
 
-	device_.setups[t_setup_id].input_buff = t_inbuf_en;
-	device_.setups[t_setup_id].ref_buff = t_refbuf_en;
-
 	return 0;
 }
 
@@ -792,7 +779,7 @@ int32_t AD717X::enableBuffers(bool t_inbuf_en, bool t_refbuf_en, uint8_t t_setup
 *******************************************************************************/
 int32_t AD717X::configureDeviceODR(uint8_t t_filtcon_id, uint8_t t_odr_sel)
 {
-    ad717x_st_reg *filtcon_reg;
+    ad717x_st_reg_t *filtcon_reg;
     int32_t ret;
 
     // Retrieve the FILTCON register
@@ -851,17 +838,48 @@ int32_t AD717X::singleRead(uint8_t t_id, int32_t *t_adc_raw_data)
 	return setChannelStatus(t_id, false);
 }
 
-int32_t AD717X::initRegs(ad717x_device_type t_dev_type)
+int32_t AD717X::initRegs(ad717x_device_type_t t_dev_type)
 {
     switch (t_dev_type)
     {
         case ID_AD7175_8:
-            device_.regs = ad7175_8_regs;
-            device_.num_regs = sizeof(ad7175_8_regs) / sizeof(ad717x_st_reg);
+            device_.regs.resize(AD7175_NUM_REGISTERS);
+            std::copy(ad7175_8_regs.begin(), ad7175_8_regs.end(), device_.regs.begin());
             break;
         default:
             return -1;
     }
 
     return 0;
+}
+
+int32_t AD717X::setGain(double gain, uint8_t t_setup_id)
+{
+    ad717x_st_reg_t *gain_reg;
+
+    gain_reg = getReg(AD717X_GAIN0_REG + t_setup_id);
+    if (!gain_reg)
+    {
+        return -EINVAL;
+    }
+
+    // Clear the ODR bits, configure the requested ODR
+    gain_reg->value =  (uint32_t) (gain * 0x555550);
+
+	if (writeRegister(AD717X_GAIN0_REG + t_setup_id) < 0)
+		return -EINVAL;
+        
+    return 0;
+}
+
+
+void AD717X::parseStatusReg(ad717x_dev_status_t* dev_status)
+{
+    ad717x_st_reg_t* status_reg = getReg(AD717X_STATUS_REG);
+
+    dev_status->data_ready =       !((status_reg->value & 0x80) >> 7);
+    dev_status->adc_error =         ((status_reg->value & 0x40) >> 6);
+    dev_status->crc_error =         ((status_reg->value & 0x20) >> 5);
+    dev_status->reg_error =         ((status_reg->value & 0x10) >> 4);
+    dev_status->active_channel =    (status_reg->value & 0x0F);
 }

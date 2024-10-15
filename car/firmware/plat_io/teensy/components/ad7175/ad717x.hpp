@@ -12,28 +12,18 @@
 #ifndef _AD717X_HPP_
 #define _AD717X_HPP_
 
-/******************************************************************************/
-/***************************** Include Files **********************************/
-/******************************************************************************/
 #include <Arduino.h>
 #include <SPI.h>
 
+#include <array>
 #include <stdint.h>
 #include <stdbool.h>
-
-/******************************************************************************/
-/*************************** Types Declarations *******************************/
-/******************************************************************************/
-/* Total Number of Setups in the AD717x-AD411x family */
-#define AD717x_MAX_SETUPS			8
-/* Maximum number of channels in the AD717x-AD411x family */
-#define AD717x_MAX_CHANNELS			16
 
 /*
  *@enum	ad717x_mode
  *@details ADC Modes of Operation
 **/
-enum ad717x_mode {
+typedef enum ad717x_mode {
 	CONTINUOUS, 			/* Continuous Mode- Default */
 	SINGLE, 				/* Single Mode */
 	STANDBY, 				/* Stand-by Mode */
@@ -42,23 +32,23 @@ enum ad717x_mode {
 	INTERNAL_GAIN_CALIB, 	/* Internal Gain Calibration */
 	SYS_OFFSET_CALIB, 		/* System Offset Calibraion */
 	SYS_GAIN_CALIB			/* System Gain Calibration */
-};
+} ad717x_mode_t;
 
 /*
  *@enum	ad717x_reference_source
  *@details Type of ADC Reference
 **/
-enum ad717x_reference_source {
+typedef enum ad717x_ref_source {
 	EXTERNAL_REF = 0x0, /* External Reference REF+/-*/
 	INTERNAL_REF = 0x2,	/* Internal 2.5V Reference */
 	AVDD_AVSS = 0x3		/* AVDD - AVSS */
-};
+} ad717x_ref_source_t;
 
 /*
  *@enum	ad717x_analog_input_pairs
  *@details Analog Input Pairs to channels for the AD411X Family
 **/
-enum ad717x_analog_input_pairs {
+typedef enum ad717x_analog_input_pairs {
 	VIN0_VIN1 = 0x1,
 	VIN0_VINCOM = 0x10,
 	VIN1_VIN0 = 0x20,
@@ -81,13 +71,13 @@ enum ad717x_analog_input_pairs {
 	IIN0P_IIN0M = 0x1E8,
 	TEMPERATURE_SENSOR = 0x232,
 	REFERENCE = 0x2B6
-};
+} ad717x_analog_input_pairs_t;
 
 /*
  *@enum	ad717x_analog_input
  *@details Positive/Negative Analog Input to channels for the AD717x Family
 **/
-enum ad717x_analog_input {
+typedef enum ad717x_analog_input {
 	AIN0 = 0x0,
 	AIN1 = 0x1,
 	AIN2 = 0x2,
@@ -110,26 +100,26 @@ enum ad717x_analog_input {
 	AVDD_AVSS_P = 0x13,
 	AVDD_AVSS_M = 0x14,
 	REF_P = 0x15,
-	REF_M = 0x16
-};
+	REF_M = 0x16,
+} ad717x_analog_input_t;
 
 /*
  *@union ad717x_analog_inputs
  *@details Types of Analog Inputs
 **/
-union ad717x_analog_inputs {
-	enum ad717x_analog_input_pairs analog_input_pairs;
+typedef union ad717x_analog_inputs {
+	ad717x_analog_input_pairs_t input_pairs;
 	struct {
-		enum ad717x_analog_input pos_analog_input;
-		enum ad717x_analog_input neg_analog_input;
+		ad717x_analog_input_t pos_input;
+		ad717x_analog_input_t neg_input;
 	} ainp;
-};
+} ad717x_analog_inputs_t;
 
 /*
  *@enum	ad717x_device_type
  *@details AD717x-AD411x Device definitions
 **/
-enum ad717x_device_type {
+typedef enum ad717x_device_type {
 	ID_AD4111,
 	ID_AD4112,
 	ID_AD4114,
@@ -142,38 +132,38 @@ enum ad717x_device_type {
 	ID_AD7175_8,
 	ID_AD7176_2,
 	ID_AD7177_2
-};
+} ad717x_device_type_t;
 
 /*
  *@struct ad717x_channel_setup
  *@details Channel setup
 **/
-struct ad717x_channel_setup {
+typedef struct ad717x_channel_setup {
 	bool bi_polar;
 	bool ref_buff;
 	bool input_buff;
-	enum ad717x_reference_source ref_source;
-};
+	ad717x_ref_source_t ref_source;
+} ad717x_channel_setup_t;
 
 /*
  *@enum ad717x_enhfilt
  *@details Post filter for enhanced rejection
 **/
-enum ad717x_enhfilt {
-	sps27_db47_ms36p7 = 0x2,
-	sps25_db62_ms40 = 0x3,
-	sps20_db86_ms50 = 0x5,
-	sps16p6_db82_ms60 = 0x6
-};
+typedef enum ad717x_enhfilt {
+	SPS27_DB47_MS36P7 = 0x2,
+	SPS25_DB62_MS40 = 0x3,
+	SPS20_DB86_MS50 = 0x5,
+	SPS16P6_db82_MS60 = 0x6
+} ad717x_enhfilt_t;
 
 /*
  *@enum ad717x_order
  *@details Order of digital filter
 **/
-enum ad717x_order {
-	sinc5_sinc1 = 0x0,
-	sinc3 = 0x3
-};
+typedef enum ad717x_order {
+	SINC5_SINC1 = 0x0,
+	SINC3 = 0x3
+} ad717x_order_t;
 
 /*
  *@enum ad717x_odr
@@ -181,66 +171,72 @@ enum ad717x_order {
  * Note: only some data rates below are supported for each version of AD717X.
  * Refer to the datasheet to know the exact output data rate mappings.
 **/
-enum ad717x_odr {
-	sps_31250_a = 0x0,
-	sps_31250_b = 0x1,
-	sps_31250_c = 0x2,
-	sps_31250_d = 0x3,
-	sps_31250_e = 0x4,
-	sps_31250_f = 0x5,
-	sps_15625 = 0x6,
-	sps_10000 = 0x7,
-	sps_5000 = 0x8,
-	sps_2500 = 0x9,
-	sps_1000 = 0xA,
-	sps_500 = 0xB,
-	sps_400 = 0xC,
-	sps_200 = 0xD,
-	sps_100 = 0xE,
-	sps_60 = 0xF,
-	sps_50 = 0x10,
-	sps_20 = 0x11,
-	sps_16 = 0x12,
-	sps_10 =0x13,
-	sps_5 = 0x14,
-	sps_2p5 = 0x15,
-	sps_1p25 = 0x16
-};
+typedef enum ad717x_odr {
+	SPS_31250_A = 0x0,
+	SPS_31250_B = 0x1,
+	SPS_31250_C = 0x2,
+	SPS_31250_D = 0x3,
+	SPS_31250_E = 0x4,
+	SPS_31250_F = 0x5,
+	SPS_15625 = 0x6,
+	SPS_10000 = 0x7,
+	SPS_5000 = 0x8,
+	SPS_2500 = 0x9,
+	SPS_1000 = 0xA,
+	SPS_500 = 0xB,
+	SPS_400 = 0xC,
+	SPS_200 = 0xD,
+	SPS_100 = 0xE,
+	SPS_60 = 0xF,
+	SPS_50 = 0x10,
+	SPS_20 = 0x11,
+	SPS_16 = 0x12,
+	SPS_10 =0x13,
+	SPS_5 = 0x14,
+	SPS_2P5 = 0x15,
+	SPS_1P25 = 0x16
+} ad717x_odr_t;
 
 /*
  *@struct ad717x_filtcon
  *@details Filter configuration
 **/
-struct ad717x_filtcon {
+typedef struct ad717x_filtcon {
 	bool sinc3_map;
 	bool enhfilten;
-	enum ad717x_enhfilt enhfilt;
-	enum ad717x_order oder;
-	enum ad717x_odr odr;
-};
+	ad717x_enhfilt_t enhfilt;
+	ad717x_order_t oder;
+	ad717x_odr_t odr;
+} ad717x_filtcon_t;
 
 /*
  *@struct ad717x_channel_map
  *@details Channel mapping
 **/
-struct ad717x_channel_map {
+typedef struct ad717x_channel_map {
 	bool channel_enable;
 	uint8_t setup_sel;
-	union ad717x_analog_inputs analog_inputs;
-};
+	ad717x_analog_inputs_t inputs;
+} ad717x_channel_map_t;
 
-typedef enum {
+typedef enum ad717x_crc_mode {
 	AD717X_DISABLE,
 	AD717X_USE_CRC,
 	AD717X_USE_XOR,
-} ad717x_crc_mode;
+} ad717x_crc_mode_t;
 
 /*! AD717X register info */
-typedef struct {
+typedef struct ad717x_st_reg {
 	int32_t addr;
 	int32_t value;
 	int32_t size;
-} ad717x_st_reg;
+} ad717x_st_reg_t;
+
+typedef struct ad717x_filt_pga_setup {
+	double gain;					// Not configured
+	ad717x_channel_setup_t setup;
+	ad717x_filtcon_t filter_config; // Not configured
+} ad717x_filt_pga_setup_t;
 
 /*
  * The structure describes the device and is used with the ad717x driver.
@@ -250,49 +246,38 @@ typedef struct {
  * @num_regs: The length of the register list.
  * @userCRC: Error check type to use on SPI transfers.
  */
-typedef struct {
+typedef struct ad717x_dev {
 	/* Device Settings */
-	ad717x_st_reg		*regs;
-	uint8_t			num_regs;
-	ad717x_crc_mode		useCRC;
+	std::vector<ad717x_st_reg_t> regs;
+	ad717x_crc_mode_t		useCRC;
 	/* Active Device */
-	enum ad717x_device_type active_device;
+	ad717x_device_type_t active_device;
 	/* Reference enable */
 	bool ref_en;
-	/* Number of channels */
-	uint8_t num_channels;
-	/* Setups */
-	struct ad717x_channel_setup setups[AD717x_MAX_SETUPS];
-	/* Channel Mapping*/
-	struct ad717x_channel_map chan_map[AD717x_MAX_CHANNELS];
-	/* Gain */
-	uint32_t pga[AD717x_MAX_SETUPS];
-	/* Filter */
-	struct ad717x_filtcon filter_configuration[AD717x_MAX_SETUPS];
 	/* ADC Mode */
-	enum ad717x_mode mode;
-} ad717x_dev;
+	ad717x_mode_t mode;
+} ad717x_dev_t;
 
 typedef struct {
 	/* Active Device */
-	enum ad717x_device_type active_device;
+	ad717x_device_type_t active_device;
 	/* Reference Enable */
 	bool ref_en;
-	/* Number of Channels */
-	uint8_t num_channels;
-	/* Number of Setups */
-	uint8_t num_setups;
-	/* Channel Mapping */
-	struct ad717x_channel_map chan_map[AD717x_MAX_CHANNELS];
+	/* Channel Mapping*/
+	std::vector<ad717x_channel_map_t> chan_map;
 	/* Setups */
-	struct ad717x_channel_setup setups[AD717x_MAX_SETUPS];
-	/* Gain */
-	uint32_t pga[AD717x_MAX_SETUPS];
-	/* Filter Configuration */
-	struct ad717x_filtcon filter_configuration[AD717x_MAX_SETUPS];
+	std::vector<ad717x_filt_pga_setup_t> setups;
 	/* ADC Mode */
-	enum ad717x_mode mode;
-} ad717x_init_param;
+	ad717x_mode_t mode;
+} ad717x_init_param_t;
+
+typedef struct ad717x_dev_status {
+	bool data_ready;
+	bool adc_error;
+	bool crc_error;
+	bool reg_error;
+	uint8_t active_channel;
+} ad717x_dev_status_t ;
 
 /*****************************************************************************/
 /***************** AD717X Register Definitions *******************************/
@@ -515,16 +500,16 @@ typedef struct {
 #define AD717X_CHMAP_REG_AINNEG_MSK    		NO_OS_GENMASK(4,0)
 #define AD717X_ADCMODE_REG_MODE_MSK   		NO_OS_GENMASK(6,4)
 #define AD717X_SETUP_CONF_REG_REF_SEL_MSK	NO_OS_GENMASK(5,4)
-#define AD717x_ODR_MSK				NO_OS_GENMASK(4,0)
+#define AD717x_ODR_MSK						NO_OS_GENMASK(4,0)
 
 class AD717X {
 public:
     // Constructor and destructor
-    AD717X() : spi_host_(&SPI), settings_(10000000, MSBFIRST, SPI_MODE3) {memset(&device_, 0, sizeof(ad717x_dev));};
+    AD717X() : spi_host_(&SPI), settings_(10000000, MSBFIRST, SPI_MODE3) {};
     ~AD717X();
 
     // Member functions
-	int32_t init(ad717x_init_param* t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
+	int32_t init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
     ad717x_st_reg* getReg(uint8_t t_reg_address);
     int32_t readRegister(uint8_t t_addr);
     int32_t writeRegister(uint8_t t_addr);
@@ -536,17 +521,19 @@ public:
     static uint8_t computeXOR8(uint8_t* t_p_buf, uint8_t t_buf_size);
     int32_t updateCRCSetting();
     int32_t setChannelStatus(uint8_t t_channel_id, bool t_channel_status);
-    int32_t setADCMode(enum ad717x_mode t_mode);
-    int32_t connectAnalogInput(uint8_t t_channel_id, union ad717x_analog_inputs t_analog_input);
+    int32_t setADCMode(ad717x_mode_t t_mode);
+    int32_t connectAnalogInput(uint8_t t_channel_id, ad717x_analog_inputs_t t_analog_input);
     int32_t assignSetup(uint8_t t_channel_id, uint8_t t_setup);
     int32_t setPolarity(bool t_bipolar, uint8_t t_setup_id);
-    int32_t setReferenceSource(enum ad717x_reference_source t_ref_source, uint8_t t_setup_id);
+    int32_t setReferenceSource(ad717x_ref_source_t t_ref_source, uint8_t t_setup_id);
     int32_t enableBuffers(bool t_inbuf_en, bool t_refbuf_en, uint8_t t_setup_id);
     int32_t singleRead(uint8_t t_id, int32_t* t_adc_raw_data);
     int32_t configureDeviceODR(uint8_t t_filtcon_id, uint8_t t_odr_sel);
+	int32_t setGain(double gain, uint8_t t_setup_id);
+	void 	parseStatusReg(ad717x_dev_status_t* dev_status);
 private:
-	int32_t initRegs(ad717x_device_type t_dev_type);
-    ad717x_dev device_;
+	int32_t initRegs(ad717x_device_type_t t_dev_type);
+    ad717x_dev_t device_;
 	SPIClass* spi_host_;
 	SPISettings settings_;
 	int8_t cs_pin_;
