@@ -279,10 +279,6 @@ typedef struct ad717x_dev_status {
 	uint8_t active_channel;
 } ad717x_dev_status_t ;
 
-/*****************************************************************************/
-/***************** AD717X Register Definitions *******************************/
-/*****************************************************************************/
-
 /* AD717X Register Map */
 #define AD717X_COMM_REG       0x00
 #define AD717X_STATUS_REG     0x00
@@ -513,12 +509,10 @@ public:
     ad717x_st_reg* getReg(uint8_t t_reg_address);
     int32_t readRegister(uint8_t t_addr);
     int32_t writeRegister(uint8_t t_addr);
-    int32_t reset();
+    int32_t reset(void);
     int32_t waitForReady(uint32_t t_timeout);
     int32_t readData(int32_t* t_p_data);
     int32_t computeDataregSize();
-    static uint8_t computeCRC8(uint8_t* t_p_buf, uint8_t t_buf_size);
-    static uint8_t computeXOR8(uint8_t* t_p_buf, uint8_t t_buf_size);
     int32_t updateCRCSetting();
     int32_t setChannelStatus(uint8_t t_channel_id, bool t_channel_status);
     int32_t setADCMode(ad717x_mode_t t_mode);
@@ -531,6 +525,8 @@ public:
     int32_t configureDeviceODR(uint8_t t_filtcon_id, uint8_t t_odr_sel);
 	int32_t setGain(double gain, uint8_t t_setup_id);
 	void 	parseStatusReg(ad717x_dev_status_t* dev_status);
+	static uint8_t computeCRC8(uint8_t* t_p_buf, uint8_t t_buf_size);
+    static uint8_t computeXOR8(uint8_t* t_p_buf, uint8_t t_buf_size);
 private:
 	int32_t initRegs(ad717x_device_type_t t_dev_type);
     ad717x_dev_t device_;

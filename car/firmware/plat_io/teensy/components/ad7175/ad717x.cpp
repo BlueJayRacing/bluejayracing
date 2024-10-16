@@ -4,7 +4,7 @@
 *   	     Devices: AD7172-2, AD7172-4, AD7173-8, AD7175-2, AD7175-8, AD7176-2,
 *            AD7177-2, AD4111, AD4112, AD4114, AD4115, AD4116
 *   @author  tchen (travis.yu.chen@gmail.com)
-*			 Credit to the following for the base no_os AD717X librar:
+*			 Credit to the following for the base no_os AD717X library:
 *			 acozma (andrei.cozma@analog.com)
 *            dnechita (dan.nechita@analog.com)
 *******************************************************************************/
@@ -189,11 +189,11 @@ ad717x_st_reg* AD717X::getReg(uint8_t t_reg_addr)
 int32_t AD717X::readRegister(uint8_t t_addr)
 {
     int32_t ret       = 0;
-    uint8_t buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    uint8_t ret_buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<uint8_t, 8> send_buf = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<uint8_t, 8> ret_buf = {0, 0, 0, 0, 0, 0, 0, 0};
     uint8_t i         = 0;
     uint8_t check8    = 0;
-    uint8_t msgBuf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<uint8_t, 8> msg_buf = {0, 0, 0, 0, 0, 0, 0, 0};
     ad717x_st_reg_t *pReg;
 
     pReg = getReg(t_addr);
@@ -201,13 +201,13 @@ int32_t AD717X::readRegister(uint8_t t_addr)
         return INVALID_VAL;
 
     // Build the Command word
-    buffer[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
+    send_buf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
                 AD717X_COMM_REG_RA(pReg->addr);
 
     spi_host_->beginTransaction(settings_);
     digitalWrite(cs_pin_, LOW);
 
-    spi_host_->transfer(buffer, ret_buffer, (device_.useCRC != AD717X_DISABLE) ? pReg->size + 2
+    spi_host_->transfer(send_buf.data(), ret_buf.data(), (device_.useCRC != AD717X_DISABLE) ? pReg->size + 2
                                      : pReg->size + 1);
 
     digitalWrite(cs_pin_, HIGH);
@@ -219,22 +219,22 @@ int32_t AD717X::readRegister(uint8_t t_addr)
     // Check the CRC
     if(device_.useCRC == AD717X_USE_CRC)
     {
-        msgBuf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
+        msg_buf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
                     AD717X_COMM_REG_RA(pReg->addr);
         for(i = 1; i < pReg->size + 2; ++i) {
-            msgBuf[i] = ret_buffer[i];
+            msg_buf[i] = ret_buf[i];
         }
-        check8 = computeCRC8(msgBuf, pReg->size + 2);
+        check8 = computeCRC8(msg_buf.data(), pReg->size + 2);
     }
     if(device_.useCRC == AD717X_USE_XOR)
     {
-        msgBuf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
+        msg_buf[0] = AD717X_COMM_REG_WEN | AD717X_COMM_REG_RD |
                     AD717X_COMM_REG_RA(pReg->addr);
         for(i = 1; i < pReg->size + 2; ++i)
         {
-            msgBuf[i] = ret_buffer[i];
+            msg_buf[i] = ret_buf[i];
         }
-        check8 = computeXOR8(msgBuf, pReg->size + 2);
+        check8 = computeXOR8(msg_buf.data(), pReg->size + 2);
     }
 
     if(check8 != 0)
@@ -248,7 +248,7 @@ int32_t AD717X::readRegister(uint8_t t_addr)
     for(i = 1; i < pReg->size + 1; i++)
     {
         pReg->value <<= 8;
-        pReg->value += ret_buffer[i];
+        pReg->value += ret_buf[i];
     }
 
     return ret;
@@ -267,8 +267,8 @@ int32_t AD717X::writeRegister(uint8_t t_addr)
 {
     int32_t ret      = 0;
     int32_t reg_val = 0;
-    uint8_t wr_buf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-    uint8_t ret_buf[8];
+    std::array<uint8_t, 8> wr_buf = {0, 0, 0, 0, 0, 0, 0, 0};
+    std::array<uint8_t, 8> ret_buf;
     uint8_t i        = 0;
     uint8_t crc8     = 0;
     ad717x_st_reg_t *p_reg;
@@ -292,14 +292,14 @@ int32_t AD717X::writeRegister(uint8_t t_addr)
     // Compute the CRC
     if(device_.useCRC != AD717X_DISABLE)
     {
-        crc8 = computeCRC8(wr_buf, p_reg->size + 1);
+        crc8 = computeCRC8(wr_buf.data(), p_reg->size + 1);
         wr_buf[p_reg->size + 1] = crc8;
     }
 
     spi_host_->beginTransaction(settings_);
     digitalWrite(cs_pin_, LOW);
 
-    spi_host_->transfer(wr_buf, ret_buf, (device_.useCRC != AD717X_DISABLE) ? p_reg->size + 2
+    spi_host_->transfer(wr_buf.data(), ret_buf.data(), (device_.useCRC != AD717X_DISABLE) ? p_reg->size + 2
                                      : p_reg->size + 1);
 
     digitalWrite(cs_pin_, HIGH);
@@ -313,16 +313,16 @@ int32_t AD717X::writeRegister(uint8_t t_addr)
 *
 * @return Returns 0 for success or negative error code.
 *******************************************************************************/
-int32_t AD717X::reset()
+int32_t AD717X::reset(void)
 {
     int32_t ret = 0;
-    uint8_t rst_buf[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-    uint8_t ret_buf[8];
+    std::array<uint8_t, 8> rst_buf = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+    std::array<uint8_t, 8> ret_buf;
 
     spi_host_->beginTransaction(settings_);
     digitalWrite(cs_pin_, LOW);
 
-    spi_host_->transfer(rst_buf, ret_buf, 8);
+    spi_host_->transfer(rst_buf.data(), ret_buf.data(), rst_buf.size());
 
     digitalWrite(cs_pin_, HIGH);
     spi_host_->endTransaction();
@@ -838,6 +838,13 @@ int32_t AD717X::singleRead(uint8_t t_id, int32_t *t_adc_raw_data)
 	return setChannelStatus(t_id, false);
 }
 
+/***************************************************************************//**
+ * @brief Initializes the registers for the device.
+ * 
+ * @param t_dev_type        - device IC name
+ * 
+ * @return Returns 0 for success or negative error code in case of failure.
+******************************************************************************/
 int32_t AD717X::initRegs(ad717x_device_type_t t_dev_type)
 {
     switch (t_dev_type)
@@ -853,6 +860,14 @@ int32_t AD717X::initRegs(ad717x_device_type_t t_dev_type)
     return 0;
 }
 
+/***************************************************************************//**
+ * @brief Sets the gain on a setup.
+ * 
+ * @param gain        - Gain for setup. Acceptable values are between 0 and 3.
+ * @param t_setup_id  - The setup that the gain will be configured for.
+ * 
+ * @return Returns 0 for success or negative error code in case of failure.
+******************************************************************************/
 int32_t AD717X::setGain(double gain, uint8_t t_setup_id)
 {
     ad717x_st_reg_t *gain_reg;
@@ -872,7 +887,13 @@ int32_t AD717X::setGain(double gain, uint8_t t_setup_id)
     return 0;
 }
 
-
+/***************************************************************************//**
+ * @brief Parses a status register.
+ * 
+ * @param dev_status  - Struct to hold the results of the parsing.
+ * 
+ * @return Returns 0 for success or negative error code in case of failure.
+******************************************************************************/
 void AD717X::parseStatusReg(ad717x_dev_status_t* dev_status)
 {
     ad717x_st_reg_t* status_reg = getReg(AD717X_STATUS_REG);
