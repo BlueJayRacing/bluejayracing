@@ -868,6 +868,7 @@ int32_t AD717X::configureFilter(ad717x_filter_config_t t_filt_config, uint8_t t_
         return -EINVAL;
 
     uint32_t new_reg_value = 0;
-    new_reg_value &= ;
-    filter_reg->value = new_reg_value;
+    filter_reg->value      = new_reg_value;
+
+    return 0;
 }
