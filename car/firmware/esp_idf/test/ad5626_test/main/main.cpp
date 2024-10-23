@@ -17,7 +17,6 @@
 
 #include "ads1120.hpp"
 #include "ad5626.hpp"
-#include "component_template.h"
 
 extern "C" void app_main(void)
 {
