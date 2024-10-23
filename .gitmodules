@@ -10,3 +10,6 @@
 [submodule "car/src/inertial_sense_ros_humble/lib/inertial-sense-sdk"]
 	path = car/src/inertial_sense_ros_humble/lib/inertial-sense-sdk
 	url = https://github.com/inertialsense/inertial-sense-sdk.git
+[submodule "car/firmware/esp_idf/components/nanopb"]
+	path = car/firmware/esp_idf/components/nanopb
+	url = git@github.com:BlueJayRacing/nanopb.git
