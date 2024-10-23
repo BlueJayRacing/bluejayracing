@@ -1,0 +1,1 @@
+./../nanopb/generator-bin/protoc --proto_path=proto --nanopb_out=src test_proto.proto
