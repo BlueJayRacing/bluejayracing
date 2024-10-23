@@ -13,3 +13,6 @@
 [submodule "car/firmware/esp_idf/components/nanopb"]
 	path = car/firmware/esp_idf/components/nanopb
 	url = git@github.com:BlueJayRacing/nanopb.git
+[submodule "car/firmware/plat_io/teensy/components/nanopb"]
+	path = car/firmware/plat_io/teensy/components/nanopb
+	url = git@github.com:BlueJayRacing/nanopb.git
