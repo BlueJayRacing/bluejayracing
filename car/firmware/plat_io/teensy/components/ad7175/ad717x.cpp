@@ -160,7 +160,7 @@ int32_t AD717X::init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, in
 *
 * @return A pointer to the register if found or 0.
 *******************************************************************************/
-ad717x_st_reg* AD717X::getReg(uint8_t t_reg_addr)
+ad717x_st_reg_t* AD717X::getReg(uint8_t t_reg_addr)
 {
 	uint8_t i;
 
@@ -898,9 +898,9 @@ void AD717X::parseStatusReg(ad717x_dev_status_t* dev_status)
 {
     ad717x_st_reg_t* status_reg = getReg(AD717X_STATUS_REG);
 
-    dev_status->data_ready =       !((status_reg->value & 0x80) >> 7);
-    dev_status->adc_error =         ((status_reg->value & 0x40) >> 6);
-    dev_status->crc_error =         ((status_reg->value & 0x20) >> 5);
-    dev_status->reg_error =         ((status_reg->value & 0x10) >> 4);
-    dev_status->active_channel =    (status_reg->value & 0x0F);
+    dev_status->data_ready =       !((status_reg->value & AD717X_STATUS_REG_RDY) >> 7);
+    dev_status->adc_error =         ((status_reg->value & AD717X_STATUS_REG_ADC_ERR) >> 6);
+    dev_status->crc_error =         ((status_reg->value & AD717X_STATUS_REG_CRC_ERR) >> 5);
+    dev_status->reg_error =         ((status_reg->value & AD717X_STATUS_REG_REG_ERR) >> 4);
+    dev_status->active_channel =    (status_reg->value &  AD717X_STATUS_REG_CH(15));
 }
