@@ -1,4 +1,4 @@
-set(PROTOC_PATH "${COMPONENT_DIR}/../nanopb/generator_bin/protoc")
+set(PROTOC_PATH "${COMPONENT_DIR}/../nanopb/generator-bin/protoc")
 set(PROTO_PATH "${COMPONENT_DIR}/../../../../proto/")
 set(PROTO_OUT_PATH "${COMPONENT_DIR}/src")
 
