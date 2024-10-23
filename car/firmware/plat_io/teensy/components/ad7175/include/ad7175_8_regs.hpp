@@ -3,7 +3,8 @@
  *
  * @brief AD7175_8 Register definitions.
  *
- * @author dnechita (dan.nechita@analog.com)
+ * @author 
+ * dnechita (dan.nechita@analog.com)
  *
  *******************************************************************************
  * Copyright 2015(c) Analog Devices, Inc.
@@ -38,8 +39,6 @@
 #define _AD7175_8_REGS_HPP_
 
 #include "ad717x.hpp"
-
-#define AD7175_NUM_REGISTERS 55
 
 /*! Array holding the info for the AD7175_8 registers - address, initial value, size */
 const std::vector<ad717x_st_reg> ad7175_8_regs = {

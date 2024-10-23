@@ -1,16 +1,19 @@
 /******************************************************************************
  *   @file    AD717X.cpp
  *   @brief   AD717X implementation file.
- *   	     Devices: AD7172-2, AD7172-4, AD7173-8, AD7175-2, AD7175-8, AD7176-2,
- *            AD7177-2, AD4111, AD4112, AD4114, AD4115, AD4116
+ *   	      (Sort of) Compatible devices: AD7172-2, AD7172-4, AD7173-8,
+ *            AD7175-2, AD7175-8, AD7176-2, AD7177-2, AD4111, AD4112, AD4114,
+ *            AD4115, AD4116 (may need some library changes)
+ *T           Tested devices: AD7175-8
  *   @author  tchen (travis.yu.chen@gmail.com)
- *			 Credit to the following for the base no_os AD717X library:
- *			 acozma (andrei.cozma@analog.com)
+ *			  Credit to the following for the base no_os AD717X library:
+ *			  acozma (andrei.cozma@analog.com)
  *            dnechita (dan.nechita@analog.com)
  *******************************************************************************/
 #include <iostream>
 #include <stdlib.h>
 
+#include "ad7175_2_regs.hpp"
 #include "ad7175_8_regs.hpp"
 #include "ad717x.hpp"
 
@@ -805,8 +808,12 @@ int32_t AD717X::initRegs(ad717x_device_type_t t_dev_type)
 {
     switch (t_dev_type) {
     case ID_AD7175_8:
-        device_.regs.resize(AD7175_NUM_REGISTERS);
+        device_.regs.resize(ad7175_8_regs.size());
         std::copy(ad7175_8_regs.begin(), ad7175_8_regs.end(), device_.regs.begin());
+        break;
+    case ID_AD7175_2:
+        device_.regs.resize(ad7175_2_regs.size());
+        std::copy(ad7175_2_regs.begin(), ad7175_2_regs.end(), device_.regs.begin());
         break;
     default:
         return -1;

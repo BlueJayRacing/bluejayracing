@@ -1,7 +1,10 @@
 /******************************************************************************
  *   @file    AD717X.hpp
- *   @brief   AD717X header file. Devices: AD7172-2, AD7172-4, AD7173-8, AD7175-2, AD7175-8, AD7176-2,
- *            AD7177-2, AD4111, AD4112, AD4114, AD4115, AD4116
+ *   @brief   AD717X header file.
+ *   	      (Sort of) Compatible devices: AD7172-2, AD7172-4, AD7173-8,
+ *            AD7175-2, AD7175-8, AD7176-2, AD7177-2, AD4111, AD4112, AD4114,
+ *            AD4115, AD4116 (may need some library changes)
+ *T           Tested devices: AD7175-8
  *   @author  tchen (travis.yu.chen@gmail.com)
  *			  Credit to the following for the base no_os AD717X library:
  *            acozma (andrei.cozma@analog.com)

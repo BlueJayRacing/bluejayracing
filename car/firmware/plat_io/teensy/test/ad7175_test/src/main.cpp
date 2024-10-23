@@ -1,8 +1,7 @@
 #include <Arduino.h>
 
-#include "ad717x.hpp"
-
 #include "ad5626.hpp"
+#include "ad717x.hpp"
 
 #define ADC_CS_PIN 10
 
