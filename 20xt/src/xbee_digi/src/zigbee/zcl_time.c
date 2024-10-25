@@ -27,39 +27,38 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "xbee/platform.h"
 #include "xbee/byteorder.h"
+#include "xbee/platform.h"
 #include "zigbee/zcl_time.h"
 #include "zigbee/zdo.h"
 
 #ifndef __DC__
-   #define _zcl_time_debug
+#define _zcl_time_debug
 #elif defined ZCL_TIME_DEBUG
-   #define _zcl_time_debug    __debug
+#define _zcl_time_debug __debug
 #else
-   #define _zcl_time_debug    __nodebug
+#define _zcl_time_debug __nodebug
 #endif
 /*** EndHeader */
 
 /*** BeginHeader zcl_time_time, zcl_time_timestatus */
 extern zcl_utctime_t zcl_time_time;
-extern uint8_t       zcl_time_timestatus;
+extern uint8_t zcl_time_timestatus;
 /*** EndHeader */
 /// Current value of Time Attribute (#ZCL_TIME_ATTR_TIME), start value
 /// doesn't matter since it is set by _zcl_time_time_get().
-zcl_utctime_t  zcl_time_time;
+zcl_utctime_t zcl_time_time;
 
 /// Current value of TimeStatus Attribute (#ZCL_TIME_ATTR_TIME_STATUS)
 #ifdef ZCL_ENABLE_TIME_SERVER
-   uint8_t  zcl_time_timestatus = ZCL_TIME_STATUS_MASTER;
+uint8_t zcl_time_timestatus = ZCL_TIME_STATUS_MASTER;
 #else
-   uint8_t  zcl_time_timestatus = 0;
+uint8_t zcl_time_timestatus = 0;
 #endif
 
 /*** BeginHeader _zcl_time_time_set, _zcl_time_time_get */
-int _zcl_time_time_set( const zcl_attribute_full_t FAR *attribute,
-   zcl_attribute_write_rec_t *rec);
-uint_fast8_t _zcl_time_time_get( const zcl_attribute_full_t FAR *attribute);
+int _zcl_time_time_set(const zcl_attribute_full_t FAR* attribute, zcl_attribute_write_rec_t* rec);
+uint_fast8_t _zcl_time_time_get(const zcl_attribute_full_t FAR* attribute);
 /*** EndHeader */
 /// difference between xbee_seconds_timer() and actual calendar time
 int32_t zcl_time_skew = 0;
@@ -77,39 +76,32 @@ int32_t zcl_time_skew = 0;
 
    See zcl_attribute_write_fn() for calling convention.
 */
-_zcl_time_debug
-int _zcl_time_time_set( const zcl_attribute_full_t FAR *attribute,
-   zcl_attribute_write_rec_t *rec)
+_zcl_time_debug int _zcl_time_time_set(const zcl_attribute_full_t FAR* attribute, zcl_attribute_write_rec_t* rec)
 {
-   int16_t bytes_read = 0;
+    int16_t bytes_read = 0;
 
-   // decode using standard method
-   if (rec)
-   {
-      // if this device is a MASTER, Time is read-only
-      if (zcl_time_timestatus & ZCL_TIME_STATUS_MASTER)
-      {
-         rec->status = ZCL_STATUS_READ_ONLY;
-         rec->buffer += 4;
-         return 4;
-      }
+    // decode using standard method
+    if (rec) {
+        // if this device is a MASTER, Time is read-only
+        if (zcl_time_timestatus & ZCL_TIME_STATUS_MASTER) {
+            rec->status = ZCL_STATUS_READ_ONLY;
+            rec->buffer += 4;
+            return 4;
+        }
 
-      bytes_read = zcl_decode_attribute( &attribute->base, rec);
-      if (! (rec->flags & ZCL_ATTR_WRITE_FLAG_ASSIGN))
-      {
-         return bytes_read;
-      }
-   }
+        bytes_read = zcl_decode_attribute(&attribute->base, rec);
+        if (!(rec->flags & ZCL_ATTR_WRITE_FLAG_ASSIGN)) {
+            return bytes_read;
+        }
+    }
 
-   zcl_time_skew = zcl_time_time -
-                     (xbee_seconds_timer() - ZCL_TIME_EPOCH_DELTA);
+    zcl_time_skew = zcl_time_time - (xbee_seconds_timer() - ZCL_TIME_EPOCH_DELTA);
 
-   #ifdef ZCL_TIME_VERBOSE
-      printf( "%s: setting time to 0x%" PRIx32 "; skew is %" PRId32 " sec\n",
-         __FUNCTION__, zcl_time_time, zcl_time_skew);
-   #endif
+#ifdef ZCL_TIME_VERBOSE
+    printf("%s: setting time to 0x%" PRIx32 "; skew is %" PRId32 " sec\n", __FUNCTION__, zcl_time_time, zcl_time_skew);
+#endif
 
-   return bytes_read;
+    return bytes_read;
 }
 
 /**
@@ -120,32 +112,27 @@ int _zcl_time_time_set( const zcl_attribute_full_t FAR *attribute,
 
    See zcl_attribute_update_fn() for calling convention.
 */
-_zcl_time_debug
-uint_fast8_t _zcl_time_time_get( const zcl_attribute_full_t FAR *attribute)
+_zcl_time_debug uint_fast8_t _zcl_time_time_get(const zcl_attribute_full_t FAR* attribute)
 {
-   // zcl_attribute_update_fn API, but 'attribute' parameter's value is always
-   // a pointer to 'zcl_time_time' variable.
-   XBEE_UNUSED_PARAMETER( attribute);
+    // zcl_attribute_update_fn API, but 'attribute' parameter's value is always
+    // a pointer to 'zcl_time_time' variable.
+    XBEE_UNUSED_PARAMETER(attribute);
 
 #if ZCL_TIME_EPOCH_DELTA > 0
-   if (! zcl_time_skew && xbee_seconds_timer() < ZCL_TIME_EPOCH_DELTA)
-   {
-      // we don't really know what time it is...
-      zcl_time_time = ZCL_UTCTIME_INVALID;
-   }
-   else
+    if (!zcl_time_skew && xbee_seconds_timer() < ZCL_TIME_EPOCH_DELTA) {
+        // we don't really know what time it is...
+        zcl_time_time = ZCL_UTCTIME_INVALID;
+    } else
 #endif
-   {
-      zcl_time_time = zcl_time_skew +
-                        (xbee_seconds_timer() - ZCL_TIME_EPOCH_DELTA);
-   }
+    {
+        zcl_time_time = zcl_time_skew + (xbee_seconds_timer() - ZCL_TIME_EPOCH_DELTA);
+    }
 
-   #ifdef ZCL_TIME_VERBOSE
-      printf( "%s: read clock & updated zcl_time_time to 0x%" PRIx32 "\n",
-         __FUNCTION__, zcl_time_time);
-   #endif
+#ifdef ZCL_TIME_VERBOSE
+    printf("%s: read clock & updated zcl_time_time to 0x%" PRIx32 "\n", __FUNCTION__, zcl_time_time);
+#endif
 
-   return ZCL_STATUS_SUCCESS;
+    return ZCL_STATUS_SUCCESS;
 }
 
 /*** BeginHeader zcl_time_attribute_tree */
@@ -159,39 +146,32 @@ uint_fast8_t _zcl_time_time_get( const zcl_attribute_full_t FAR *attribute)
 
    Only used if device has a Time Server.
 */
-_zcl_time_debug
-int _zcl_time_timestatus_set( const zcl_attribute_full_t FAR *attribute,
-   zcl_attribute_write_rec_t *rec)
+_zcl_time_debug int _zcl_time_timestatus_set(const zcl_attribute_full_t FAR* attribute, zcl_attribute_write_rec_t* rec)
 {
-   uint8_t time_status;
+    uint8_t time_status;
 
-   // zcl_attribute_write_fn API, but 'attribute' parameter's value is always
-   // a pointer to 'time_status' variable.
-   XBEE_UNUSED_PARAMETER( attribute);
+    // zcl_attribute_write_fn API, but 'attribute' parameter's value is always
+    // a pointer to 'time_status' variable.
+    XBEE_UNUSED_PARAMETER(attribute);
 
-   if (rec->flags & ZCL_ATTR_WRITE_FLAG_ASSIGN)
-   {
-      // Master and MasterZoneDst bits are not settable.
-      // If Master is set to 1, Synchronized bit is always set to 0.
+    if (rec->flags & ZCL_ATTR_WRITE_FLAG_ASSIGN) {
+        // Master and MasterZoneDst bits are not settable.
+        // If Master is set to 1, Synchronized bit is always set to 0.
 
-      time_status = *rec->buffer;
-      // can only set the Synchronized bit if Master bit is not set
-      if (!(zcl_time_timestatus & ZCL_TIME_STATUS_MASTER))
-      {
-         if (time_status & ZCL_TIME_STATUS_SYNCHRONIZED)
-         {
-            // set Synchronized bit
-            zcl_time_timestatus |= ZCL_TIME_STATUS_SYNCHRONIZED;
-         }
-         else
-         {
-            // clear Synchronized bit
-            zcl_time_timestatus &= ~ZCL_TIME_STATUS_SYNCHRONIZED;
-         }
-      }
-   }
+        time_status = *rec->buffer;
+        // can only set the Synchronized bit if Master bit is not set
+        if (!(zcl_time_timestatus & ZCL_TIME_STATUS_MASTER)) {
+            if (time_status & ZCL_TIME_STATUS_SYNCHRONIZED) {
+                // set Synchronized bit
+                zcl_time_timestatus |= ZCL_TIME_STATUS_SYNCHRONIZED;
+            } else {
+                // clear Synchronized bit
+                zcl_time_timestatus &= ~ZCL_TIME_STATUS_SYNCHRONIZED;
+            }
+        }
+    }
 
-   return 1;
+    return 1;
 }
 
 /** Global attribute list used in #ZCL_CLUST_ENTRY_TIME_SERVER and
@@ -199,29 +179,24 @@ int _zcl_time_timestatus_set( const zcl_attribute_full_t FAR *attribute,
    Client does not have any attributes.
 */
 const struct {
-   zcl_attribute_full_t       time;
-   zcl_attribute_full_t       time_status;
-   uint16_t                   end_of_list;
-} zcl_time_attr =
-{
-//   ID, Flags, Type, Address to data, min, max, read, write
-   { { ZCL_TIME_ATTR_TIME,
-      ZCL_ATTRIB_FLAG_FULL,
-      ZCL_TYPE_TIME_UTCTIME,
-      &zcl_time_time },
-      { 0 }, { 0 },
-      &_zcl_time_time_get, &_zcl_time_time_set },
-   { { ZCL_TIME_ATTR_TIME_STATUS,
-      ZCL_ATTRIB_FLAG_FULL,
-      ZCL_TYPE_BITMAP_8BIT,
-      &zcl_time_timestatus },
-      { 0 }, { 0 },
-      NULL, &_zcl_time_timestatus_set },
-   ZCL_ATTRIBUTE_END_OF_LIST
-};
+    zcl_attribute_full_t time;
+    zcl_attribute_full_t time_status;
+    uint16_t end_of_list;
+} zcl_time_attr = {
+    //   ID, Flags, Type, Address to data, min, max, read, write
+    {{ZCL_TIME_ATTR_TIME, ZCL_ATTRIB_FLAG_FULL, ZCL_TYPE_TIME_UTCTIME, &zcl_time_time},
+     {0},
+     {0},
+     &_zcl_time_time_get,
+     &_zcl_time_time_set},
+    {{ZCL_TIME_ATTR_TIME_STATUS, ZCL_ATTRIB_FLAG_FULL, ZCL_TYPE_BITMAP_8BIT, &zcl_time_timestatus},
+     {0},
+     {0},
+     NULL,
+     &_zcl_time_timestatus_set},
+    ZCL_ATTRIBUTE_END_OF_LIST};
 
-const zcl_attribute_tree_t zcl_time_attribute_tree[] =
-      { { ZCL_MFG_NONE, &zcl_time_attr.time.base, NULL } };
+const zcl_attribute_tree_t zcl_time_attribute_tree[] = {{ZCL_MFG_NONE, &zcl_time_attr.time.base, NULL}};
 
 /*** BeginHeader zcl_time_now */
 /*** EndHeader */
@@ -243,19 +218,15 @@ const zcl_attribute_tree_t zcl_time_attribute_tree[] =
 
    @sa xbee_seconds_timer, xbee_millisecond_timer
 */
-zcl_utctime_t zcl_time_now( void)
+zcl_utctime_t zcl_time_now(void)
 {
-   // Confirm that we are a master or have synchronized with one.
-   if (zcl_time_timestatus
-      & (ZCL_TIME_STATUS_MASTER | ZCL_TIME_STATUS_SYNCHRONIZED))
-   {
-      _zcl_time_time_get( NULL);
-      return zcl_time_time;
-   }
-   else
-   {
-      return ZCL_UTCTIME_INVALID;
-   }
+    // Confirm that we are a master or have synchronized with one.
+    if (zcl_time_timestatus & (ZCL_TIME_STATUS_MASTER | ZCL_TIME_STATUS_SYNCHRONIZED)) {
+        _zcl_time_time_get(NULL);
+        return zcl_time_time;
+    } else {
+        return ZCL_UTCTIME_INVALID;
+    }
 }
 
 /*** BeginHeader zcl_time_client */
@@ -287,108 +258,87 @@ zcl_utctime_t zcl_time_now( void)
 // TODO: make use of zcl_process_read_attr_response() in zcl_client.c to parse
 // Read Attributes Response and populate a temporary attribute list with the
 // values.
-_zcl_time_debug
-int zcl_time_client( const wpan_envelope_t FAR *envelope, void FAR *context)
+_zcl_time_debug int zcl_time_client(const wpan_envelope_t FAR* envelope, void FAR* context)
 {
-   zcl_command_t  zcl;
+    zcl_command_t zcl;
 
-   // We're only expecting Read Attribute Responses.
-   // Make sure frame is server-to-client, not manufacturer-specific and
-   // a profile (not cluster) command.
-   if (zcl_command_build( &zcl, envelope, context) == 0 &&
-      zcl.command == ZCL_CMD_READ_ATTRIB_RESP &&
-      ZCL_CMD_MATCH( &zcl.frame_control, GENERAL, SERVER_TO_CLIENT, PROFILE))
-   {
-      const zcl_header_t         FAR *header = envelope->payload;
-      union {
-         const uint8_t  FAR *u8;
-         const uint16_t FAR *u16_le;
-         const uint32_t FAR *u32_le;
-      } walk;                          // used to walk the payload
-      uint8_t     FAR *payload_end;
-      uint16_t       attribute_id;
-      uint8_t        attribute_type;
-      zcl_utctime_t  time = 0;
-      uint8_t        time_status = 0;
-      uint8_t        response = ZCL_STATUS_SUCCESS;
+    // We're only expecting Read Attribute Responses.
+    // Make sure frame is server-to-client, not manufacturer-specific and
+    // a profile (not cluster) command.
+    if (zcl_command_build(&zcl, envelope, context) == 0 && zcl.command == ZCL_CMD_READ_ATTRIB_RESP &&
+        ZCL_CMD_MATCH(&zcl.frame_control, GENERAL, SERVER_TO_CLIENT, PROFILE)) {
+        const zcl_header_t FAR* header = envelope->payload;
+        union {
+            const uint8_t FAR* u8;
+            const uint16_t FAR* u16_le;
+            const uint32_t FAR* u32_le;
+        } walk; // used to walk the payload
+        uint8_t FAR* payload_end;
+        uint16_t attribute_id;
+        uint8_t attribute_type;
+        zcl_utctime_t time  = 0;
+        uint8_t time_status = 0;
+        uint8_t response    = ZCL_STATUS_SUCCESS;
 
-      #ifdef ZCL_TIME_VERBOSE
-         printf( "%s: %d-byte payload to time client\n", __FUNCTION__,
-            envelope->length);
-         hex_dump( envelope->payload, envelope->length, HEX_DUMP_FLAG_TAB);
-      #endif
+#ifdef ZCL_TIME_VERBOSE
+        printf("%s: %d-byte payload to time client\n", __FUNCTION__, envelope->length);
+        hex_dump(envelope->payload, envelope->length, HEX_DUMP_FLAG_TAB);
+#endif
 
-      payload_end = ((uint8_t FAR *)envelope->payload) + envelope->length;
-      walk.u8 = header->type.std.common.payload;
-      while (response == ZCL_STATUS_SUCCESS && walk.u8 < payload_end)
-      {
-         attribute_id = le16toh( *walk.u16_le++);
-         if (*walk.u8++ == ZCL_STATUS_SUCCESS)
-         {
-            attribute_type = *walk.u8++;
-            if (attribute_id == ZCL_TIME_ATTR_TIME)
-            {
-               if (attribute_type != ZCL_TYPE_TIME_UTCTIME)
-               {
-                  response = ZCL_STATUS_INVALID_DATA_TYPE;
-               }
-               else
-               {
-                  time = le32toh( *walk.u32_le++);
-               }
+        payload_end = ((uint8_t FAR*)envelope->payload) + envelope->length;
+        walk.u8     = header->type.std.common.payload;
+        while (response == ZCL_STATUS_SUCCESS && walk.u8 < payload_end) {
+            attribute_id = le16toh(*walk.u16_le++);
+            if (*walk.u8++ == ZCL_STATUS_SUCCESS) {
+                attribute_type = *walk.u8++;
+                if (attribute_id == ZCL_TIME_ATTR_TIME) {
+                    if (attribute_type != ZCL_TYPE_TIME_UTCTIME) {
+                        response = ZCL_STATUS_INVALID_DATA_TYPE;
+                    } else {
+                        time = le32toh(*walk.u32_le++);
+                    }
+                } else if (attribute_id == ZCL_TIME_ATTR_TIME_STATUS) {
+                    if (attribute_type != ZCL_TYPE_BITMAP_8BIT) {
+                        response = ZCL_STATUS_INVALID_DATA_TYPE;
+                    } else {
+                        time_status = *walk.u8++;
+                    }
+                } else {
+                    // unexpected attribute in response
+                    response = ZCL_STATUS_UNSUPPORTED_ATTRIBUTE;
+                }
             }
-            else if (attribute_id == ZCL_TIME_ATTR_TIME_STATUS)
-            {
-               if (attribute_type != ZCL_TYPE_BITMAP_8BIT)
-               {
-                  response = ZCL_STATUS_INVALID_DATA_TYPE;
-               }
-               else
-               {
-                  time_status = *walk.u8++;
-               }
+        }
+
+        // didn't get a valid time in response
+        if (response == ZCL_STATUS_SUCCESS && !time) {
+#ifdef ZCL_TIME_VERBOSE
+            printf("%s: response did not contain a valid time\n", __FUNCTION__);
+#endif
+            response = ZCL_STATUS_FAILURE;
+        }
+
+        if (response == ZCL_STATUS_SUCCESS) {
+#ifdef ZCL_TIME_VERBOSE
+            printf("%s: the time is %" PRIu32 "\n", __FUNCTION__, time);
+#endif
+
+            // only set the clock if the response has a valid time
+            if (time != ZCL_UTCTIME_INVALID &&
+                (time_status & (ZCL_TIME_STATUS_MASTER | ZCL_TIME_STATUS_SYNCHRONIZED)) != 0) {
+                zcl_time_time = time;
+                _zcl_time_time_set(NULL, NULL);
+
+                // set Synchronized bit of our TimeStatus
+                zcl_time_timestatus |= ZCL_TIME_STATUS_SYNCHRONIZED;
             }
-            else
-            {
-               // unexpected attribute in response
-               response = ZCL_STATUS_UNSUPPORTED_ATTRIBUTE;
-            }
-         }
-      }
+        }
 
-      // didn't get a valid time in response
-      if (response == ZCL_STATUS_SUCCESS && ! time)
-      {
-         #ifdef ZCL_TIME_VERBOSE
-            printf( "%s: response did not contain a valid time\n",
-               __FUNCTION__);
-         #endif
-         response = ZCL_STATUS_FAILURE;
-      }
+        return zcl_default_response(&zcl, response);
+    }
 
-      if (response == ZCL_STATUS_SUCCESS)
-      {
-         #ifdef ZCL_TIME_VERBOSE
-            printf( "%s: the time is %" PRIu32 "\n", __FUNCTION__, time);
-         #endif
-
-         // only set the clock if the response has a valid time
-         if (time != ZCL_UTCTIME_INVALID && (time_status &
-            (ZCL_TIME_STATUS_MASTER | ZCL_TIME_STATUS_SYNCHRONIZED)) != 0)
-         {
-            zcl_time_time = time;
-            _zcl_time_time_set( NULL, NULL);
-
-            // set Synchronized bit of our TimeStatus
-            zcl_time_timestatus |= ZCL_TIME_STATUS_SYNCHRONIZED;
-         }
-      }
-
-      return zcl_default_response( &zcl, response);
-   }
-
-   // command not handled by this function, try general command handler
-   return zcl_general_command( envelope, context);
+    // command not handled by this function, try general command handler
+    return zcl_general_command(envelope, context);
 }
 
 /*** BeginHeader zcl_time_find_servers */
@@ -424,43 +374,34 @@ int zcl_time_client( const wpan_envelope_t FAR *envelope, void FAR *context)
    @retval  -EINVAL  Couldn't find a Time Cluster Client with \p profile_id
                      in the endpoint table of \p dev.
 */
-int zcl_time_find_servers( wpan_dev_t *dev, uint16_t profile_id)
+int zcl_time_find_servers(wpan_dev_t* dev, uint16_t profile_id)
 {
-   // Might as well keep this const -- fewer bytes to have a const table than
-   // to have code to build it in RAM.  If not const, still needs const table
-   // to use for initializing a list in RAM.
-   static const uint16_t clusters[] =
-                              { ZCL_CLUST_TIME, WPAN_CLUSTER_END_OF_LIST };
+    // Might as well keep this const -- fewer bytes to have a const table than
+    // to have code to build it in RAM.  If not const, still needs const table
+    // to use for initializing a list in RAM.
+    static const uint16_t clusters[] = {ZCL_CLUST_TIME, WPAN_CLUSTER_END_OF_LIST};
 
-   // These structures are static since they must persist after this function
-   // ends.  They're used as the context for a callback, and the function that
-   // generages a ZCL Read Attributes Request from the ZDO Match Descriptor
-   // response needs the contents of this structure.
-   static const uint16_t attributes[] =
-      {
-         ZCL_TIME_ATTR_TIME,
-         ZCL_TIME_ATTR_TIME_STATUS,
-         ZCL_ATTRIBUTE_END_OF_LIST
-      };
-   // This structure can't be const, since we fill in the endpoint from the
-   // device's endpoint table.
-   static zcl_client_read_t client_read =
-      {
-         NULL,             // fill in with endpoint passed to function
-         ZCL_MFG_NONE,     // part of ZCL, not a manufacturer-specific cluster
-         ZCL_CLUST_TIME,   // cluster ID
-         attributes        // attributes to request
-      };
+    // These structures are static since they must persist after this function
+    // ends.  They're used as the context for a callback, and the function that
+    // generages a ZCL Read Attributes Request from the ZDO Match Descriptor
+    // response needs the contents of this structure.
+    static const uint16_t attributes[] = {ZCL_TIME_ATTR_TIME, ZCL_TIME_ATTR_TIME_STATUS, ZCL_ATTRIBUTE_END_OF_LIST};
+    // This structure can't be const, since we fill in the endpoint from the
+    // device's endpoint table.
+    static zcl_client_read_t client_read = {
+        NULL,           // fill in with endpoint passed to function
+        ZCL_MFG_NONE,   // part of ZCL, not a manufacturer-specific cluster
+        ZCL_CLUST_TIME, // cluster ID
+        attributes      // attributes to request
+    };
 
-   // Find a Time Cluster Client with the correct profile ID
-   client_read.ep = wpan_endpoint_of_cluster( dev, profile_id,
-            ZCL_CLUST_TIME, WPAN_CLUST_FLAG_CLIENT);
-   if (client_read.ep == NULL)
-   {
-      return -EINVAL;
-   }
+    // Find a Time Cluster Client with the correct profile ID
+    client_read.ep = wpan_endpoint_of_cluster(dev, profile_id, ZCL_CLUST_TIME, WPAN_CLUST_FLAG_CLIENT);
+    if (client_read.ep == NULL) {
+        return -EINVAL;
+    }
 
-   return zcl_find_and_read_attributes( dev, clusters, &client_read);
+    return zcl_find_and_read_attributes(dev, clusters, &client_read);
 }
 
 ///@}

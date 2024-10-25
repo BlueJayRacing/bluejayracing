@@ -1,8 +1,8 @@
-#include <stdio.h>
+#include <driver/gpio.h>
+#include <driver/spi_master.h>
 #include <esp_err.h>
 #include <esp_log.h>
-#include <driver/spi_master.h>
-#include <driver/gpio.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "ads1120.h"
@@ -11,13 +11,13 @@ gpio_num_t ADS1120_CS_PIN;
 gpio_num_t ADS1120_DRDY_PIN;
 spi_device_handle_t spi_dev;
 
-#define ADS_SPI_BUS SPI2_HOST
-#define ADS_SPI_LOCK_TIMEOUT 10
-#define ADS_SPI_CLOCK_SPEED_HZ 1 * 1000 * 1000 // Clock out at 1 MHz
-#define ADS_SPI_MODE 1
-#define ADS_CS_EN_PRE_WAIT_CYCLES 2
+#define ADS_SPI_BUS                SPI2_HOST
+#define ADS_SPI_LOCK_TIMEOUT       10
+#define ADS_SPI_CLOCK_SPEED_HZ     1 * 1000 * 1000 // Clock out at 1 MHz
+#define ADS_SPI_MODE               1
+#define ADS_CS_EN_PRE_WAIT_CYCLES  2
 #define ADS_CS_EN_POST_WAIT_CYCLES 0
-#define ADS_SPI_INPUT_DELAY_NS 0
+#define ADS_SPI_INPUT_DELAY_NS     0
 
 esp_err_t ads1120_send_command(uint8_t command)
 {
@@ -25,9 +25,9 @@ esp_err_t ads1120_send_command(uint8_t command)
     spi_transaction_t t;
     memset(&t, 0, sizeof(spi_transaction_t));
 
-    t.flags = SPI_TRANS_USE_TXDATA;
+    t.flags      = SPI_TRANS_USE_TXDATA;
     t.tx_data[0] = command;
-    t.length = 1 * 8;
+    t.length     = 1 * 8;
 
     ret = spi_device_polling_transmit(spi_dev, &t); // Transmit!
     return ret;
@@ -40,28 +40,28 @@ esp_err_t ads1120_write_reg(uint8_t address, uint8_t value)
     spi_transaction_t t;
     memset(&t, 0, sizeof(spi_transaction_t));
 
-    t.flags = SPI_TRANS_USE_TXDATA;
+    t.flags      = SPI_TRANS_USE_TXDATA;
     t.tx_data[0] = (CMD_WREG | (address << 2));
     t.tx_data[1] = value;
-    t.length = 2 * 8; // 2 bytes
+    t.length     = 2 * 8; // 2 bytes
 
     ret = spi_device_polling_transmit(spi_dev, &t); // Transmit!
     return ret;
 }
 
-esp_err_t ads1120_read_reg(uint8_t address, uint8_t *data_ptr)
+esp_err_t ads1120_read_reg(uint8_t address, uint8_t* data_ptr)
 {
     esp_err_t ret;
     spi_transaction_t t;
     memset(&t, 0, sizeof(spi_transaction_t));
 
-    t.flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA;
-    t.length = 2 * 8;   // 2 bytes
-    t.rxlength = 2 * 8; // 2 bytes
+    t.flags      = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA;
+    t.length     = 2 * 8; // 2 bytes
+    t.rxlength   = 2 * 8; // 2 bytes
     t.tx_data[0] = (CMD_RREG | (address << 2));
     t.tx_data[1] = SPI_MASTER_DUMMY;
 
-    ret = spi_device_polling_transmit(spi_dev, &t); // Transmit!
+    ret       = spi_device_polling_transmit(spi_dev, &t); // Transmit!
     *data_ptr = t.rx_data[1];
     return ret;
 }
@@ -69,21 +69,21 @@ esp_err_t ads1120_read_reg(uint8_t address, uint8_t *data_ptr)
 esp_err_t ads1120_spi_init(gpio_num_t cs_pin, gpio_num_t drdy_pin)
 {
     // Set pins up
-    ADS1120_CS_PIN = cs_pin;
+    ADS1120_CS_PIN   = cs_pin;
     ADS1120_DRDY_PIN = drdy_pin;
 
     gpio_set_direction((gpio_num_t)ADS1120_CS_PIN, GPIO_MODE_OUTPUT);
     gpio_set_direction((gpio_num_t)ADS1120_DRDY_PIN, GPIO_MODE_INPUT);
 
     spi_device_interface_config_t devcfg = {
-        .mode = ADS_SPI_MODE,
-        .cs_ena_pretrans = ADS_CS_EN_PRE_WAIT_CYCLES,
+        .mode             = ADS_SPI_MODE,
+        .cs_ena_pretrans  = ADS_CS_EN_PRE_WAIT_CYCLES,
         .cs_ena_posttrans = ADS_CS_EN_POST_WAIT_CYCLES,
-        .clock_speed_hz = ADS_SPI_CLOCK_SPEED_HZ,
-        .input_delay_ns = ADS_SPI_INPUT_DELAY_NS,
-        .spics_io_num = ADS1120_CS_PIN, // CS pin
-        .flags = 0,
-        .queue_size = 1,
+        .clock_speed_hz   = ADS_SPI_CLOCK_SPEED_HZ,
+        .input_delay_ns   = ADS_SPI_INPUT_DELAY_NS,
+        .spics_io_num     = ADS1120_CS_PIN, // CS pin
+        .flags            = 0,
+        .queue_size       = 1,
     };
 
     spi_bus_add_device(ADS_SPI_BUS, &devcfg, &spi_dev);
@@ -94,12 +94,9 @@ esp_err_t ads1120_spi_init(gpio_num_t cs_pin, gpio_num_t drdy_pin)
     return ads1120_start_sync(); // Send start/sync for continuous conversion mode
 }
 
-bool ads1120_is_data_ready()
-{
-    return !gpio_get_level(ADS1120_DRDY_PIN);
-}
+bool ads1120_is_data_ready() { return !gpio_get_level(ADS1120_DRDY_PIN); }
 
-esp_err_t ads1120_read_adc(uint16_t *data_ptr)
+esp_err_t ads1120_read_adc(uint16_t* data_ptr)
 {
     esp_err_t ret;
     spi_transaction_t t;
@@ -108,10 +105,10 @@ esp_err_t ads1120_read_adc(uint16_t *data_ptr)
     t.flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA;
     memset(t.tx_data, SPI_MASTER_DUMMY, 2);
 
-    t.length = 2 * 8;   // 2 bytes
+    t.length   = 2 * 8; // 2 bytes
     t.rxlength = 2 * 8; // 2 bytes
 
-    ret = spi_device_polling_transmit(spi_dev, &t); // Transmit!
+    ret       = spi_device_polling_transmit(spi_dev, &t); // Transmit!
     *data_ptr = t.rx_data[0];
     *data_ptr = (*data_ptr << 8) | t.rx_data[1];
     return ret;
@@ -160,8 +157,7 @@ esp_err_t ads1120_set_mult(uint8_t value)
     | 0X0E  |   SHORTED   |
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x0E)
-    {
+    if (value > 0x0E) {
         value = 0x00;
     }
     value = value << 4; // Shift to match with mask
@@ -172,8 +168,7 @@ esp_err_t ads1120_set_gain(uint8_t gain)
 {
     /* Sets ADC gain. Possible values are 1, 2, 4, 8, 16, 32, 64, 128. */
     uint8_t value = 0x00;
-    switch (gain)
-    {
+    switch (gain) {
     case 1:
         value = 0x00;
         break;
@@ -219,8 +214,7 @@ esp_err_t ads1120_set_data_rate(uint8_t value)
     /* Sets the data rate for the ADC. See table 18 in datasheet for datarates
        in various operating modes. */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x07)
-    {
+    if (value > 0x07) {
         value = 0x00;
     }
     value = value << 5; // Shift to match with mask
@@ -235,8 +229,7 @@ esp_err_t ads1120_set_op_mode(uint8_t value)
        2 - Turbo mode
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x02)
-    {
+    if (value > 0x02) {
         value = 0x00;
     }
     value = value << 3; // Shift to match with mask
@@ -250,8 +243,7 @@ esp_err_t ads1120_set_conv_mode(uint8_t value)
        1 - continuous conversion mode
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x01)
-    {
+    if (value > 0x01) {
         value = 0x00;
     }
     value = value << 2; // Shift to match with mask
@@ -265,8 +257,7 @@ esp_err_t ads1120_set_temp_mode(uint8_t value)
        1 - Enables temperature sensor
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x01)
-    {
+    if (value > 0x01) {
         value = 0x00;
     }
     value = value << 1; // Shift to match with mask
@@ -288,8 +279,7 @@ esp_err_t ads1120_set_volt_ref(uint8_t value)
        3 - Use analog supply as reference
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x03)
-    {
+    if (value > 0x03) {
         value = 0x00;
     }
     value = value << 6; // Shift to match with mask
@@ -305,8 +295,7 @@ esp_err_t ads1120_set_fir(uint8_t value)
        3 - 60 Hz rejection
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x03)
-    {
+    if (value > 0x03) {
         value = 0x00;
     }
     value = value << 4; // Shift to match with mask
@@ -321,8 +310,7 @@ esp_err_t ads1120_set_power_switch(uint8_t value)
            ads1120_power_down command is issues.
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x01)
-    {
+    if (value > 0x01) {
         value = 0x00;
     }
     value = value << 3; // Shift to match with mask
@@ -342,8 +330,7 @@ esp_err_t ads1120_set_idac_current(uint8_t value)
        7 - 1500 uA
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x07)
-    {
+    if (value > 0x07) {
         value = 0x00;
     }
     return ads1120_write_reg_masked(value, REG_MASK_IDAC_CURRENT, CONFIG_REG2_ADDRESS);
@@ -361,8 +348,7 @@ esp_err_t ads1120_set_idac1_rout(uint8_t value)
        6 - REFN0
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x06)
-    {
+    if (value > 0x06) {
         value = 0x00;
     }
     value = value << 5; // Shift to match with mask
@@ -381,8 +367,7 @@ esp_err_t ads1120_set_idac2_rout(uint8_t value)
        6 - REFN0
     */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x06)
-    {
+    if (value > 0x06) {
         value = 0x00;
     }
     value = value << 2; // Shift to match with mask
@@ -396,30 +381,17 @@ esp_err_t ads1120_set_drdy_mode(uint8_t value)
        1 - Data ready indicated on DOUT/DRDY and DRDY
    */
     // Make sure the value is in the valid range. Otherwise set to 0x00
-    if (value > 0x01)
-    {
+    if (value > 0x01) {
         value = 0x00;
     }
     value = value << 1; // Shift to match with mask
     return ads1120_write_reg_masked(value, REG_MASK_DRDY_MODE, CONFIG_REG3_ADDRESS);
 }
 
-esp_err_t ads1120_reset()
-{
-    return ads1120_send_command(CMD_RESET);
-}
+esp_err_t ads1120_reset() { return ads1120_send_command(CMD_RESET); }
 
-esp_err_t ads1120_start_sync()
-{
-    return ads1120_send_command(CMD_START_SYNC);
-}
+esp_err_t ads1120_start_sync() { return ads1120_send_command(CMD_START_SYNC); }
 
-esp_err_t ads1120_power_down()
-{
-    return ads1120_send_command(CMD_PWRDWN);
-}
+esp_err_t ads1120_power_down() { return ads1120_send_command(CMD_PWRDWN); }
 
-esp_err_t ads1120_rdata()
-{
-    return ads1120_send_command(CMD_RDATA);
-}
+esp_err_t ads1120_rdata() { return ads1120_send_command(CMD_RDATA); }

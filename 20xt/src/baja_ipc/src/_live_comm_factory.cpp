@@ -3,10 +3,8 @@
 
 void LiveCommFactory::add_observation(const Observation& new_data)
 {
-  Observation* buffer = this->live_comm.add_observations();
-  buffer->CopyFrom(new_data);
+    Observation* buffer = this->live_comm.add_observations();
+    buffer->CopyFrom(new_data);
 }
 
-std::string LiveCommFactory::get_serialized_live_comm() {
-  return this->live_comm.SerializeAsString();
-}
+std::string LiveCommFactory::get_serialized_live_comm() { return this->live_comm.SerializeAsString(); }

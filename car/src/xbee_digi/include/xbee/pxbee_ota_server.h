@@ -41,8 +41,7 @@ XBEE_BEGIN_DECLS
 
    @see wpan_aps_handler_fn
 */
-int pxbee_ota_server_cmd( const wpan_envelope_t FAR *envelope,
-   void FAR *context);
+int pxbee_ota_server_cmd(const wpan_envelope_t FAR* envelope, void FAR* context);
 
 /**
    @brief
@@ -69,8 +68,7 @@ int pxbee_ota_server_cmd( const wpan_envelope_t FAR *envelope,
    @retval  !NULL respond to request with error message
 
 */
-const char *xbee_update_firmware_ota( const wpan_envelope_t FAR *envelope,
-   void FAR *context);
+const char* xbee_update_firmware_ota(const wpan_envelope_t FAR* envelope, void FAR* context);
 
 /**
    @brief
@@ -78,17 +76,19 @@ const char *xbee_update_firmware_ota( const wpan_envelope_t FAR *envelope,
 
    @param[in]  flag  set to WPAN_CLUST_FLAG_NONE or WPAN_CLUST_FLAG_ENCRYPT
 */
-#define PXBEE_OTA_CMD_SERVER_CLUST_ENTRY(flag)                       \
-   {  DIGI_CLUST_PROG_XBEE_OTA_UPD, pxbee_ota_server_cmd, NULL,         \
-      (flag) | WPAN_CLUST_FLAG_SERVER | WPAN_CLUST_FLAG_NOT_ZCL }
+#define PXBEE_OTA_CMD_SERVER_CLUST_ENTRY(flag)                                                                         \
+    {                                                                                                                  \
+        DIGI_CLUST_PROG_XBEE_OTA_UPD, pxbee_ota_server_cmd, NULL,                                                      \
+            (flag) | WPAN_CLUST_FLAG_SERVER | WPAN_CLUST_FLAG_NOT_ZCL                                                  \
+    }
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-   #use "pxbee_ota_server.c"
+#use "pxbee_ota_server.c"
 #endif
 
-#endif      // PXBEE_OTA_SERVER_H defined
+#endif // PXBEE_OTA_SERVER_H defined
 
 ///@}

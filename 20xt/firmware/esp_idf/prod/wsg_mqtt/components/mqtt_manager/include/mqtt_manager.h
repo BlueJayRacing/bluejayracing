@@ -10,23 +10,20 @@ extern "C" {
 
 #include "stdbool.h"
 
-#define MQTT_MESSAGE_LENGTH             200
+#define MQTT_MESSAGE_LENGTH 200
 
-typedef struct __attribute__((packed)) mqtt_data
-{
+typedef struct __attribute__((packed)) mqtt_data {
     uint32_t data_diff_micro;
     uint16_t data_point;
 } mqtt_data_t;
 
-typedef struct __attribute__((packed)) mqtt_message
-{
+typedef struct __attribute__((packed)) mqtt_message {
     uint64_t start_micro;
     uint8_t mac_address[6];
     mqtt_data_t data[MQTT_MESSAGE_LENGTH];
 } mqtt_message_t;
 
-typedef struct mqtt_time
-{
+typedef struct mqtt_time {
     uint64_t pi_time_micro;
     uint64_t esp_time_micro;
 } mqtt_time_t;

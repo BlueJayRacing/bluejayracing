@@ -4,20 +4,21 @@
 #include "libgpsmm.h"
 
 // Unsure why this header was included
-//#include "../../communication/uart.hpp"
+// #include "../../communication/uart.hpp"
 
 #include "../interfaces/sensor_interface.hpp"
 #include "MTK3339.hpp"
 
-class GPS: public SensorInterface {
-public:
-  GPS();
-  ~GPS();
-  
-  void reset() override;
-  std::vector<double> read() override;
-private:
-  gpsmm gps_rec;
+class GPS : public SensorInterface {
+  public:
+    GPS();
+    ~GPS();
+
+    void reset() override;
+    std::vector<double> read() override;
+
+  private:
+    gpsmm gps_rec;
 };
 
 #endif

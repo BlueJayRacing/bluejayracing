@@ -11,26 +11,23 @@
  */
 
 /*** BeginHeader */
-#include <stddef.h>
 #include "xbee/platform.h"
+#include <stddef.h>
 /*** EndHeader */
 
 /*** BeginHeader memcheck */
 /*** EndHeader */
 // documented in xbee/platform.h
-int memcheck( const void FAR *src, int ch, size_t length)
+int memcheck(const void FAR* src, int ch, size_t length)
 {
-    const uint8_t FAR *s;
+    const uint8_t FAR* s;
     uint8_t c = (ch & 0xFF);
 
-    for (s = src; length--; ++s)
-    {
-        if (*s != c)
-        {
+    for (s = src; length--; ++s) {
+        if (*s != c) {
             return (*s > c) ? 1 : -1;
         }
     }
 
     return 0;
 }
-

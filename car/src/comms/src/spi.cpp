@@ -1,14 +1,14 @@
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <linux/types.h>
-#include <linux/spi/spidev.h>
-#include <iostream>
-#include <unistd.h>
-#include <stdlib.h>
 #include <cstring>
+#include <fcntl.h>
+#include <iostream>
+#include <linux/spi/spidev.h>
+#include <linux/types.h>
+#include <stdlib.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 // #include <pigpio.h>
 
-//Ioctls
+// Ioctls
 
 // uint8_t spi_read(int spi_handle, uint8_t reg) {
 //   int status;
@@ -43,7 +43,6 @@
 //   struct spi_ioc_transfer xfer;
 // 	memset(&xfer, 0, sizeof(xfer));
 //   uint8_t	outbuf[3];
-	
 
 // 	memset(&outbuf, 0, sizeof outbuf);
 
@@ -66,12 +65,7 @@
 //   return 0;
 // }
 
-
-
-
-
-
-//Synchronous
+// Synchronous
 
 // uint8_t spi_read(int spi_handle, unsigned char reg)
 // {

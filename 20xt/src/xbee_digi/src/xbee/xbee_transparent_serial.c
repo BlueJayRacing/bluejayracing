@@ -29,27 +29,25 @@
 /*** BeginHeader xbee_transparent_serial */
 /*** EndHeader */
 // documented in xbee/transparent_serial.h
-int xbee_transparent_serial( wpan_envelope_t *envelope)
+int xbee_transparent_serial(wpan_envelope_t* envelope)
 {
-   // fill in rest of envelope
-   envelope->profile_id = WPAN_PROFILE_DIGI;
-   envelope->source_endpoint = envelope->dest_endpoint
-                                                = WPAN_ENDPOINT_DIGI_DATA;
-   envelope->cluster_id = DIGI_CLUST_SERIAL;
+    // fill in rest of envelope
+    envelope->profile_id      = WPAN_PROFILE_DIGI;
+    envelope->source_endpoint = envelope->dest_endpoint = WPAN_ENDPOINT_DIGI_DATA;
+    envelope->cluster_id                                = DIGI_CLUST_SERIAL;
 
-   return wpan_envelope_send( envelope);
+    return wpan_envelope_send(envelope);
 }
 
 /*** BeginHeader xbee_transparent_serial_str */
 /*** EndHeader */
 // documented in xbee/transparent_serial.h
-int xbee_transparent_serial_str( wpan_envelope_t *envelope,
-                                                   const char FAR *data)
+int xbee_transparent_serial_str(wpan_envelope_t* envelope, const char FAR* data)
 {
-   envelope->payload = data;
-   envelope->length = strlen( data);
+    envelope->payload = data;
+    envelope->length  = strlen(data);
 
-   return xbee_transparent_serial( envelope);
+    return xbee_transparent_serial(envelope);
 }
 
 ///@}

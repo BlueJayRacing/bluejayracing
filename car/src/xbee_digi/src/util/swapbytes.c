@@ -30,12 +30,10 @@
    @param[in]  value value to swap
    @return     new 32-bit value with opposite endianness of \a value
 */
-uint32_t swap32( uint32_t value)
+uint32_t swap32(uint32_t value)
 {
-   return  (value & 0x000000FF) << 24
-         | (value & 0x0000FF00) << 8
-         | (value & 0x00FF0000) >> 8
-         | (value & 0xFF000000) >> 24;
+    return (value & 0x000000FF) << 24 | (value & 0x0000FF00) << 8 | (value & 0x00FF0000) >> 8 |
+           (value & 0xFF000000) >> 24;
 }
 
 /**
@@ -44,10 +42,7 @@ uint32_t swap32( uint32_t value)
    @param[in]  value value to swap
    @return     new 16-bit value with opposite endianness of \a value
 */
-uint16_t swap16( uint16_t value)
-{
-   return ((value & 0x00FF) << 8) | (value >> 8);
-}
+uint16_t swap16(uint16_t value) { return ((value & 0x00FF) << 8) | (value >> 8); }
 
 #endif /* HAVE_SWAP_FUNCS */
 

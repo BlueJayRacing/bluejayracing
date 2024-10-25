@@ -1,17 +1,18 @@
 // writer_driver.hpp
 #pragma once
 
-#include <rclcpp/rclcpp.hpp>
 #include <baja_msgs/msg/observation.hpp>
 #include <inertial_sense_ros_humble_msgs/msg/didins4.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-namespace writer_driver {
+namespace writer_driver
+{
 
 class WriterDriver : public rclcpp::Node {
-public:
+  public:
     WriterDriver();
 
-private:
+  private:
     void observation_callback(const baja_msgs::msg::Observation::SharedPtr msg);
     void log_gps(const baja_msgs::msg::Observation& observation);
     void log_localization(const baja_msgs::msg::Observation& observation);

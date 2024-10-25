@@ -37,160 +37,137 @@
 
 #include <serial.h>
 
-
 using boost::asio::serial_port_base;
 
-Serial::Serial(std::string port, int baud_rate) :
-  io_service_(),
-  write_in_progress_(false),
-  serial_port_(io_service_),
-  port_(port),
-  baud_rate_(baud_rate)
+Serial::Serial(std::string port, int baud_rate)
+    : io_service_(), write_in_progress_(false), serial_port_(io_service_), port_(port), baud_rate_(baud_rate)
 {
-  listener_ = NULL;
+    listener_ = NULL;
 }
 
-Serial::~Serial()
-{
-}
+Serial::~Serial() {}
 
 void Serial::open()
 {
-  // open the port
-  try
-  {
-    serial_port_.open(port_);
-    serial_port_.set_option(serial_port_base::baud_rate(baud_rate_));
-    serial_port_.set_option(serial_port_base::character_size(8));
-    serial_port_.set_option(serial_port_base::parity(serial_port_base::parity::none));
-    serial_port_.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
-    serial_port_.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
-  }
-  catch (boost::system::system_error e)
-  {
-    throw SerialException(e);
-  }
+    // open the port
+    try {
+        serial_port_.open(port_);
+        serial_port_.set_option(serial_port_base::baud_rate(baud_rate_));
+        serial_port_.set_option(serial_port_base::character_size(8));
+        serial_port_.set_option(serial_port_base::parity(serial_port_base::parity::none));
+        serial_port_.set_option(serial_port_base::stop_bits(serial_port_base::stop_bits::one));
+        serial_port_.set_option(serial_port_base::flow_control(serial_port_base::flow_control::none));
+    } catch (boost::system::system_error e) {
+        throw SerialException(e);
+    }
 
-  // start reading from the port
-  async_read();
-  io_thread_ = boost::thread(boost::bind(&boost::asio::io_service::run, &this->io_service_));
+    // start reading from the port
+    async_read();
+    io_thread_ = boost::thread(boost::bind(&boost::asio::io_service::run, &this->io_service_));
 }
 
 void Serial::close()
 {
-  mutex_lock lock(mutex_);
+    mutex_lock lock(mutex_);
 
-  io_service_.stop();
-  serial_port_.close();
+    io_service_.stop();
+    serial_port_.close();
 
-  if (io_thread_.joinable())
-  {
-    io_thread_.join();
-  }
+    if (io_thread_.joinable()) {
+        io_thread_.join();
+    }
 }
 
-void Serial::register_listener(SerialListener * const listener)
+void Serial::register_listener(SerialListener* const listener)
 {
-  if (listener == NULL || listener_ != NULL)
-    return;
-  else
-    listener_ = listener;
+    if (listener == NULL || listener_ != NULL)
+        return;
+    else
+        listener_ = listener;
 }
 
 void Serial::async_read()
 {
-  if (!serial_port_.is_open()) return;
+    if (!serial_port_.is_open())
+        return;
 
-  serial_port_.async_read_some(
-        boost::asio::buffer(read_buf_raw_, BUFFER_SIZE),
-        boost::bind(
-          &Serial::async_read_end,
-          this,
-          boost::asio::placeholders::error,
-          boost::asio::placeholders::bytes_transferred));
+    serial_port_.async_read_some(boost::asio::buffer(read_buf_raw_, BUFFER_SIZE),
+                                 boost::bind(&Serial::async_read_end, this, boost::asio::placeholders::error,
+                                             boost::asio::placeholders::bytes_transferred));
 }
 
-void Serial::async_read_end(const boost::system::error_code &error, size_t bytes_transferred)
+void Serial::async_read_end(const boost::system::error_code& error, size_t bytes_transferred)
 {
-  if (!serial_port_.is_open()) return;
+    if (!serial_port_.is_open())
+        return;
 
-  if (error)
-  {
-    close();
-    return;
-  }
+    if (error) {
+        close();
+        return;
+    }
 
-  listener_->handle_bytes(read_buf_raw_, bytes_transferred);
+    listener_->handle_bytes(read_buf_raw_, bytes_transferred);
 
-  async_read();
+    async_read();
 }
 
 void Serial::write(const uint8_t* bytes, uint8_t len)
 {
-  assert(len <= BUFFER_SIZE); //! \todo Do something less catastrophic here
+    assert(len <= BUFFER_SIZE); //! \todo Do something less catastrophic here
 
-  WriteBuffer *buffer = new WriteBuffer();
-  buffer->len = len;
-  for (int i = 0; i < len; i++)
-  {
-    buffer->data[i] = bytes[i];
-  }
+    WriteBuffer* buffer = new WriteBuffer();
+    buffer->len         = len;
+    for (int i = 0; i < len; i++) {
+        buffer->data[i] = bytes[i];
+    }
 
-  {
-    mutex_lock lock(mutex_);
-    write_queue_.push_back(buffer);
-  }
+    {
+        mutex_lock lock(mutex_);
+        write_queue_.push_back(buffer);
+    }
 
-  async_write(true);
+    async_write(true);
 }
 
 void Serial::async_write(bool check_write_state)
 {
-  if (check_write_state && write_in_progress_)
-    return;
+    if (check_write_state && write_in_progress_)
+        return;
 
-  mutex_lock lock(mutex_);
-  if (write_queue_.empty())
-    return;
+    mutex_lock lock(mutex_);
+    if (write_queue_.empty())
+        return;
 
-  write_in_progress_ = true;
-  WriteBuffer *buffer = write_queue_.front();
-  serial_port_.async_write_some(
-        boost::asio::buffer(buffer->dpos(), buffer->nbytes()),
-        boost::bind(
-          &Serial::async_write_end,
-          this,
-          boost::asio::placeholders::error,
-          boost::asio::placeholders::bytes_transferred));
-
+    write_in_progress_  = true;
+    WriteBuffer* buffer = write_queue_.front();
+    serial_port_.async_write_some(boost::asio::buffer(buffer->dpos(), buffer->nbytes()),
+                                  boost::bind(&Serial::async_write_end, this, boost::asio::placeholders::error,
+                                              boost::asio::placeholders::bytes_transferred));
 }
 
-void Serial::async_write_end(const boost::system::error_code &error, std::size_t bytes_transferred)
+void Serial::async_write_end(const boost::system::error_code& error, std::size_t bytes_transferred)
 {
-  if (error)
-  {
-    std::cerr << error.message() << std::endl;
-    close();
-    return;
-  }
+    if (error) {
+        std::cerr << error.message() << std::endl;
+        close();
+        return;
+    }
 
-  mutex_lock lock(mutex_);
-  if (write_queue_.empty())
-  {
-    write_in_progress_ = false;
-    return;
-  }
+    mutex_lock lock(mutex_);
+    if (write_queue_.empty()) {
+        write_in_progress_ = false;
+        return;
+    }
 
-  WriteBuffer *buffer = write_queue_.front();
-  buffer->pos += bytes_transferred;
-  if (buffer->nbytes() == 0)
-  {
-    write_queue_.pop_front();
-    delete buffer;
-  }
+    WriteBuffer* buffer = write_queue_.front();
+    buffer->pos += bytes_transferred;
+    if (buffer->nbytes() == 0) {
+        write_queue_.pop_front();
+        delete buffer;
+    }
 
-  if (write_queue_.empty())
-    write_in_progress_ = false;
-  else
-    async_write(false);
+    if (write_queue_.empty())
+        write_in_progress_ = false;
+    else
+        async_write(false);
 }

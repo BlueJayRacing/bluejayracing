@@ -17,9 +17,13 @@
 
 #include "zigbee/zcl.h"
 
-#define FAIL_IF(cond)  if (cond) { printf("FAIL: %s\n", #cond); ++failures; }
+#define FAIL_IF(cond)                                                                                                  \
+    if (cond) {                                                                                                        \
+        printf("FAIL: %s\n", #cond);                                                                                   \
+        ++failures;                                                                                                    \
+    }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     int failures = 0;
 

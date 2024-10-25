@@ -1,18 +1,19 @@
 #pragma once
 
-#include <rclcpp/rclcpp.hpp>
-#include <baja_msgs/msg/observation.hpp>
 #include <array>
-#include <deque>
+#include <baja_msgs/msg/observation.hpp>
 #include <chrono>
+#include <deque>
+#include <rclcpp/rclcpp.hpp>
 
-namespace car {
+namespace car
+{
 
 class AxleTorqueAggregator : public rclcpp::Node {
-public:
+  public:
     AxleTorqueAggregator(const std::string& name);
 
-private:
+  private:
     void observation_callback(const baja_msgs::msg::Observation::SharedPtr msg);
     void update_and_print_averages(const baja_msgs::msg::AnalogChannel& channel);
 
@@ -24,4 +25,4 @@ private:
     static constexpr std::chrono::seconds PRINT_INTERVAL{2};
 };
 
-}  // namespace car
+} // namespace car
