@@ -113,14 +113,15 @@ __nodebug void serial_bypass(void)
         (hl);
     read A's Rx pin jr z, .host_rx_zero.host_rx_one : ioi set _XBEE_DRIVE_TXD, (ix)jr.check_xbee_rx.host_rx_zero
         : ioi res _XBEE_DRIVE_TXD,
-        (ix)
+          (ix)
 
-            .check_xbee_rx : ioi bit _XBEE_DRIVE_RXD,
-        (ix)jr z, .xbee_rx_zero.xbee_rx_one : ioi set _HOST_DRIVE_TXD,
-        (hl)jr.check_host_cts.xbee_rx_zero : ioi res _HOST_DRIVE_TXD,
-        (hl)
+              .check_xbee_rx : ioi bit _XBEE_DRIVE_RXD,
+          (ix)jr z,
+          .xbee_rx_zero.xbee_rx_one : ioi set _HOST_DRIVE_TXD,
+          (hl)jr.check_host_cts.xbee_rx_zero : ioi res _HOST_DRIVE_TXD,
+          (hl)
 
-            .check_host_cts:;
+              .check_host_cts:;
     port A doesn 't have CTS/RTS, so we' ll just map Tx / Rx pins
                                                               .check_xbee_cts :
 
