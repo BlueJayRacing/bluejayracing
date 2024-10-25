@@ -22,18 +22,18 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "xbee/platform.h"          // may set WPAN_APS_VERBOSE macro
-#include "wpan/types.h"
 #include "wpan/aps.h"
-#include "zigbee/zdo.h"
+#include "wpan/types.h"
+#include "xbee/platform.h" // may set WPAN_APS_VERBOSE macro
 #include "zigbee/zcl.h"
+#include "zigbee/zdo.h"
 
 #ifndef __DC__
-   #define wpan_aps_debug
+#define wpan_aps_debug
 #elif defined WPAN_APS_DEBUG
-   #define wpan_aps_debug     __debug
+#define wpan_aps_debug __debug
 #else
-   #define wpan_aps_debug     __nodebug
+#define wpan_aps_debug __nodebug
 #endif
 /*** EndHeader */
 
@@ -58,27 +58,22 @@
 
    @see wpan_endpoint_get_next(), wpan_endpoint_match()
 */
-wpan_aps_debug
-const wpan_cluster_table_entry_t *wpan_cluster_match( uint16_t match,
-   uint8_t mask, const wpan_cluster_table_entry_t *entry)
+wpan_aps_debug const wpan_cluster_table_entry_t* wpan_cluster_match(uint16_t match, uint8_t mask,
+                                                                    const wpan_cluster_table_entry_t* entry)
 {
-   if (! entry)
-   {
-      return NULL;
-   }
+    if (!entry) {
+        return NULL;
+    }
 
-   while ( entry->cluster_id != WPAN_CLUSTER_END_OF_LIST)
-   {
-      if (entry->cluster_id == match && (mask & entry->flags))
-      {
-         // found a match
-         return entry;
-      }
-      ++entry;
-   }
-   return NULL;
+    while (entry->cluster_id != WPAN_CLUSTER_END_OF_LIST) {
+        if (entry->cluster_id == match && (mask & entry->flags)) {
+            // found a match
+            return entry;
+        }
+        ++entry;
+    }
+    return NULL;
 }
-
 
 /*** BeginHeader wpan_endpoint_get_next */
 /*** EndHeader */
@@ -101,40 +96,36 @@ const wpan_cluster_table_entry_t *wpan_cluster_match( uint16_t match,
 
    @see wpan_endpoint_match(), wpan_cluster_match()
 */
-wpan_aps_debug
-const wpan_endpoint_table_entry_t *wpan_endpoint_get_next( wpan_dev_t *dev,
-   const wpan_endpoint_table_entry_t *ep)
+wpan_aps_debug const wpan_endpoint_table_entry_t* wpan_endpoint_get_next(wpan_dev_t* dev,
+                                                                         const wpan_endpoint_table_entry_t* ep)
 {
-   if (dev == NULL)
-   {
-      return NULL;
-   }
+    if (dev == NULL) {
+        return NULL;
+    }
 
-   // If this endpoint has a custom function for walking the endpoint table,
-   // make use of it.
-   if (dev->endpoint_get_next)
-   {
-      return dev->endpoint_get_next( dev, ep);
-   }
+    // If this endpoint has a custom function for walking the endpoint table,
+    // make use of it.
+    if (dev->endpoint_get_next) {
+        return dev->endpoint_get_next(dev, ep);
+    }
 
-   if (ep == NULL)               // return first entry in table
-   {
-      return dev->endpoint_table;
-   }
+    if (ep == NULL) // return first entry in table
+    {
+        return dev->endpoint_table;
+    }
 
-   ++ep;                         // advance to next entry in table
-   if (ep->endpoint == WPAN_ENDPOINT_END_OF_LIST)
-   {
-      return NULL;               // reached end of table
-   }
+    ++ep; // advance to next entry in table
+    if (ep->endpoint == WPAN_ENDPOINT_END_OF_LIST) {
+        return NULL; // reached end of table
+    }
 
-   return ep;
+    return ep;
 }
 
 /*** BeginHeader wpan_endpoint_match */
 /*** EndHeader */
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DISABLE C5909    // Assignment in condition is OK
+#pragma MESSAGE DISABLE C5909 // Assignment in condition is OK
 #endif
 /**
    @brief
@@ -156,31 +147,26 @@ const wpan_endpoint_table_entry_t *wpan_endpoint_get_next( wpan_dev_t *dev,
    @see wpan_endpoint_of_cluster(), wpan_endpoint_get_next(),
          wpan_cluster_match(), wpan_endpoint_of_envelope()
 */
-wpan_aps_debug
-const wpan_endpoint_table_entry_t *wpan_endpoint_match( wpan_dev_t *dev,
-   uint8_t endpoint, uint16_t profile_id)
+wpan_aps_debug const wpan_endpoint_table_entry_t* wpan_endpoint_match(wpan_dev_t* dev, uint8_t endpoint,
+                                                                      uint16_t profile_id)
 {
-   const wpan_endpoint_table_entry_t *ep;
-   bool_t matchany;
+    const wpan_endpoint_table_entry_t* ep;
+    bool_t matchany;
 
-   // wpan_endpoint_get_next tests for NULL dev
+    // wpan_endpoint_get_next tests for NULL dev
 
-   matchany = (profile_id == WPAN_APS_PROFILE_ANY);
-   ep = NULL;
-   while ( (ep = wpan_endpoint_get_next( dev, ep)) != NULL)
-   {
-      if (endpoint == ep->endpoint &&
-         (matchany || profile_id == ep->profile_id))
-      {
-         return ep;
-      }
-   }
-   return NULL;
+    matchany = (profile_id == WPAN_APS_PROFILE_ANY);
+    ep       = NULL;
+    while ((ep = wpan_endpoint_get_next(dev, ep)) != NULL) {
+        if (endpoint == ep->endpoint && (matchany || profile_id == ep->profile_id)) {
+            return ep;
+        }
+    }
+    return NULL;
 }
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DEFAULT C5909    // restore C5909 (Assignment in condition)
+#pragma MESSAGE DEFAULT C5909 // restore C5909 (Assignment in condition)
 #endif
-
 
 /*** BeginHeader wpan_endpoint_of_envelope */
 /*** EndHeader */
@@ -199,22 +185,18 @@ const wpan_endpoint_table_entry_t *wpan_endpoint_match( wpan_dev_t *dev,
    @see wpan_endpoint_of_cluster(), wpan_endpoint_get_next(),
          wpan_cluster_match(), wpan_endpoint_match()
 */
-wpan_aps_debug
-const wpan_endpoint_table_entry_t
-*wpan_endpoint_of_envelope( const wpan_envelope_t *env)
+wpan_aps_debug const wpan_endpoint_table_entry_t* wpan_endpoint_of_envelope(const wpan_envelope_t* env)
 {
-   if (env == NULL)
-   {
-      return NULL;
-   }
-   return wpan_endpoint_match( env->dev, env->source_endpoint, env->profile_id);
+    if (env == NULL) {
+        return NULL;
+    }
+    return wpan_endpoint_match(env->dev, env->source_endpoint, env->profile_id);
 }
-
 
 /*** BeginHeader wpan_endpoint_of_cluster */
 /*** EndHeader */
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DISABLE C5909    // Assignment in condition is OK
+#pragma MESSAGE DISABLE C5909 // Assignment in condition is OK
 #endif
 /** @brief
    Walk a device's endpoint table looking for a matching profile ID
@@ -239,41 +221,36 @@ const wpan_endpoint_table_entry_t
 
    @see wpan_endpoint_match(), wpan_endpoint_get_next(), wpan_cluster_match()
 */
-wpan_aps_debug
-const wpan_endpoint_table_entry_t *wpan_endpoint_of_cluster( wpan_dev_t *dev,
-   uint16_t profile_id, uint16_t cluster_id, uint8_t mask)
+wpan_aps_debug const wpan_endpoint_table_entry_t* wpan_endpoint_of_cluster(wpan_dev_t* dev, uint16_t profile_id,
+                                                                           uint16_t cluster_id, uint8_t mask)
 {
-   const wpan_endpoint_table_entry_t *ep;
-   bool_t matchany;
+    const wpan_endpoint_table_entry_t* ep;
+    bool_t matchany;
 
-   // wpan_endpoint_get_next tests for NULL dev
+    // wpan_endpoint_get_next tests for NULL dev
 
-   matchany = (profile_id == WPAN_APS_PROFILE_ANY);
-   ep = NULL;
-   while ( (ep = wpan_endpoint_get_next( dev, ep)) != NULL)
-   {
-      if ((matchany || profile_id == ep->profile_id)
-         && wpan_cluster_match( cluster_id, mask, ep->cluster_table))
-      {
-         #ifdef WPAN_APS_VERBOSE
-            printf( "%s: ep 0x%02x matched profile 0x%04x, cluster 0x%04x, "
-               "mask 0x%02x\n", __FUNCTION__,
-               ep->endpoint, profile_id, cluster_id, mask);
-         #endif
-         return ep;
-      }
-   }
-   #ifdef WPAN_APS_VERBOSE
-      printf( "%s: no match for profile 0x%04x, cluster 0x%04x, "
-         "mask 0x%02x\n", __FUNCTION__,
-         profile_id, cluster_id, mask);
-   #endif
-   return NULL;
+    matchany = (profile_id == WPAN_APS_PROFILE_ANY);
+    ep       = NULL;
+    while ((ep = wpan_endpoint_get_next(dev, ep)) != NULL) {
+        if ((matchany || profile_id == ep->profile_id) && wpan_cluster_match(cluster_id, mask, ep->cluster_table)) {
+#ifdef WPAN_APS_VERBOSE
+            printf("%s: ep 0x%02x matched profile 0x%04x, cluster 0x%04x, "
+                   "mask 0x%02x\n",
+                   __FUNCTION__, ep->endpoint, profile_id, cluster_id, mask);
+#endif
+            return ep;
+        }
+    }
+#ifdef WPAN_APS_VERBOSE
+    printf("%s: no match for profile 0x%04x, cluster 0x%04x, "
+           "mask 0x%02x\n",
+           __FUNCTION__, profile_id, cluster_id, mask);
+#endif
+    return NULL;
 }
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DEFAULT C5909    // restore C5909 (Assignment in condition)
+#pragma MESSAGE DEFAULT C5909 // restore C5909 (Assignment in condition)
 #endif
-
 
 /*** BeginHeader wpan_conversation_register */
 /*** EndHeader */
@@ -295,47 +272,40 @@ const wpan_endpoint_table_entry_t *wpan_endpoint_of_cluster( wpan_dev_t *dev,
 
    @see wpan_endpoint_next_trans
 */
-wpan_aps_debug
-int wpan_conversation_register( wpan_ep_state_t FAR *state,
-   wpan_response_fn handler, const void FAR *context, uint16_t timeout)
+wpan_aps_debug int wpan_conversation_register(wpan_ep_state_t FAR* state, wpan_response_fn handler,
+                                              const void FAR* context, uint16_t timeout)
 {
-   wpan_conversation_t FAR *conversation;
-   uint_fast8_t i;
+    wpan_conversation_t FAR* conversation;
+    uint_fast8_t i;
 
-   if (! state)
-   {
-      return -EINVAL;
-   }
+    if (!state) {
+        return -EINVAL;
+    }
 
-   if (! handler)
-   {
-      // caller just wants the next transaction ID
-      return ++state->last_transaction;
-   }
+    if (!handler) {
+        // caller just wants the next transaction ID
+        return ++state->last_transaction;
+    }
 
-   conversation = state->conversations;
-   for (i = WPAN_MAX_CONVERSATIONS; i; ++conversation, --i)
-   {
-      if (conversation->handler == NULL)
-      {
-         // cast away the const -- allow const and non-const in conversation
-         conversation->context = (void FAR *)context;
-         conversation->handler = handler;
-         if (timeout != 0)
-         {
-            timeout += (uint16_t) xbee_seconds_timer();
-            if (timeout == 0)
-            {
-               // timeout of 0 is reserved for "never", so add an extra second
-               timeout = 1;
+    conversation = state->conversations;
+    for (i = WPAN_MAX_CONVERSATIONS; i; ++conversation, --i) {
+        if (conversation->handler == NULL) {
+            // cast away the const -- allow const and non-const in conversation
+            conversation->context = (void FAR*)context;
+            conversation->handler = handler;
+            if (timeout != 0) {
+                timeout += (uint16_t)xbee_seconds_timer();
+                if (timeout == 0) {
+                    // timeout of 0 is reserved for "never", so add an extra second
+                    timeout = 1;
+                }
             }
-         }
-         conversation->timeout = timeout;
-         return (conversation->transaction_id = ++state->last_transaction);
-      }
-   }
+            conversation->timeout = timeout;
+            return (conversation->transaction_id = ++state->last_transaction);
+        }
+    }
 
-   return -ENOSPC;
+    return -ENOSPC;
 }
 
 /*** BeginHeader wpan_conversation_delete */
@@ -345,17 +315,15 @@ int wpan_conversation_register( wpan_ep_state_t FAR *state,
 
    @param[in,out] conversation   conversation to delete
 */
-wpan_aps_debug
-void wpan_conversation_delete( wpan_conversation_t FAR *conversation)
+wpan_aps_debug void wpan_conversation_delete(wpan_conversation_t FAR* conversation)
 {
-   if (conversation != NULL)
-   {
-      _f_memset( conversation, 0, sizeof *conversation);
-   }
+    if (conversation != NULL) {
+        _f_memset(conversation, 0, sizeof *conversation);
+    }
 }
 
 /*** BeginHeader _wpan_endpoint_expire_conversations */
-void _wpan_endpoint_expire_conversations( wpan_ep_state_t FAR *state);
+void _wpan_endpoint_expire_conversations(wpan_ep_state_t FAR* state);
 /*** EndHeader */
 /**
    @internal @brief
@@ -364,41 +332,35 @@ void _wpan_endpoint_expire_conversations( wpan_ep_state_t FAR *state);
 
    @param[in]  state    endpoint state (from endpoint table)
 */
-wpan_aps_debug
-void _wpan_endpoint_expire_conversations( wpan_ep_state_t FAR *state)
+wpan_aps_debug void _wpan_endpoint_expire_conversations(wpan_ep_state_t FAR* state)
 {
-   wpan_conversation_t FAR *conversation;
-   uint_fast8_t i;
-   uint16_t now;
+    wpan_conversation_t FAR* conversation;
+    uint_fast8_t i;
+    uint16_t now;
 
-   if (state == NULL)
-   {
-      return;
-   }
+    if (state == NULL) {
+        return;
+    }
 
-   /*
-      Notes regarding timeout calculation:  We just store the lower 16 bits of
-      the xbee_seconds_timer() value of when we should timeout.  We can tell
-      whether we're before or after that time by subtracting the target time
-      from the curent time.  If the result as a signed integer is >= 0, we
-      have passed the selected timeout value.
-   */
+    /*
+       Notes regarding timeout calculation:  We just store the lower 16 bits of
+       the xbee_seconds_timer() value of when we should timeout.  We can tell
+       whether we're before or after that time by subtracting the target time
+       from the curent time.  If the result as a signed integer is >= 0, we
+       have passed the selected timeout value.
+    */
 
-   now = (uint16_t) xbee_seconds_timer();
-   conversation = state->conversations;
-   for (i = WPAN_MAX_CONVERSATIONS; i; ++conversation, --i)
-   {
-      if (conversation->handler != NULL
-         && conversation->timeout != 0
-         && (int16_t)(now - conversation->timeout) >= 0)
-      {
-         // send timeout to conversation's handler, ignore the response
-         conversation->handler( conversation, NULL);
-         wpan_conversation_delete( conversation);
-      }
-   }
+    now          = (uint16_t)xbee_seconds_timer();
+    conversation = state->conversations;
+    for (i = WPAN_MAX_CONVERSATIONS; i; ++conversation, --i) {
+        if (conversation->handler != NULL && conversation->timeout != 0 &&
+            (int16_t)(now - conversation->timeout) >= 0) {
+            // send timeout to conversation's handler, ignore the response
+            conversation->handler(conversation, NULL);
+            wpan_conversation_delete(conversation);
+        }
+    }
 }
-
 
 /*** BeginHeader wpan_conversation_response */
 /*** EndHeader */
@@ -423,61 +385,50 @@ void _wpan_endpoint_expire_conversations( wpan_ep_state_t FAR *state)
    @retval  !0       handler reported an error while processing response
 */
 
-wpan_aps_debug
-int wpan_conversation_response( wpan_ep_state_t FAR *state,
-   uint8_t transaction_id, const wpan_envelope_t FAR *envelope)
+wpan_aps_debug int wpan_conversation_response(wpan_ep_state_t FAR* state, uint8_t transaction_id,
+                                              const wpan_envelope_t FAR* envelope)
 {
-   wpan_conversation_t FAR *conversation;
-   uint_fast8_t i;
-   int            retval;
-   const wpan_endpoint_table_entry_t *ep;
+    wpan_conversation_t FAR* conversation;
+    uint_fast8_t i;
+    int retval;
+    const wpan_endpoint_table_entry_t* ep;
 
-   if (envelope == NULL)
-   {
-      return -EINVAL;
-   }
+    if (envelope == NULL) {
+        return -EINVAL;
+    }
 
-   if (state == NULL)
-   {
-      ep = wpan_endpoint_match( envelope->dev, envelope->dest_endpoint,
-                                             envelope->profile_id);
-      if (ep == NULL)
-      {
-         return -EINVAL;
-      }
+    if (state == NULL) {
+        ep = wpan_endpoint_match(envelope->dev, envelope->dest_endpoint, envelope->profile_id);
+        if (ep == NULL) {
+            return -EINVAL;
+        }
 
-      state = ep->ep_state;
-   }
+        state = ep->ep_state;
+    }
 
-   conversation = state->conversations;
-   for (i = WPAN_MAX_CONVERSATIONS; i; ++conversation, --i)
-   {
-      if (conversation->transaction_id == transaction_id)
-      {
-         #ifdef WPAN_APS_VERBOSE
-            printf( "%s: matched conversation %u (handler=%p)\n", __FUNCTION__,
-               WPAN_MAX_CONVERSATIONS - i, conversation->handler);
-         #endif
-         if (conversation->handler)
-         {
-            retval = conversation->handler( conversation, envelope);
-            if (retval == WPAN_CONVERSATION_END)
-            {
-               wpan_conversation_delete( conversation);
+    conversation = state->conversations;
+    for (i = WPAN_MAX_CONVERSATIONS; i; ++conversation, --i) {
+        if (conversation->transaction_id == transaction_id) {
+#ifdef WPAN_APS_VERBOSE
+            printf("%s: matched conversation %u (handler=%p)\n", __FUNCTION__, WPAN_MAX_CONVERSATIONS - i,
+                   conversation->handler);
+#endif
+            if (conversation->handler) {
+                retval = conversation->handler(conversation, envelope);
+                if (retval == WPAN_CONVERSATION_END) {
+                    wpan_conversation_delete(conversation);
+                }
+#ifdef WPAN_APS_VERBOSE
+                else if (retval != WPAN_CONVERSATION_CONTINUE) {
+                    printf("%s: invalid reponse %d from conversation handler\n", __FUNCTION__, retval);
+                }
+#endif
+                return (retval < 0) ? retval : 0;
             }
-            #ifdef WPAN_APS_VERBOSE
-               else if (retval != WPAN_CONVERSATION_CONTINUE)
-               {
-                  printf( "%s: invalid reponse %d from conversation handler\n",
-                     __FUNCTION__, retval);
-               }
-            #endif
-            return (retval < 0) ? retval : 0;
-         }
-      }
-   }
+        }
+    }
 
-   return -EINVAL;         // not found
+    return -EINVAL; // not found
 }
 
 /*** BeginHeader wpan_endpoint_next_trans */
@@ -489,14 +440,12 @@ int wpan_conversation_response( wpan_ep_state_t FAR *state,
 
    @retval  0-255 current transaction ID for endpoint
 */
-wpan_aps_debug
-uint8_t wpan_endpoint_next_trans( const wpan_endpoint_table_entry_t *ep)
+wpan_aps_debug uint8_t wpan_endpoint_next_trans(const wpan_endpoint_table_entry_t* ep)
 {
-   if (! ep || ! ep->ep_state)
-   {
-      return 0;
-   }
-   return ++(ep->ep_state->last_transaction);
+    if (!ep || !ep->ep_state) {
+        return 0;
+    }
+    return ++(ep->ep_state->last_transaction);
 }
 
 /*** BeginHeader wpan_envelope_dispatch */
@@ -519,82 +468,65 @@ uint8_t wpan_endpoint_next_trans( const wpan_endpoint_table_entry_t *ep)
    @retval  -ENOENT  no handler for this endpoint/cluster
    @retval  !0 error dispatching messages
 */
-wpan_aps_debug
-int _wpan_endpoint_dispatch( wpan_envelope_t *envelope,
-   const wpan_endpoint_table_entry_t *ep)
+wpan_aps_debug int _wpan_endpoint_dispatch(wpan_envelope_t* envelope, const wpan_endpoint_table_entry_t* ep)
 {
-   const wpan_cluster_table_entry_t    *clust;
+    const wpan_cluster_table_entry_t* clust;
 
-   #ifdef WPAN_APS_VERBOSE
-      printf( "%s: found entry for endpoint 0x%02x\n", __FUNCTION__,
-         envelope->dest_endpoint);
-   #endif
-   // Match either an input or an output cluster, since the ZigBee layer
-   // doesn't contain information on the direction of the frame.
-   clust = wpan_cluster_match( envelope->cluster_id, WPAN_CLUST_FLAG_INOUT,
-      ep->cluster_table);
-   if (clust)
-   {
-      // If ZCL cluster requires encryption, make sure frame was encrypted.
-      // (test for FLAG_ENCRYPT set and FLAG_NOT_ZCL not set).
-      if (!(envelope->options & WPAN_ENVELOPE_RX_APS_ENCRYPT)
-         && !(clust->flags & WPAN_CLUST_FLAG_NOT_ZCL))
-      {
-         // Send a failure response if we require encryption, or this
-         // is a unicast frame and we only accept unencrypted broadcasts.
-         if ((clust->flags & WPAN_CLUST_FLAG_ENCRYPT)
-            || ((clust->flags & WPAN_CLUST_FLAG_ENCRYPT_UNICAST)
-               && !(envelope->options & WPAN_ENVELOPE_BROADCAST_ADDR)))
-         {
-            #ifdef WPAN_APS_VERBOSE
-               printf( "%s: sending FAILURE for unencrypted APS frame\n",
-                  __FUNCTION__);
-            #endif
-            // send failure, we don't accept unencrypted broadcast frames
-            return zcl_invalid_cluster( envelope, NULL);
-         }
-      }
+#ifdef WPAN_APS_VERBOSE
+    printf("%s: found entry for endpoint 0x%02x\n", __FUNCTION__, envelope->dest_endpoint);
+#endif
+    // Match either an input or an output cluster, since the ZigBee layer
+    // doesn't contain information on the direction of the frame.
+    clust = wpan_cluster_match(envelope->cluster_id, WPAN_CLUST_FLAG_INOUT, ep->cluster_table);
+    if (clust) {
+        // If ZCL cluster requires encryption, make sure frame was encrypted.
+        // (test for FLAG_ENCRYPT set and FLAG_NOT_ZCL not set).
+        if (!(envelope->options & WPAN_ENVELOPE_RX_APS_ENCRYPT) && !(clust->flags & WPAN_CLUST_FLAG_NOT_ZCL)) {
+            // Send a failure response if we require encryption, or this
+            // is a unicast frame and we only accept unencrypted broadcasts.
+            if ((clust->flags & WPAN_CLUST_FLAG_ENCRYPT) || ((clust->flags & WPAN_CLUST_FLAG_ENCRYPT_UNICAST) &&
+                                                             !(envelope->options & WPAN_ENVELOPE_BROADCAST_ADDR))) {
+#ifdef WPAN_APS_VERBOSE
+                printf("%s: sending FAILURE for unencrypted APS frame\n", __FUNCTION__);
+#endif
+                // send failure, we don't accept unencrypted broadcast frames
+                return zcl_invalid_cluster(envelope, NULL);
+            }
+        }
 
-      envelope->options |= clust->flags;
+        envelope->options |= clust->flags;
 
-      if (! clust->handler)
-      {
-         #ifdef WPAN_APS_VERBOSE
-            printf( "%s: cluster 0x%04x has null handler\n",
-               __FUNCTION__, envelope->cluster_id);
-         #endif
-      }
-      else
-      {
-         #ifdef WPAN_APS_VERBOSE
-            printf( "%s: calling handler for cluster 0x%04x\n",
-               __FUNCTION__, envelope->cluster_id);
-         #endif
-         // Note that we cast away const when selecting the context to pass
-         // to the cluster handler and assume that the main program has set
-         // up its cluster table correctly (and knows whether its context
-         // pointer should be treated as const or not).
-         return clust->handler( envelope, (void FAR *) clust->context);
-      }
-   }
+        if (!clust->handler) {
+#ifdef WPAN_APS_VERBOSE
+            printf("%s: cluster 0x%04x has null handler\n", __FUNCTION__, envelope->cluster_id);
+#endif
+        } else {
+#ifdef WPAN_APS_VERBOSE
+            printf("%s: calling handler for cluster 0x%04x\n", __FUNCTION__, envelope->cluster_id);
+#endif
+            // Note that we cast away const when selecting the context to pass
+            // to the cluster handler and assume that the main program has set
+            // up its cluster table correctly (and knows whether its context
+            // pointer should be treated as const or not).
+            return clust->handler(envelope, (void FAR*)clust->context);
+        }
+    }
 
-   // We don't have that cluster (or the cluster doesn't have a handler) so
-   // use the endpoint's handler.
-   if (ep->handler)
-   {
-      #ifdef WPAN_APS_VERBOSE
-         printf( "%s: no entry for cluster 0x%04x, use default handler\n",
-            __FUNCTION__, envelope->cluster_id);
-      #endif
+    // We don't have that cluster (or the cluster doesn't have a handler) so
+    // use the endpoint's handler.
+    if (ep->handler) {
+#ifdef WPAN_APS_VERBOSE
+        printf("%s: no entry for cluster 0x%04x, use default handler\n", __FUNCTION__, envelope->cluster_id);
+#endif
 
-      return ep->handler( envelope, ep->ep_state);
-   }
+        return ep->handler(envelope, ep->ep_state);
+    }
 
-   #ifdef WPAN_APS_VERBOSE
-      printf( "%s: no handler for 0x%02x/0x%04x, ignoring frame\n",
-         __FUNCTION__, envelope->dest_endpoint, envelope->cluster_id);
-   #endif
-   return -ENOENT;
+#ifdef WPAN_APS_VERBOSE
+    printf("%s: no handler for 0x%02x/0x%04x, ignoring frame\n", __FUNCTION__, envelope->dest_endpoint,
+           envelope->cluster_id);
+#endif
+    return -ENOENT;
 }
 
 /** @brief
@@ -616,68 +548,60 @@ int _wpan_endpoint_dispatch( wpan_envelope_t *envelope,
    @retval  !0 error dispatching messages
 */
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DISABLE C5909    // Assignment in condition is OK
+#pragma MESSAGE DISABLE C5909 // Assignment in condition is OK
 #endif
-wpan_aps_debug
-int wpan_envelope_dispatch( wpan_envelope_t *envelope)
+wpan_aps_debug int wpan_envelope_dispatch(wpan_envelope_t* envelope)
 {
-   const wpan_endpoint_table_entry_t   *ep;
-   uint_fast8_t                        match_ep;
-   int                                 retval = -ENOENT;
+    const wpan_endpoint_table_entry_t* ep;
+    uint_fast8_t match_ep;
+    int retval = -ENOENT;
 
-   #ifdef WPAN_APS_VERBOSE
-      printf( "%s: RX ", __FUNCTION__);
-      wpan_envelope_dump( envelope);
-   #endif
+#ifdef WPAN_APS_VERBOSE
+    printf("%s: RX ", __FUNCTION__);
+    wpan_envelope_dump(envelope);
+#endif
 
-   // find matching endpoints
-   match_ep = envelope->dest_endpoint;
+    // find matching endpoints
+    match_ep = envelope->dest_endpoint;
 
-   if (match_ep == WPAN_ENDPOINT_BROADCAST)
-   {
-      // broadcast endpoint, dispatch to all endpoints on device matching
-      // the given profile ID
+    if (match_ep == WPAN_ENDPOINT_BROADCAST) {
+        // broadcast endpoint, dispatch to all endpoints on device matching
+        // the given profile ID
 
-      envelope->options |= WPAN_ENVELOPE_BROADCAST_EP;
-      ep = NULL;
-      // Assignment in next line is intentional (Warning C5909)
-      while ( (ep = wpan_endpoint_get_next( envelope->dev, ep)) != NULL)
-      {
-         if (envelope->profile_id == ep->profile_id)
-         {
-            // update endpoint to match endpoint we're dispatching to
-            envelope->dest_endpoint = ep->endpoint;
+        envelope->options |= WPAN_ENVELOPE_BROADCAST_EP;
+        ep = NULL;
+        // Assignment in next line is intentional (Warning C5909)
+        while ((ep = wpan_endpoint_get_next(envelope->dev, ep)) != NULL) {
+            if (envelope->profile_id == ep->profile_id) {
+                // update endpoint to match endpoint we're dispatching to
+                envelope->dest_endpoint = ep->endpoint;
 
-            // clear cluster flags possibly set by previous call to
-            // _wpan_endpoint_dispatch
-            envelope->options &= ~WPAN_ENVELOPE_CLUSTER_FLAGS;
+                // clear cluster flags possibly set by previous call to
+                // _wpan_endpoint_dispatch
+                envelope->options &= ~WPAN_ENVELOPE_CLUSTER_FLAGS;
 
-            if (_wpan_endpoint_dispatch( envelope, ep) == 0)
-            {
-               retval = 0;    // dispatched to at least one endpoint
+                if (_wpan_endpoint_dispatch(envelope, ep) == 0) {
+                    retval = 0; // dispatched to at least one endpoint
+                }
             }
-         }
-      }
-      return retval;
-   }
+        }
+        return retval;
+    }
 
-   ep = wpan_endpoint_match( envelope->dev, match_ep, envelope->profile_id);
-   if ( ep != NULL)
-   {
-      return _wpan_endpoint_dispatch( envelope, ep);
-   }
+    ep = wpan_endpoint_match(envelope->dev, match_ep, envelope->profile_id);
+    if (ep != NULL) {
+        return _wpan_endpoint_dispatch(envelope, ep);
+    }
 
-   #ifdef WPAN_APS_VERBOSE
-      printf( "%s: no entry for ep 0x%02x profile 0x%04x, ignoring frame\n",
-         __FUNCTION__, match_ep, envelope->profile_id);
-   #endif
+#ifdef WPAN_APS_VERBOSE
+    printf("%s: no entry for ep 0x%02x profile 0x%04x, ignoring frame\n", __FUNCTION__, match_ep, envelope->profile_id);
+#endif
 
-   return retval;
+    return retval;
 }
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DEFAULT C5909    // restore C5909 (Assignment in condition)
+#pragma MESSAGE DEFAULT C5909 // restore C5909 (Assignment in condition)
 #endif
-
 
 /*** BeginHeader wpan_envelope_create */
 /*** EndHeader */
@@ -708,18 +632,16 @@ int wpan_envelope_dispatch( wpan_envelope_t *envelope)
 
    @see wpan_envelope_reply()
 */
-wpan_aps_debug
-void wpan_envelope_create( wpan_envelope_t *envelope, wpan_dev_t *dev,
-   const addr64 FAR *ieee, uint16_t network_addr)
+wpan_aps_debug void wpan_envelope_create(wpan_envelope_t* envelope, wpan_dev_t* dev, const addr64 FAR* ieee,
+                                         uint16_t network_addr)
 {
-   if (envelope != NULL)
-   {
-      memset( envelope, 0, sizeof (*envelope));
+    if (envelope != NULL) {
+        memset(envelope, 0, sizeof(*envelope));
 
-      envelope->dev = dev;
-      envelope->ieee_address = *ieee;
-      envelope->network_address = network_addr;
-   }
+        envelope->dev             = dev;
+        envelope->ieee_address    = *ieee;
+        envelope->network_address = network_addr;
+    }
 }
 
 /*** BeginHeader wpan_envelope_reply */
@@ -748,31 +670,27 @@ void wpan_envelope_create( wpan_envelope_t *envelope, wpan_dev_t *dev,
 
    @see wpan_envelope_create()
 */
-wpan_aps_debug
-int wpan_envelope_reply( wpan_envelope_t FAR *reply,
-   const wpan_envelope_t FAR *original)
+wpan_aps_debug int wpan_envelope_reply(wpan_envelope_t FAR* reply, const wpan_envelope_t FAR* original)
 {
-   if (! (reply && original) || original == reply)
-   {
-      return -EINVAL;
-   }
+    if (!(reply && original) || original == reply) {
+        return -EINVAL;
+    }
 
-   // Copy dev, ieee_address, network_address, profile_id, and cluster_id.
-   _f_memcpy( reply, original, offsetof( wpan_envelope_t, source_endpoint));
+    // Copy dev, ieee_address, network_address, profile_id, and cluster_id.
+    _f_memcpy(reply, original, offsetof(wpan_envelope_t, source_endpoint));
 
-   // swap source and destination endpoints
-   reply->source_endpoint = original->dest_endpoint;
-   reply->dest_endpoint = original->source_endpoint;
+    // swap source and destination endpoints
+    reply->source_endpoint = original->dest_endpoint;
+    reply->dest_endpoint   = original->source_endpoint;
 
-   // Use APS encryption if replying to an encrypted frame.
-   reply->options = (original->options & WPAN_ENVELOPE_RX_APS_ENCRYPT)
-      ? WPAN_CLUST_FLAG_ENCRYPT : 0;
+    // Use APS encryption if replying to an encrypted frame.
+    reply->options = (original->options & WPAN_ENVELOPE_RX_APS_ENCRYPT) ? WPAN_CLUST_FLAG_ENCRYPT : 0;
 
-   // Clear payload
-   reply->payload = NULL;
-   reply->length = 0;
+    // Clear payload
+    reply->payload = NULL;
+    reply->length  = 0;
 
-   return 0;
+    return 0;
 }
 
 /*** BeginHeader wpan_envelope_send */
@@ -786,27 +704,21 @@ int wpan_envelope_reply( wpan_envelope_t FAR *reply,
    @retval  0  request sent
    @retval  !0 error trying to send request
 */
-wpan_aps_debug
-int wpan_envelope_send( const wpan_envelope_t FAR *envelope)
+wpan_aps_debug int wpan_envelope_send(const wpan_envelope_t FAR* envelope)
 {
-   if (envelope == NULL
-      || envelope->dev == NULL
-      || envelope->dev->endpoint_send == NULL)
-   {
-      #ifdef WPAN_APS_VERBOSE
-         printf( "%s: return -EINVAL; NULL envelope->dev->send\n",
-            __FUNCTION__);
-      #endif
-      return -EINVAL;
-   }
+    if (envelope == NULL || envelope->dev == NULL || envelope->dev->endpoint_send == NULL) {
+#ifdef WPAN_APS_VERBOSE
+        printf("%s: return -EINVAL; NULL envelope->dev->send\n", __FUNCTION__);
+#endif
+        return -EINVAL;
+    }
 
-   #ifdef WPAN_APS_VERBOSE
-      printf( "%s: TX ", __FUNCTION__);
-      wpan_envelope_dump( envelope);
-   #endif
-   return envelope->dev->endpoint_send( envelope,
-      (envelope->options & WPAN_CLUST_FLAG_ENCRYPT)
-      ? WPAN_SEND_FLAG_ENCRYPTED : WPAN_SEND_FLAG_NONE );
+#ifdef WPAN_APS_VERBOSE
+    printf("%s: TX ", __FUNCTION__);
+    wpan_envelope_dump(envelope);
+#endif
+    return envelope->dev->endpoint_send(
+        envelope, (envelope->options & WPAN_CLUST_FLAG_ENCRYPT) ? WPAN_SEND_FLAG_ENCRYPTED : WPAN_SEND_FLAG_NONE);
 }
 
 /*** BeginHeader wpan_envelope_dump */
@@ -819,25 +731,21 @@ int wpan_envelope_send( const wpan_envelope_t FAR *envelope)
 
    @param[in]  envelope    envelope to dump
 */
-wpan_aps_debug
-void wpan_envelope_dump( const wpan_envelope_t FAR *envelope)
+wpan_aps_debug void wpan_envelope_dump(const wpan_envelope_t FAR* envelope)
 {
-   char addr[ADDR64_STRING_LENGTH];
+    char addr[ADDR64_STRING_LENGTH];
 
-   if (envelope == NULL)
-   {
-      printf( "NULL envelope\n");
-   }
-   else
-   {
-      printf( "ep %u->%u, profile 0x%04x, clust 0x%04x\n",
-         envelope->source_endpoint, envelope->dest_endpoint,
-         envelope->profile_id, envelope->cluster_id);
-      printf( "remote %" PRIsFAR " (0x%04x), options=0x%04x, "
-         "%u-byte payload:\n", addr64_format( addr, &envelope->ieee_address),
-         envelope->network_address, envelope->options, envelope->length);
-      hex_dump( envelope->payload, envelope->length, HEX_DUMP_FLAG_OFFSET);
-   }
+    if (envelope == NULL) {
+        printf("NULL envelope\n");
+    } else {
+        printf("ep %u->%u, profile 0x%04x, clust 0x%04x\n", envelope->source_endpoint, envelope->dest_endpoint,
+               envelope->profile_id, envelope->cluster_id);
+        printf("remote %" PRIsFAR " (0x%04x), options=0x%04x, "
+               "%u-byte payload:\n",
+               addr64_format(addr, &envelope->ieee_address), envelope->network_address, envelope->options,
+               envelope->length);
+        hex_dump(envelope->payload, envelope->length, HEX_DUMP_FLAG_OFFSET);
+    }
 }
 
 /*** BeginHeader wpan_tick */
@@ -854,33 +762,29 @@ void wpan_envelope_dump( const wpan_envelope_t FAR *envelope)
    @retval  <0       some other error encountered during the tick
 */
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DISABLE C5909    // Assignment in condition is OK
+#pragma MESSAGE DISABLE C5909 // Assignment in condition is OK
 #endif
-wpan_aps_debug
-int wpan_tick( wpan_dev_t *dev)
+wpan_aps_debug int wpan_tick(wpan_dev_t* dev)
 {
-   const wpan_endpoint_table_entry_t *ep;
-   int retval = -EINVAL;
+    const wpan_endpoint_table_entry_t* ep;
+    int retval = -EINVAL;
 
-   if (dev != NULL)
-   {
-      if (dev->tick)
-      {
-         retval = dev->tick( dev);
-      }
+    if (dev != NULL) {
+        if (dev->tick) {
+            retval = dev->tick(dev);
+        }
 
-      // walk endpoint table, expiring each endpoint's conversations
-      ep = NULL;
-      while ( (ep = wpan_endpoint_get_next( dev, ep)) != NULL)
-      {
-         _wpan_endpoint_expire_conversations( ep->ep_state);
-      }
-   }
+        // walk endpoint table, expiring each endpoint's conversations
+        ep = NULL;
+        while ((ep = wpan_endpoint_get_next(dev, ep)) != NULL) {
+            _wpan_endpoint_expire_conversations(ep->ep_state);
+        }
+    }
 
-   return retval;
+    return retval;
 }
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DEFAULT C5909    // restore C5909 (Assignment in condition)
+#pragma MESSAGE DEFAULT C5909 // restore C5909 (Assignment in condition)
 #endif
 
 ///@}

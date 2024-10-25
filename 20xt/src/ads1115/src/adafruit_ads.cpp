@@ -32,27 +32,22 @@
 
 #include "i2c_dev.hpp"
 
-
-
-using std::uint8_t;
 using std::uint16_t;
+using std::uint8_t;
 using std::vector;
-
-
-
 
 /**************************************************************************/
 /*!
     @brief  Instantiates a new ADS1015 class w/appropriate properties
 */
 /**************************************************************************/
-Adafruit_ADS1015::Adafruit_ADS1015(int fd, int adr) {
-  this->fd = fd;
-  this->adr = adr;
-  m_bitShift = 4;
-  m_gain = GAIN_TWOTHIRDS; /* +/- 6.144V range (limited to VDD +0.3V max!) */
-  m_dataRate = RATE_ADS1015_1600SPS;
-  
+Adafruit_ADS1015::Adafruit_ADS1015(int fd, int adr)
+{
+    this->fd   = fd;
+    this->adr  = adr;
+    m_bitShift = 4;
+    m_gain     = GAIN_TWOTHIRDS; /* +/- 6.144V range (limited to VDD +0.3V max!) */
+    m_dataRate = RATE_ADS1015_1600SPS;
 }
 
 /**************************************************************************/
@@ -60,12 +55,13 @@ Adafruit_ADS1015::Adafruit_ADS1015(int fd, int adr) {
     @brief  Instantiates a new ADS1115 class w/appropriate properties
 */
 /**************************************************************************/
-Adafruit_ADS1115::Adafruit_ADS1115(int fd, int adr) {
-  this->fd = fd;
-  this->adr = adr;
-  m_bitShift = 0;
-  m_gain = GAIN_TWOTHIRDS; /* +/- 6.144V range (limited to VDD +0.3V max!) */
-  m_dataRate = RATE_ADS1115_860SPS;
+Adafruit_ADS1115::Adafruit_ADS1115(int fd, int adr)
+{
+    this->fd   = fd;
+    this->adr  = adr;
+    m_bitShift = 0;
+    m_gain     = GAIN_TWOTHIRDS; /* +/- 6.144V range (limited to VDD +0.3V max!) */
+    m_dataRate = RATE_ADS1115_860SPS;
 }
 
 // /**************************************************************************/
@@ -128,19 +124,20 @@ uint16_t Adafruit_ADS1X15::getDataRate() { return m_dataRate; }
     @return the ADC reading
 */
 /**************************************************************************/
-int16_t Adafruit_ADS1X15::readADC_SingleEnded(uint8_t channel) {
-  if (channel > 3) {
-    return 0;
-  }
+int16_t Adafruit_ADS1X15::readADC_SingleEnded(uint8_t channel)
+{
+    if (channel > 3) {
+        return 0;
+    }
 
-  startADCReading(MUX_BY_CHANNEL[channel], /*continuous=*/false);
+    startADCReading(MUX_BY_CHANNEL[channel], /*continuous=*/false);
 
-  // Wait for the conversion to complete
-  while (!conversionComplete())
-    ;
+    // Wait for the conversion to complete
+    while (!conversionComplete())
+        ;
 
-  // Read the conversion results
-  return getLastConversionResults();
+    // Read the conversion results
+    return getLastConversionResults();
 }
 
 /**************************************************************************/
@@ -153,15 +150,16 @@ int16_t Adafruit_ADS1X15::readADC_SingleEnded(uint8_t channel) {
     @return the ADC reading
 */
 /**************************************************************************/
-int16_t Adafruit_ADS1X15::readADC_Differential_0_1() {
-  startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
+int16_t Adafruit_ADS1X15::readADC_Differential_0_1()
+{
+    startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_1, /*continuous=*/false);
 
-  // Wait for the conversion to complete
-  while (!conversionComplete())
-    ;
+    // Wait for the conversion to complete
+    while (!conversionComplete())
+        ;
 
-  // Read the conversion results
-  return getLastConversionResults();
+    // Read the conversion results
+    return getLastConversionResults();
 }
 
 /**************************************************************************/
@@ -173,15 +171,16 @@ int16_t Adafruit_ADS1X15::readADC_Differential_0_1() {
     @return the ADC reading
 */
 /**************************************************************************/
-int16_t Adafruit_ADS1X15::readADC_Differential_0_3() {
-  startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_3, /*continuous=*/false);
+int16_t Adafruit_ADS1X15::readADC_Differential_0_3()
+{
+    startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_0_3, /*continuous=*/false);
 
-  // Wait for the conversion to complete
-  while (!conversionComplete())
-    ;
+    // Wait for the conversion to complete
+    while (!conversionComplete())
+        ;
 
-  // Read the conversion results
-  return getLastConversionResults();
+    // Read the conversion results
+    return getLastConversionResults();
 }
 
 /**************************************************************************/
@@ -193,15 +192,16 @@ int16_t Adafruit_ADS1X15::readADC_Differential_0_3() {
     @return the ADC reading
 */
 /**************************************************************************/
-int16_t Adafruit_ADS1X15::readADC_Differential_1_3() {
-  startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_1_3, /*continuous=*/false);
+int16_t Adafruit_ADS1X15::readADC_Differential_1_3()
+{
+    startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_1_3, /*continuous=*/false);
 
-  // Wait for the conversion to complete
-  while (!conversionComplete())
-    ;
+    // Wait for the conversion to complete
+    while (!conversionComplete())
+        ;
 
-  // Read the conversion results
-  return getLastConversionResults();
+    // Read the conversion results
+    return getLastConversionResults();
 }
 
 /**************************************************************************/
@@ -214,15 +214,16 @@ int16_t Adafruit_ADS1X15::readADC_Differential_1_3() {
     @return the ADC reading
 */
 /**************************************************************************/
-int16_t Adafruit_ADS1X15::readADC_Differential_2_3() {
-  startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/false);
+int16_t Adafruit_ADS1X15::readADC_Differential_2_3()
+{
+    startADCReading(ADS1X15_REG_CONFIG_MUX_DIFF_2_3, /*continuous=*/false);
 
-  // Wait for the conversion to complete
-  while (!conversionComplete())
-    ;
+    // Wait for the conversion to complete
+    while (!conversionComplete())
+        ;
 
-  // Read the conversion results
-  return getLastConversionResults();
+    // Read the conversion results
+    return getLastConversionResults();
 }
 
 /**************************************************************************/
@@ -237,32 +238,31 @@ int16_t Adafruit_ADS1X15::readADC_Differential_2_3() {
     @param threshold comparator threshold
 */
 /**************************************************************************/
-void Adafruit_ADS1X15::startComparator_SingleEnded(uint8_t channel,
-                                                   int16_t threshold) {
-  // Start with default values
-  uint16_t config =
-      ADS1X15_REG_CONFIG_CQUE_1CONV |   // Comparator enabled and asserts on 1
-                                        // match
-      ADS1X15_REG_CONFIG_CLAT_LATCH |   // Latching mode
-      ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
-      ADS1X15_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
-      ADS1X15_REG_CONFIG_MODE_CONTIN |  // Continuous conversion mode
-      ADS1X15_REG_CONFIG_MODE_CONTIN;   // Continuous conversion mode
+void Adafruit_ADS1X15::startComparator_SingleEnded(uint8_t channel, int16_t threshold)
+{
+    // Start with default values
+    uint16_t config = ADS1X15_REG_CONFIG_CQUE_1CONV |   // Comparator enabled and asserts on 1
+                                                        // match
+                      ADS1X15_REG_CONFIG_CLAT_LATCH |   // Latching mode
+                      ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
+                      ADS1X15_REG_CONFIG_CMODE_TRAD |   // Traditional comparator (default val)
+                      ADS1X15_REG_CONFIG_MODE_CONTIN |  // Continuous conversion mode
+                      ADS1X15_REG_CONFIG_MODE_CONTIN;   // Continuous conversion mode
 
-  // Set PGA/voltage range
-  config |= m_gain;
+    // Set PGA/voltage range
+    config |= m_gain;
 
-  // Set data rate
-  config |= m_dataRate;
+    // Set data rate
+    config |= m_dataRate;
 
-  config |= MUX_BY_CHANNEL[channel];
+    config |= MUX_BY_CHANNEL[channel];
 
-  // Set the high threshold register
-  // Shift 12-bit results left 4 bits for the ADS1015
-  writeRegister(ADS1X15_REG_POINTER_HITHRESH, threshold << m_bitShift);
+    // Set the high threshold register
+    // Shift 12-bit results left 4 bits for the ADS1015
+    writeRegister(ADS1X15_REG_POINTER_HITHRESH, threshold << m_bitShift);
 
-  // Write config register to the ADC
-  writeRegister(ADS1X15_REG_POINTER_CONFIG, config);
+    // Write config register to the ADC
+    writeRegister(ADS1X15_REG_POINTER_CONFIG, config);
 }
 
 /**************************************************************************/
@@ -274,20 +274,21 @@ void Adafruit_ADS1X15::startComparator_SingleEnded(uint8_t channel,
     @return the last ADC reading
 */
 /**************************************************************************/
-int16_t Adafruit_ADS1X15::getLastConversionResults() {
-  // Read the conversion results
-  uint16_t res = readRegister(ADS1X15_REG_POINTER_CONVERT) >> m_bitShift;
-  if (m_bitShift == 0) {
-    return (int16_t)res;
-  } else {
-    // Shift 12-bit results right 4 bits for the ADS1015,
-    // making sure we keep the sign bit intact
-    if (res > 0x07FF) {
-      // negative number - extend the sign to 16th bit
-      res |= 0xF000;
+int16_t Adafruit_ADS1X15::getLastConversionResults()
+{
+    // Read the conversion results
+    uint16_t res = readRegister(ADS1X15_REG_POINTER_CONVERT) >> m_bitShift;
+    if (m_bitShift == 0) {
+        return (int16_t)res;
+    } else {
+        // Shift 12-bit results right 4 bits for the ADS1015,
+        // making sure we keep the sign bit intact
+        if (res > 0x07FF) {
+            // negative number - extend the sign to 16th bit
+            res |= 0xF000;
+        }
+        return (int16_t)res;
     }
-    return (int16_t)res;
-  }
 }
 
 /**************************************************************************/
@@ -299,32 +300,33 @@ int16_t Adafruit_ADS1X15::getLastConversionResults() {
     @return the ADC reading in volts
 */
 /**************************************************************************/
-float Adafruit_ADS1X15::computeVolts(int16_t counts) {
-  // see data sheet Table 3
-  float fsRange;
-  switch (m_gain) {
-  case GAIN_TWOTHIRDS:
-    fsRange = 6.144f;
-    break;
-  case GAIN_ONE:
-    fsRange = 4.096f;
-    break;
-  case GAIN_TWO:
-    fsRange = 2.048f;
-    break;
-  case GAIN_FOUR:
-    fsRange = 1.024f;
-    break;
-  case GAIN_EIGHT:
-    fsRange = 0.512f;
-    break;
-  case GAIN_SIXTEEN:
-    fsRange = 0.256f;
-    break;
-  default:
-    fsRange = 0.0f;
-  }
-  return counts * (fsRange / (32768 >> m_bitShift));
+float Adafruit_ADS1X15::computeVolts(int16_t counts)
+{
+    // see data sheet Table 3
+    float fsRange;
+    switch (m_gain) {
+    case GAIN_TWOTHIRDS:
+        fsRange = 6.144f;
+        break;
+    case GAIN_ONE:
+        fsRange = 4.096f;
+        break;
+    case GAIN_TWO:
+        fsRange = 2.048f;
+        break;
+    case GAIN_FOUR:
+        fsRange = 1.024f;
+        break;
+    case GAIN_EIGHT:
+        fsRange = 0.512f;
+        break;
+    case GAIN_SIXTEEN:
+        fsRange = 0.256f;
+        break;
+    default:
+        fsRange = 0.0f;
+    }
+    return counts * (fsRange / (32768 >> m_bitShift));
 }
 
 /**************************************************************************/
@@ -341,39 +343,39 @@ float Adafruit_ADS1X15::computeVolts(int16_t counts) {
     @param continuous continuous if set, otherwise single shot
 */
 /**************************************************************************/
-void Adafruit_ADS1X15::startADCReading(uint16_t mux, bool continuous) {
-  // Start with default values
-  uint16_t config =
-      ADS1X15_REG_CONFIG_CQUE_1CONV |   // Set CQUE to any value other than
-                                        // None so we can use it in RDY mode
-      ADS1X15_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
-      ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
-      ADS1X15_REG_CONFIG_CMODE_TRAD;    // Traditional comparator (default val)
+void Adafruit_ADS1X15::startADCReading(uint16_t mux, bool continuous)
+{
+    // Start with default values
+    uint16_t config = ADS1X15_REG_CONFIG_CQUE_1CONV |   // Set CQUE to any value other than
+                                                        // None so we can use it in RDY mode
+                      ADS1X15_REG_CONFIG_CLAT_NONLAT |  // Non-latching (default val)
+                      ADS1X15_REG_CONFIG_CPOL_ACTVLOW | // Alert/Rdy active low   (default val)
+                      ADS1X15_REG_CONFIG_CMODE_TRAD;    // Traditional comparator (default val)
 
-  if (continuous) {
-    config |= ADS1X15_REG_CONFIG_MODE_CONTIN;
-  } else {
-    config |= ADS1X15_REG_CONFIG_MODE_SINGLE;
-  }
+    if (continuous) {
+        config |= ADS1X15_REG_CONFIG_MODE_CONTIN;
+    } else {
+        config |= ADS1X15_REG_CONFIG_MODE_SINGLE;
+    }
 
-  // Set PGA/voltage range
-  config |= m_gain;
+    // Set PGA/voltage range
+    config |= m_gain;
 
-  // Set data rate
-  config |= m_dataRate;
+    // Set data rate
+    config |= m_dataRate;
 
-  // Set channels
-  config |= mux;
+    // Set channels
+    config |= mux;
 
-  // Set 'start single-conversion' bit
-  config |= ADS1X15_REG_CONFIG_OS_SINGLE;
+    // Set 'start single-conversion' bit
+    config |= ADS1X15_REG_CONFIG_OS_SINGLE;
 
-  // Write config register to the ADC
-  writeRegister(ADS1X15_REG_POINTER_CONFIG, config);
+    // Write config register to the ADC
+    writeRegister(ADS1X15_REG_POINTER_CONFIG, config);
 
-  // Set ALERT/RDY to RDY mode.
-  writeRegister(ADS1X15_REG_POINTER_HITHRESH, 0x8000);
-  writeRegister(ADS1X15_REG_POINTER_LOWTHRESH, 0x0000);
+    // Set ALERT/RDY to RDY mode.
+    writeRegister(ADS1X15_REG_POINTER_HITHRESH, 0x8000);
+    writeRegister(ADS1X15_REG_POINTER_LOWTHRESH, 0x0000);
 }
 
 /**************************************************************************/
@@ -383,9 +385,7 @@ void Adafruit_ADS1X15::startADCReading(uint16_t mux, bool continuous) {
     @return True if conversion is complete, false otherwise.
 */
 /**************************************************************************/
-bool Adafruit_ADS1X15::conversionComplete() {
-  return (readRegister(ADS1X15_REG_POINTER_CONFIG) & 0x8000) != 0;
-}
+bool Adafruit_ADS1X15::conversionComplete() { return (readRegister(ADS1X15_REG_POINTER_CONFIG) & 0x8000) != 0; }
 
 /**************************************************************************/
 /*!
@@ -395,14 +395,16 @@ bool Adafruit_ADS1X15::conversionComplete() {
     @param value value to write to register
 */
 /**************************************************************************/
-void Adafruit_ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
-  i2c_bulk_write(this->fd, this->adr, reg, vector<uint8_t>({static_cast<uint8_t>(value >> 8), static_cast<uint8_t>(value & 0xFF)}), 2);
-  return;
+void Adafruit_ADS1X15::writeRegister(uint8_t reg, uint16_t value)
+{
+    i2c_bulk_write(this->fd, this->adr, reg,
+                   vector<uint8_t>({static_cast<uint8_t>(value >> 8), static_cast<uint8_t>(value & 0xFF)}), 2);
+    return;
 
-  // buffer[0] = reg;
-  // buffer[1] = value >> 8;
-  // buffer[2] = value & 0xFF;
-  // m_i2c_dev->write(buffer, 3);
+    // buffer[0] = reg;
+    // buffer[1] = value >> 8;
+    // buffer[2] = value & 0xFF;
+    // m_i2c_dev->write(buffer, 3);
 }
 
 /**************************************************************************/
@@ -414,12 +416,13 @@ void Adafruit_ADS1X15::writeRegister(uint8_t reg, uint16_t value) {
     @return 16 bit register value read
 */
 /**************************************************************************/
-uint16_t Adafruit_ADS1X15::readRegister(uint8_t reg) {
-  vector<uint8_t> r = i2c_bulk_read(this->fd, this->adr, reg, 2);
-  return (r.size() >= 2 ? r[0]<<8 | r[1] : 0);
+uint16_t Adafruit_ADS1X15::readRegister(uint8_t reg)
+{
+    vector<uint8_t> r = i2c_bulk_read(this->fd, this->adr, reg, 2);
+    return (r.size() >= 2 ? r[0] << 8 | r[1] : 0);
 
-  // buffer[0] = reg;
-  // m_i2c_dev->write(buffer, 1);
-  // m_i2c_dev->read(buffer, 2);
-  // return ((buffer[0] << 8) | buffer[1]);
+    // buffer[0] = reg;
+    // m_i2c_dev->write(buffer, 1);
+    // m_i2c_dev->read(buffer, 2);
+    // return ((buffer[0] << 8) | buffer[1]);
 }

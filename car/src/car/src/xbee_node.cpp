@@ -1,7 +1,8 @@
-#include <rclcpp/rclcpp.hpp>
 #include "xbee_driver/xbee_driver.hpp"
+#include <rclcpp/rclcpp.hpp>
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     rclcpp::init(argc, argv);
     auto node = std::make_shared<xbee_driver::XbeeDriver>();
     rclcpp::spin(node);

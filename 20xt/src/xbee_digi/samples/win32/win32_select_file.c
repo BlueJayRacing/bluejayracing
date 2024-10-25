@@ -17,9 +17,9 @@
 // Requires Win2K or newer for GetConsoleWindow() function
 #define WINVER 0x0500
 
-#include <windows.h>
-#include <wincon.h>
 #include <commdlg.h>
+#include <wincon.h>
+#include <windows.h>
 
 // hook for GetOpenFileName to move window to foreground
 UINT APIENTRY OFNHookProc(HWND h, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -36,7 +36,7 @@ UINT APIENTRY OFNHookProc(HWND h, UINT msg, WPARAM wParam, LPARAM lParam)
     // Code to center window over console based on code from
     // http://msdn.microsoft.com/en-us/library/ms644996(v=VS.85).aspx#init_box
     if (msg == WM_INITDIALOG) {
-        hwndDlg = GetParent(h);
+        hwndDlg   = GetParent(h);
         hwndOwner = GetConsoleWindow();
 
         GetWindowRect(hwndOwner, &rcOwner);
@@ -54,11 +54,8 @@ UINT APIENTRY OFNHookProc(HWND h, UINT msg, WPARAM wParam, LPARAM lParam)
         // The new position is the sum of half the remaining space and the owner's
         // original position.
 
-        SetWindowPos(hwndDlg,
-                     HWND_TOPMOST,
-                     rcOwner.left + (rc.right / 2),
-                     rcOwner.top + (rc.bottom / 2),
-                     0, 0,          // Ignores size arguments.
+        SetWindowPos(hwndDlg, HWND_TOPMOST, rcOwner.left + (rc.right / 2), rcOwner.top + (rc.bottom / 2), 0,
+                     0, // Ignores size arguments.
                      SWP_NOSIZE | SWP_SHOWWINDOW);
         return TRUE;
     }
@@ -68,21 +65,19 @@ UINT APIENTRY OFNHookProc(HWND h, UINT msg, WPARAM wParam, LPARAM lParam)
 
 // Prompt user to select a file.
 // Returns file selected or NULL on Cancel/error.
-char *win32_select_file(const char *title, const char *filter)
+char* win32_select_file(const char* title, const char* filter)
 {
     OPENFILENAME ofn;
     static char file[256] = "";
 
     ZeroMemory(&ofn, sizeof ofn);
     ofn.lStructSize = sizeof ofn;
-    ofn.nMaxFile = sizeof file;
-    ofn.lpstrFile = file;
+    ofn.nMaxFile    = sizeof file;
+    ofn.lpstrFile   = file;
     ofn.lpstrFilter = filter;
-    ofn.lpstrTitle = title;
-    ofn.lpfnHook = OFNHookProc;
-    ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLEHOOK | OFN_EXPLORER;
+    ofn.lpstrTitle  = title;
+    ofn.lpfnHook    = OFNHookProc;
+    ofn.Flags       = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_ENABLEHOOK | OFN_EXPLORER;
 
     return GetOpenFileName(&ofn) != 0 ? file : NULL;
 }
-
-

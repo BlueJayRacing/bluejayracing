@@ -20,23 +20,23 @@
             the seconds timer (base it on the HCS08 regression).
 */
 
-#include <time.h>
-#include <sys/time.h>
 #include "xbee/platform.h"
+#include <sys/time.h>
+#include <time.h>
 
 uint32_t xbee_seconds_timer()
 {
     // On BSD OSes, time can include leap seconds.  That's OK, because this
     // function is only used to track elapsed time, not determine time-of-day.
-    return time( NULL);
+    return time(NULL);
 }
 
 uint32_t xbee_millisecond_timer()
 {
     struct timeval t;
 
-    gettimeofday( &t, NULL);
-    return (uint32_t) (t.tv_sec * 1000 + t.tv_usec / 1000);
+    gettimeofday(&t, NULL);
+    return (uint32_t)(t.tv_sec * 1000 + t.tv_usec / 1000);
 }
 
 ///@}

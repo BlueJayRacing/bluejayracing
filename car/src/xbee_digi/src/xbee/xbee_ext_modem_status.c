@@ -21,12 +21,9 @@
 
 #include "xbee/ext_modem_status.h"
 
-int xbee_frame_dump_ext_modem_status(xbee_dev_t *xbee,
-                                     const void FAR *payload,
-                                     uint16_t length,
-                                     void FAR *context)
+int xbee_frame_dump_ext_modem_status(xbee_dev_t* xbee, const void FAR* payload, uint16_t length, void FAR* context)
 {
-    const xbee_frame_xms_ss_header_t FAR *header = payload;
+    const xbee_frame_xms_ss_header_t FAR* header = payload;
 
     // Standard frame handler callback API, but we don't use all parameters.
     XBEE_UNUSED_PARAMETER(xbee);
@@ -42,8 +39,7 @@ int xbee_frame_dump_ext_modem_status(xbee_dev_t *xbee,
 
     length -= sizeof *header;
 
-    printf("%s: status_code=0x%02X, %d bytes of data:\n",
-           __FUNCTION__, header->status_code, length);
+    printf("%s: status_code=0x%02X, %d bytes of data:\n", __FUNCTION__, header->status_code, length);
 
     hex_dump(header + 1, length, HEX_DUMP_FLAG_OFFSET);
 

@@ -1,53 +1,51 @@
 #include "../sensors/ADS1115/adc.hpp"
-#include <iostream>
-#include <ios>
 #include <fstream>
 #include <iomanip>
-#include <string>
+#include <ios>
+#include <iostream>
 #include <stdlib.h>
+#include <string>
 
 using std::cout;
 using std::endl;
-using std::vector;
-using std::to_string;
 using std::remove;
 using std::rename;
-
-
+using std::to_string;
+using std::vector;
 
 // TODO: Added definition for BUS_NAME as place holder
 char BUS_NAME = '2';
 
-int main(/*int argc, char* argv[]*/) {
+int main(/*int argc, char* argv[]*/)
+{
 
-  std::ofstream temp;
-  temp.open("torque_test.txt");
-  temp << std::fixed << std::showpoint << std::setprecision(6);
+    std::ofstream temp;
+    temp.open("torque_test.txt");
+    temp << std::fixed << std::showpoint << std::setprecision(6);
 
-  
-  int fd = open("/dev/i2c-13", O_RDWR);
-  if (fd < 0) {
-    char err[200];
-    sprintf(err, "Failed to open i2c bus (%c) ", BUS_NAME);
-  }
+    int fd = open("/dev/i2c-13", O_RDWR);
+    if (fd < 0) {
+        char err[200];
+        sprintf(err, "Failed to open i2c bus (%c) ", BUS_NAME);
+    }
 
-  //ADC a = ADC(fd, 2, true);
-  // ADC a = ADC(fd, 0, false);
+    // ADC a = ADC(fd, 2, true);
+    //  ADC a = ADC(fd, 0, false);
 
-  //ADC a = ADC(fd, 2, true);
+    // ADC a = ADC(fd, 2, true);
 
-  //torque
-  ADC a = ADC(fd, 1, false);
+    // torque
+    ADC a = ADC(fd, 1, false);
 
-  for (int i = 0; i < 100000000; i++) {
-    vector<double> data = a.read();
-    temp << data[0] << endl;
-    cout << data[0] << endl;
-    usleep(1000.0*(1.0/860.0));
-  }
-  
-  // temp.close();
+    for (int i = 0; i < 100000000; i++) {
+        vector<double> data = a.read();
+        temp << data[0] << endl;
+        cout << data[0] << endl;
+        usleep(1000.0 * (1.0 / 860.0));
+    }
 
-  close(fd);
-  return 0;
+    // temp.close();
+
+    close(fd);
+    return 0;
 }

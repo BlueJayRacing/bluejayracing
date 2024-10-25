@@ -1,20 +1,21 @@
 #pragma once
 
-#include <rclcpp/rclcpp.hpp>
-#include <string>
 #include "interfaces/connection.h"
-#include "xbee/xbee_connection.h"
 #include "xbee/xbee_baja_serial_config.h"
+#include "xbee/xbee_connection.h"
+#include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
+#include <string>
 
-namespace xbee_driver {
+namespace xbee_driver
+{
 
 class XbeeDriver : public rclcpp::Node {
-public:
+  public:
     XbeeDriver();
     ~XbeeDriver();
 
-private:
+  private:
     void timer_callback();
     int try_transmit_data(const std_msgs::msg::String& msg);
     int try_receive_data();

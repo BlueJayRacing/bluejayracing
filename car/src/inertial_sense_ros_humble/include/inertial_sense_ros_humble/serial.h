@@ -38,8 +38,8 @@
 #define MAVROSFLIGHT_MAVLINK_COMM_H
 
 #include <boost/asio.hpp>
-#include <boost/thread.hpp>
 #include <boost/function.hpp>
+#include <boost/thread.hpp>
 
 #include <list>
 #include <string>
@@ -49,177 +49,158 @@
 
 #define BUFFER_SIZE 2048
 
-class SerialListener
-{
-public:
-  virtual void handle_bytes(const uint8_t* bytes, uint8_t len) = 0;
+class SerialListener {
+  public:
+    virtual void handle_bytes(const uint8_t* bytes, uint8_t len) = 0;
 };
 
+class Serial {
+  public:
+    /**
+     * \brief Instantiates the class and begins communication on the specified serial port
+     * \param port Name of the serial port (e.g. "/dev/ttyUSB0")
+     * \param baud_rate Serial communication baud rate
+     */
+    Serial(std::__cxx11::string port, int baud_rate);
 
-class Serial
-{
-public:
+    /**
+     * \brief Stops communication and closes the serial port before the object is destroyed
+     */
+    ~Serial();
 
-  /**
-   * \brief Instantiates the class and begins communication on the specified serial port
-   * \param port Name of the serial port (e.g. "/dev/ttyUSB0")
-   * \param baud_rate Serial communication baud rate
-   */
-  Serial(std::__cxx11::string port, int baud_rate);
+    /**
+     * \brief Opens the port and begins communication
+     */
+    void open();
 
-  /**
-   * \brief Stops communication and closes the serial port before the object is destroyed
-   */
-  ~Serial();
+    /**
+     * \brief Stops communication and closes the port
+     */
+    void close();
 
-  /**
-   * \brief Opens the port and begins communication
-   */
-  void open();
+    /**
+     * \brief write data
+     * \param buffer The message to send
+     * \param len The number of bytes
+     */
+    void write(const uint8_t* buffer, uint8_t len);
 
-  /**
-   * \brief Stops communication and closes the port
-   */
-  void close();
+    /**
+     * \brief Register a listener for received bytes
+     * \param listener Pointer to an object that implements the SerialListener interface
+     */
+    void register_listener(SerialListener* const listener);
 
-  /**
-   * \brief write data
-   * \param buffer The message to send
-   * \param len The number of bytes
-   */
-  void write(const uint8_t *buffer, uint8_t len);
+    boost::asio::io_service io_service_; //!< boost io service provider
 
-  /**
-   * \brief Register a listener for received bytes
-   * \param listener Pointer to an object that implements the SerialListener interface
-   */
-  void register_listener(SerialListener * const listener);
+  private:
+    //===========================================================================
+    // definitions
+    //===========================================================================
 
-  boost::asio::io_service io_service_; //!< boost io service provider
+    /**
+     * \brief Struct for buffering the contents of a mavlink message
+     */
+    struct WriteBuffer {
+        uint8_t data[BUFFER_SIZE];
+        size_t len;
+        size_t pos;
 
-private:
+        WriteBuffer() : len(0), pos(0) {}
 
-  //===========================================================================
-  // definitions
-  //===========================================================================
+        WriteBuffer(const uint8_t* buf, uint16_t len) : len(len), pos(0)
+        {
+            assert(len <= BUFFER_SIZE); //! \todo Do something less catastrophic here
+            memcpy(data, buf, len);
+        }
 
-  /**
-   * \brief Struct for buffering the contents of a mavlink message
-   */
-  struct WriteBuffer
-  {
-    uint8_t data[BUFFER_SIZE];
-    size_t len;
-    size_t pos;
+        const uint8_t* dpos() const { return data + pos; }
 
-    WriteBuffer() : len(0), pos(0) {}
+        size_t nbytes() const { return len - pos; }
+    };
 
-    WriteBuffer(const uint8_t * buf, uint16_t len) : len(len), pos(0)
+    /**
+     * \brief Pointer to byte listener
+     */
+    SerialListener* listener_;
+
+    boost::asio::serial_port serial_port_; //!< boost serial port object
+    std::string port_;
+    int baud_rate_;
+
+    /**
+     * \brief Convenience typedef for mutex lock
+     */
+    typedef boost::lock_guard<boost::recursive_mutex> mutex_lock;
+
+    //===========================================================================
+    // methods
+    //===========================================================================
+
+    /**
+     * \brief Initiate an asynchronous read operation
+     */
+    void async_read();
+
+    /**
+     * \brief Handler for end of asynchronous read operation
+     * \param error Error code
+     * \param bytes_transferred Number of bytes received
+     */
+    void async_read_end(const boost::system::error_code& error, size_t bytes_transferred);
+
+    /**
+     * \brief Initialize an asynchronous write operation
+     * \param check_write_state If true, only start another write operation if a write sequence is not already running
+     */
+    void async_write(bool check_write_state);
+
+    /**
+     * \brief Handler for end of asynchronous write operation
+     * \param error Error code
+     * \param bytes_transferred Number of bytes sent
+     */
+    void async_write_end(const boost::system::error_code& error, size_t bytes_transferred);
+
+    //===========================================================================
+    // member variables
+    //===========================================================================
+
+    boost::thread io_thread_;      //!< thread on which the io service runs
+    boost::recursive_mutex mutex_; //!< mutex for threadsafe operation
+
+    uint8_t sysid_;
+    uint8_t compid_;
+
+    uint8_t read_buf_raw_[BUFFER_SIZE];
+
+    std::list<WriteBuffer*> write_queue_; //!< queue of buffers to be written to the serial port
+    bool write_in_progress_;              //!< flag for whether async_write is already running
+};
+
+class SerialException : public std::exception {
+  public:
+    explicit SerialException(const char* const description) { init(description); }
+
+    explicit SerialException(const std::string& description) { init(description.c_str()); }
+
+    explicit SerialException(const boost::system::system_error& err) { init(err.what()); }
+
+    SerialException(const SerialException& other) : what_(other.what_) {}
+
+    ~SerialException() throw() {}
+
+    virtual const char* what() const throw() { return what_.c_str(); }
+
+  private:
+    std::string what_;
+
+    void init(const char* const description)
     {
-      assert(len <= BUFFER_SIZE); //! \todo Do something less catastrophic here
-      memcpy(data, buf, len);
+        std::ostringstream ss;
+        ss << "Serial Error: " << description;
+        what_ = ss.str();
     }
-
-    const uint8_t * dpos() const { return data + pos; }
-
-    size_t nbytes() const { return len - pos; }
-  };
-
-  /**
-   * \brief Pointer to byte listener
-   */
-  SerialListener* listener_;
-
-  boost::asio::serial_port serial_port_; //!< boost serial port object
-  std::string port_;
-  int baud_rate_;
-
-  /**
-   * \brief Convenience typedef for mutex lock
-   */
-  typedef boost::lock_guard<boost::recursive_mutex> mutex_lock;
-
-  //===========================================================================
-  // methods
-  //===========================================================================
-
-  /**
-   * \brief Initiate an asynchronous read operation
-   */
-  void async_read();
-
-  /**
-   * \brief Handler for end of asynchronous read operation
-   * \param error Error code
-   * \param bytes_transferred Number of bytes received
-   */
-  void async_read_end(const boost::system::error_code& error, size_t bytes_transferred);
-
-  /**
-   * \brief Initialize an asynchronous write operation
-   * \param check_write_state If true, only start another write operation if a write sequence is not already running
-   */
-  void async_write(bool check_write_state);
-
-  /**
-   * \brief Handler for end of asynchronous write operation
-   * \param error Error code
-   * \param bytes_transferred Number of bytes sent
-   */
-  void async_write_end(const boost::system::error_code& error, size_t bytes_transferred);
-
-  //===========================================================================
-  // member variables
-  //===========================================================================
-
-  boost::thread io_thread_; //!< thread on which the io service runs
-  boost::recursive_mutex mutex_; //!< mutex for threadsafe operation
-
-  uint8_t sysid_;
-  uint8_t compid_;
-
-  uint8_t read_buf_raw_[BUFFER_SIZE];
-
-  std::list<WriteBuffer*> write_queue_; //!< queue of buffers to be written to the serial port
-  bool write_in_progress_; //!< flag for whether async_write is already running
-};
-
-class SerialException : public std::exception
-{
-public:
-  explicit SerialException(const char * const description)
-  {
-    init(description);
-  }
-
-  explicit SerialException(const std::string &description)
-  {
-    init(description.c_str());
-  }
-
-  explicit SerialException(const boost::system::system_error &err)
-  {
-    init(err.what());
-  }
-
-  SerialException(const SerialException &other) : what_(other.what_) {}
-
-  ~SerialException() throw() {}
-
-  virtual const char* what() const throw()
-  {
-    return what_.c_str();
-  }
-
-private:
-  std::string what_;
-
-  void init(const char * const description)
-  {
-    std::ostringstream ss;
-    ss << "Serial Error: " << description;
-    what_ = ss.str();
-  }
 };
 
 #endif
