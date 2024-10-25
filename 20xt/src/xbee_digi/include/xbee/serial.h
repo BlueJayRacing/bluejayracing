@@ -76,7 +76,8 @@ XBEE_BEGIN_DECLS
    @retval  1 \a serial is not a valid XBee serial port
    @retval  0 \a serial is a valid XBee serial port
 */
-bool_t xbee_ser_invalid(xbee_serial_t* serial);
+bool_t xbee_ser_invalid( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -93,7 +94,8 @@ bool_t xbee_ser_invalid(xbee_serial_t* serial);
 
    @return  null-terminated string describing the serial port
 */
-const char* xbee_ser_portname(xbee_serial_t* serial);
+const char *xbee_ser_portname( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -113,7 +115,9 @@ const char* xbee_ser_portname(xbee_serial_t* serial);
 
    @see  xbee_ser_read(), xbee_ser_putchar(), xbee_ser_getchar()
 */
-int xbee_ser_write(xbee_serial_t* serial, const void FAR* buffer, int length);
+int xbee_ser_write( xbee_serial_t *serial, const void FAR *buffer,
+   int length);
+
 
 /**
    @brief
@@ -135,7 +139,8 @@ int xbee_ser_write(xbee_serial_t* serial, const void FAR* buffer, int length);
 
    @see  xbee_ser_write(), xbee_ser_putchar(), xbee_ser_getchar()
 */
-int xbee_ser_read(xbee_serial_t* serial, void FAR* buffer, int bufsize);
+int xbee_ser_read( xbee_serial_t *serial, void FAR *buffer, int bufsize);
+
 
 /**
    @brief
@@ -152,7 +157,8 @@ int xbee_ser_read(xbee_serial_t* serial, void FAR* buffer, int bufsize);
 
    @see  xbee_ser_read(), xbee_ser_write(), xbee_ser_getchar()
 */
-int xbee_ser_putchar(xbee_serial_t* serial, uint8_t ch);
+int xbee_ser_putchar( xbee_serial_t *serial, uint8_t ch);
+
 
 /**
    @brief
@@ -166,7 +172,8 @@ int xbee_ser_putchar(xbee_serial_t* serial, uint8_t ch);
 
    @see  xbee_ser_read(), xbee_ser_write(), xbee_ser_getchar()
 */
-int xbee_ser_getchar(xbee_serial_t* serial);
+int xbee_ser_getchar( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -183,7 +190,8 @@ int xbee_ser_getchar(xbee_serial_t* serial);
    @see  xbee_ser_rx_free(), xbee_ser_rx_used(), xbee_ser_rx_flush(),
             xbee_ser_tx_used(), xbee_ser_tx_flush()
 */
-int xbee_ser_tx_free(xbee_serial_t* serial);
+int xbee_ser_tx_free( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -200,7 +208,8 @@ int xbee_ser_tx_free(xbee_serial_t* serial);
    @see  xbee_ser_rx_free(), xbee_ser_rx_used(), xbee_ser_rx_flush(),
             xbee_ser_tx_free(), xbee_ser_tx_flush()
 */
-int xbee_ser_tx_used(xbee_serial_t* serial);
+int xbee_ser_tx_used( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -215,7 +224,8 @@ int xbee_ser_tx_used(xbee_serial_t* serial);
    @see  xbee_ser_rx_free(), xbee_ser_rx_used(), xbee_ser_rx_flush(),
             xbee_ser_tx_free(), xbee_ser_tx_used()
 */
-int xbee_ser_tx_flush(xbee_serial_t* serial);
+int xbee_ser_tx_flush( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -232,7 +242,8 @@ int xbee_ser_tx_flush(xbee_serial_t* serial);
    @see  xbee_ser_tx_free(), xbee_ser_tx_used(), xbee_ser_tx_flush(),
             xbee_ser_rx_used(), xbee_ser_rx_flush()
 */
-int xbee_ser_rx_free(xbee_serial_t* serial);
+int xbee_ser_rx_free( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -262,7 +273,8 @@ int xbee_ser_rx_free(xbee_serial_t* serial);
    @endcode
          returns TRUE if \c count bytes are available, FALSE otherwise.
 */
-int xbee_ser_rx_used(xbee_serial_t* serial);
+int xbee_ser_rx_used( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -277,7 +289,8 @@ int xbee_ser_rx_used(xbee_serial_t* serial);
    @see  xbee_ser_tx_free(), xbee_ser_tx_used(), xbee_ser_tx_flush(),
             xbee_ser_rx_free(), xbee_ser_rx_used()
 */
-int xbee_ser_rx_flush(xbee_serial_t* serial);
+int xbee_ser_rx_flush( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -294,7 +307,8 @@ int xbee_ser_rx_flush(xbee_serial_t* serial);
 
    @see xbee_ser_baudrate(), xbee_ser_close(), xbee_ser_break()
 */
-int xbee_ser_open(xbee_serial_t* serial, uint32_t baudrate);
+int xbee_ser_open( xbee_serial_t *serial, uint32_t baudrate);
+
 
 /**
    @brief
@@ -311,7 +325,8 @@ int xbee_ser_open(xbee_serial_t* serial, uint32_t baudrate);
 
    @see xbee_ser_open(), xbee_ser_close(), xbee_ser_break()
 */
-int xbee_ser_baudrate(xbee_serial_t* serial, uint32_t baudrate);
+int xbee_ser_baudrate( xbee_serial_t *serial, uint32_t baudrate);
+
 
 /**
    @brief
@@ -324,7 +339,8 @@ int xbee_ser_baudrate(xbee_serial_t* serial, uint32_t baudrate);
 
    @see  xbee_ser_open(), xbee_ser_baudrate(), xbee_ser_break()
 */
-int xbee_ser_close(xbee_serial_t* serial);
+int xbee_ser_close( xbee_serial_t *serial);
+
 
 /**
    @brief
@@ -341,7 +357,8 @@ int xbee_ser_close(xbee_serial_t* serial);
 
    @see  xbee_ser_open(), xbee_ser_close()
 */
-int xbee_ser_break(xbee_serial_t* serial, bool_t enabled);
+int xbee_ser_break( xbee_serial_t *serial, bool_t enabled);
+
 
 /**
    @brief
@@ -359,7 +376,8 @@ int xbee_ser_break(xbee_serial_t* serial, bool_t enabled);
    @see  xbee_ser_set_rts(), xbee_ser_get_cts()
 
 */
-int xbee_ser_flowcontrol(xbee_serial_t* serial, bool_t enabled);
+int xbee_ser_flowcontrol( xbee_serial_t *serial, bool_t enabled);
+
 
 /**
    @brief
@@ -379,7 +397,8 @@ int xbee_ser_flowcontrol(xbee_serial_t* serial, bool_t enabled);
 
    @see  xbee_ser_flowcontrol(), xbee_ser_get_cts()
 */
-int xbee_ser_set_rts(xbee_serial_t* serial, bool_t asserted);
+int xbee_ser_set_rts( xbee_serial_t *serial, bool_t asserted);
+
 
 /**
    @brief
@@ -399,13 +418,13 @@ int xbee_ser_set_rts(xbee_serial_t* serial, bool_t asserted);
 
    @see  xbee_ser_flowcontrol(), xbee_ser_set_rts()
 */
-int xbee_ser_get_cts(xbee_serial_t* serial);
+int xbee_ser_get_cts( xbee_serial_t *serial);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-#use "xbee_serial_rabbit.c"
+   #use "xbee_serial_rabbit.c"
 #endif
 
 #endif

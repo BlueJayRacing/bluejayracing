@@ -37,10 +37,10 @@
 /**** Configuration Options for Sample ****/
 
 // XBEE_SS_REQ_OPT_TIMEOUT_FIXED or XBEE_SS_REQ_OPT_TIMEOUT_INTER_PACKET
-#define TIMEOUT_OPT XBEE_SS_REQ_OPT_TIMEOUT_INTER_PACKET
+#define TIMEOUT_OPT             XBEE_SS_REQ_OPT_TIMEOUT_INTER_PACKET
 
 // Duration in units of 0.1s, or XBEE_SS_REQ_TIMEOUT_YIELDING
-#define TIMEOUT_DURATION (60 * XBEE_SS_REQ_TIMEOUT_UNITS_PER_SEC)
+#define TIMEOUT_DURATION        (60 * XBEE_SS_REQ_TIMEOUT_UNITS_PER_SEC)
 
 /**** End of Configuration Options ****/
 
@@ -49,19 +49,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "util/srp.h"
-#include "xbee/byteorder.h"
-#include "xbee/ext_modem_status.h"
 #include "xbee/platform.h"
+#include "xbee/byteorder.h"
 #include "xbee/random.h"
+#include "xbee/ext_modem_status.h"
 #include "xbee/secure_session.h"
+#include "util/srp.h"
 
-#include "_atinter.h"   // Common code for processing AT commands
-#include "_nodetable.h" // Common code for handling remote node lists
+#include "_atinter.h"           // Common code for processing AT commands
+#include "_nodetable.h"         // Common code for handling remote node lists
+#include "sample_cli.h"         // Common code for parsing user-entered data
 #include "parse_serial_args.h"
-#include "sample_cli.h" // Common code for parsing user-entered data
 
-int dump_ext_modem_status(xbee_dev_t* xbee, const void FAR* payload, uint16_t length, void FAR* context)
+int dump_ext_modem_status(xbee_dev_t *xbee,
+                          const void FAR *payload,
+                          uint16_t length,
+                          void FAR *context)
 {
     int ret;
 
@@ -77,21 +80,22 @@ int dump_ext_modem_status(xbee_dev_t* xbee, const void FAR* payload, uint16_t le
 }
 
 const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-    XBEE_FRAME_HANDLE_LOCAL_AT,      // for processing AT command responses
-    XBEE_FRAME_HANDLE_ATND_RESPONSE, // for processing ATND responses
+    XBEE_FRAME_HANDLE_LOCAL_AT,         // for processing AT command responses
+    XBEE_FRAME_HANDLE_ATND_RESPONSE,    // for processing ATND responses
 
     // Dump Modem Status frames (if bit 3 of ATAZ is clear)
     XBEE_FRAME_MODEM_STATUS_DEBUG,
 
     // Our handler for Extended Modem Status frames (if bit 3 of ATAZ set)
-    {XBEE_FRAME_EXT_MODEM_STATUS, 0, dump_ext_modem_status, NULL},
+    { XBEE_FRAME_EXT_MODEM_STATUS, 0, dump_ext_modem_status, NULL },
 
-    XBEE_FRAME_DUMP_SS_RESP, // Dump Secure Session Response frames
+    XBEE_FRAME_DUMP_SS_RESP,            // Dump Secure Session Response frames
 
-    XBEE_FRAME_TABLE_END};
+    XBEE_FRAME_TABLE_END
+};
 
 // Callback registered with xbee_disc_add_node_id_handler to update node list.
-void node_discovered(xbee_dev_t* xbee, const xbee_node_id_t* rec)
+void node_discovered(xbee_dev_t *xbee, const xbee_node_id_t *rec)
 {
     if (rec != NULL) {
         int index = node_add(rec);
@@ -104,7 +108,8 @@ void node_discovered(xbee_dev_t* xbee, const xbee_node_id_t* rec)
     }
 }
 
-void handle_menu_cmd(xbee_dev_t* xbee, char* command)
+
+void handle_menu_cmd(xbee_dev_t *xbee, char *command)
 {
     XBEE_UNUSED_PARAMETER(xbee);
     XBEE_UNUSED_PARAMETER(command);
@@ -130,10 +135,11 @@ void handle_menu_cmd(xbee_dev_t* xbee, char* command)
     puts("");
 }
 
-const xbee_node_id_t* get_target(const char* num, char** next_param)
+
+const xbee_node_id_t *get_target(const char *num, char **next_param)
 {
-    const xbee_node_id_t* target = NULL;
-    unsigned n                   = (unsigned)strtoul(num, next_param, 0);
+    const xbee_node_id_t *target = NULL;
+    unsigned n = (unsigned)strtoul(num, next_param, 0);
 
     if (*next_param == NULL || *next_param == num) {
         puts("Error: must specify node index");
@@ -147,10 +153,11 @@ const xbee_node_id_t* get_target(const char* num, char** next_param)
     return target;
 }
 
-void handle_login_cmd(xbee_dev_t* xbee, char* command)
+
+void handle_login_cmd(xbee_dev_t *xbee, char *command)
 {
-    char* next_param;
-    const xbee_node_id_t* target = get_target(&command[5], &next_param);
+    char *next_param;
+    const xbee_node_id_t *target = get_target(&command[5], &next_param);
 
     if (target == NULL) {
         // error parsing command
@@ -167,7 +174,9 @@ void handle_login_cmd(xbee_dev_t* xbee, char* command)
         return;
     }
 
-    int result = xbee_secure_session_request(xbee, &target->ieee_addr_be, XBEE_SS_REQ_OPT_CLIENT_LOGIN | TIMEOUT_OPT,
+    int result = xbee_secure_session_request(xbee, &target->ieee_addr_be,
+                                             XBEE_SS_REQ_OPT_CLIENT_LOGIN
+                                                 | TIMEOUT_OPT,
                                              TIMEOUT_DURATION, next_param);
 
     if (result) {
@@ -178,14 +187,15 @@ void handle_login_cmd(xbee_dev_t* xbee, char* command)
     xbee_disc_node_id_dump(target);
 }
 
-void handle_logout_or_close_cmd(xbee_dev_t* xbee, char* command)
+
+void handle_logout_or_close_cmd(xbee_dev_t *xbee, char *command)
 {
-    bool_t is_logout   = (strncmpi(command, "logout", 6) == 0);
-    const char* cmd    = is_logout ? "LOGOUT" : "CLOSE";
-    const char* params = &command[is_logout ? 6 : 5];
-    const addr64* ieee_addr_be;
-    const xbee_node_id_t* target = NULL;
-    char* next_param;
+    bool_t is_logout = (strncmpi(command, "logout", 6) == 0);
+    const char *cmd = is_logout ? "LOGOUT" : "CLOSE";
+    const char *params = &command[is_logout ? 6 : 5];
+    const addr64 *ieee_addr_be;
+    const xbee_node_id_t *target = NULL;
+    char *next_param;
 
     if (strcmpi(params, " all") == 0) {
         ieee_addr_be = WPAN_IEEE_ADDR_BROADCAST;
@@ -198,7 +208,10 @@ void handle_logout_or_close_cmd(xbee_dev_t* xbee, char* command)
     }
 
     int result = xbee_secure_session_request(
-        xbee, ieee_addr_be, is_logout ? XBEE_SS_REQ_OPT_CLIENT_LOGOUT : XBEE_SS_REQ_OPT_SERVER_TERMINATION, 0, NULL);
+                     xbee, ieee_addr_be,
+                     is_logout ? XBEE_SS_REQ_OPT_CLIENT_LOGOUT
+                               : XBEE_SS_REQ_OPT_SERVER_TERMINATION,
+                     0, NULL);
 
     if (target) {
         if (result) {
@@ -216,17 +229,21 @@ void handle_logout_or_close_cmd(xbee_dev_t* xbee, char* command)
     }
 }
 
+
 const cmd_entry_t commands[] = {
-    ATCMD_CLI_ENTRIES MENU_CLI_ENTRIES NODETABLE_CLI_ENTRIES
+    ATCMD_CLI_ENTRIES
+    MENU_CLI_ENTRIES
+    NODETABLE_CLI_ENTRIES
 
-    {"login", &handle_login_cmd},
-    {"logout", &handle_logout_or_close_cmd},
-    {"close", &handle_logout_or_close_cmd},
+    { "login",          &handle_login_cmd },
+    { "logout",         &handle_logout_or_close_cmd },
+    { "close",          &handle_logout_or_close_cmd },
 
-    {NULL, NULL} // end of command table
+    { NULL, NULL }                      // end of command table
 };
 
-int main(int argc, char* argv[])
+
+int main(int argc, char *argv[])
 {
     xbee_dev_t my_xbee;
     char cmdstr[256];

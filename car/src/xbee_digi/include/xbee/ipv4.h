@@ -31,65 +31,65 @@
 #ifndef XBEE_IPV4_H
 #define XBEE_IPV4_H
 
-#include "xbee/device.h"
 #include "xbee/platform.h"
+#include "xbee/device.h"
 
 #if (!XBEE_WIFI_ENABLED) && (!XBEE_CELLULAR_ENABLED)
-#error "At least one of XBEE_WIFI_ENABLED and XBEE_CELLULAR_ENABLED " \
+   #error "At least one of XBEE_WIFI_ENABLED and XBEE_CELLULAR_ENABLED " \
       "must be defined as non-zero to use this header."
 #endif
 
 XBEE_BEGIN_DECLS
 
 /// Frame Type: Transmit IPv4 data. [Wi-Fi, Cellular]
-#define XBEE_FRAME_TRANSMIT_IPV4 0x20
+#define XBEE_FRAME_TRANSMIT_IPV4       0x20
 
 /// Frame Type: Sent upon receiving IPv4 data. [Wi-Fi, Cellular]
-#define XBEE_FRAME_RECEIVE_IPV4 0xB0
+#define XBEE_FRAME_RECEIVE_IPV4        0xB0
 
 /** @name XBEE_IPV4_PROTOCOL_xxx
    Values for \c protocol member of xbee_header_transmit_ipv4_t and
    xbee_header_receive_ipv4_t.
 @{
 */
-#define XBEE_IPV4_PROTOCOL_UDP 0 ///< UDP
-#define XBEE_IPV4_PROTOCOL_TCP 1 ///< TCP
-#define XBEE_IPV4_PROTOCOL_SSL 4 ///< SSL
+#define XBEE_IPV4_PROTOCOL_UDP         0        ///< UDP
+#define XBEE_IPV4_PROTOCOL_TCP         1        ///< TCP
+#define XBEE_IPV4_PROTOCOL_SSL         4        ///< SSL
 ///@}
 
 /** @name XBEE_IPV4_TX_OPT_xxx
    Values for \c options member of xbee_header_transmit_ipv4_t.
 @{
 */
-#define XBEE_IPV4_TX_OPT_NONE      0        ///< None
-#define XBEE_IPV4_TX_OPT_TCP_CLOSE (1 << 1) ///< TCP Close
+#define XBEE_IPV4_TX_OPT_NONE          0        ///< None
+#define XBEE_IPV4_TX_OPT_TCP_CLOSE     (1<<1)   ///< TCP Close
 ///@}
 
 /// Maximum number of bytes in the payload of an IPv4 transmit or receive frame.
-#define XBEE_IPV4_MAX_PAYLOAD 1500
+#define XBEE_IPV4_MAX_PAYLOAD          1500
 
 /// Header of XBee API frame type 0x20 (#XBEE_FRAME_TRANSMIT_IPV4);
 /// sent from host to XBee.
 typedef XBEE_PACKED(xbee_header_transmit_ipv4_t, {
-    uint8_t frame_type; ///< XBEE_FRAME_TRANSMIT_IPV4 (0x20)
-    uint8_t frame_id;
-    uint32_t remote_addr_be;
-    uint16_t remote_port_be;
-    uint16_t local_port_be;
-    uint8_t protocol; ///< see XBEE_IPV4_PROTOCOL_xxx
-    uint8_t options;  ///< see XBEE_IPV4_TX_OPT_xxx
+   uint8_t        frame_type;          ///< XBEE_FRAME_TRANSMIT_IPV4 (0x20)
+   uint8_t        frame_id;
+   uint32_t       remote_addr_be;
+   uint16_t       remote_port_be;
+   uint16_t       local_port_be;
+   uint8_t        protocol;            ///< see XBEE_IPV4_PROTOCOL_xxx
+   uint8_t        options;             ///< see XBEE_IPV4_TX_OPT_xxx
 }) xbee_header_transmit_ipv4_t;
 
 /// Format of XBee API frame type 0xB0 (#XBEE_FRAME_RECEIVE_IPV4);
 /// received from XBee by host.
 typedef XBEE_PACKED(xbee_frame_receive_ipv4_t, {
-    uint8_t frame_type; ///< XBEE_FRAME_RECEIVE_IPV4 (0xB0)
-    uint32_t remote_addr_be;
-    uint16_t local_port_be;
-    uint16_t remote_port_be;
-    uint8_t protocol; ///< see XBEE_IPV4_PROTOCOL_xxx
-    uint8_t status;
-    uint8_t payload[1]; ///< multi-byte payload
+   uint8_t        frame_type;          ///< XBEE_FRAME_RECEIVE_IPV4 (0xB0)
+   uint32_t       remote_addr_be;
+   uint16_t       local_port_be;
+   uint16_t       remote_port_be;
+   uint8_t        protocol;            ///< see XBEE_IPV4_PROTOCOL_xxx
+   uint8_t        status;
+   uint8_t        payload[1];          ///< multi-byte payload
 }) xbee_frame_receive_ipv4_t;
 
 /*
@@ -105,18 +105,19 @@ typedef XBEE_PACKED(xbee_frame_receive_ipv4_t, {
 */
 /* Similar concept to wpan_envelope_t, needs some more documentation. */
 typedef struct xbee_ipv4_envelope_t {
-    // first group of members are common when creating reply envelope
-    xbee_dev_t* xbee;        ///< interface received on/to send to
-    uint32_t remote_addr_be; ///< remote device's IP address
-    uint16_t local_port;     ///< port on this device
-    uint16_t remote_port;    ///< port on remote device
-    uint8_t protocol;        ///< protocol for message
+   // first group of members are common when creating reply envelope
+   xbee_dev_t *xbee;                   ///< interface received on/to send to
+   uint32_t remote_addr_be;            ///< remote device's IP address
+   uint16_t local_port;                ///< port on this device
+   uint16_t remote_port;               ///< port on remote device
+   uint8_t protocol;                   ///< protocol for message
 
-    // second group of members are modified when creating reply envelope
-    uint16_t options;
-    const void FAR* payload; ///< contents of message
-    uint16_t length;         ///< number of bytes in payload
+   // second group of members are modified when creating reply envelope
+   uint16_t options;
+   const void FAR *payload;            ///< contents of message
+   uint16_t length;                    ///< number of bytes in payload
 } xbee_ipv4_envelope_t;
+
 
 /**
    @brief Address a reply envelope using fields from a received envelope.
@@ -127,12 +128,16 @@ typedef struct xbee_ipv4_envelope_t {
    @retval  0        envelope addressed
    @retval  -EINVAL  invalid parameter passed to function
 */
-int xbee_ipv4_envelope_reply(xbee_ipv4_envelope_t FAR* reply, const xbee_ipv4_envelope_t FAR* original);
+int xbee_ipv4_envelope_reply(xbee_ipv4_envelope_t FAR *reply,
+   const xbee_ipv4_envelope_t FAR *original);
+
 
 /**
    @brief Print the contents of an IPv4 envelope to stdout.
 */
-void xbee_ipv4_envelope_dump(const xbee_ipv4_envelope_t FAR* envelope, bool_t include_payload);
+void xbee_ipv4_envelope_dump(const xbee_ipv4_envelope_t FAR *envelope,
+   bool_t include_payload);
+
 
 /**
    @brief Send an IPv4 packet.
@@ -146,7 +151,7 @@ void xbee_ipv4_envelope_dump(const xbee_ipv4_envelope_t FAR* envelope, bool_t in
 
    @sa xbee_ipv4_envelope_reply()
 */
-int xbee_ipv4_envelope_send(const xbee_ipv4_envelope_t FAR* envelope);
+int xbee_ipv4_envelope_send(const xbee_ipv4_envelope_t FAR *envelope);
 
 /**
    @brief Dump received IPv4 frame to stdout.
@@ -159,7 +164,8 @@ int xbee_ipv4_envelope_send(const xbee_ipv4_envelope_t FAR* envelope);
    See the function help for xbee_frame_handler_fn() for full
    documentation on this function's API.
 */
-int xbee_ipv4_receive_dump(xbee_dev_t* xbee, const void FAR* raw, uint16_t length, void FAR* context);
+int xbee_ipv4_receive_dump(xbee_dev_t *xbee, const void FAR *raw,
+   uint16_t length, void FAR *context);
 
 /**
    @brief Format a big-endian IP address from an XBee frame as a
@@ -183,7 +189,7 @@ int xbee_ipv4_ntoa(char buffer[16], uint32_t ip_be);
    @retval  0        IP address successfully converted
    @retval  -EINVAL     Malformed string/ipv4 address
 */
-int xbee_ipv4_aton(const char* cp, uint32_t* ip_be);
+int xbee_ipv4_aton(const char * cp, uint32_t *ip_be);
 
 /**
    @brief A string description of the "protocol" byte from an XBee IPv4 frame.
@@ -197,13 +203,13 @@ int xbee_ipv4_aton(const char* cp, uint32_t* ip_be);
 
    @retval           buffer passed to function
 */
-char* xbee_ipv4_protocol_str(char buffer[8], uint8_t protocol);
+char *xbee_ipv4_protocol_str(char buffer[8], uint8_t protocol);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-#use "xbee_sms.c"
+   #use "xbee_sms.c"
 #endif
 
 #endif

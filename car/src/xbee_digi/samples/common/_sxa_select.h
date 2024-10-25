@@ -16,11 +16,11 @@
 extern addr64 target_ieee;
 extern int have_target;
 extern int ever_had_target;
-extern sxa_node_t FAR* sxa;
+extern sxa_node_t FAR *sxa;
 
 void set_sxa(void);
-int set_target(const char* str, addr64 FAR* address);
+int set_target(const char *str, addr64 FAR *address);
 void sxa_select_help(void);
-int sxa_select_command(char* cmdstr);
+int sxa_select_command( char *cmdstr);
 
 #endif // _SXA_SELECT_H_INCL

@@ -23,8 +23,8 @@
 #ifndef __XBEE_XMODEM
 #define __XBEE_XMODEM
 
-#include "xbee/device.h"
 #include "xbee/platform.h"
+#include "xbee/device.h"
 
 XBEE_BEGIN_DECLS
 
@@ -32,25 +32,25 @@ XBEE_BEGIN_DECLS
    @{
 */
 /// receiver requests XMODEM (with checksum), or did not receive last block
-#define XMODEM_NAK 0x15
+#define XMODEM_NAK   0x15
 
 /// receiver requests XMODEM-CRC
-#define XMODEM_CRC 'C'
+#define XMODEM_CRC   'C'
 
 /// start of 128-byte block
-#define XMODEM_SOH 0x01
+#define XMODEM_SOH   0x01
 
 /// start of 1024-byte block
-#define XMODEM_STX 0x02
+#define XMODEM_STX   0x02
 
 /// acknowledge receipt of block
-#define XMODEM_ACK 0x06
+#define XMODEM_ACK   0x06
 
 /// cancel transmission
-#define XMODEM_CAN 0x18
+#define XMODEM_CAN   0x18
 
 /// sender is ending transmission
-#define XMODEM_EOT 0x04 // end of transmission
+#define XMODEM_EOT   0x04     // end of transmission
 ///@}
 
 /**
@@ -71,7 +71,8 @@ XBEE_BEGIN_DECLS
    @retval  -EINVAL  NULL pointer or negative byte count passed to function
    @retval  0        no more bytes to read
 */
-typedef int (*xbee_xmodem_read_fn)(void FAR* context, void FAR* buffer, int16_t bytes);
+typedef int (*xbee_xmodem_read_fn)( void FAR * context,
+                                          void FAR *buffer, int16_t bytes);
 
 /**
    @brief
@@ -88,87 +89,89 @@ typedef int (*xbee_xmodem_read_fn)(void FAR* context, void FAR* buffer, int16_t 
    @retval  -EINVAL  NULL pointer or negative byte count passed to function
    @retval  <0       irrecoverable error
 */
-typedef int (*xbee_xmodem_write_fn)(void FAR* context, const void FAR* buffer, int16_t bytes);
+typedef int (*xbee_xmodem_write_fn)( void FAR * context,
+                                       const void FAR *buffer, int16_t bytes);
 
 /**
    Values for \c state member of xbee_xmodem_state_t
 */
-enum xbee_xmodem_state
-{
-    XBEE_XMODEM_STATE_FLUSH,     ///< flush receive buffer and wait
-    XBEE_XMODEM_STATE_START,     ///< waiting for NAK or CRC char
-    XBEE_XMODEM_STATE_SEND,      ///< start of another packet
-    XBEE_XMODEM_STATE_RESEND,    ///< resend last packet
-    XBEE_XMODEM_STATE_SENDING,   ///< sending bytes of packet
-    XBEE_XMODEM_STATE_WAIT_ACK,  ///< waiting for ACK of current packet
-    XBEE_XMODEM_STATE_EOF,       ///< reached end of file, close connection
-    XBEE_XMODEM_STATE_FINAL_ACK, ///< waiting for final ACK from receiver
-    XBEE_XMODEM_STATE_SUCCESS,   ///< completed transfer was successful
-    XBEE_XMODEM_STATE_FAILURE,   ///< transfer failed
+enum xbee_xmodem_state {
+   XBEE_XMODEM_STATE_FLUSH,      ///< flush receive buffer and wait
+   XBEE_XMODEM_STATE_START,      ///< waiting for NAK or CRC char
+   XBEE_XMODEM_STATE_SEND,       ///< start of another packet
+   XBEE_XMODEM_STATE_RESEND,     ///< resend last packet
+   XBEE_XMODEM_STATE_SENDING,    ///< sending bytes of packet
+   XBEE_XMODEM_STATE_WAIT_ACK,   ///< waiting for ACK of current packet
+   XBEE_XMODEM_STATE_EOF,        ///< reached end of file, close connection
+   XBEE_XMODEM_STATE_FINAL_ACK,  ///< waiting for final ACK from receiver
+   XBEE_XMODEM_STATE_SUCCESS,    ///< completed transfer was successful
+   XBEE_XMODEM_STATE_FAILURE,    ///< transfer failed
 };
 
 /**
    Structure used to track the state of an Xmodem send.
 */
-typedef struct xbee_xmodem_state_t {
-    /// flags for tracking state of transfer
-    uint16_t flags;
-/** @name Values for \c flags member of xbee_xmodem_state_t
-   @{
-*/
-/// macro for "no flags", used when calling xbee_xmodem_tx_init
-#define XBEE_XMODEM_FLAG_NONE 0x0000
-/// blocks end with a 1-byte checksum
-#define XBEE_XMODEM_FLAG_CHECKSUM 0x0001
-/// blocks end with a 16-bit CRC
-#define XBEE_XMODEM_FLAG_CRC 0x0002
-/// force use of XMODEM-CRC (by ignoring NAK at start of transfer)
-#define XBEE_XMODEM_FLAG_FORCE_CRC 0x0008
-/// mask for determining block size
-#define XBEE_XMODEM_MASK_BLOCKSIZE 0x0300
-/// 128-byte blocks (default setting)
-#define XBEE_XMODEM_FLAG_128 0x0000
-/// 64-byte blocks -- non-standard block size used for OTA updates
-#define XBEE_XMODEM_FLAG_64 0x0100
-/// 1KB blocks
-#define XBEE_XMODEM_FLAG_1K 0x0200
-/// alternate macro name for #XBEE_XMODEM_FLAG_1K
-#define XBEE_XMODEM_FLAG_1024 XBEE_XMODEM_FLAG_1K
+typedef struct xbee_xmodem_state_t
+{
+   /// flags for tracking state of transfer
+   uint16_t                   flags;
+      /** @name Values for \c flags member of xbee_xmodem_state_t
+         @{
+      */
+      /// macro for "no flags", used when calling xbee_xmodem_tx_init
+      #define XBEE_XMODEM_FLAG_NONE       0x0000
+      /// blocks end with a 1-byte checksum
+      #define XBEE_XMODEM_FLAG_CHECKSUM   0x0001
+      /// blocks end with a 16-bit CRC
+      #define XBEE_XMODEM_FLAG_CRC        0x0002
+      /// force use of XMODEM-CRC (by ignoring NAK at start of transfer)
+      #define XBEE_XMODEM_FLAG_FORCE_CRC  0x0008
+      /// mask for determining block size
+      #define XBEE_XMODEM_MASK_BLOCKSIZE  0x0300
+      /// 128-byte blocks (default setting)
+      #define XBEE_XMODEM_FLAG_128        0x0000
+      /// 64-byte blocks -- non-standard block size used for OTA updates
+      #define XBEE_XMODEM_FLAG_64         0x0100
+      /// 1KB blocks
+      #define XBEE_XMODEM_FLAG_1K         0x0200
+      /// alternate macro name for #XBEE_XMODEM_FLAG_1K
+      #define XBEE_XMODEM_FLAG_1024       XBEE_XMODEM_FLAG_1K
 #ifdef XBEE_XMODEM_TESTING
-// Macros for testing both sides of the xmodem transfer code
-/// ignore the next ACK that comes in from the receiver
-#define XBEE_XMODEM_FLAG_DROP_ACK 0x1000
-/// don't actually send the next frame (but act like you did)
-#define XBEE_XMODEM_FLAG_DROP_FRAME 0x2000
-/// make the CRC-16 bad (and make sure the other side asks for resend!)
-#define XBEE_XMODEM_FLAG_BAD_CRC 0x4000
-/// CRC-16 is bad and needs to be restored
-#define XBEE_XMODEM_FLAG_RESTORE_CRC 0x8000
+      // Macros for testing both sides of the xmodem transfer code
+      /// ignore the next ACK that comes in from the receiver
+      #define XBEE_XMODEM_FLAG_DROP_ACK         0x1000
+      /// don't actually send the next frame (but act like you did)
+      #define XBEE_XMODEM_FLAG_DROP_FRAME       0x2000
+      /// make the CRC-16 bad (and make sure the other side asks for resend!)
+      #define XBEE_XMODEM_FLAG_BAD_CRC          0x4000
+      /// CRC-16 is bad and needs to be restored
+      #define XBEE_XMODEM_FLAG_RESTORE_CRC      0x8000
 #endif
 
-/// mask of user-settable flags that can be passed to xbee_xmodem_tx_init
-#define XBEE_XMODEM_FLAG_USER (XBEE_XMODEM_MASK_BLOCKSIZE | XBEE_XMODEM_FLAG_FORCE_CRC)
-    ///@}
+      /// mask of user-settable flags that can be passed to xbee_xmodem_tx_init
+      #define XBEE_XMODEM_FLAG_USER       \
+         (XBEE_XMODEM_MASK_BLOCKSIZE | XBEE_XMODEM_FLAG_FORCE_CRC)
+      ///@}
 
-    /// current packet number; starts at 1 and low byte used in block headers
-    uint16_t packet_num;
+   /// current packet number; starts at 1 and low byte used in block headers
+   uint16_t                   packet_num;
 
-    /// timer value used to hold low word of xbee_millisecond_timer()
-    uint16_t timer;
+   /// timer value used to hold low word of xbee_millisecond_timer()
+   uint16_t                   timer;
 
-    enum xbee_xmodem_state state; ///< current state of transfer
-    uint_fast8_t tries;           ///< # of tries left before giving up
-    int offset;                   ///< offset into packet being sent
-    char FAR* buffer;             ///< buffer we can use
-    struct {
-        xbee_xmodem_read_fn read; ///< source of bytes to send
-        void FAR* context;        ///< context for file.read()
-    } file;                       ///< function and context to read source of sent data
-    struct {
-        xbee_xmodem_read_fn read;   ///< read response bytes from target
-        xbee_xmodem_write_fn write; ///< send blocks to target
-        void FAR* context;          ///< context for stream.read & .write
-    } stream;                       ///< functions and context to communicate with target device
+   enum xbee_xmodem_state     state;      ///< current state of transfer
+   uint_fast8_t               tries;      ///< # of tries left before giving up
+   int                        offset;     ///< offset into packet being sent
+   char                 FAR   *buffer;    ///< buffer we can use
+   struct {
+      xbee_xmodem_read_fn     read;       ///< source of bytes to send
+      void              FAR   *context;   ///< context for file.read()
+   } file;     ///< function and context to read source of sent data
+   struct {
+      xbee_xmodem_read_fn     read;       ///< read response bytes from target
+      xbee_xmodem_write_fn    write;      ///< send blocks to target
+      void              FAR   *context;   ///< context for stream.read & .write
+   } stream;   ///< functions and context to communicate with target device
 } xbee_xmodem_state_t;
 
 /**
@@ -192,7 +195,7 @@ typedef struct xbee_xmodem_state_t {
 
    @sa pxbee_ota_init, xbee_xmodem_set_stream
 */
-int xbee_xmodem_use_serport(xbee_xmodem_state_t* xbxm, xbee_serial_t* serport);
+int xbee_xmodem_use_serport( xbee_xmodem_state_t *xbxm, xbee_serial_t *serport);
 
 /**
    @brief
@@ -208,8 +211,8 @@ int xbee_xmodem_use_serport(xbee_xmodem_state_t* xbxm, xbee_serial_t* serport);
    @retval     0        successfully configured data source
    @retval     -EINVAL  invalid parameter passed in
 */
-int xbee_xmodem_set_source(xbee_xmodem_state_t* xbxm, void FAR* buffer, xbee_xmodem_read_fn read,
-                           const void FAR* context);
+int xbee_xmodem_set_source( xbee_xmodem_state_t *xbxm,
+   void FAR *buffer, xbee_xmodem_read_fn read, const void FAR *context);
 
 /**
    @brief
@@ -229,8 +232,9 @@ int xbee_xmodem_set_source(xbee_xmodem_state_t* xbxm, void FAR* buffer, xbee_xmo
 
    @sa pxbee_ota_init, xbee_xmodem_use_serport
 */
-int xbee_xmodem_set_stream(xbee_xmodem_state_t* xbxm, xbee_xmodem_read_fn read, xbee_xmodem_write_fn write,
-                           const void FAR* context);
+int xbee_xmodem_set_stream( xbee_xmodem_state_t *xbxm,
+   xbee_xmodem_read_fn read, xbee_xmodem_write_fn write,
+   const void FAR *context);
 
 /**
    @brief
@@ -250,7 +254,7 @@ int xbee_xmodem_set_stream(xbee_xmodem_state_t* xbxm, xbee_xmodem_read_fn read, 
 
    @sa pxbee_ota_init
 */
-int xbee_xmodem_tx_init(xbee_xmodem_state_t* xbxm, uint16_t flags);
+int xbee_xmodem_tx_init( xbee_xmodem_state_t *xbxm, uint16_t flags);
 
 /**
    @brief
@@ -264,13 +268,13 @@ int xbee_xmodem_tx_init(xbee_xmodem_state_t* xbxm, uint16_t flags);
    @retval  1           transfer completed successfully
 
 */
-int xbee_xmodem_tx_tick(xbee_xmodem_state_t* xbxm);
+int xbee_xmodem_tx_tick( xbee_xmodem_state_t *xbxm);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-#use "xbee_xmodem.c"
+   #use "xbee_xmodem.c"
 #endif
 
 #endif
