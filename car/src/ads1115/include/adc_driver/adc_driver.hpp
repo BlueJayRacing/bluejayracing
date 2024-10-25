@@ -1,18 +1,19 @@
 // adc_driver.hpp
 #pragma once
 
-#include <rclcpp/rclcpp.hpp>
+#include <ads1115/adc.hpp>
 #include <baja_msgs/msg/analog_channel.hpp>
 #include <baja_msgs/msg/observation.hpp>
-#include <ads1115/adc.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-namespace adc_driver {
+namespace adc_driver
+{
 
 class ADCDriver : public rclcpp::Node {
-public:
+  public:
     ADCDriver();
 
-private:
+  private:
     void read_and_publish_data();
     std::string serializeDoubleToBinaryString(double value);
 

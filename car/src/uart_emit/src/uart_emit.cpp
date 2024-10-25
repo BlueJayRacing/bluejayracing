@@ -1,9 +1,10 @@
-// how to configure serial IO: https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/
-#include <uart_emit/uart_emit.hpp>
-#include <iostream>
-#include <fcntl.h>
+// how to configure serial IO:
+// https://blog.mbedded.ninja/programming/operating-systems/linux/linux-serial-ports-using-c-cpp/
 #include <errno.h>
+#include <fcntl.h>
+#include <iostream>
 #include <termios.h>
+#include <uart_emit/uart_emit.hpp>
 #include <unistd.h>
 
 #define SERIAL_PORT "/dev/ttyACM0"
@@ -19,8 +20,7 @@ UartEmit::UartEmit() : Node("uart_emit_node")
     serial_port = open(SERIAL_PORT, O_RDWR);
 
     // Check for errors
-    if (serial_port < 0)
-    {
+    if (serial_port < 0) {
         RCLCPP_ERROR(get_logger(), "Error %i from open: %s", errno, strerror(errno));
         return;
     }
@@ -30,20 +30,16 @@ UartEmit::UartEmit() : Node("uart_emit_node")
         "observation_topic", 10, std::bind(&UartEmit::observation_callback, this, std::placeholders::_1));
 }
 
-void UartEmit::observation_callback(const baja_msgs::msg::Observation msg)
-{
-    emit_rtk_correction(msg);
-}
+void UartEmit::observation_callback(const baja_msgs::msg::Observation msg) { emit_rtk_correction(msg); }
 
 void UartEmit::emit_rtk_correction(const baja_msgs::msg::Observation msg)
 {
 
     auto rtk = msg.rtk_correction[0];
-    int ts = msg.timestamp.ts;
+    int ts   = msg.timestamp.ts;
 
     const uint8_t* rtk_msg = reinterpret_cast<const uint8_t*>(rtk.rtk_correction.data());
-    size_t rtk_msg_size = rtk.rtk_correction.size();
-
+    size_t rtk_msg_size    = rtk.rtk_correction.size();
 
     write(serial_port, rtk_msg, rtk_msg_size);
 

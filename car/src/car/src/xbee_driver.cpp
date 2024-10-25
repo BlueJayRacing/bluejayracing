@@ -6,27 +6,30 @@
 #define RF_RATE 0 // 0: 10 kb/s, 1: 110 kb/s, 2: 250 kb/s
 
 #ifndef RF_RATE
-    #error "RF_RATE must be defined and be 0, 1, or 2"
+#error "RF_RATE must be defined and be 0, 1, or 2"
 #endif
 #if RF_RATE == 0
-  #define POLLING_INTERVAL 120000 // useconds
-  #define FULL_QUEUE_WAIT_TIME 480000 // useconds
+#define POLLING_INTERVAL     120000 // useconds
+#define FULL_QUEUE_WAIT_TIME 480000 // useconds
 #elif RF_RATE == 1
-  #define POLLING_INTERVAL 12000 // useconds
-  #define FULL_QUEUE_WAIT_TIME 48000 // useconds
+#define POLLING_INTERVAL     12000 // useconds
+#define FULL_QUEUE_WAIT_TIME 48000 // useconds
 #elif RF_RATE == 2
-  #define POLLING_INTERVAL 6000 // useconds
-  #define FULL_QUEUE_WAIT_TIME 24000 // useconds
+#define POLLING_INTERVAL     6000  // useconds
+#define FULL_QUEUE_WAIT_TIME 24000 // useconds
 #else
-  #error "RF_RATE must be defined and be 0, 1, or 2"
+#error "RF_RATE must be defined and be 0, 1, or 2"
 #endif
 
-namespace xbee_driver {
+namespace xbee_driver
+{
 
-XbeeDriver::XbeeDriver() : Node("xbee_driver") {
+XbeeDriver::XbeeDriver() : Node("xbee_driver")
+{
     RCLCPP_INFO(get_logger(), "Starting XBee driver...");
 
-    conn_ = new XBeeConnection(XbeeBajaSerialConfig::CAR_DEVICE, XbeeBajaSerialConfig::BAJA_BAUDRATE, XbeeBajaSerialConfig::CONGESTION_CONTROL_WINDOW);
+    conn_   = new XBeeConnection(XbeeBajaSerialConfig::CAR_DEVICE, XbeeBajaSerialConfig::BAJA_BAUDRATE,
+                                 XbeeBajaSerialConfig::CONGESTION_CONTROL_WINDOW);
     int err = conn_->open();
     while (err == Connection::RECOVERABLE_ERROR) {
         std::this_thread::sleep_for(std::chrono::microseconds(100000));
@@ -44,26 +47,27 @@ XbeeDriver::XbeeDriver() : Node("xbee_driver") {
 
     rx_pub_ = create_publisher<std_msgs::msg::String>("xbee_rx_data", 10);
 
-    timer_ = create_wall_timer(std::chrono::microseconds(POLLING_INTERVAL), std::bind(&XbeeDriver::timer_callback, this));
+    timer_ =
+        create_wall_timer(std::chrono::microseconds(POLLING_INTERVAL), std::bind(&XbeeDriver::timer_callback, this));
 }
 
-XbeeDriver::~XbeeDriver() {
-    delete conn_;
-}
+XbeeDriver::~XbeeDriver() { delete conn_; }
 
-void XbeeDriver::timer_callback() {
+void XbeeDriver::timer_callback()
+{
     RCLCPP_INFO(get_logger(), "Spinning");
     try_receive_data();
 }
 
-int XbeeDriver::try_transmit_data(const std_msgs::msg::String& msg) {
-    if ( msg.data.empty() ){
+int XbeeDriver::try_transmit_data(const std_msgs::msg::String& msg)
+{
+    if (msg.data.empty()) {
         RCLCPP_INFO(get_logger(), "No message to transmit");
         return EXIT_SUCCESS;
     }
     RCLCPP_INFO(get_logger(), "Retrieved message from subscription, sending to XBee");
 
-    int err = conn_->send(msg.data);
+    int err  = conn_->send(msg.data);
     int iter = 1;
     while (iter <= XBEE_DRIVER_MAX_SEND_RETRIES && err == Connection::QUEUE_FULL) {
         RCLCPP_WARN(get_logger(), "XBee serial queue full, waiting and retrying");
@@ -94,7 +98,8 @@ int XbeeDriver::try_transmit_data(const std_msgs::msg::String& msg) {
     return EXIT_SUCCESS;
 }
 
-int XbeeDriver::try_receive_data() {
+int XbeeDriver::try_receive_data()
+{
     if (conn_->num_messages_available() <= 0) {
         int err = conn_->tick();
         if (err == Connection::IRRECOVERABLE_ERROR) {

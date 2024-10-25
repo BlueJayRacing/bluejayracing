@@ -18,41 +18,36 @@
 
 #include "xbee/ebl_file.h"
 
-int ebl_dump( const char *filename)
+int ebl_dump(const char* filename)
 {
-   FILE              *f;
-   ebl_file_header_t header;
-   
-   f = fopen( filename, "rb");
-   if (f == NULL)
-   {
-      puts( "couldn't open file");
-      return -EIO;
-   }
-   
-   if (fread( &header, 1, sizeof header, f) != sizeof header)
-   {
-      puts( "read came up short");
-   }
-   else
-   {
-      ebl_header_dump( &header, EBL_HEADER_DUMP_EVERYTHING);
-   }
-   
-   fclose( f);
+    FILE* f;
+    ebl_file_header_t header;
 
-   return 0;
+    f = fopen(filename, "rb");
+    if (f == NULL) {
+        puts("couldn't open file");
+        return -EIO;
+    }
+
+    if (fread(&header, 1, sizeof header, f) != sizeof header) {
+        puts("read came up short");
+    } else {
+        ebl_header_dump(&header, EBL_HEADER_DUMP_EVERYTHING);
+    }
+
+    fclose(f);
+
+    return 0;
 }
 
-int main( int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-   int i;
-   
-   for (i = 1; i < argc; ++i)
-   {
-      printf( "\n%s:\n", argv[i]);
-      ebl_dump( argv[i]);
-   }
-   
-   return 0;
+    int i;
+
+    for (i = 1; i < argc; ++i) {
+        printf("\n%s:\n", argv[i]);
+        ebl_dump(argv[i]);
+    }
+
+    return 0;
 }

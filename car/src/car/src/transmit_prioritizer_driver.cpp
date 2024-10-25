@@ -1,16 +1,18 @@
 #include "transmit_prioritizer_driver/transmit_prioritizer_driver.hpp"
 
+namespace transmit_prioritizer
+{
 
-namespace transmit_prioritizer {
-
-TransmitPrioritizerDriver::TransmitPrioritizerDriver() : Node("transmit_prioritizer_driver") {
+TransmitPrioritizerDriver::TransmitPrioritizerDriver() : Node("transmit_prioritizer_driver")
+{
     observation_sub_ = create_subscription<baja_msgs::msg::Observation>(
         "transmit_data", 10, std::bind(&TransmitPrioritizerDriver::observation_callback, this, std::placeholders::_1));
 
     radio_pub_ = create_publisher<std_msgs::msg::String>("radio_data", 10);
 }
 
-void TransmitPrioritizerDriver::observation_callback(const baja_msgs::msg::Observation::SharedPtr msg) {
+void TransmitPrioritizerDriver::observation_callback(const baja_msgs::msg::Observation::SharedPtr msg)
+{
     Observation proto_observation;
     translate_observation(*msg, proto_observation);
     live_comm_.add_observations()->CopyFrom(proto_observation);
@@ -26,7 +28,9 @@ void TransmitPrioritizerDriver::observation_callback(const baja_msgs::msg::Obser
     }
 }
 
-void TransmitPrioritizerDriver::translate_observation(const baja_msgs::msg::Observation& ros_observation, Observation& proto_observation) {
+void TransmitPrioritizerDriver::translate_observation(const baja_msgs::msg::Observation& ros_observation,
+                                                      Observation& proto_observation)
+{
     translate_timestamp(ros_observation.timestamp, *proto_observation.mutable_timestamp());
 
     if (!ros_observation.gps.empty()) {
@@ -49,17 +53,22 @@ void TransmitPrioritizerDriver::translate_observation(const baja_msgs::msg::Obse
     }
 }
 
-void TransmitPrioritizerDriver::translate_timestamp(const baja_msgs::msg::Timestamp& ros_timestamp, Timestamp& proto_timestamp) {
+void TransmitPrioritizerDriver::translate_timestamp(const baja_msgs::msg::Timestamp& ros_timestamp,
+                                                    Timestamp& proto_timestamp)
+{
     proto_timestamp.set_ts(ros_timestamp.ts);
 }
 
-void TransmitPrioritizerDriver::translate_gps(const baja_msgs::msg::GPS& ros_gps, GPS& proto_gps) {
+void TransmitPrioritizerDriver::translate_gps(const baja_msgs::msg::GPS& ros_gps, GPS& proto_gps)
+{
     proto_gps.set_latitude(ros_gps.latitude);
     proto_gps.set_longitude(ros_gps.longitude);
     proto_gps.set_altitude(ros_gps.altitude);
 }
 
-void TransmitPrioritizerDriver::translate_localization(const baja_msgs::msg::Localization& ros_localization, Localization& proto_localization) {
+void TransmitPrioritizerDriver::translate_localization(const baja_msgs::msg::Localization& ros_localization,
+                                                       Localization& proto_localization)
+{
     proto_localization.set_x(ros_localization.x);
     proto_localization.set_y(ros_localization.y);
     proto_localization.set_z(ros_localization.z);
@@ -87,21 +96,30 @@ void TransmitPrioritizerDriver::translate_localization(const baja_msgs::msg::Loc
     }
 }
 
-void TransmitPrioritizerDriver::translate_communication(const baja_msgs::msg::Communication& ros_communication, Communication& proto_communication) {
+void TransmitPrioritizerDriver::translate_communication(const baja_msgs::msg::Communication& ros_communication,
+                                                        Communication& proto_communication)
+{
     if (ros_communication.instruction) {
-        proto_communication.set_instruction(static_cast<Communication::DriverInstruction>(ros_communication.instruction));
+        proto_communication.set_instruction(
+            static_cast<Communication::DriverInstruction>(ros_communication.instruction));
     }
     if (ros_communication.driver_response) {
-        proto_communication.set_driver_response(static_cast<Communication::DriverResponse>(ros_communication.driver_response));
+        proto_communication.set_driver_response(
+            static_cast<Communication::DriverResponse>(ros_communication.driver_response));
     }
 }
 
-void TransmitPrioritizerDriver::translate_analog_channel(const baja_msgs::msg::AnalogChannel& ros_analog_channel, AnalogChannel& proto_analog_channel) {
+void TransmitPrioritizerDriver::translate_analog_channel(const baja_msgs::msg::AnalogChannel& ros_analog_channel,
+                                                         AnalogChannel& proto_analog_channel)
+{
     proto_analog_channel.set_channel_type(static_cast<AnalogChannel::ChannelType>(ros_analog_channel.channel_type));
-    proto_analog_channel.set_encoded_analog_points(serializeDoubleToBinaryString(ros_analog_channel.encoded_analog_points));
+    proto_analog_channel.set_encoded_analog_points(
+        serializeDoubleToBinaryString(ros_analog_channel.encoded_analog_points));
 }
 
-void TransmitPrioritizerDriver::translate_car_state(const baja_msgs::msg::CarState& ros_car_state, CarState& proto_car_state) {
+void TransmitPrioritizerDriver::translate_car_state(const baja_msgs::msg::CarState& ros_car_state,
+                                                    CarState& proto_car_state)
+{
     if (ros_car_state.engine_status) {
         proto_car_state.set_engine_status(static_cast<CarState::EngineStatus>(ros_car_state.engine_status));
     }
@@ -110,12 +128,15 @@ void TransmitPrioritizerDriver::translate_car_state(const baja_msgs::msg::CarSta
     }
 }
 
-void TransmitPrioritizerDriver::translate_rtk_correction(const baja_msgs::msg::RTKCorrection& ros_rtk_correction, RTKCorrection& proto_rtk_correction) {
+void TransmitPrioritizerDriver::translate_rtk_correction(const baja_msgs::msg::RTKCorrection& ros_rtk_correction,
+                                                         RTKCorrection& proto_rtk_correction)
+{
     const char* rtk_msg = reinterpret_cast<const char*>(ros_rtk_correction.rtk_correction.data());
     proto_rtk_correction.set_rtk_correction(std::string(rtk_msg));
 }
 
-std::string TransmitPrioritizerDriver::serializeDoubleToBinaryString(double value) {
+std::string TransmitPrioritizerDriver::serializeDoubleToBinaryString(double value)
+{
     const unsigned char* p = reinterpret_cast<const unsigned char*>(&value);
     return std::string(p, p + sizeof(double));
 }

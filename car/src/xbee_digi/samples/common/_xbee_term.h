@@ -15,20 +15,21 @@
 
 #include "xbee/platform.h"
 
-enum char_source {
-    SOURCE_UNKNOWN,             // startup condition
-    SOURCE_KEYBOARD,            // from user entering data at keyboard
-    SOURCE_SERIAL,              // from XBee on serial port
-    SOURCE_STATUS,              // status messages
+enum char_source
+{
+    SOURCE_UNKNOWN,  // startup condition
+    SOURCE_KEYBOARD, // from user entering data at keyboard
+    SOURCE_SERIAL,   // from XBee on serial port
+    SOURCE_STATUS,   // status messages
 };
 
 // Platform-specific functions used by xbee_term.c.
-void xbee_term_console_restore( void);
-void xbee_term_console_init( void);
-void xbee_term_set_color( enum char_source source);
-int xbee_term_getchar( void);
+void xbee_term_console_restore(void);
+void xbee_term_console_init(void);
+void xbee_term_set_color(enum char_source source);
+int xbee_term_getchar(void);
 
 // open an interactive terminal to \a port
-void xbee_term( xbee_serial_t *port);
+void xbee_term(xbee_serial_t* port);
 
 #endif /* XBEE_TERM_H_ */

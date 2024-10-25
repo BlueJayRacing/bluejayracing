@@ -20,21 +20,19 @@
 
 #include "xbee/discovery.h"
 
-#define NODE_TABLE_SIZE  10
+#define NODE_TABLE_SIZE 10
 extern xbee_node_id_t node_table[NODE_TABLE_SIZE];
 
-xbee_node_id_t *node_by_addr( const addr64 FAR *ieee_be);
-xbee_node_id_t *node_by_name( const char *name);
-xbee_node_id_t *node_by_index( int idx);
-int node_add( const xbee_node_id_t *node_id);
-void node_table_dump( void);
+xbee_node_id_t* node_by_addr(const addr64 FAR* ieee_be);
+xbee_node_id_t* node_by_name(const char* name);
+xbee_node_id_t* node_by_index(int idx);
+int node_add(const xbee_node_id_t* node_id);
+void node_table_dump(void);
 
 // sample_cli handlers
 void print_cli_help_nodetable(void);
-void handle_nd_cmd(xbee_dev_t *xbee, char *command);
-void handle_nodes_cmd(xbee_dev_t *xbee, char *command);
-#define NODETABLE_CLI_ENTRIES \
-    { "nd",             &handle_nd_cmd },       \
-    { "nodes",          &handle_nodes_cmd },    \
+void handle_nd_cmd(xbee_dev_t* xbee, char* command);
+void handle_nodes_cmd(xbee_dev_t* xbee, char* command);
+#define NODETABLE_CLI_ENTRIES {"nd", &handle_nd_cmd}, {"nodes", &handle_nodes_cmd},
 
 #endif

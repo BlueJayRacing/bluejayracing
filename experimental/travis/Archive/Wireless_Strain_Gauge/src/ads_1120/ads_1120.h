@@ -9,14 +9,15 @@
  * the interrupt pin on the IoT device.
  */
 
-class ads_1120{
-    public:
-        void begin(int cs_pin, int drdy_pin);
-        uint16_t read_adc();
-    private:
-        ADS1120* adc;
-        static void interrupt();
-        static bool drdy_flag;
+class ads_1120 {
+  public:
+    void begin(int cs_pin, int drdy_pin);
+    uint16_t read_adc();
+
+  private:
+    ADS1120* adc;
+    static void interrupt();
+    static bool drdy_flag;
 };
 
 #endif

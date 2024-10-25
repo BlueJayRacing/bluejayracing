@@ -20,28 +20,28 @@
 #ifndef __XBEE_TIME_H
 #define __XBEE_TIME_H
 
-#include <time.h>
 #include "xbee/platform.h"
+#include <time.h>
 
 XBEE_BEGIN_DECLS
 
 typedef uint32_t xbee_utctime_t;
-#define XBEE_UTCTIME_INVALID            0xFFFFFFFF
+#define XBEE_UTCTIME_INVALID 0xFFFFFFFF
 
 // Convert a 1/1/2000-based timestamp into a struct tm which can be used with
 // the Standard C Library's <time.h>.
-struct tm *xbee_gmtime(struct tm *tm, xbee_utctime_t timestamp);
+struct tm* xbee_gmtime(struct tm* tm, xbee_utctime_t timestamp);
 
 // Convert a struct tm to a 1/1/2000-based timestamp.
-xbee_utctime_t xbee_mktime(struct tm *time_rec);
+xbee_utctime_t xbee_mktime(struct tm* time_rec);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-    #use "xbee_time.c"
+#use "xbee_time.c"
 #endif
 
-#endif  // __XBEE_TIME_H defined
+#endif // __XBEE_TIME_H defined
 
 ///@}

@@ -4,10 +4,9 @@
 #include <vector>
 
 class SensorInterface {
-public:
-    virtual void reset() = 0;
+  public:
+    virtual void reset()               = 0;
     virtual std::vector<double> read() = 0;
 };
-
 
 #endif

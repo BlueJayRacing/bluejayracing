@@ -1,16 +1,17 @@
 // broker_driver.hpp
 #pragma once
 
-#include <rclcpp/rclcpp.hpp>
 #include <baja_msgs/msg/observation.hpp>
+#include <rclcpp/rclcpp.hpp>
 
-namespace broker_driver {
+namespace broker_driver
+{
 
 class BrokerDriver : public rclcpp::Node {
-public:
+  public:
     BrokerDriver();
 
-private:
+  private:
     void observation_callback(const baja_msgs::msg::Observation::SharedPtr msg);
 
     rclcpp::Subscription<baja_msgs::msg::Observation>::SharedPtr mqtt_sub_;
