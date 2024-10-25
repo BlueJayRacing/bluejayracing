@@ -63,8 +63,8 @@
 #define SRP_H
 
 // Digi International's XBee products use the following SRP configuration.
-#define SRP_GROUP_LEN       128
-#define SRP_HASH_LEN        32
+#define SRP_GROUP_LEN 128
+#define SRP_HASH_LEN  32
 
 struct SRPVerifier;
 struct SRPUser;
@@ -73,72 +73,58 @@ struct SRPUser;
  *
  * The caller is responsible for freeing the memory allocated for bytes_s and bytes_v
  */
-int srp_create_salted_verification_key( const char * username,
-                                         const unsigned char * password, int len_password,
-                                         const unsigned char ** bytes_s, int * len_s,
-                                         const unsigned char ** bytes_v, int * len_v );
-
+int srp_create_salted_verification_key(const char* username, const unsigned char* password, int len_password,
+                                       const unsigned char** bytes_s, int* len_s, const unsigned char** bytes_v,
+                                       int* len_v);
 
 /* Out: bytes_B, len_B.
  *
  * On failure, bytes_B will be set to NULL and len_B will be set to 0
  */
-struct SRPVerifier *  srp_verifier_new( const char * username,
-                                        const unsigned char * bytes_s, int len_s,
-                                        const unsigned char * bytes_v, int len_v,
-                                        const unsigned char * bytes_A, int len_A,
-                                        const unsigned char ** bytes_B, int * len_B );
+struct SRPVerifier* srp_verifier_new(const char* username, const unsigned char* bytes_s, int len_s,
+                                     const unsigned char* bytes_v, int len_v, const unsigned char* bytes_A, int len_A,
+                                     const unsigned char** bytes_B, int* len_B);
 
+void srp_verifier_delete(struct SRPVerifier* ver);
 
-void                  srp_verifier_delete( struct SRPVerifier * ver );
+int srp_verifier_is_authenticated(struct SRPVerifier* ver);
 
-
-int                   srp_verifier_is_authenticated( struct SRPVerifier * ver );
-
-
-const char *          srp_verifier_get_username( struct SRPVerifier * ver );
+const char* srp_verifier_get_username(struct SRPVerifier* ver);
 
 /* key_length may be null */
-const unsigned char * srp_verifier_get_session_key( struct SRPVerifier * ver, int * key_length );
+const unsigned char* srp_verifier_get_session_key(struct SRPVerifier* ver, int* key_length);
 
-
-int                   srp_verifier_get_session_key_length( struct SRPVerifier * ver );
-
+int srp_verifier_get_session_key_length(struct SRPVerifier* ver);
 
 /* user_M must be exactly srp_verifier_get_session_key_length() bytes in size */
-void                  srp_verifier_verify_session( struct SRPVerifier * ver,
-                                                   const unsigned char * user_M,
-                                                   const unsigned char ** bytes_HAMK );
+void srp_verifier_verify_session(struct SRPVerifier* ver, const unsigned char* user_M,
+                                 const unsigned char** bytes_HAMK);
 
 /*******************************************************************************/
 
-struct SRPUser *      srp_user_new( const char * username,
-                                    const unsigned char * bytes_password, int len_password );
+struct SRPUser* srp_user_new(const char* username, const unsigned char* bytes_password, int len_password);
 
-void                  srp_user_delete( struct SRPUser * usr );
+void srp_user_delete(struct SRPUser* usr);
 
-int                   srp_user_is_authenticated( struct SRPUser * usr);
+int srp_user_is_authenticated(struct SRPUser* usr);
 
-
-const char *          srp_user_get_username( struct SRPUser * usr );
+const char* srp_user_get_username(struct SRPUser* usr);
 
 /* key_length may be null */
-const unsigned char * srp_user_get_session_key( struct SRPUser * usr, int * key_length );
+const unsigned char* srp_user_get_session_key(struct SRPUser* usr, int* key_length);
 
-int                   srp_user_get_session_key_length( struct SRPUser * usr );
+int srp_user_get_session_key_length(struct SRPUser* usr);
 
 /* Output: username, bytes_A, len_A */
-int                   srp_user_start_authentication( struct SRPUser * usr, const char ** username,
-                                                     const unsigned char ** bytes_A, int * len_A );
+int srp_user_start_authentication(struct SRPUser* usr, const char** username, const unsigned char** bytes_A,
+                                  int* len_A);
 
 /* Output: bytes_M, len_M  (len_M may be null and will always be
  *                          srp_user_get_session_key_length() bytes in size) */
-int                   srp_user_process_challenge( struct SRPUser * usr,
-                                                  const unsigned char * bytes_s, int len_s,
-                                                  const unsigned char * bytes_B, int len_B,
-                                                  const unsigned char ** bytes_M, int * len_M );
+int srp_user_process_challenge(struct SRPUser* usr, const unsigned char* bytes_s, int len_s,
+                               const unsigned char* bytes_B, int len_B, const unsigned char** bytes_M, int* len_M);
 
 /* bytes_HAMK must be exactly srp_user_get_session_key_length() bytes in size */
-void                  srp_user_verify_session( struct SRPUser * usr, const unsigned char * bytes_HAMK );
+void srp_user_verify_session(struct SRPUser* usr, const unsigned char* bytes_HAMK);
 
 #endif /* Include Guard */

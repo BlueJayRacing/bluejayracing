@@ -21,19 +21,22 @@
 
 #include "xbee/wifi.h"
 
-const char *xbee_wifi_encryption_name( uint8_t type)
+const char* xbee_wifi_encryption_name(uint8_t type)
 {
     static char unknown[sizeof "0xXX"];
 
-    switch (type)
-    {
-        case XBEE_WIFI_ENCRYPTION_OPEN:     return "open";
-        case XBEE_WIFI_ENCRYPTION_WPA:      return "WPA";
-        case XBEE_WIFI_ENCRYPTION_WPA2:     return "WPA2";
-        case XBEE_WIFI_ENCRYPTION_WEP:      return "WEP";
+    switch (type) {
+    case XBEE_WIFI_ENCRYPTION_OPEN:
+        return "open";
+    case XBEE_WIFI_ENCRYPTION_WPA:
+        return "WPA";
+    case XBEE_WIFI_ENCRYPTION_WPA2:
+        return "WPA2";
+    case XBEE_WIFI_ENCRYPTION_WEP:
+        return "WEP";
     }
 
-    sprintf( unknown, "0x%02X", type);
+    sprintf(unknown, "0x%02X", type);
     return unknown;
 }
 

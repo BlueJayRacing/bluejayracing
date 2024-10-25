@@ -70,9 +70,9 @@
 #ifndef XBEE_DISCOVERY_H
 #define XBEE_DISCOVERY_H
 
-#include "xbee/platform.h"
-#include "xbee/device.h"
 #include "wpan/types.h"
+#include "xbee/device.h"
+#include "xbee/platform.h"
 
 XBEE_BEGIN_DECLS
 
@@ -80,57 +80,57 @@ XBEE_BEGIN_DECLS
 #define XBEE_DISC_MAX_NODEID_LEN 20
 
 typedef XBEE_PACKED(xbee_node_id1_t, {
-   uint16_t       network_addr_be;     ///< ATMY value [0xFFFE on DigiMesh]
-   addr64         ieee_addr_be;        ///< ATSH and ATSL
-   /// null-terminated ATNI value (variable length)
-   char           node_info[XBEE_DISC_MAX_NODEID_LEN + 1];
+    uint16_t network_addr_be; ///< ATMY value [0xFFFE on DigiMesh]
+    addr64 ieee_addr_be;      ///< ATSH and ATSL
+    /// null-terminated ATNI value (variable length)
+    char node_info[XBEE_DISC_MAX_NODEID_LEN + 1];
 }) xbee_node_id1_t;
 
 // data following variable-length node info
 typedef XBEE_PACKED(xbee_node_id2_t, {
-   uint16_t       parent_addr_be;      ///< ATMP value [0xFFFE on DigiMesh]
+    uint16_t parent_addr_be; ///< ATMP value [0xFFFE on DigiMesh]
 
-   uint8_t        device_type;         ///< one of XBEE_ND_DEVICE_* macro values
-      #define XBEE_ND_DEVICE_TYPE_COORD   0
-      #define XBEE_ND_DEVICE_TYPE_ROUTER  1
-      #define XBEE_ND_DEVICE_TYPE_ENDDEV  2
+    uint8_t device_type; ///< one of XBEE_ND_DEVICE_* macro values
+#define XBEE_ND_DEVICE_TYPE_COORD  0
+#define XBEE_ND_DEVICE_TYPE_ROUTER 1
+#define XBEE_ND_DEVICE_TYPE_ENDDEV 2
 
-   uint8_t        source_event;        ///< event that generated the ND frame
-      #define XBEE_ND_SOURCE_EVENT_NONE         0
-      #define XBEE_ND_SOURCE_EVENT_PUSHBUTTON   1
-      #define XBEE_ND_SOURCE_EVENT_JOINED       2
-      #define XBEE_ND_SOURCE_EVENT_POWER_CYCLE  3
+    uint8_t source_event; ///< event that generated the ND frame
+#define XBEE_ND_SOURCE_EVENT_NONE        0
+#define XBEE_ND_SOURCE_EVENT_PUSHBUTTON  1
+#define XBEE_ND_SOURCE_EVENT_JOINED      2
+#define XBEE_ND_SOURCE_EVENT_POWER_CYCLE 3
 
-   uint16_t       profile_be;          ///< Digi Profile ID (0xC105)
-   uint16_t       manufacturer_be;     ///< Manufacturer ID (0x101E)
+    uint16_t profile_be;      ///< Digi Profile ID (0xC105)
+    uint16_t manufacturer_be; ///< Manufacturer ID (0x101E)
 
-   /// ATDD of remote device [optional field enabled with ATNO on DigiMesh]
-   uint32_t       device_id_be;
+    /// ATDD of remote device [optional field enabled with ATNO on DigiMesh]
+    uint32_t device_id_be;
 
-   /// RSSI of packet [optional field enabled with ATNO on DigiMesh]
-   uint8_t        rssi;
+    /// RSSI of packet [optional field enabled with ATNO on DigiMesh]
+    uint8_t rssi;
 }) xbee_node_id2_t;
 
 /// format of 0x95 frames received from XBee
 typedef XBEE_PACKED(xbee_frame_node_id_t, {
-   uint8_t           frame_type;       ///< XBEE_FRAME_NODE_ID (0x95)
-   addr64            ieee_address_be;
-   uint16_t          network_address_be;
-   uint8_t           options;
-   /// variable-length data, parsed with xbee_disc_nd_parse()
-   xbee_node_id1_t   node_data;
-   // an xbee_node_id2_t follows the variable-length xbee_node_id1_t
+    uint8_t frame_type; ///< XBEE_FRAME_NODE_ID (0x95)
+    addr64 ieee_address_be;
+    uint16_t network_address_be;
+    uint8_t options;
+    /// variable-length data, parsed with xbee_disc_nd_parse()
+    xbee_node_id1_t node_data;
+    // an xbee_node_id2_t follows the variable-length xbee_node_id1_t
 }) xbee_frame_node_id_t;
 
 /// parsed Node ID in host-byte-order and fixed length fields
 typedef struct xbee_node_id_t {
-   addr64         ieee_addr_be;     ///< ATSH and ATSL
-   uint16_t       network_addr;     ///< ATMY value
-   uint16_t       parent_addr;      ///< ATMP
-   /// one of XBEE_ND_DEVICE_TYPE_COORD, _ROUTER or _ENDDEV
-   uint8_t        device_type;
-   /// ATNI value (variable length, null-terminated)
-   char           node_info[XBEE_DISC_MAX_NODEID_LEN + 1];
+    addr64 ieee_addr_be;   ///< ATSH and ATSL
+    uint16_t network_addr; ///< ATMY value
+    uint16_t parent_addr;  ///< ATMP
+    /// one of XBEE_ND_DEVICE_TYPE_COORD, _ROUTER or _ENDDEV
+    uint8_t device_type;
+    /// ATNI value (variable length, null-terminated)
+    char node_info[XBEE_DISC_MAX_NODEID_LEN + 1];
 } xbee_node_id_t;
 
 /**
@@ -146,8 +146,7 @@ typedef struct xbee_node_id_t {
    @retval  -EINVAL           invalid parameter passed to function
    @retval  -EBADMSG          error parsing Node ID message
 */
-int xbee_disc_nd_parse( xbee_node_id_t FAR *parsed, const void FAR *source,
-      int source_length);
+int xbee_disc_nd_parse(xbee_node_id_t FAR* parsed, const void FAR* source, int source_length);
 
 /**
    @brief
@@ -155,7 +154,7 @@ int xbee_disc_nd_parse( xbee_node_id_t FAR *parsed, const void FAR *source,
 
    @param[in]  ni    pointer to an xbee_node_id_t structure
 */
-void xbee_disc_node_id_dump( const xbee_node_id_t FAR *ni);
+void xbee_disc_node_id_dump(const xbee_node_id_t FAR* ni);
 
 /**
    @brief
@@ -169,7 +168,7 @@ void xbee_disc_node_id_dump( const xbee_node_id_t FAR *ni);
 
    @sa xbee_node_id_t
 */
-const char *xbee_disc_device_type_str( uint8_t device_type);
+const char* xbee_disc_device_type_str(uint8_t device_type);
 
 /**
    @brief Process messages sent to the Node ID Message cluster (0x0095) of
@@ -192,14 +191,15 @@ const char *xbee_disc_device_type_str( uint8_t device_type);
    @sa XBEE_DISC_DIGI_DATA_CLUSTER_ENTRY, xbee_disc_nodeid_frame_handler,
       xbee_disc_atnd_response_handler
 */
-int xbee_disc_nodeid_cluster_handler( const wpan_envelope_t FAR *envelope,
-   void FAR *context);
+int xbee_disc_nodeid_cluster_handler(const wpan_envelope_t FAR* envelope, void FAR* context);
 
 /// Include xbee_disc_nodeid_cluster_handler in the cluster table for the
 /// the Digi Data endpoint.
-#define XBEE_DISC_DIGI_DATA_CLUSTER_ENTRY    \
-   { DIGI_CLUST_NODEID_MESSAGE, xbee_disc_nodeid_cluster_handler, NULL, \
-      WPAN_CLUST_FLAG_INPUT | WPAN_CLUST_FLAG_NOT_ZCL}
+#define XBEE_DISC_DIGI_DATA_CLUSTER_ENTRY                                                                              \
+    {                                                                                                                  \
+        DIGI_CLUST_NODEID_MESSAGE, xbee_disc_nodeid_cluster_handler, NULL,                                             \
+            WPAN_CLUST_FLAG_INPUT | WPAN_CLUST_FLAG_NOT_ZCL                                                            \
+    }
 
 /**
    @brief Process AT Command Response frames (type 0x88), looking for ATND
@@ -219,12 +219,13 @@ int xbee_disc_nodeid_cluster_handler( const wpan_envelope_t FAR *envelope,
    @sa XBEE_FRAME_HANDLE_ATND_RESPONSE, xbee_disc_nodeid_frame_handler,
       xbee_disc_nodeid_cluster_handler
 */
-int xbee_disc_atnd_response_handler( xbee_dev_t *xbee, const void FAR *raw,
-      uint16_t length, void FAR *context);
+int xbee_disc_atnd_response_handler(xbee_dev_t* xbee, const void FAR* raw, uint16_t length, void FAR* context);
 
 /// Include xbee_disc_atnd_response_handler in xbee_frame_handlers[].
-#define XBEE_FRAME_HANDLE_ATND_RESPONSE      \
-   { XBEE_FRAME_LOCAL_AT_RESPONSE, 0, xbee_disc_atnd_response_handler, NULL }
+#define XBEE_FRAME_HANDLE_ATND_RESPONSE                                                                                \
+    {                                                                                                                  \
+        XBEE_FRAME_LOCAL_AT_RESPONSE, 0, xbee_disc_atnd_response_handler, NULL                                         \
+    }
 
 /**
    @brief Process Node Identification frames (type 0x95), sent when ATAO = 0.
@@ -247,13 +248,14 @@ int xbee_disc_atnd_response_handler( xbee_dev_t *xbee, const void FAR *raw,
 
    @sa xbee_disc_nodeid_cluster_handler, xbee_disc_atnd_response_handler
 */
-int xbee_disc_nodeid_frame_handler(xbee_dev_t *xbee, const void FAR *raw,
-      uint16_t length, void FAR *context);
+int xbee_disc_nodeid_frame_handler(xbee_dev_t* xbee, const void FAR* raw, uint16_t length, void FAR* context);
 
 /// Include xbee_disc_nodeid_frame_handler in xbee_frame_handlers[] (only
 /// necessary if ATAO is set to 0).
-#define XBEE_FRAME_HANDLE_AO0_NODEID         \
-   { XBEE_FRAME_NODE_ID, 0, xbee_disc_nodeid_frame_handler, NULL }
+#define XBEE_FRAME_HANDLE_AO0_NODEID                                                                                   \
+    {                                                                                                                  \
+        XBEE_FRAME_NODE_ID, 0, xbee_disc_nodeid_frame_handler, NULL                                                    \
+    }
 
 /**
    @brief Designate a function to receive parsed Node ID messages on a given
@@ -268,7 +270,7 @@ int xbee_disc_nodeid_frame_handler(xbee_dev_t *xbee, const void FAR *raw,
 
    @sa xbee_disc_remove_node_id_handler
  */
-int xbee_disc_add_node_id_handler( xbee_dev_t *xbee, xbee_disc_node_id_fn fn);
+int xbee_disc_add_node_id_handler(xbee_dev_t* xbee, xbee_disc_node_id_fn fn);
 
 /**
    @brief Remove a function registered to receive parsed Node ID messages on a
@@ -283,8 +285,7 @@ int xbee_disc_add_node_id_handler( xbee_dev_t *xbee, xbee_disc_node_id_fn fn);
 
    @sa xbee_disc_remove_node_id_handler
  */
-int xbee_disc_remove_node_id_handler( xbee_dev_t *xbee,
-      xbee_disc_node_id_fn fn);
+int xbee_disc_remove_node_id_handler(xbee_dev_t* xbee, xbee_disc_node_id_fn fn);
 
 /** @brief Send an ATND command to the XBee, initiating node discovery for
          all nodes or a specific node's "node identification" (ATNI) string.
@@ -303,13 +304,13 @@ int xbee_disc_remove_node_id_handler( xbee_dev_t *xbee,
 
    @sa xbee_disc_add_node_id_handler, xbee_disc_remove_node_id_handler
 */
-int xbee_disc_discover_nodes( xbee_dev_t *xbee, const char *identifier);
+int xbee_disc_discover_nodes(xbee_dev_t* xbee, const char* identifier);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-   #use "xbee_discovery.c"
+#use "xbee_discovery.c"
 #endif
 
 #endif

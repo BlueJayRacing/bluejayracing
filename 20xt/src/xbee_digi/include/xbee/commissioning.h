@@ -27,21 +27,21 @@ XBEE_BEGIN_DECLS
 
 // XBee has hard-coded values, same as ZCL defaults except for ScanAttempts
 // (which is set to 1 instead of 5).
-#define XBEE_COMM_SCAN_ATTEMPTS         1
-#define XBEE_COMM_TIME_BETWEEN_SCANS    0x0064
-#define XBEE_COMM_REJOIN_INTERVAL       0x003C
-#define XBEE_COMM_MAX_REJOIN_INTERVAL   0x0E10
+#define XBEE_COMM_SCAN_ATTEMPTS       1
+#define XBEE_COMM_TIME_BETWEEN_SCANS  0x0064
+#define XBEE_COMM_REJOIN_INTERVAL     0x003C
+#define XBEE_COMM_MAX_REJOIN_INTERVAL 0x0E10
 
-void xbee_commissioning_tick(xbee_dev_t *xbee, zcl_comm_state_t *comm_state);
-int xbee_commissioning_set(xbee_dev_t *xbee, zcl_comm_startup_param_t *p);
+void xbee_commissioning_tick(xbee_dev_t* xbee, zcl_comm_state_t* comm_state);
+int xbee_commissioning_set(xbee_dev_t* xbee, zcl_comm_startup_param_t* p);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-    #use "xbee_commissioning.c"
+#use "xbee_commissioning.c"
 #endif
 
-#endif  // XBEE_COMMISSIONING_H defined
+#endif // XBEE_COMMISSIONING_H defined
 
 ///@}

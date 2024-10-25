@@ -19,29 +19,25 @@
 */
 
 /*** BeginHeader */
+#include "wpan/types.h"
 #include <ctype.h>
 #include <string.h>
-#include "wpan/types.h"
 /*** EndHeader */
 
 /*** BeginHeader _WPAN_IEEE_ADDR_UNDEFINED */
 /*** EndHeader */
 /// @internal address pointed to by macro #WPAN_IEEE_ADDR_UNDEFINED
-const addr64 _WPAN_IEEE_ADDR_UNDEFINED =
-                        { { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF } };
+const addr64 _WPAN_IEEE_ADDR_UNDEFINED = {{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
 
 /*** BeginHeader _WPAN_IEEE_ADDR_BROADCAST */
 /*** EndHeader */
 /// @internal address pointed to by macro #WPAN_IEEE_ADDR_BROADCAST
-const addr64 _WPAN_IEEE_ADDR_BROADCAST =
-                        { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF } };
+const addr64 _WPAN_IEEE_ADDR_BROADCAST = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF}};
 
 /*** BeginHeader _WPAN_IEEE_ADDR_COORDINATOR */
 /*** EndHeader */
 /// @internal address pointed to by macro #WPAN_IEEE_ADDR_COORDINATOR
-const addr64 _WPAN_IEEE_ADDR_COORDINATOR =
-                        { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
-
+const addr64 _WPAN_IEEE_ADDR_COORDINATOR = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 /*** BeginHeader addr64_format */
 /*** EndHeader */
@@ -74,40 +70,36 @@ const addr64 _WPAN_IEEE_ADDR_COORDINATOR =
          - format used by the Python framework (with [!]?)
 
 */
-char FAR *addr64_format( char FAR *buffer, const addr64 FAR *address)
+char FAR* addr64_format(char FAR* buffer, const addr64 FAR* address)
 {
-   int i, start;
-   const uint8_t FAR *b;
-   char FAR *p;
-   uint_fast8_t ch;
+    int i, start;
+    const uint8_t FAR* b;
+    char FAR* p;
+    uint_fast8_t ch;
 
-   // format address into buffer
-   p = buffer;
-   b = address->b;
-   start = 8;
-   if (b[0] == 0x00 && b[1] == 0x00)      // 48-bit MAC address
-   {
-      b += 2;
-      start -= 2;
-   }
-   for (i = start; ; )
-   {
-      ch = *b++;
-      *p++ = "0123456789abcdef"[ch >> 4];
-      *p++ = "0123456789abcdef"[ch & 0x0F];
-      if (--i)
-      {
-         *p++ = ADDR64_FORMAT_SEPARATOR;
-      }
-      else
-      {
-         *p = '\0';
-         break;
-      }
-   }
+    // format address into buffer
+    p     = buffer;
+    b     = address->b;
+    start = 8;
+    if (b[0] == 0x00 && b[1] == 0x00) // 48-bit MAC address
+    {
+        b += 2;
+        start -= 2;
+    }
+    for (i = start;;) {
+        ch   = *b++;
+        *p++ = "0123456789abcdef"[ch >> 4];
+        *p++ = "0123456789abcdef"[ch & 0x0F];
+        if (--i) {
+            *p++ = ADDR64_FORMAT_SEPARATOR;
+        } else {
+            *p = '\0';
+            break;
+        }
+    }
 
-   // return start of buffer
-   return buffer;
+    // return start of buffer
+    return buffer;
 }
 
 /*** BeginHeader addr64_equal */
@@ -122,14 +114,12 @@ char FAR *addr64_format( char FAR *buffer, const addr64 FAR *address)
                   identical addresses
    @retval  FALSE NULL parameter passed in, or addresses differ
 */
-bool_t addr64_equal( const addr64 FAR *addr1, const addr64 FAR *addr2)
+bool_t addr64_equal(const addr64 FAR* addr1, const addr64 FAR* addr2)
 {
-   // This is marginally faster than calling memcmp.  Make sure neither
-   // parameter is NULL and then do two 4-byte compares.
-   return (addr1 && addr2 &&
-      addr1->l[0] == addr2->l[0] && addr1->l[1] == addr2->l[1]);
+    // This is marginally faster than calling memcmp.  Make sure neither
+    // parameter is NULL and then do two 4-byte compares.
+    return (addr1 && addr2 && addr1->l[0] == addr2->l[0] && addr1->l[1] == addr2->l[1]);
 }
-
 
 /*** BeginHeader addr64_is_zero */
 /*** EndHeader */
@@ -143,10 +133,7 @@ bool_t addr64_equal( const addr64 FAR *addr1, const addr64 FAR *addr2)
 
    @see WPAN_IEEE_ADDR_ALL_ZEROS
 */
-bool_t addr64_is_zero( const addr64 FAR *addr)
-{
-   return ! (addr && (addr->l[0] || addr->l[1]));
-}
+bool_t addr64_is_zero(const addr64 FAR* addr) { return !(addr && (addr->l[0] || addr->l[1])); }
 
 /*
    Do we need functions to return the high and low 32-bit halves of an addr64
@@ -183,49 +170,43 @@ bool_t addr64_is_zero( const addr64 FAR *addr)
                      not NULL, it will be set to all zeros
    @retval  0        string converted
 */
-int addr64_parse( addr64 *address_be, const char FAR *str)
+int addr64_parse(addr64* address_be, const char FAR* str)
 {
-   uint_fast8_t i;
-   uint8_t *b;
-   int ret;
+    uint_fast8_t i;
+    uint8_t* b;
+    int ret;
 
-   i = 8;         // bytes to convert
-   if (str != NULL && address_be != NULL)
-   {
-      // skip over leading spaces
-      while (isspace( (uint8_t) *str))
-      {
-         ++str;
-      }
-      for (b = address_be->b; i; ++b, --i)
-      {
-         ret = hexstrtobyte( str);
-         if (ret < 0)
-         {
-            break;
-         }
-         *b = (uint8_t)ret;
-         str += 2;               // point past the encoded byte
-
-         // skip over any separator, if present
-         if (*str && ! isxdigit( (uint8_t) *str))
-         {
+    i = 8; // bytes to convert
+    if (str != NULL && address_be != NULL) {
+        // skip over leading spaces
+        while (isspace((uint8_t)*str)) {
             ++str;
-         }
-      }
-   }
+        }
+        for (b = address_be->b; i; ++b, --i) {
+            ret = hexstrtobyte(str);
+            if (ret < 0) {
+                break;
+            }
+            *b = (uint8_t)ret;
+            str += 2; // point past the encoded byte
 
-   if (i == 0)       // successful conversion
-   {
-      return 0;
-   }
+            // skip over any separator, if present
+            if (*str && !isxdigit((uint8_t)*str)) {
+                ++str;
+            }
+        }
+    }
 
-   // conversion not complete
-   if (address_be != NULL)
-   {
-      *address_be = *WPAN_IEEE_ADDR_ALL_ZEROS;  // zero out address on errors
-   }
-   return -EINVAL;
+    if (i == 0) // successful conversion
+    {
+        return 0;
+    }
+
+    // conversion not complete
+    if (address_be != NULL) {
+        *address_be = *WPAN_IEEE_ADDR_ALL_ZEROS; // zero out address on errors
+    }
+    return -EINVAL;
 }
 
 ///@}

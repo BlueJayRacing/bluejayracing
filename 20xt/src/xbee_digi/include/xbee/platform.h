@@ -35,11 +35,11 @@
       linking C-compiled code into C++ projects.
 */
 #if defined(__cplusplus)
-   #define XBEE_BEGIN_DECLS   extern "C" {
-   #define XBEE_END_DECLS     }
+#define XBEE_BEGIN_DECLS extern "C" {
+#define XBEE_END_DECLS   }
 #else
-   #define XBEE_BEGIN_DECLS
-   #define XBEE_END_DECLS
+#define XBEE_BEGIN_DECLS
+#define XBEE_END_DECLS
 #endif
 
 #include <errno.h>
@@ -91,61 +91,60 @@
    @}
 */
 #ifndef ENODATA
-   #define ENODATA   20000
+#define ENODATA 20000
 #endif
 #ifndef EINVAL
-   #define EINVAL    20001
+#define EINVAL 20001
 #endif
 #ifndef EIO
-   #define EIO       20002
+#define EIO 20002
 #endif
 #ifndef EBUSY
-   #define EBUSY     20003
+#define EBUSY 20003
 #endif
 #ifndef EEXIST
-   #define EEXIST    20004
+#define EEXIST 20004
 #endif
 #ifndef ENOSPC
-   #define ENOSPC    20005
+#define ENOSPC 20005
 #endif
 #ifndef ENOENT
-   #define ENOENT    20006
+#define ENOENT 20006
 #endif
 #ifndef E2BIG
-   #define E2BIG     20007
+#define E2BIG 20007
 #endif
 #ifndef EBADMSG
-   #define EBADMSG   20010
+#define EBADMSG 20010
 #endif
 #ifndef ENOTSUP
-   #define ENOTSUP   20011
+#define ENOTSUP 20011
 #endif
 #ifndef ETIMEDOUT
-   #define ETIMEDOUT 20012
+#define ETIMEDOUT 20012
 #endif
 #ifndef EILSEQ
-   #define EILSEQ    20013
+#define EILSEQ 20013
 #endif
 #ifndef EAGAIN
-   #define EAGAIN    20014
+#define EAGAIN 20014
 #endif
 #ifndef ENOSYS
-   #define ENOSYS    20015
+#define ENOSYS 20015
 #endif
 #ifndef EACCES
-   #define EACCES    20016
+#define EACCES 20016
 #endif
 #ifndef ECANCELED
-   #define ECANCELED 20017
+#define ECANCELED 20017
 #endif
 #ifndef EMSGSIZE
-   #define EMSGSIZE  20018
+#define EMSGSIZE 20018
 #endif
 #ifndef EPERM
-   #define EPERM     20019
+#define EPERM 20019
 #endif
 // Note to developers: if possible, only add POSIX.1-2001 macros to this list.
-
 
 /**
    @ingroup platform_specific
@@ -337,84 +336,83 @@
 
 /// For 1/1/1980 epoch (Rabbit), add 20 years, plus 5 leap days (1980,
 /// 1984, 1988, 1992, 1996) to get to ZigBee epoch of 1/1/2000.
-#define ZCL_TIME_EPOCH_DELTA_1980   ((UINT32_C(20) * 365 + 5) * 24 * 60 * 60)
+#define ZCL_TIME_EPOCH_DELTA_1980 ((UINT32_C(20) * 365 + 5) * 24 * 60 * 60)
 
 /// For 1/1/1970 epoch (Win32, Unix), add 30 years, plus 7 leap days (1972,
 /// 1976, 1980, 1984, 1988, 1992, 1996) to get to ZigBee epoch of 1/1/2000.
-#define ZCL_TIME_EPOCH_DELTA_1970   ((UINT32_C(30) * 365 + 7) * 24 * 60 * 60)
+#define ZCL_TIME_EPOCH_DELTA_1970 ((UINT32_C(30) * 365 + 7) * 24 * 60 * 60)
 
 #ifdef XBEE_PLATFORM_HEADER
-   #include XBEE_PLATFORM_HEADER
+#include XBEE_PLATFORM_HEADER
 #elif defined __DC__
-   #include "../ports/rabbit/platform_config.h"
+#include "../ports/rabbit/platform_config.h"
 #elif defined POSIX
-   #include "../ports/posix/platform_config.h"
+#include "../ports/posix/platform_config.h"
 #elif defined __DOS__
-   // Note: at present, only Open Watcom compiler supported
-   // (can test for __WATCOMC__ preprocessor symbol, or
-   // __BORLANDC__ for Borland C++)
-   #include "../ports/dos/platform_config.h"
-#elif defined WIN32 || defined _WIN32 || defined _WIN32_ || defined __WIN32__ \
-   || defined __CYGWIN32__ || defined MINGW32
-   #include "../ports/win32/platform_config.h"
+// Note: at present, only Open Watcom compiler supported
+// (can test for __WATCOMC__ preprocessor symbol, or
+// __BORLANDC__ for Borland C++)
+#include "../ports/dos/platform_config.h"
+#elif defined WIN32 || defined _WIN32 || defined _WIN32_ || defined __WIN32__ || defined __CYGWIN32__ || defined MINGW32
+#include "../ports/win32/platform_config.h"
 #elif defined __MWERKS__ && defined __HC08__
-   #include "../ports/hcs08/platform_config.h"
+#include "../ports/hcs08/platform_config.h"
 #else
-   #error "Unknown target"
+#error "Unknown target"
 #endif
 
 #ifndef TRUE
-   #define TRUE 1
+#define TRUE 1
 #endif
 #ifndef FALSE
-   #define FALSE 0
+#define FALSE 0
 #endif
 
 #ifndef PACKED_STRUCT
-   #define PACKED_STRUCT struct
+#define PACKED_STRUCT struct
 #endif
 #ifndef XBEE_PACKED
-   #define XBEE_PACKED(name, decl)     PACKED_STRUCT name decl
+#define XBEE_PACKED(name, decl) PACKED_STRUCT name decl
 #endif
 
 // Most platforms don't have alignment requirements, and we can just use casts.
 #ifndef xbee_get_unaligned16
-   #define xbee_get_unaligned16( p) (*(uint16_t FAR *)(p))
+#define xbee_get_unaligned16(p) (*(uint16_t FAR*)(p))
 #endif
 #ifndef xbee_get_unaligned32
-   #define xbee_get_unaligned32( p) (*(uint32_t FAR *)(p))
+#define xbee_get_unaligned32(p) (*(uint32_t FAR*)(p))
 #endif
 #ifndef xbee_set_unaligned16
-   #define xbee_set_unaligned16( p, v) *(uint16_t FAR *)(p) = (v)
+#define xbee_set_unaligned16(p, v) *(uint16_t FAR*)(p) = (v)
 #endif
 #ifndef xbee_set_unaligned32
-   #define xbee_set_unaligned32( p, v) *(uint32_t FAR *)(p) = (v)
+#define xbee_set_unaligned32(p, v) *(uint32_t FAR*)(p) = (v)
 #endif
 
 // default is for FAR to be ignored
 #ifndef FAR
-   #define FAR
+#define FAR
 #endif
 // on platforms without the concept of "FAR", cast to near is unnecessary
 #ifndef CAST_FAR_TO_NEAR
-   #define CAST_FAR_TO_NEAR(p)   (p)
+#define CAST_FAR_TO_NEAR(p) (p)
 #endif
 #ifndef INTERRUPT_ENABLE
-   #define INTERRUPT_ENABLE
+#define INTERRUPT_ENABLE
 #endif
 
 #ifndef INTERRUPT_DISABLE
-   #define INTERRUPT_DISABLE
+#define INTERRUPT_DISABLE
 #endif
 
 #if defined(XBEE_WIFI_ENABLE) || defined(XBEE_WIFI_DISABLE)
-   #error "The XBEE_WIFI_ENABLE and XBEE_WIFI_DISABLE macros " \
+#error "The XBEE_WIFI_ENABLE and XBEE_WIFI_DISABLE macros " \
       "are deprecated. Please use XBEE_WIFI_ENABLED instead."
 #endif
 
 // assume platforms support up to 115200bps
 #ifndef XBEE_SERIAL_MAX_BAUDRATE
-   #define XBEE_SERIAL_MAX_BAUDRATE 115200
+#define XBEE_SERIAL_MAX_BAUDRATE 115200
 #endif
 
 // Default method for specifying an unused parameter (to avoid compiler
@@ -422,53 +420,52 @@
 // or actually generates code, that platform's header file should define it
 // as nothing.
 #ifndef XBEE_UNUSED_PARAMETER
-   #define XBEE_UNUSED_PARAMETER(p)    (void) p
+#define XBEE_UNUSED_PARAMETER(p) (void)p
 #endif
 
 // Following in the standard set by inttypes.h, use fprintf macro PRIsFAR for
 // printing far strings (will be just "s" on most platforms).
 // default settings for various macros
 #ifndef PRIsFAR
-   #define PRIsFAR         "s"
+#define PRIsFAR "s"
 #endif
 #ifndef PRIpFAR
-   #define PRIpFAR         "p"
+#define PRIpFAR "p"
 #endif
 #ifndef PRId16
-   #define PRId16          "hd"
+#define PRId16 "hd"
 #endif
 #ifndef PRId32
-   #define PRId32          "ld"
+#define PRId32 "ld"
 #endif
 #ifndef PRIu16
-   #define PRIu16          "hu"
+#define PRIu16 "hu"
 #endif
 #ifndef PRIu32
-   #define PRIu32          "lu"
+#define PRIu32 "lu"
 #endif
 #ifndef PRIx16
-   #define PRIx16          "hx"
+#define PRIx16 "hx"
 #endif
 #ifndef PRIx32
-   #define PRIx32          "lx"
+#define PRIx32 "lx"
 #endif
 #ifndef PRIX16
-   #define PRIX16          "hX"
+#define PRIX16 "hX"
 #endif
 #ifndef PRIX32
-   #define PRIX32          "lX"
+#define PRIX32 "lX"
 #endif
-
 
 #ifndef XBEE_RESET_FN
-	#define XBEE_RESET_FN 		NULL
+#define XBEE_RESET_FN NULL
 #endif
 #ifndef XBEE_IS_AWAKE_FN
-	#define XBEE_IS_AWAKE_FN 	NULL
+#define XBEE_IS_AWAKE_FN NULL
 #endif
 
 /// Helper macro for calculating the number of entries in an array.
-#define _TABLE_ENTRIES(array)    ((sizeof (array)) / (sizeof (*array)))
+#define _TABLE_ENTRIES(array) ((sizeof(array)) / (sizeof(*array)))
 
 XBEE_BEGIN_DECLS
 
@@ -492,7 +489,7 @@ XBEE_BEGIN_DECLS
 
    @return Number of elapsed seconds.
 */
-uint32_t (xbee_seconds_timer)( void);
+uint32_t(xbee_seconds_timer)(void);
 
 /**
    @brief
@@ -512,7 +509,7 @@ uint32_t (xbee_seconds_timer)( void);
 
    @sa XBEE_MS_TIMER_RESOLUTION
 */
-uint32_t (xbee_millisecond_timer)( void);
+uint32_t(xbee_millisecond_timer)(void);
 
 /**
    @brief
@@ -529,8 +526,7 @@ uint32_t (xbee_millisecond_timer)( void);
    - hexstrtobyte("ABCDEF") returns 0xAB (ignores additional chars)
 
 */
-int hexstrtobyte( const char FAR *p);
-
+int hexstrtobyte(const char FAR* p);
 
 /**
    @brief
@@ -552,7 +548,7 @@ int hexstrtobyte( const char FAR *p);
    @retval  -EINVAL  NULL buffer or length is less than 1.
    @retval  -ENODATA User entered CTRL-D to end input.
 */
-int xbee_readline( char *buffer, int length);
+int xbee_readline(char* buffer, int length);
 
 /**
    Helper function for printing a hex dump of memory to stdout.  A reference
@@ -569,22 +565,21 @@ int xbee_readline( char *buffer, int length);
       - #HEX_DUMP_FLAG_ADDRESS
       - #HEX_DUMP_FLAG_TAB
 */
-void hex_dump( const void FAR *address, uint16_t length, uint16_t flags);
+void hex_dump(const void FAR* address, uint16_t length, uint16_t flags);
 /**
    @name
    Flags to pass to hex_dump().
    @{
 */
 /// Default settings (no prefix).
-#define HEX_DUMP_FLAG_NONE       0x0000
+#define HEX_DUMP_FLAG_NONE 0x0000
 /// Prefix each line with the memory offset (0000: xx xx xx).
-#define HEX_DUMP_FLAG_OFFSET     0x0001
+#define HEX_DUMP_FLAG_OFFSET 0x0001
 /// Prefix each line with the address (uses %p specifier) (000000: xx xx xx).
-#define HEX_DUMP_FLAG_ADDRESS    0x0002
+#define HEX_DUMP_FLAG_ADDRESS 0x0002
 /// Prefix each line with a tab character.
-#define HEX_DUMP_FLAG_TAB        0x0004
+#define HEX_DUMP_FLAG_TAB 0x0004
 ///@}
-
 
 /**
    @brief Test whether a block of memory is set to a single byte value.
@@ -601,7 +596,7 @@ void hex_dump( const void FAR *address, uint16_t length, uint16_t flags);
 
    @sa memcmp, memset
 */
-int memcheck( const void FAR *src, int c, size_t length);
+int memcheck(const void FAR* src, int c, size_t length);
 
 /**
     Compare two uint16_t timer values, with proper handling of rollover
@@ -626,8 +621,7 @@ int memcheck( const void FAR *src, int c, size_t length);
        } while (XBEE_TIMER_COMPARE( t0 + delay, >, xbee_millisecond_timer()));
     @endcode
 */
-#define XBEE_TIMER_COMPARE( a, op, b) \
-   ( ((int16_t)((uint16_t)(a) - (uint16_t)(b))) op 0 )
+#define XBEE_TIMER_COMPARE(a, op, b) (((int16_t)((uint16_t)(a) - (uint16_t)(b))) op 0)
 
 /**
    Macro used to load a variable with an expiration time, later used with
@@ -658,8 +652,7 @@ int memcheck( const void FAR *src, int c, size_t length);
       }
    @endcode
 */
-#define XBEE_SET_TIMEOUT_MS(delay)  \
-   ((uint16_t)xbee_millisecond_timer() + (delay))
+#define XBEE_SET_TIMEOUT_MS(delay) ((uint16_t)xbee_millisecond_timer() + (delay))
 
 /**
    Macro used to check a timer set by XBEE_SET_TIMEOUT_MS().  See the
@@ -674,9 +667,7 @@ int memcheck( const void FAR *src, int c, size_t length);
 
    @sa XBEE_SET_TIMEOUT_MS(), XBEE_SET_TIMEOUT_SEC(), XBEE_CHECK_TIMEOUT_SEC()
 */
-#define XBEE_CHECK_TIMEOUT_MS(timer) \
-   ((int16_t)((uint16_t)xbee_millisecond_timer() - (timer)) >= 0)
-
+#define XBEE_CHECK_TIMEOUT_MS(timer) ((int16_t)((uint16_t)xbee_millisecond_timer() - (timer)) >= 0)
 
 /**
    Macro used to load a variable with an expiration time, later used with
@@ -722,8 +713,7 @@ int memcheck( const void FAR *src, int c, size_t length);
 
    @sa XBEE_SET_TIMEOUT_SEC(), XBEE_SET_TIMEOUT_MS(), XBEE_CHECK_TIMEOUT_MS()
 */
-#define XBEE_CHECK_TIMEOUT_SEC(timer) \
-   ((int16_t)((uint16_t)xbee_seconds_timer() - (timer)) >= 0)
+#define XBEE_CHECK_TIMEOUT_SEC(timer) ((int16_t)((uint16_t)xbee_seconds_timer() - (timer)) >= 0)
 
 // include support for 64-bit integers
 #include "xbee/jslong_glue.h"

@@ -11,7 +11,7 @@
  */
 
 /**
-    @addtogroup xbee_firmware 
+    @addtogroup xbee_firmware
     @{
     @file xbee/bl_gen3.h
     Code to interface with the "Gen3" XBee bootloader.
@@ -22,77 +22,78 @@
 #ifndef XBEE_BL_GEN3_H
 #define XBEE_BL_GEN3_H
 
-#include "xbee/device.h"
 #include "wpan/types.h"
+#include "xbee/device.h"
 
 XBEE_BEGIN_DECLS
 
-typedef enum xbee_gen3_state {
-    XBEE_GEN3_STATE_INIT,               // hold TX in break
-    XBEE_GEN3_STATE_ENTER_BOOTLOADER,   // wait for bootloader (drops CTS)
-    XBEE_GEN3_STATE_GET_BL_VERSION,     // wait until bootloader ready, send 'B'
-    XBEE_GEN3_STATE_BL_VERSION,         // parse 'B' response, send 'L'
-    XBEE_GEN3_STATE_BL_PROTOCOL,        // parse 'L' response, send 'R'/'X'
-    XBEE_GEN3_STATE_BAUD_RATE,          // parse 'R'/'X', change baud, send 'V'
-    XBEE_GEN3_STATE_EXT_VERSION,        // parse 'V' response, send 'I'
-    XBEE_GEN3_STATE_START_TRANSFER,     // parse 'I' response, start transfer
-    XBEE_GEN3_STATE_SEND_PAGE,          // send the current page
-    XBEE_GEN3_STATE_LOAD_PAGE,          // on success, load next page or verify
-    XBEE_GEN3_STATE_VERIFY,             // wait for response to 'C'
+typedef enum xbee_gen3_state
+{
+    XBEE_GEN3_STATE_INIT,             // hold TX in break
+    XBEE_GEN3_STATE_ENTER_BOOTLOADER, // wait for bootloader (drops CTS)
+    XBEE_GEN3_STATE_GET_BL_VERSION,   // wait until bootloader ready, send 'B'
+    XBEE_GEN3_STATE_BL_VERSION,       // parse 'B' response, send 'L'
+    XBEE_GEN3_STATE_BL_PROTOCOL,      // parse 'L' response, send 'R'/'X'
+    XBEE_GEN3_STATE_BAUD_RATE,        // parse 'R'/'X', change baud, send 'V'
+    XBEE_GEN3_STATE_EXT_VERSION,      // parse 'V' response, send 'I'
+    XBEE_GEN3_STATE_START_TRANSFER,   // parse 'I' response, start transfer
+    XBEE_GEN3_STATE_SEND_PAGE,        // send the current page
+    XBEE_GEN3_STATE_LOAD_PAGE,        // on success, load next page or verify
+    XBEE_GEN3_STATE_VERIFY,           // wait for response to 'C'
 
     XBEE_GEN3_STATE_SUCCESS,
     XBEE_GEN3_STATE_FAILURE
 } xbee_gen3_state_t;
 
-#define XBEE_GEN3_UPLOAD_PAGE_SIZE      512
+#define XBEE_GEN3_UPLOAD_PAGE_SIZE 512
 
 // Response to a XBEE_GEN3_CMD_EXTENDED_VER command.
 typedef XBEE_PACKED(xbee_gen3_extended_ver_t, {
-    uint16_t            hw_version_le;          // ATHV
-    uint16_t            hw_revision_le;         // AT%R
-    uint8_t             hw_compatibility;       // AT%C
-    uint8_t             unused;
-    uint16_t            hw_series_le;           // ATHS
-    addr64              mac_address_be;
-    uint8_t             end_of_response;        // always 'U'
+    uint16_t hw_version_le;   // ATHV
+    uint16_t hw_revision_le;  // AT%R
+    uint8_t hw_compatibility; // AT%C
+    uint8_t unused;
+    uint16_t hw_series_le; // ATHS
+    addr64 mac_address_be;
+    uint8_t end_of_response; // always 'U'
 }) xbee_gen3_extended_ver_t;
 
-void xbee_gen3_dump_extended_ver(const xbee_gen3_extended_ver_t *ver);
+void xbee_gen3_dump_extended_ver(const xbee_gen3_extended_ver_t* ver);
 
 typedef struct xbee_gen3_update_t {
-    uint32_t                    timer;
-    xbee_gen3_state_t           state;
-    xbee_gen3_state_t           next_state;
-    uint16_t                    flags;
-#define XBEE_GEN3_BL_FLAG_RETRY_MASK    (0xFF)  ///< count retries on upload
-#define XBEE_GEN3_BL_FLAG_QUERY_ONLY    (1<<8)  ///< don't upload firmware
-#define XBEE_GEN3_BL_FLAG_PROTO1        (1<<9)  ///< upload uses CRC16
-#define XBEE_GEN3_BL_FLAG_EOF           (1<<10) ///< reached end of fw image
+    uint32_t timer;
+    xbee_gen3_state_t state;
+    xbee_gen3_state_t next_state;
+    uint16_t flags;
+#define XBEE_GEN3_BL_FLAG_RETRY_MASK (0xFF)    ///< count retries on upload
+#define XBEE_GEN3_BL_FLAG_QUERY_ONLY (1 << 8)  ///< don't upload firmware
+#define XBEE_GEN3_BL_FLAG_PROTO1     (1 << 9)  ///< upload uses CRC16
+#define XBEE_GEN3_BL_FLAG_EOF        (1 << 10) ///< reached end of fw image
 
-    uint16_t                    bl_version;     ///< parsed response from 'B' cmd
-    uint16_t                    page_num;       ///< page we're sending to BL
+    uint16_t bl_version; ///< parsed response from 'B' cmd
+    uint16_t page_num;   ///< page we're sending to BL
 
     /// Current offset into buffer (0 - <n-1>); -1 if sending page header;
     /// <n> if sending checksum/CRC16 (where <n> = XBEE_GEN3_UPLOAD_PAGE_SIZE).
-    int16_t                     page_offset;
+    int16_t page_offset;
 
-    xbee_gen3_extended_ver_t    ext_ver;        ///< parsed response from 'V' cmd
+    xbee_gen3_extended_ver_t ext_ver; ///< parsed response from 'V' cmd
 
-    xbee_dev_t                  *xbee;
+    xbee_dev_t* xbee;
 
     /// buffer for upload page, must persist for duration of update
-    char                        buffer[XBEE_GEN3_UPLOAD_PAGE_SIZE];
+    char buffer[XBEE_GEN3_UPLOAD_PAGE_SIZE];
 
     /// Function to read firmware image contents.  Considered EOF if it returns
     /// a value less than <bytes>.  Values <0 are errors passed up from
     /// xbee_fw_install_ebin_tick().
-    int (*read)(void *context, void *buffer, int16_t bytes);
+    int (*read)(void* context, void* buffer, int16_t bytes);
 
     /// context passed to .read() function
-    void *context;
+    void* context;
 } xbee_gen3_update_t;
 
-#define XBEE_GEN3_FW_LOAD_TIMEOUT_MS    10000
+#define XBEE_GEN3_FW_LOAD_TIMEOUT_MS 10000
 
 /**
     @brief
@@ -123,7 +124,7 @@ typedef struct xbee_gen3_update_t {
     @retval     -EINVAL     NULL parameter passed to function
 
 */
-int xbee_bl_gen3_install_init(xbee_dev_t *xbee, xbee_gen3_update_t *source);
+int xbee_bl_gen3_install_init(xbee_dev_t* xbee, xbee_gen3_update_t* source);
 
 /**
     @brief
@@ -136,7 +137,7 @@ int xbee_bl_gen3_install_init(xbee_dev_t *xbee, xbee_gen3_update_t *source);
 
     @sa xbee_bl_gen3_install_status
 */
-uint16_t xbee_bl_gen3_install_state(xbee_gen3_update_t *source);
+uint16_t xbee_bl_gen3_install_state(xbee_gen3_update_t* source);
 
 /**
     @brief
@@ -160,10 +161,10 @@ uint16_t xbee_bl_gen3_install_state(xbee_gen3_update_t *source);
     @retval     -EIO        Couldn't establish communications with XBee module.
 
 */
-int xbee_bl_gen3_install_tick(xbee_gen3_update_t *source);
+int xbee_bl_gen3_install_tick(xbee_gen3_update_t* source);
 
 /// Minimum size of buffer passed to xbee_bl_gen3_install_status()
-#define XBEE_GEN3_STATUS_BUF_SIZE       60
+#define XBEE_GEN3_STATUS_BUF_SIZE 60
 
 /**
     @brief
@@ -178,8 +179,7 @@ int xbee_bl_gen3_install_tick(xbee_gen3_update_t *source);
 
     @sa xbee_bl_gen3_install_state
 */
-const char *xbee_bl_gen3_install_status(xbee_gen3_update_t *source,
-                                        char buffer[XBEE_GEN3_STATUS_BUF_SIZE]);
+const char* xbee_bl_gen3_install_status(xbee_gen3_update_t* source, char buffer[XBEE_GEN3_STATUS_BUF_SIZE]);
 
 XBEE_END_DECLS
 
