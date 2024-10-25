@@ -56,7 +56,7 @@
 
 #ifdef JS_HAVE_LONG_LONG
 
-#define JSLL_INIT(hi, lo)  ((UINT64_C(hi) << 32) + UINT64_C(lo))
+#define JSLL_INIT(hi, lo) ((UINT64_C(hi) << 32) + UINT64_C(lo))
 
 /***********************************************************************
 ** MACROS:      JSLL_*
@@ -75,12 +75,12 @@
 **  JSLL_GE_ZERO        Test for zero or positive
 **  JSLL_CMP            Compare two values
 ***********************************************************************/
-#define JSLL_IS_ZERO(a)       ((a) == 0)
-#define JSLL_EQ(a, b)         ((a) == (b))
-#define JSLL_NE(a, b)         ((a) != (b))
-#define JSLL_GE_ZERO(a)       ((a) >= 0)
-#define JSLL_CMP(a, op, b)    ((JSInt64)(a) op (JSInt64)(b))
-#define JSLL_UCMP(a, op, b)   ((JSUint64)(a) op (JSUint64)(b))
+#define JSLL_IS_ZERO(a)     ((a) == 0)
+#define JSLL_EQ(a, b)       ((a) == (b))
+#define JSLL_NE(a, b)       ((a) != (b))
+#define JSLL_GE_ZERO(a)     ((a) >= 0)
+#define JSLL_CMP(a, op, b)  ((JSInt64)(a)op(JSInt64)(b))
+#define JSLL_UCMP(a, op, b) ((JSUint64)(a)op(JSUint64)(b))
 
 /***********************************************************************
 ** MACROS:      JSLL_<logical operators>
@@ -91,11 +91,11 @@
 **  JSLL_OR2            A disgusting deviation
 **  JSLL_NOT            Negation (one's compliment)
 ***********************************************************************/
-#define JSLL_AND(r, a, b)       ((r) = (a) & (b))
-#define JSLL_OR(r, a, b)        ((r) = (a) | (b))
-#define JSLL_XOR(r, a, b)       ((r) = (a) ^ (b))
-#define JSLL_OR2(r, a)          ((r) = (r) | (a))
-#define JSLL_NOT(r, a)          ((r) = ~(a))
+#define JSLL_AND(r, a, b) ((r) = (a) & (b))
+#define JSLL_OR(r, a, b)  ((r) = (a) | (b))
+#define JSLL_XOR(r, a, b) ((r) = (a) ^ (b))
+#define JSLL_OR2(r, a)    ((r) = (r) | (a))
+#define JSLL_NOT(r, a)    ((r) = ~(a))
 
 /***********************************************************************
 ** MACROS:      JSLL_<mathematical operators>
@@ -104,9 +104,9 @@
 **  JSLL_ADD            Summation (two's compliment)
 **  JSLL_SUB            Difference (two's compliment)
 ***********************************************************************/
-#define JSLL_NEG(r, a)        ((r) = -(a))
-#define JSLL_ADD(r, a, b)     ((r) = (a) + (b))
-#define JSLL_SUB(r, a, b)     ((r) = (a) - (b))
+#define JSLL_NEG(r, a)    ((r) = -(a))
+#define JSLL_ADD(r, a, b) ((r) = (a) + (b))
+#define JSLL_SUB(r, a, b) ((r) = (a) - (b))
 
 /***********************************************************************
 ** MACROS:      JSLL_<mathematical operators>
@@ -116,10 +116,10 @@
 **  JSLL_DIV            Quotient (two's compliment)
 **  JSLL_MOD            Modulus (two's compliment)
 ***********************************************************************/
-#define JSLL_MUL(r, a, b)        ((r) = (a) * (b))
-#define JSLL_MUL32(r, a, b)      ((r) = (JSUint64)(a) * (JSUint32)(b))
-#define JSLL_DIV(r, a, b)        ((r) = (a) / (b))
-#define JSLL_MOD(r, a, b)        ((r) = (a) % (b))
+#define JSLL_MUL(r, a, b)   ((r) = (a) * (b))
+#define JSLL_MUL32(r, a, b) ((r) = (JSUint64)(a) * (JSUint32)(b))
+#define JSLL_DIV(r, a, b)   ((r) = (a) / (b))
+#define JSLL_MOD(r, a, b)   ((r) = (a) % (b))
 
 /***********************************************************************
 ** MACROS:      JSLL_<shifting operators>
@@ -130,10 +130,10 @@
 **  (consider renaming to LSR and ASR for logical and arithmetic shift right)
 **  JSLL_ISHL           Integer (32-bit) shift left [0..64] bits
 ***********************************************************************/
-#define JSLL_SHL(r, a, b)     ((r) = (JSInt64)(a) << (b))
-#define JSLL_SHR(r, a, b)     ((r) = (JSInt64)(a) >> (b))
-#define JSLL_USHR(r, a, b)    ((r) = (JSUint64)(a) >> (b))
-#define JSLL_ISHL(r, a, b)    ((r) = (JSInt64)(a) << (b))
+#define JSLL_SHL(r, a, b)  ((r) = (JSInt64)(a) << (b))
+#define JSLL_SHR(r, a, b)  ((r) = (JSInt64)(a) >> (b))
+#define JSLL_USHR(r, a, b) ((r) = (JSUint64)(a) >> (b))
+#define JSLL_ISHL(r, a, b) ((r) = (JSInt64)(a) << (b))
 
 /***********************************************************************
 ** MACROS:      JSLL_<conversion operators>
@@ -147,15 +147,15 @@
 **  JSLL_F2L            Convert float to 64-bit
 **  JSLL_D2L            Convert double to 64-bit
 ***********************************************************************/
-#define JSLL_L2I(i, l)        ((i) = (JSInt32)(l))
-#define JSLL_L2UI(ui, l)        ((ui) = (JSUint32)(l))
-#define JSLL_L2F(f, l)        ((f) = (JSFloat64)(l))
-#define JSLL_L2D(d, l)        ((d) = (JSFloat64)(l))
+#define JSLL_L2I(i, l)   ((i) = (JSInt32)(l))
+#define JSLL_L2UI(ui, l) ((ui) = (JSUint32)(l))
+#define JSLL_L2F(f, l)   ((f) = (JSFloat64)(l))
+#define JSLL_L2D(d, l)   ((d) = (JSFloat64)(l))
 
-#define JSLL_I2L(l, i)        ((l) = (JSInt64)(i))
-#define JSLL_UI2L(l, ui)        ((l) = (JSInt64)(ui))
-#define JSLL_F2L(l, f)        ((l) = (JSInt64)(f))
-#define JSLL_D2L(l, d)        ((l) = (JSInt64)(d))
+#define JSLL_I2L(l, i)   ((l) = (JSInt64)(i))
+#define JSLL_UI2L(l, ui) ((l) = (JSInt64)(ui))
+#define JSLL_F2L(l, f)   ((l) = (JSInt64)(f))
+#define JSLL_D2L(l, d)   ((l) = (JSInt64)(d))
 
 /***********************************************************************
 ** MACROS:      JSLL_UDIVMOD
@@ -166,9 +166,7 @@
 ** OUTPUTS:     JSUint64 *qp: pointer to quotient
 **              JSUint64 *rp: pointer to remainder
 ***********************************************************************/
-#define JSLL_UDIVMOD(qp, rp, a, b) \
-    (*(qp) = ((JSUint64)(a) / (b)), \
-     *(rp) = ((JSUint64)(a) % (b)))
+#define JSLL_UDIVMOD(qp, rp, a, b) (*(qp) = ((JSUint64)(a) / (b)), *(rp) = ((JSUint64)(a) % (b)))
 
 /***********************************************************************
 ** MACROS:      JSLL_HEXSTR, JSLL_DECSTR
@@ -181,155 +179,164 @@
 **
 **  Returns number of characters written to buffer.
 ***********************************************************************/
-#define JSLL_HEXSTR(s, a)        sprintf( s, "%016" PRIx64, a)
-#define JSLL_DECSTR(s, a)        sprintf( s, "%" PRId64, a)
-#define JSLL_UDECSTR(s, a)       sprintf( s, "%" PRIu64, a)
+#define JSLL_HEXSTR(s, a)  sprintf(s, "%016" PRIx64, a)
+#define JSLL_DECSTR(s, a)  sprintf(s, "%" PRId64, a)
+#define JSLL_UDECSTR(s, a) sprintf(s, "%" PRIu64, a)
 
-#else  /* !JS_HAVE_LONG_LONG */
+#else /* !JS_HAVE_LONG_LONG */
 
 #ifdef IS_LITTLE_ENDIAN
-#define JSLL_INIT(hi, lo) { lo, hi }
+#define JSLL_INIT(hi, lo) {lo, hi}
 #else
-#define JSLL_INIT(hi, lo) { hi, lo }
+#define JSLL_INIT(hi, lo) {hi, lo}
 #endif
 
-#define JSLL_IS_ZERO(a)         (((a).hi == 0) && ((a).lo == 0))
-#define JSLL_EQ(a, b)           (((a).hi == (b).hi) && ((a).lo == (b).lo))
-#define JSLL_NE(a, b)           (((a).hi != (b).hi) || ((a).lo != (b).lo))
-#define JSLL_GE_ZERO(a)         (((a).hi >> 31) == 0)
+#define JSLL_IS_ZERO(a) (((a).hi == 0) && ((a).lo == 0))
+#define JSLL_EQ(a, b)   (((a).hi == (b).hi) && ((a).lo == (b).lo))
+#define JSLL_NE(a, b)   (((a).hi != (b).hi) || ((a).lo != (b).lo))
+#define JSLL_GE_ZERO(a) (((a).hi >> 31) == 0)
 
 #ifdef DEBUG
-#define JSLL_CMP(a, op, b)      (JS_ASSERT((#op)[1] != '='), JSLL_REAL_CMP(a, op, b))
-#define JSLL_UCMP(a, op, b)     (JS_ASSERT((#op)[1] != '='), JSLL_REAL_UCMP(a, op, b))
+#define JSLL_CMP(a, op, b)  (JS_ASSERT((#op)[1] != '='), JSLL_REAL_CMP(a, op, b))
+#define JSLL_UCMP(a, op, b) (JS_ASSERT((#op)[1] != '='), JSLL_REAL_UCMP(a, op, b))
 #else
-#define JSLL_CMP(a, op, b)      JSLL_REAL_CMP(a, op, b)
-#define JSLL_UCMP(a, op, b)     JSLL_REAL_UCMP(a, op, b)
+#define JSLL_CMP(a, op, b)  JSLL_REAL_CMP(a, op, b)
+#define JSLL_UCMP(a, op, b) JSLL_REAL_UCMP(a, op, b)
 #endif
 
-#define JSLL_REAL_CMP(a,op,b)   (((JSInt32)(a).hi op (JSInt32)(b).hi) || \
-                                 (((a).hi == (b).hi) && ((a).lo op (b).lo)))
-#define JSLL_REAL_UCMP(a,op,b)  (((a).hi op (b).hi) || \
-                                 (((a).hi == (b).hi) && ((a).lo op (b).lo)))
+#define JSLL_REAL_CMP(a, op, b)  (((JSInt32)(a).hi op(JSInt32)(b).hi) || (((a).hi == (b).hi) && ((a).lo op(b).lo)))
+#define JSLL_REAL_UCMP(a, op, b) (((a).hi op(b).hi) || (((a).hi == (b).hi) && ((a).lo op(b).lo)))
 
-#define JSLL_AND(r, a, b)       ((r).lo = (a).lo & (b).lo, \
-                                 (r).hi = (a).hi & (b).hi)
-#define JSLL_OR(r, a, b)        ((r).lo = (a).lo | (b).lo, \
-                                 (r).hi = (a).hi | (b).hi)
-#define JSLL_XOR(r, a, b)       ((r).lo = (a).lo ^ (b).lo, \
-                                 (r).hi = (a).hi ^ (b).hi)
-#define JSLL_OR2(r, a)          ((r).lo = (r).lo | (a).lo, \
-                                 (r).hi = (r).hi | (a).hi)
-#define JSLL_NOT(r, a)          ((r).lo = ~(a).lo, \
-                                 (r).hi = ~(a).hi)
+#define JSLL_AND(r, a, b) ((r).lo = (a).lo & (b).lo, (r).hi = (a).hi & (b).hi)
+#define JSLL_OR(r, a, b)  ((r).lo = (a).lo | (b).lo, (r).hi = (a).hi | (b).hi)
+#define JSLL_XOR(r, a, b) ((r).lo = (a).lo ^ (b).lo, (r).hi = (a).hi ^ (b).hi)
+#define JSLL_OR2(r, a)    ((r).lo = (r).lo | (a).lo, (r).hi = (r).hi | (a).hi)
+#define JSLL_NOT(r, a)    ((r).lo = ~(a).lo, (r).hi = ~(a).hi)
 
-#define JSLL_NEG(r, a)          ((r).lo = -(JSInt32)(a).lo, \
-                                 (r).hi = -(JSInt32)(a).hi - ((r).lo != 0))
-#define JSLL_ADD(r, a, b) { \
-    JSUint32 t; \
-    t = (a).lo + (b).lo; \
-    (r).hi = (a).hi + (b).hi + (t < (b).lo); \
-    (r).lo = t; \
-}
+#define JSLL_NEG(r, a) ((r).lo = -(JSInt32)(a).lo, (r).hi = -(JSInt32)(a).hi - ((r).lo != 0))
+#define JSLL_ADD(r, a, b)                                                                                              \
+    {                                                                                                                  \
+        JSUint32 t;                                                                                                    \
+        t      = (a).lo + (b).lo;                                                                                      \
+        (r).hi = (a).hi + (b).hi + (t < (b).lo);                                                                       \
+        (r).lo = t;                                                                                                    \
+    }
 
-#define JSLL_SUB(r, a, b) { \
-    (r).hi = (a).hi - (b).hi - ((a).lo < (b).lo); \
-    (r).lo = (a).lo - (b).lo; \
-}
+#define JSLL_SUB(r, a, b)                                                                                              \
+    {                                                                                                                  \
+        (r).hi = (a).hi - (b).hi - ((a).lo < (b).lo);                                                                  \
+        (r).lo = (a).lo - (b).lo;                                                                                      \
+    }
 
-#define JSLL_MUL(r, a, b)             jsll_mul( &(r), a, b)
-void jsll_mul(JSUint64 *rp, JSUint64 a, JSUint64 b);
+#define JSLL_MUL(r, a, b) jsll_mul(&(r), a, b)
+void jsll_mul(JSUint64* rp, JSUint64 a, JSUint64 b);
 
-#define JSLL_MUL32(r, a, b)           jsll_mul32( &(r), a, b)
-void jsll_mul32(JSUint64 *rp, JSUint32 a, JSUint32 b);
+#define JSLL_MUL32(r, a, b) jsll_mul32(&(r), a, b)
+void jsll_mul32(JSUint64* rp, JSUint32 a, JSUint32 b);
 
-#define JSLL_UDIVMOD(qp, rp, a, b)    jsll_udivmod(qp, rp, a, b)
-void jsll_udivmod(JSUint64 *qp, JSUint64 *rp, JSUint64 a, JSUint64 b);
+#define JSLL_UDIVMOD(qp, rp, a, b) jsll_udivmod(qp, rp, a, b)
+void jsll_udivmod(JSUint64* qp, JSUint64* rp, JSUint64 a, JSUint64 b);
 
-#define JSLL_DIV(r, a, b)             jsll_div( &(r), &(a), &(b))
-void jsll_div( JSUint64 *r, const JSUint64 *a, const JSUint64 *b);
+#define JSLL_DIV(r, a, b) jsll_div(&(r), &(a), &(b))
+void jsll_div(JSUint64* r, const JSUint64* a, const JSUint64* b);
 
-#define JSLL_MOD(r, a, b)             jsll_mod( &(r), &(a), &(b))
-void jsll_mod( JSUint64 *r, const JSUint64 *a, const JSUint64 *b);
+#define JSLL_MOD(r, a, b) jsll_mod(&(r), &(a), &(b))
+void jsll_mod(JSUint64* r, const JSUint64* a, const JSUint64* b);
 
 /* a is an JSInt32, b is JSInt32, r is JSInt64 */
-#define JSLL_ISHL(r, a, b) { \
-    if (b) { \
-        if ((b) < 32) { \
-            (r).lo = (a) << ((b) & 31); \
-            (r).hi = ((a) >> (32 - (b))); \
-        } else { \
-            (r).lo = 0; \
-            (r).hi = (a) << ((b) & 31); \
-        } \
-    } else { \
-        (r).lo = (a); \
-        (r).hi = 0; \
-    } \
-}
+#define JSLL_ISHL(r, a, b)                                                                                             \
+    {                                                                                                                  \
+        if (b) {                                                                                                       \
+            if ((b) < 32) {                                                                                            \
+                (r).lo = (a) << ((b) & 31);                                                                            \
+                (r).hi = ((a) >> (32 - (b)));                                                                          \
+            } else {                                                                                                   \
+                (r).lo = 0;                                                                                            \
+                (r).hi = (a) << ((b) & 31);                                                                            \
+            }                                                                                                          \
+        } else {                                                                                                       \
+            (r).lo = (a);                                                                                              \
+            (r).hi = 0;                                                                                                \
+        }                                                                                                              \
+    }
 
-#define JSLL_SHL(r, a, b)             jsll_shl( &(r), a, b)
-#define JSLL_SHR(r, a, b)             jsll_shr( &(r), a, b)
-#define JSLL_USHR(r, a, b)            jsll_ushr( &(r), a, b)
+#define JSLL_SHL(r, a, b)  jsll_shl(&(r), a, b)
+#define JSLL_SHR(r, a, b)  jsll_shr(&(r), a, b)
+#define JSLL_USHR(r, a, b) jsll_ushr(&(r), a, b)
 
-void jsll_shl( JSUint64 *r, JSUint64 a, uint_fast8_t b);
-void jsll_shr( JSInt64 *r, JSInt64 a, uint_fast8_t b);
-void jsll_ushr( JSUint64 *r, JSUint64 a, uint_fast8_t b);
+void jsll_shl(JSUint64* r, JSUint64 a, uint_fast8_t b);
+void jsll_shr(JSInt64* r, JSInt64 a, uint_fast8_t b);
+void jsll_ushr(JSUint64* r, JSUint64 a, uint_fast8_t b);
 
-#define JSLL_L2I(i, l)        ((i) = (l).lo)
-#define JSLL_L2UI(ui, l)      ((ui) = (l).lo)
-#define JSLL_L2F(f, l)        { double _d; JSLL_L2D(_d, l); (f) = (JSFloat64)_d; }
+#define JSLL_L2I(i, l)   ((i) = (l).lo)
+#define JSLL_L2UI(ui, l) ((ui) = (l).lo)
+#define JSLL_L2F(f, l)                                                                                                 \
+    {                                                                                                                  \
+        double _d;                                                                                                     \
+        JSLL_L2D(_d, l);                                                                                               \
+        (f) = (JSFloat64)_d;                                                                                           \
+    }
 
-#define JSLL_L2D(d, l) { \
-    bool_t _negative; \
-    JSInt64 _absval; \
- \
-    _negative = (JSInt32)(l).hi < 0; \
-    if (_negative) { \
-        JSLL_NEG(_absval, l); \
-    } else { \
-        _absval = l; \
-    } \
-    (d) = (double)_absval.hi * 4.294967296e9 + _absval.lo; \
-    if (_negative) \
-        (d) = -(d); \
-}
+#define JSLL_L2D(d, l)                                                                                                 \
+    {                                                                                                                  \
+        bool_t _negative;                                                                                              \
+        JSInt64 _absval;                                                                                               \
+                                                                                                                       \
+        _negative = (JSInt32)(l).hi < 0;                                                                               \
+        if (_negative) {                                                                                               \
+            JSLL_NEG(_absval, l);                                                                                      \
+        } else {                                                                                                       \
+            _absval = l;                                                                                               \
+        }                                                                                                              \
+        (d) = (double)_absval.hi * 4.294967296e9 + _absval.lo;                                                         \
+        if (_negative)                                                                                                 \
+            (d) = -(d);                                                                                                \
+    }
 
-#define JSLL_I2L(l, i)        {(l).lo = (i); (l).hi = (JSInt32)(i) >> 31; }
-#define JSLL_UI2L(l, ui)      ((l).lo = (ui), (l).hi = 0)
-#define JSLL_F2L(l, f)        { double _d = (double)f; JSLL_D2L(l, _d); }
+#define JSLL_I2L(l, i)                                                                                                 \
+    {                                                                                                                  \
+        (l).lo = (i);                                                                                                  \
+        (l).hi = (JSInt32)(i) >> 31;                                                                                   \
+    }
+#define JSLL_UI2L(l, ui) ((l).lo = (ui), (l).hi = 0)
+#define JSLL_F2L(l, f)                                                                                                 \
+    {                                                                                                                  \
+        double _d = (double)f;                                                                                         \
+        JSLL_D2L(l, _d);                                                                                               \
+    }
 
-#define JSLL_D2L(l, d) { \
-    int _negative; \
-    double _absval, _d_hi; \
-    JSInt64 _lo_d; \
- \
-    _negative = ((d) < 0); \
-    _absval = _negative ? -(d) : (d); \
- \
-    (l).hi = _absval / 4.294967296e9; \
-    (l).lo = 0; \
-    JSLL_L2D(_d_hi, l); \
-    _absval -= _d_hi; \
-    _lo_d.hi = 0; \
-    if (_absval < 0) { \
-    _lo_d.lo = -_absval; \
-    JSLL_SUB(l, l, _lo_d); \
-    } else { \
-    _lo_d.lo = _absval; \
-    JSLL_ADD(l, l, _lo_d); \
-    } \
- \
-    if (_negative) \
-    JSLL_NEG(l, l); \
-}
+#define JSLL_D2L(l, d)                                                                                                 \
+    {                                                                                                                  \
+        int _negative;                                                                                                 \
+        double _absval, _d_hi;                                                                                         \
+        JSInt64 _lo_d;                                                                                                 \
+                                                                                                                       \
+        _negative = ((d) < 0);                                                                                         \
+        _absval   = _negative ? -(d) : (d);                                                                            \
+                                                                                                                       \
+        (l).hi = _absval / 4.294967296e9;                                                                              \
+        (l).lo = 0;                                                                                                    \
+        JSLL_L2D(_d_hi, l);                                                                                            \
+        _absval -= _d_hi;                                                                                              \
+        _lo_d.hi = 0;                                                                                                  \
+        if (_absval < 0) {                                                                                             \
+            _lo_d.lo = -_absval;                                                                                       \
+            JSLL_SUB(l, l, _lo_d);                                                                                     \
+        } else {                                                                                                       \
+            _lo_d.lo = _absval;                                                                                        \
+            JSLL_ADD(l, l, _lo_d);                                                                                     \
+        }                                                                                                              \
+                                                                                                                       \
+        if (_negative)                                                                                                 \
+            JSLL_NEG(l, l);                                                                                            \
+    }
 
-#define JSLL_HEXSTR(s, a) \
-    sprintf( s, "%08" PRIx32 "%08" PRIx32, (a).hi, (a).lo)
-#define JSLL_DECSTR(s, a)        jsll_decstr( s, &(a))
-#define JSLL_UDECSTR(s, a)       jsll_udecstr( s, &(a))
+#define JSLL_HEXSTR(s, a)  sprintf(s, "%08" PRIx32 "%08" PRIx32, (a).hi, (a).lo)
+#define JSLL_DECSTR(s, a)  jsll_decstr(s, &(a))
+#define JSLL_UDECSTR(s, a) jsll_udecstr(s, &(a))
 
-int jsll_decstr( char *buffer, const JSInt64 *v);
-int jsll_udecstr( char *buffer, const JSUint64 *v);
+int jsll_decstr(char* buffer, const JSInt64* v);
+int jsll_udecstr(char* buffer, const JSUint64* v);
 
 #endif /* !JS_HAVE_LONG_LONG */
 

@@ -1068,7 +1068,7 @@ int sendfilex(int node, char* opcode, char* filename, char* destdir, int blocksi
                 }
             }
         } // end retval==1
-    }     // end block loop
+    } // end block loop
     while (getout == 0 && ntogo > 0);
 
     if (progflag != 0)
@@ -1237,7 +1237,7 @@ int receivefilex(char* fname, int clientnode)
 
         } // end got block
         else
-            getout = 1;                 // error
+            getout = 1; // error
     } while (ntogo > 0 && getout == 0); // plus 2 CRC bytes
 
     fclose(stream);

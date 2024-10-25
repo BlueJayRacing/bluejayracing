@@ -20,12 +20,8 @@
 #include "xbee/device.h"
 #include "xbee/firmware.h"
 
-#include "xbee/atcmd.h"         // for XBEE_FRAME_HANDLE_LOCAL_AT
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] =
-{
-    XBEE_FRAME_HANDLE_LOCAL_AT,
-    XBEE_FRAME_TABLE_END
-};
+#include "xbee/atcmd.h" // for XBEE_FRAME_HANDLE_LOCAL_AT
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {XBEE_FRAME_HANDLE_LOCAL_AT, XBEE_FRAME_TABLE_END};
 
 #include "parse_serial_args.h"
 
@@ -41,39 +37,31 @@ const xbee_dispatch_table_entry_t xbee_frame_handlers[] =
 
 xbee_dev_t my_xbee;
 
-int fw_seek( void FAR *context, uint32_t offset)
-{
-    return fseek( (FILE FAR *)context, offset, SEEK_SET);
-}
+int fw_seek(void FAR* context, uint32_t offset) { return fseek((FILE FAR*)context, offset, SEEK_SET); }
 
-int fw_read( void FAR *context, void FAR *buffer, int16_t bytes)
-{
-    return fread( buffer, 1, bytes, (FILE FAR *)context);
-}
+int fw_read(void FAR* context, void FAR* buffer, int16_t bytes) { return fread(buffer, 1, bytes, (FILE FAR*)context); }
 
-void manual_xbee_reset(xbee_dev_t *xbee, int reset)
+void manual_xbee_reset(xbee_dev_t* xbee, int reset)
 {
-    static int state = 0;           // assume released
+    static int state = 0; // assume released
     char buffer[10];
 
     // standard API for an XBee reset handler, but there's only one XBee
     // in this sample, so no need to use 'xbee' parameter
-    XBEE_UNUSED_PARAMETER( xbee);
+    XBEE_UNUSED_PARAMETER(xbee);
 
-    if (state != reset)
-    {
-        printf( "%s the XBee's reset button, press ENTER.\n",
-            reset ? "Press and hold" : "Release");
-        fgets( buffer, 10, stdin);
+    if (state != reset) {
+        printf("%s the XBee's reset button, press ENTER.\n", reset ? "Press and hold" : "Release");
+        fgets(buffer, 10, stdin);
 
         state = reset;
     }
 }
 
-int main( int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    xbee_fw_source_t fw = { 0 };
-    FILE *file = NULL;
+    xbee_fw_source_t fw = {0};
+    FILE* file          = NULL;
     char buffer[80];
     uint32_t t;
     int result;
@@ -85,57 +73,47 @@ int main( int argc, char *argv[])
         xbee_reset = &manual_xbee_reset;
     }
 
-    if (argc > 1)
-    {
-        file = fopen( argv[1], "rb");
+    if (argc > 1) {
+        file = fopen(argv[1], "rb");
     }
-    if (! file)
-    {
-        printf( "Error: pass path to .EBL or .GBL file as first parameter\n");
-        exit( -1);
+    if (!file) {
+        printf("Error: pass path to .EBL or .GBL file as first parameter\n");
+        exit(-1);
     }
 
     fw.context = file;
-    fw.seek = fw_seek;
-    fw.read = fw_read;
+    fw.seek    = fw_seek;
+    fw.read    = fw_read;
 
-    parse_serial_arguments( argc, argv, &XBEE_SERPORT);
+    parse_serial_arguments(argc, argv, &XBEE_SERPORT);
 
-    if (xbee_dev_init( &my_xbee, &XBEE_SERPORT, NULL, xbee_reset))
-    {
-        printf( "Failed to initialize device.\n");
+    if (xbee_dev_init(&my_xbee, &XBEE_SERPORT, NULL, xbee_reset)) {
+        printf("Failed to initialize device.\n");
         return 0;
     }
 
-    xbee_fw_install_init( &my_xbee, NULL, &fw);
-    do
-    {
-        t = xbee_millisecond_timer();
-        last_state = xbee_fw_install_ebl_state( &fw);
-        result = xbee_fw_install_ebl_tick( &fw);
-        t = xbee_millisecond_timer() - t;
+    xbee_fw_install_init(&my_xbee, NULL, &fw);
+    do {
+        t          = xbee_millisecond_timer();
+        last_state = xbee_fw_install_ebl_state(&fw);
+        result     = xbee_fw_install_ebl_tick(&fw);
+        t          = xbee_millisecond_timer() - t;
 #ifdef BLOCKING_WARNING
-        if (t > 50)
-        {
-            printf( "!!! blocked for %ums in state 0x%04X (now state 0x%04X)\n",
-                t, last_state, xbee_fw_install_ebl_state( &fw));
+        if (t > 50) {
+            printf("!!! blocked for %ums in state 0x%04X (now state 0x%04X)\n", t, last_state,
+                   xbee_fw_install_ebl_state(&fw));
         }
 #endif
-        if (last_state != xbee_fw_install_ebl_state( &fw))
-        {
+        if (last_state != xbee_fw_install_ebl_state(&fw)) {
             // print new status
-            printf( " %" PRIsFAR "                          \r",
-                xbee_fw_status_ebl( &fw, buffer));
-            fflush( stdout);
+            printf(" %" PRIsFAR "                          \r", xbee_fw_status_ebl(&fw, buffer));
+            fflush(stdout);
         }
     } while (result == 0);
-    if (result == 1)
-    {
-        printf( "firmware update completed successfully\n");
-    }
-    else
-    {
-        printf( "firmware update failed with error %d\n", result);
+    if (result == 1) {
+        printf("firmware update completed successfully\n");
+    } else {
+        printf("firmware update failed with error %d\n", result);
         // dump possible error message from bootloader
         printf("Remaining output from serial port:\n");
         t = xbee_millisecond_timer();
@@ -148,13 +126,12 @@ int main( int argc, char *argv[])
         putchar('\n');
     }
 
-    fclose( file);
+    fclose(file);
 
-    xbee_ser_close( &my_xbee.serport);
+    xbee_ser_close(&my_xbee.serport);
 
     // Note that the module now has default settings, including baud rate,
     // flow control and even API mode.
 
     return 0;
 }
-

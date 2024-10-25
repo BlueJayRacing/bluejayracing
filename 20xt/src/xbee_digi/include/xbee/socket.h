@@ -44,7 +44,7 @@
       destination.  Use xbee_sock_sendto() to send data.
 
     - A Listening socket spawns new Connected sockets from inbound connections.
-    
+
     For use with XBee Cellular firmware versions ending in x15 or later.
 */
 
@@ -65,7 +65,7 @@ typedef int xbee_sock_t;
 #ifndef XBEE_SOCK_SOCKET_COUNT
 /// Number of sockets to track on the host.  Base on number of simultaneous
 /// sockets while considering XBee Cellular device's limits.
-#define XBEE_SOCK_SOCKET_COUNT          10
+#define XBEE_SOCK_SOCKET_COUNT 10
 #endif
 
 /**
@@ -92,9 +92,7 @@ typedef int xbee_sock_t;
 
     @sa xbee_sock_create
 */
-typedef void (*xbee_sock_notify_fn)(xbee_sock_t socket,
-                                    uint8_t frame_type,
-                                    uint8_t message);
+typedef void (*xbee_sock_notify_fn)(xbee_sock_t socket, uint8_t frame_type, uint8_t message);
 
 /**
     @brief
@@ -110,10 +108,7 @@ typedef void (*xbee_sock_notify_fn)(xbee_sock_t socket,
 
     @sa xbee_sock_connect, xbee_sock_send, xbee_sock_receive_from_fn
 */
-typedef void (*xbee_sock_receive_fn)(xbee_sock_t socket,
-                                     uint8_t status,
-                                     const void *payload,
-                                     size_t payload_len);
+typedef void (*xbee_sock_receive_fn)(xbee_sock_t socket, uint8_t status, const void* payload, size_t payload_len);
 
 /**
     @brief
@@ -131,12 +126,8 @@ typedef void (*xbee_sock_receive_fn)(xbee_sock_t socket,
 
     @sa xbee_sock_bind, xbee_sock_sendto, xbee_sock_receive_fn
 */
-typedef void (*xbee_sock_receive_from_fn)(xbee_sock_t socket,
-                                          uint8_t status,
-                                          uint32_t remote_addr,
-                                          uint16_t remote_port,
-                                          const void *datagram,
-                                          size_t datagram_len);
+typedef void (*xbee_sock_receive_from_fn)(xbee_sock_t socket, uint8_t status, uint32_t remote_addr,
+                                          uint16_t remote_port, const void* datagram, size_t datagram_len);
 
 /**
     @brief
@@ -153,11 +144,8 @@ typedef void (*xbee_sock_receive_from_fn)(xbee_sock_t socket,
 
     @sa xbee_sock_listen, xbee_sock_receive_fn
 */
-typedef xbee_sock_receive_fn
-    (*xbee_sock_ipv4_client_fn)(xbee_sock_t listening_socket,
-                                xbee_sock_t client_socket,
-                                uint32_t remote_addr,
-                                uint16_t remote_port);
+typedef xbee_sock_receive_fn (*xbee_sock_ipv4_client_fn)(xbee_sock_t listening_socket, xbee_sock_t client_socket,
+                                                         uint32_t remote_addr, uint16_t remote_port);
 
 /**
     @brief
@@ -173,12 +161,8 @@ typedef xbee_sock_receive_fn
 
     @sa xbee_sock_option
 */
-typedef void (*xbee_sock_option_resp_fn)(xbee_sock_t socket,
-                                         uint8_t option_id,
-                                         uint8_t status,
-                                         const void *data,
+typedef void (*xbee_sock_option_resp_fn)(xbee_sock_t socket, uint8_t option_id, uint8_t status, const void* data,
                                          size_t data_len);
-
 
 /**
     @brief
@@ -199,9 +183,7 @@ typedef void (*xbee_sock_option_resp_fn)(xbee_sock_t socket,
 
     @sa xbee_sock_notify_fn
 */
-xbee_sock_t xbee_sock_create(xbee_dev_t *xbee,
-                             uint8_t protocol,
-                             xbee_sock_notify_fn notify_handler);
+xbee_sock_t xbee_sock_create(xbee_dev_t* xbee, uint8_t protocol, xbee_sock_notify_fn notify_handler);
 
 /**
     @brief
@@ -228,8 +210,7 @@ xbee_sock_t xbee_sock_create(xbee_dev_t *xbee,
 
     @sa xbee_sock_create, xbee_sock_send, xbee_sock_receive_fn
 */
-int xbee_sock_connect(xbee_sock_t socket, uint16_t remote_port,
-                      uint32_t remote_addr, const char *remote_host,
+int xbee_sock_connect(xbee_sock_t socket, uint16_t remote_port, uint32_t remote_addr, const char* remote_host,
                       xbee_sock_receive_fn receive_handler);
 
 /**
@@ -253,8 +234,7 @@ int xbee_sock_connect(xbee_sock_t socket, uint16_t remote_port,
 
     @sa xbee_sock_create, xbee_sock_sendto, xbee_sock_receive_from_fn
 */
-int xbee_sock_bind(xbee_sock_t socket, uint16_t local_port,
-                   xbee_sock_receive_from_fn receive_from_handler);
+int xbee_sock_bind(xbee_sock_t socket, uint16_t local_port, xbee_sock_receive_from_fn receive_from_handler);
 
 /**
     @brief
@@ -275,8 +255,7 @@ int xbee_sock_bind(xbee_sock_t socket, uint16_t local_port,
 
     @sa xbee_sock_create, xbee_sock_ipv4_client_fn
 */
-int xbee_sock_listen(xbee_sock_t socket, uint16_t local_port,
-                     xbee_sock_ipv4_client_fn ipv4_client_handler);
+int xbee_sock_listen(xbee_sock_t socket, uint16_t local_port, xbee_sock_ipv4_client_fn ipv4_client_handler);
 
 // Future: maybe make tx_options an int or uint16_t -- lower byte passed in
 // frame, upper byte used for API options (like DISABLE_TX_STATUS).
@@ -307,8 +286,7 @@ int xbee_sock_listen(xbee_sock_t socket, uint16_t local_port,
 
     @sa xbee_sock_connect, xbee_sock_receive_fn, xbee_sock_sendto
 */
-int xbee_sock_send(xbee_sock_t socket, uint8_t tx_options,
-                   const void *payload, size_t payload_len);
+int xbee_sock_send(xbee_sock_t socket, uint8_t tx_options, const void* payload, size_t payload_len);
 
 /**
     @brief
@@ -339,9 +317,8 @@ int xbee_sock_send(xbee_sock_t socket, uint8_t tx_options,
 
     @sa xbee_sock_bind, xbee_sock_receive_from_fn, xbee_sock_send
 */
-int xbee_sock_sendto(xbee_sock_t socket, uint8_t tx_options,
-                     uint32_t remote_addr, uint16_t remote_port,
-                     const void *payload, size_t payload_len);
+int xbee_sock_sendto(xbee_sock_t socket, uint8_t tx_options, uint32_t remote_addr, uint16_t remote_port,
+                     const void* payload, size_t payload_len);
 
 /**
     @brief
@@ -365,8 +342,8 @@ int xbee_sock_sendto(xbee_sock_t socket, uint8_t tx_options,
 
     @sa xbee_sock_option_resp_fn
 */
-int xbee_sock_option(xbee_sock_t socket, uint8_t option_id, const void *data,
-                     size_t data_len, xbee_sock_option_resp_fn callback);
+int xbee_sock_option(xbee_sock_t socket, uint8_t option_id, const void* data, size_t data_len,
+                     xbee_sock_option_resp_fn callback);
 
 /**
     @brief
@@ -382,8 +359,7 @@ int xbee_sock_option(xbee_sock_t socket, uint8_t option_id, const void *data,
 
     @sa xbee_sock_close, xbee_sock_close_all
 */
-int xbee_sock_reset(xbee_dev_t *xbee);
-
+int xbee_sock_reset(xbee_dev_t* xbee);
 
 /**
     @brief
@@ -401,7 +377,6 @@ int xbee_sock_reset(xbee_dev_t *xbee);
 */
 int xbee_sock_close(xbee_sock_t socket);
 
-
 /**
     @brief
     Close all created sockets for a given XBee device.
@@ -415,8 +390,7 @@ int xbee_sock_close(xbee_sock_t socket);
 
     @sa xbee_sock_reset, xbee_sock_close
 */
-int xbee_sock_close_all(xbee_dev_t *xbee);
-
+int xbee_sock_close_all(xbee_dev_t* xbee);
 
 /**
     @brief
@@ -427,12 +401,10 @@ int xbee_sock_close_all(xbee_dev_t *xbee);
 
     @sa xbee_frame_handler_fn
 */
-int xbee_sock_frame_handler(xbee_dev_t *xbee, const void FAR *rawframe,
-                            uint16_t length, void FAR *context);
-
+int xbee_sock_frame_handler(xbee_dev_t* xbee, const void FAR* rawframe, uint16_t length, void FAR* context);
 
 /// Macro for xbee_frame_handlers table of xbee_dispatch_table_entry_t structs.
-#define XBEE_SOCK_FRAME_HANDLERS        { 0, 0, xbee_sock_frame_handler, NULL }
+#define XBEE_SOCK_FRAME_HANDLERS {0, 0, xbee_sock_frame_handler, NULL}
 
 XBEE_END_DECLS
 

@@ -223,7 +223,7 @@ void WriterDriver::log_car_state(const baja_msgs::msg::Observation& observation)
 void WriterDriver::log_rtk_correction(const baja_msgs::msg::Observation& observation)
 {
     auto rtk                   = std::vector<char>(observation.rtk_correction[0].rtk_correction.begin(),
-                                 observation.rtk_correction[0].rtk_correction.end());
+                                                   observation.rtk_correction[0].rtk_correction.end());
     std::string ts             = std::to_string(observation.timestamp.ts);
     std::string rtk_correction = std::string(rtk.begin(), rtk.end());
     std::vector<std::string> line({rtk_correction, ts});

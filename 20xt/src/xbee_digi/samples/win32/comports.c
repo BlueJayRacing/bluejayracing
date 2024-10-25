@@ -15,13 +15,13 @@
 */
 
 #include <stdio.h>
-#include <windows.h>
 #include <winbase.h>
+#include <windows.h>
 
 #define MAX_COMPORT 4096
 
 char path[5000];
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     printf("Checking COM1 through COM%d:\n", MAX_COMPORT);
     for (unsigned i = 1; i <= MAX_COMPORT; ++i) {

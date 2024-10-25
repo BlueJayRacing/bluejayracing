@@ -9,7 +9,7 @@ class ChannelDescription {
                        std::string time_unit, std::string num_bits_per_sample, uint8_t channel_id)
         : channel_name(channel_name), unit_of_measurement(unit_of_measurement),
           scale_factor_decimal(scale_factor_decimal), time_unit(time_unit), num_bits_per_sample(num_bits_per_sample),
-          channel_id(channel_id){};
+          channel_id(channel_id) {};
 
     ChannelDescription(std::string source_json);
     std::string to_json();
