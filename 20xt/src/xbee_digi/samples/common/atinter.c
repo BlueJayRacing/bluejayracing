@@ -10,9 +10,9 @@
  * =======================================================================
  */
 
+#include <stdio.h>
 #include "_atinter.h"
 #include "parse_serial_args.h"
-#include <stdio.h>
 
 xbee_dev_t my_xbee;
 
@@ -22,62 +22,75 @@ xbee_dev_t my_xbee;
    Initiate communication with the XBee module, then accept AT commands from
    STDIO, pass them to the XBee module and print the result.
 */
-int main(int argc, char* argv[])
+int main( int argc, char *argv[])
 {
-    char cmdstr[256];
-    int status;
-    xbee_serial_t XBEE_SERPORT;
+   char cmdstr[256];
+   int status;
+   xbee_serial_t XBEE_SERPORT;
 
-    parse_serial_arguments(argc, argv, &XBEE_SERPORT);
+   parse_serial_arguments( argc, argv, &XBEE_SERPORT);
 
-    // initialize the serial and device layer for this XBee device
-    if (xbee_dev_init(&my_xbee, &XBEE_SERPORT, NULL, NULL)) {
-        printf("Failed to initialize device.\n");
-        return 0;
-    }
+   // initialize the serial and device layer for this XBee device
+   if (xbee_dev_init( &my_xbee, &XBEE_SERPORT, NULL, NULL))
+   {
+      printf( "Failed to initialize device.\n");
+      return 0;
+   }
 
-    // Initialize the AT Command layer for this XBee device and have the
-    // driver query it for basic information (hardware version, firmware version,
-    // serial number, IEEE address, etc.)
-    xbee_cmd_init_device(&my_xbee);
-    printf("Waiting for driver to query the XBee device...\n");
-    do {
-        xbee_dev_tick(&my_xbee);
-        status = xbee_cmd_query_status(&my_xbee);
-    } while (status == -EBUSY);
-    if (status) {
-        printf("Error %d waiting for query to complete.\n", status);
-    }
+   // Initialize the AT Command layer for this XBee device and have the
+   // driver query it for basic information (hardware version, firmware version,
+   // serial number, IEEE address, etc.)
+   xbee_cmd_init_device( &my_xbee);
+   printf( "Waiting for driver to query the XBee device...\n");
+   do {
+      xbee_dev_tick( &my_xbee);
+      status = xbee_cmd_query_status( &my_xbee);
+   } while (status == -EBUSY);
+   if (status)
+   {
+      printf( "Error %d waiting for query to complete.\n", status);
+   }
 
-    // report on the settings
-    xbee_dev_dump_settings(&my_xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
+   // report on the settings
+   xbee_dev_dump_settings( &my_xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
 
-    printATCmds(&my_xbee);
+   printATCmds( &my_xbee);
 
-    while (1) {
-        int linelen;
-        do {
-            linelen = xbee_readline(cmdstr, sizeof cmdstr);
-            status  = xbee_dev_tick(&my_xbee);
-            if (status < 0) {
-                printf("Error %d from xbee_dev_tick().\n", status);
-                return -1;
-            }
-        } while (linelen == -EAGAIN);
+   while (1)
+   {
+      int linelen;
+      do {
+         linelen = xbee_readline(cmdstr, sizeof cmdstr);
+         status = xbee_dev_tick(&my_xbee);
+         if (status < 0) {
+            printf("Error %d from xbee_dev_tick().\n", status);
+            return -1;
+         }
+      } while (linelen == -EAGAIN);
 
-        if (linelen == -ENODATA || !strcmpi(cmdstr, "quit")) {
-            return 0;
-        } else if (!strncmpi(cmdstr, "menu", 4)) {
-            printATCmds(&my_xbee);
-        } else {
-            process_command(&my_xbee, cmdstr);
-        }
-    }
+      if (linelen == -ENODATA || ! strcmpi( cmdstr, "quit"))
+      {
+         return 0;
+      }
+      else if (! strncmpi( cmdstr, "menu", 4))
+      {
+         printATCmds( &my_xbee);
+      }
+      else
+      {
+         process_command( &my_xbee, cmdstr);
+      }
+   }
 }
 
 // Since we're not using a dynamic frame dispatch table, we need to define
 // it here.
-#include "xbee/atcmd.h" // for XBEE_FRAME_HANDLE_LOCAL_AT
+#include "xbee/atcmd.h"       // for XBEE_FRAME_HANDLE_LOCAL_AT
 #include "xbee/device.h"
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {XBEE_FRAME_HANDLE_LOCAL_AT, XBEE_FRAME_MODEM_STATUS_DEBUG,
-                                                           XBEE_FRAME_TABLE_END};
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] =
+{
+   XBEE_FRAME_HANDLE_LOCAL_AT,
+   XBEE_FRAME_MODEM_STATUS_DEBUG,
+   XBEE_FRAME_TABLE_END
+};
+

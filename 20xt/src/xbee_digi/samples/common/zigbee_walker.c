@@ -19,9 +19,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "xbee/atcmd.h"
-#include "xbee/device.h"
 #include "xbee/platform.h"
+#include "xbee/device.h"
+#include "xbee/atcmd.h"
 #include "xbee/wpan.h"
 
 #include "_zigbee_walker.h"
@@ -38,76 +38,85 @@
 */
 
 xbee_dev_t my_xbee;
-addr64 target = {{0}};
+addr64 target = { { 0 } };
 
-void parse_args(int argc, char* argv[])
+void parse_args( int argc, char *argv[])
 {
-    int i;
+   int i;
 
-    for (i = 1; i < argc; ++i) {
-        if (strncmp(argv[i], "--mac=", 6) == 0) {
-            if (addr64_parse(&target, &argv[i][6])) {
-                fprintf(stderr, "ERROR: couldn't parse MAC %s\n", &argv[i][6]);
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
+   for (i = 1; i < argc; ++i)
+   {
+      if (strncmp( argv[i], "--mac=", 6) == 0)
+      {
+         if (addr64_parse( &target, &argv[i][6]))
+         {
+            fprintf( stderr, "ERROR: couldn't parse MAC %s\n", &argv[i][6]);
+            exit( EXIT_FAILURE);
+         }
+      }
+   }
 
-    if (addr64_is_zero(&target)) {
-        fprintf(stderr, "ERROR: must pass address of target on command-line\n");
-        fprintf(stderr, "\t(--mac=01:23:45:67:89:AB:CD:EF)\n");
-        exit(EXIT_FAILURE);
-    }
+   if (addr64_is_zero( &target))
+   {
+      fprintf( stderr, "ERROR: must pass address of target on command-line\n");
+      fprintf( stderr, "\t(--mac=01:23:45:67:89:AB:CD:EF)\n");
+      exit( EXIT_FAILURE);
+   }
 }
 
-int main(int argc, char* argv[])
+int main( int argc, char *argv[])
 {
-    int status;
-    xbee_serial_t XBEE_SERPORT;
+   int status;
+   xbee_serial_t XBEE_SERPORT;
 
-    // set serial port
-    parse_serial_arguments(argc, argv, &XBEE_SERPORT);
+   // set serial port
+   parse_serial_arguments( argc, argv, &XBEE_SERPORT);
 
-    // parse args for this program
-    parse_args(argc, argv);
+   // parse args for this program
+   parse_args( argc, argv);
 
-    // initialize the serial and device layer for this XBee device
-    if (xbee_dev_init(&my_xbee, &XBEE_SERPORT, NULL, NULL)) {
-        printf("Failed to initialize XBee device.\n");
-        return -1;
-    }
+   // initialize the serial and device layer for this XBee device
+   if (xbee_dev_init( &my_xbee, &XBEE_SERPORT, NULL, NULL))
+   {
+      printf( "Failed to initialize XBee device.\n");
+      return -1;
+   }
 
-    // Initialize the WPAN layer of the XBee device driver.  This layer enables
-    // endpoints and clusters, and is required for all ZigBee layers.
-    xbee_wpan_init(&my_xbee, &sample_endpoints.zdo);
+   // Initialize the WPAN layer of the XBee device driver.  This layer enables
+   // endpoints and clusters, and is required for all ZigBee layers.
+   xbee_wpan_init( &my_xbee, &sample_endpoints.zdo);
 
-    // Initialize the AT Command layer for this XBee device and have the
-    // driver query it for basic information (hardware version, firmware version,
-    // serial number, IEEE address, etc.)
-    xbee_cmd_init_device(&my_xbee);
-    do {
-        status = xbee_dev_tick(&my_xbee);
-        if (status >= 0) {
-            status = xbee_cmd_query_status(&my_xbee);
-        }
-    } while (status == -EBUSY);
+   // Initialize the AT Command layer for this XBee device and have the
+   // driver query it for basic information (hardware version, firmware version,
+   // serial number, IEEE address, etc.)
+   xbee_cmd_init_device( &my_xbee);
+   do {
+      status = xbee_dev_tick(&my_xbee);
+      if (status >= 0) {
+         status = xbee_cmd_query_status(&my_xbee);
+      }
+   } while (status == -EBUSY);
 
-    if (status == 0) {
-        walker_init(&my_xbee.wpan_dev, &target, WALKER_FLAGS_NONE);
-        while ((status = wpan_tick(&my_xbee.wpan_dev)) >= 0) {
-            switch (walker_tick()) {
+   if (status == 0)
+   {
+      walker_init(&my_xbee.wpan_dev, &target, WALKER_FLAGS_NONE);
+      while ((status = wpan_tick(&my_xbee.wpan_dev)) >= 0)
+      {
+         switch (walker_tick())
+         {
             case WALKER_DONE:
-                return 0;
+               return 0;
             case WALKER_ERROR:
-                return -1;
+               return -1;
             default:
-                break; // continue processing
-            }
-        }
-    }
+               break;      // continue processing
+         }
+      }
+   }
 
-    if (status < 0) {
-        printf("Error %d.\n", status);
-        return -1;
-    }
+   if (status < 0) {
+      printf("Error %d.\n", status);
+      return -1;
+   }
 }
+

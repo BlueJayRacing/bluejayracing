@@ -34,19 +34,22 @@
                             accepting serial data (deasserting /CTS signal).
     @retval     -EMSGSIZE   Serial buffer can't ever send a frame this large.
 */
-int xbee_user_data_relay_tx(xbee_dev_t* xbee, uint8_t dest, const void* payload, uint16_t length)
+int xbee_user_data_relay_tx(xbee_dev_t *xbee, uint8_t dest,
+                            const void *payload, uint16_t length)
 {
     xbee_header_user_data_tx_t header;
     int retval;
 
-    header.frame_type  = XBEE_FRAME_USER_DATA_TX;
-    header.frame_id    = xbee_next_frame_id(xbee);
+    header.frame_type = XBEE_FRAME_USER_DATA_TX;
+    header.frame_id = xbee_next_frame_id(xbee);
     header.destination = dest;
 
-    retval = xbee_frame_write(xbee, &header, sizeof(header), payload, length, XBEE_WRITE_FLAG_NONE);
+    retval = xbee_frame_write(xbee, &header, sizeof(header),
+                              payload, length, XBEE_WRITE_FLAG_NONE);
 
     return retval < 0 ? retval : header.frame_id;
 }
+
 
 /**
     @brief
@@ -56,15 +59,12 @@ int xbee_user_data_relay_tx(xbee_dev_t* xbee, uint8_t dest, const void* payload,
 
     @retval     A string description for that interface or "[invalid]".
 */
-const char* xbee_user_data_interface(uint8_t iface)
+const char *xbee_user_data_interface(uint8_t iface)
 {
     switch (iface) {
-    case XBEE_USER_DATA_IF_SERIAL:
-        return "serial";
-    case XBEE_USER_DATA_IF_BLE:
-        return "Bluetooth";
-    case XBEE_USER_DATA_IF_MICROPYTHON:
-        return "MicroPython";
+        case XBEE_USER_DATA_IF_SERIAL:      return "serial";
+        case XBEE_USER_DATA_IF_BLE:         return "Bluetooth";
+        case XBEE_USER_DATA_IF_MICROPYTHON: return "MicroPython";
     }
 
     return "[invalid]";

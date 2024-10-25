@@ -21,19 +21,19 @@
 #ifndef ZCL_OTA_SERVER_H
 #define ZCL_OTA_SERVER_H
 
-#include "zigbee/zcl.h"
 #include "zigbee/zcl_ota_upgrade.h"
+#include "zigbee/zcl.h"
 
 XBEE_BEGIN_DECLS
 
 /// Handler for an OTA Upgrade Server's wpan_cluster_table_entry_t.
-int zcl_ota_upgrade_cluster_handler(const wpan_envelope_t FAR* envelope, void FAR* context);
+int zcl_ota_upgrade_cluster_handler(const wpan_envelope_t FAR *envelope,
+                                    void FAR *context);
 
 /// Macro to include an OTA Upgrade Server in an endpoint's cluster table.
-#define ZCL_OTA_UPGRADE_CLUSTER_ENTRY                                                                                  \
-    {                                                                                                                  \
-        ZCL_CLUST_OTA_UPGRADE, zcl_ota_upgrade_cluster_handler, NULL, WPAN_CLUST_FLAG_SERVER                           \
-    }
+#define ZCL_OTA_UPGRADE_CLUSTER_ENTRY \
+    { ZCL_CLUST_OTA_UPGRADE, zcl_ota_upgrade_cluster_handler, \
+      NULL, WPAN_CLUST_FLAG_SERVER }
 
 // forward declaration to define zcl_ota_upgrade_read_fn
 struct zcl_ota_upgrade_source_t;
@@ -51,16 +51,17 @@ struct zcl_ota_upgrade_source_t;
 
     @return     Number of bytes actually read.
 */
-typedef int (*zcl_ota_upgrade_read_fn)(const struct zcl_ota_upgrade_source_t* source, void* buffer, uint32_t offset,
-                                       size_t bytes, const addr64* client_ieee_be);
+typedef int (*zcl_ota_upgrade_read_fn)
+    (const struct zcl_ota_upgrade_source_t *source,
+     void *buffer, uint32_t offset, size_t bytes, const addr64 *client_ieee_be);
 
 /// Datatype for providing an OTA Upgrade Image to a client.
 typedef struct zcl_ota_upgrade_source_t {
-    zcl_ota_image_id_t id; ///< ID fields for image
-    uint32_t image_size;   ///< size of image
+    zcl_ota_image_id_t          id;             ///< ID fields for image
+    uint32_t                    image_size;     ///< size of image
 
-    zcl_ota_upgrade_read_fn read_handler; ///< callback to read image
-    void* context;                        ///< location to hold user data
+    zcl_ota_upgrade_read_fn     read_handler;   ///< callback to read image
+    void                        *context;       ///< location to hold user data
 } zcl_ota_upgrade_source_t;
 
 /**
@@ -78,8 +79,11 @@ typedef struct zcl_ota_upgrade_source_t {
     @retval     0               Request Sent
     @retval     <0              Error returned from wpan_dev->endpoint_send().
 */
-int zcl_ota_upgrade_image_notify(wpan_dev_t* wpan_dev, const zcl_ota_image_id_t* image_id,
-                                 const wpan_endpoint_table_entry_t* src_ep, uint8_t dest_ep, const addr64* ieee_addr_be,
+int zcl_ota_upgrade_image_notify(wpan_dev_t *wpan_dev,
+                                 const zcl_ota_image_id_t *image_id,
+                                 const wpan_endpoint_table_entry_t *src_ep,
+                                 uint8_t dest_ep,
+                                 const addr64 *ieee_addr_be,
                                  uint16_t network_addr);
 
 /**
@@ -96,8 +100,10 @@ int zcl_ota_upgrade_image_notify(wpan_dev_t* wpan_dev, const zcl_ota_image_id_t*
     @retval     NULL            Respond to client with NO_IMAGE_AVAILABLE.
     @retval     non-NULL        Source with image to send to client.
 */
-const zcl_ota_upgrade_source_t* zcl_ota_get_upgrade_source(const addr64* client_ieee_be, const zcl_ota_image_id_t* id,
-                                                           uint8_t zcl_command);
+const zcl_ota_upgrade_source_t
+    *zcl_ota_get_upgrade_source(const addr64 *client_ieee_be,
+                                const zcl_ota_image_id_t *id,
+                                uint8_t zcl_command);
 
 /**
     @brief
@@ -112,7 +118,8 @@ const zcl_ota_upgrade_source_t* zcl_ota_get_upgrade_source(const addr64* client_
     @retval     non-NULL        Source with image to send to client.
 */
 // TODO: If we support using a current_time field, pass that to the callback.
-uint32_t zcl_ota_get_upgrade_time(const addr64* client_ieee_be, const zcl_ota_upgrade_source_t* source);
+uint32_t zcl_ota_get_upgrade_time(const addr64 *client_ieee_be,
+                                  const zcl_ota_upgrade_source_t *source);
 
 XBEE_END_DECLS
 
