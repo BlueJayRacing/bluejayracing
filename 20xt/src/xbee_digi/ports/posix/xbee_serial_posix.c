@@ -192,7 +192,7 @@ int xbee_ser_rx_used(xbee_serial_t* serial)
 #ifdef FIONREAD
               FIONREAD,
 #else
-               TIOCINQ, // for Cygwin
+              TIOCINQ, // for Cygwin
 #endif
               &bytes) == -1) {
         return -errno;

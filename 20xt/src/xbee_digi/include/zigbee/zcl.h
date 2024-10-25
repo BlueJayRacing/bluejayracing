@@ -154,11 +154,10 @@ typedef XBEE_PACKED(zcl_header_common_t, {
 typedef XBEE_PACKED(zcl_header_t, {
     uint8_t frame_control;
     union {
-        XBEE_PACKED(,
-                    {
-                        uint16_t mfg_code_le;
-                        zcl_header_common_t common;
-                    })
+        XBEE_PACKED(, {
+            uint16_t mfg_code_le;
+            zcl_header_common_t common;
+        })
         mfg;                                                ///< manufacturer-specific extension
         XBEE_PACKED(, { zcl_header_common_t common; }) std; ///< standard
     } type;
@@ -169,17 +168,15 @@ typedef XBEE_PACKED(zcl_header_t, {
 /// .u.mfg.frame_control or .u.std.frame_control.
 typedef XBEE_PACKED(zcl_header_response_t, {
     union {
-        XBEE_PACKED(,
-                    {
-                        uint8_t frame_control;
-                        uint16_t mfg_code_le;
-                    })
+        XBEE_PACKED(, {
+            uint8_t frame_control;
+            uint16_t mfg_code_le;
+        })
         mfg;
-        XBEE_PACKED(,
-                    {
-                        uint16_t dummy;
-                        uint8_t frame_control;
-                    })
+        XBEE_PACKED(, {
+            uint16_t dummy;
+            uint8_t frame_control;
+        })
         std;
     } u;
     uint8_t sequence;
@@ -476,11 +473,10 @@ typedef XBEE_PACKED(zcl_rec_report_receive_t, {
 }) zcl_rec_report_receive_t;
 
 typedef union zcl_rec_report_t {
-    XBEE_PACKED(,
-                {
-                    uint8_t direction; // ZCL_DIRECTION_SEND or ZCL_DIRECTION_RECEIVE
-                    uint16_t attrib_id_le;
-                })
+    XBEE_PACKED(, {
+        uint8_t direction; // ZCL_DIRECTION_SEND or ZCL_DIRECTION_RECEIVE
+        uint16_t attrib_id_le;
+    })
     common;
     zcl_rec_report_send_t send;
     zcl_rec_report_receive_t receive;

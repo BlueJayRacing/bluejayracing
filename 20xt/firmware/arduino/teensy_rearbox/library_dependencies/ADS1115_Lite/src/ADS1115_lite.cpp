@@ -127,7 +127,7 @@ int16_t ADS1115_lite::getConversion()
     Wire.beginTransmission(_i2cAddress);     // Sets the Address of the ADS1115.
     Wire.write(ADS1115_REG_POINTER_CONVERT); // queue the data to be sent, in this case modify the pointer register so
                                              // that the following RequestFrom reads the conversion register
-    Wire.endTransmission(); // Send the data
+    Wire.endTransmission();                  // Send the data
 
     Wire.requestFrom(_i2cAddress, (uint8_t)2); // Request the 2 byte conversion register
     return (
@@ -145,7 +145,7 @@ bool ADS1115_lite::isConversionDone()
     Wire.beginTransmission(_i2cAddress);    // Sets the Address of the ADS1115.
     Wire.write(ADS1115_REG_POINTER_CONFIG); // queue the data to be sent, in this case modify the pointer register so
                                             // that the following RequestFrom reads the config register
-    Wire.endTransmission(); // Set the stop bit
+    Wire.endTransmission();                 // Set the stop bit
 
     Wire.requestFrom(_i2cAddress, (uint8_t)2);       // Request 2 byte config register
     return ((Wire.read() << 8) | Wire.read()) >> 15; // Read 2 bytes.  Return the most signifagant bit

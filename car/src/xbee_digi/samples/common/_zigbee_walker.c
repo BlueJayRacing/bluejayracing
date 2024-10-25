@@ -359,11 +359,10 @@ void walker_zcl_init(wpan_envelope_t* envelope, zcl_header_nomfg_t* zcl_header, 
 enum walker_status_t walker_send_discover_attr_req(void)
 {
     wpan_envelope_t envelope;
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    zcl_discover_attrib_t req;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        zcl_discover_attrib_t req;
+    })
     zcl;
     int trans;
 
@@ -466,11 +465,10 @@ int walker_process_read_attr_resp(wpan_conversation_t FAR* conversation, const w
 int walker_send_read_attr(zcl_rec_attrib_report_t* attr)
 {
     wpan_envelope_t envelope;
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    uint16_t attr_id_le;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        uint16_t attr_id_le;
+    })
     zcl;
     int trans;
     int retval;

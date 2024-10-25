@@ -94,11 +94,10 @@ zcl_client_debug int zcl_process_read_attr_response(zcl_command_t* zcl, const zc
 */
 zcl_client_debug int zcl_client_read_attributes(wpan_envelope_t FAR* envelope, const zcl_client_read_t* client_read)
 {
-    XBEE_PACKED(,
-                {
-                    zcl_header_response_t header;
-                    uint16_t attrib_le[20];
-                })
+    XBEE_PACKED(, {
+        zcl_header_response_t header;
+        uint16_t attrib_le[20];
+    })
     zcl_req;
     uint8_t* request_start;
     const uint16_t FAR* attrib_src;
@@ -450,11 +449,10 @@ zcl_client_debug int zcl_create_attribute_records(void FAR* buffer, uint8_t bufs
 zcl_client_debug int zcl_send_write_attributes(wpan_envelope_t* envelope, const zcl_attribute_base_t FAR* attr_list)
 {
     const wpan_endpoint_table_entry_t* source_endpoint;
-    XBEE_PACKED(request,
-                {
-                    zcl_header_nomfg_t header;
-                    uint8_t payload[80];
-                })
+    XBEE_PACKED(request, {
+        zcl_header_nomfg_t header;
+        uint8_t payload[80];
+    })
     request;
     int bytecount;
     int retval = 0;
