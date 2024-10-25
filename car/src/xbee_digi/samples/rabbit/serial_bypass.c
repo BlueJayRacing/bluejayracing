@@ -1,4 +1,4 @@
-/* Digi International, Copyright © 2005-2011.  All rights reserved. */
+/* Digi International, Copyright ï¿½ 2005-2011.  All rights reserved. */
 
 /*
 	serial_bypass.c
@@ -109,30 +109,21 @@ void serial_bypass( void)
 	         ld		hl, PCDR       		; Serial A (host) Tx and Rx
 	         ld		ix, _XBEE_SER_DR
 
+            .check_host_rx : ioi bit _HOST_DRIVE_RXD,
+        (hl);
+    read A's Rx pin jr z, .host_rx_zero.host_rx_one : ioi set _XBEE_DRIVE_TXD, (ix)jr.check_xbee_rx.host_rx_zero
+        : ioi res _XBEE_DRIVE_TXD,
+          (ix)
 
-	.check_host_rx:
-	   ioi   bit   _HOST_DRIVE_RXD, (hl)     ; read A's Rx pin
-	         jr    z, .host_rx_zero
-	.host_rx_one:
-	   ioi   set	_XBEE_DRIVE_TXD, (ix)
-	   		jr		.check_xbee_rx
-	.host_rx_zero:
-	   ioi   res	_XBEE_DRIVE_TXD, (ix)
+              .check_xbee_rx : ioi bit _XBEE_DRIVE_RXD,
+          (ix)jr z,
+          .xbee_rx_zero.xbee_rx_one : ioi set _HOST_DRIVE_TXD,
+          (hl)jr.check_host_cts.xbee_rx_zero : ioi res _HOST_DRIVE_TXD,
+          (hl)
 
-
-	.check_xbee_rx:
-		ioi	bit	_XBEE_DRIVE_RXD, (ix)
-				jr		z, .xbee_rx_zero
-	.xbee_rx_one:
-	   ioi   set	_HOST_DRIVE_TXD, (hl)
-	   		jr		.check_host_cts
-	.xbee_rx_zero:
-	   ioi   res	_HOST_DRIVE_TXD, (hl)
-
-
-	.check_host_cts:
-		; port A doesn't have CTS/RTS, so we'll just map Tx/Rx pins
-	.check_xbee_cts:
+              .check_host_cts:;
+    port A doesn 't have CTS/RTS, so we' ll just map Tx / Rx pins
+                                                              .check_xbee_cts :
 
 
 	         jr .check_host_rx
