@@ -21,23 +21,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "xbee/atcmd.h" // for XBEE_FRAME_HANDLE_LOCAL_AT
 #include "xbee/bl_gen3.h"
 #include "xbee/device.h"
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {XBEE_FRAME_HANDLE_LOCAL_AT, XBEE_FRAME_TABLE_END};
+#include "xbee/atcmd.h"         // for XBEE_FRAME_HANDLE_LOCAL_AT
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
+    XBEE_FRAME_HANDLE_LOCAL_AT,
+    XBEE_FRAME_TABLE_END
+};
 
 #include "parse_serial_args.h"
 #include "win32_select_file.h"
 
 xbee_dev_t my_xbee;
 
-int fw_read(void* context, void* buffer, int16_t bytes) { return fread(buffer, 1, bytes, context); }
-
-int main(int argc, char* argv[])
+int fw_read(void *context, void *buffer, int16_t bytes)
 {
-    xbee_gen3_update_t fw = {0};
-    char* firmware;
-    FILE* file = NULL;
+    return fread(buffer, 1, bytes, context);
+}
+
+int main(int argc, char *argv[])
+{
+    xbee_gen3_update_t fw = { 0 };
+    char *firmware;
+    FILE *file = NULL;
     char buffer[80];
     uint32_t t;
     int result;
@@ -53,20 +59,21 @@ int main(int argc, char* argv[])
             query_only = TRUE;
         } else if (memcmp(argv[argc - 1], "COM", 3) != 0) {
             firmware = argv[argc - 1];
-            file     = fopen(firmware, "rb");
+            file = fopen(firmware, "rb");
         }
     }
     if (!query_only && !file) {
         // Prompt user to select a .ebin file.
         printf("Select firmware image (*.ebin) from file dialog box.\n");
-        firmware = win32_select_file("Select Firmware Image", "XBee Firmware (*.ebin)\0*.ebin\0All Files (*.*)\0*.*\0");
+        firmware = win32_select_file("Select Firmware Image",
+            "XBee Firmware (*.ebin)\0*.ebin\0All Files (*.*)\0*.*\0");
         if (firmware == NULL) {
             printf("Dialog canceled.\n");
             exit(0);
         }
         printf("Firmware set to\n  %s\n", firmware);
         file = fopen(firmware, "rb");
-        if (!file) {
+        if (! file) {
             printf("Error: couldn't open %s\n", firmware);
             exit(-1);
         }
@@ -81,24 +88,26 @@ int main(int argc, char* argv[])
         printf("Querying bootloader for extended version info...\n");
     } else {
         fw.context = file;
-        fw.read    = fw_read;
+        fw.read = fw_read;
         printf("Installing %s...\n", firmware);
     }
     xbee_bl_gen3_install_init(&my_xbee, &fw);
 
     do {
-        t         = xbee_millisecond_timer();
-        result    = xbee_bl_gen3_install_tick(&fw);
-        t         = xbee_millisecond_timer() - t;
+        t = xbee_millisecond_timer();
+        result = xbee_bl_gen3_install_tick(&fw);
+        t = xbee_millisecond_timer() - t;
         new_state = xbee_bl_gen3_install_state(&fw);
 #ifdef BLOCKING_WARNING
         if (t > 50) {
-            printf("!!! blocked for %ums in state 0x%04X (now state 0x%04X)\n", t, last_state, new_state);
+            printf("!!! blocked for %ums in state 0x%04X (now state 0x%04X)\n",
+                t, last_state, new_state);
         }
 #endif
         if (last_state != new_state) {
             last_state = new_state;
-            printf(" Status: %s                          \r", xbee_bl_gen3_install_status(&fw, buffer));
+            printf(" Status: %s                          \r",
+                xbee_bl_gen3_install_status(&fw, buffer));
             fflush(stdout);
         }
     } while (result == -EAGAIN);
@@ -121,3 +130,4 @@ int main(int argc, char* argv[])
 
     return 0;
 }
+

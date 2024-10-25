@@ -55,16 +55,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "wpan/types.h"
+#include "xbee/platform.h"
 #include "xbee/atcmd.h"
 #include "xbee/byteorder.h"
-#include "xbee/platform.h"
 #include "xbee/register_device.h"
+#include "wpan/types.h"
 
-#include "_atinter.h"   // Common code for processing AT commands
-#include "_nodetable.h" // Common code for handling remote node lists
+#include "_atinter.h"           // Common code for processing AT commands
+#include "_nodetable.h"         // Common code for handling remote node lists
+#include "sample_cli.h"         // Common code for parsing user-entered data
 #include "parse_serial_args.h"
-#include "sample_cli.h" // Common code for parsing user-entered data
+
 
 /**
     @brief
@@ -81,7 +82,7 @@
 
     @sa hexstrtobyte
 */
-int xbee_parse_hexstr(void* dest, const char* src, size_t max_bytes)
+int xbee_parse_hexstr(void *dest, const char *src, size_t max_bytes)
 {
     if (dest == NULL || src == NULL) {
         return -EINVAL;
@@ -101,14 +102,14 @@ int xbee_parse_hexstr(void* dest, const char* src, size_t max_bytes)
         }
     }
 
-    uint8_t* p = dest;
+    uint8_t *p = dest;
     if (nibble & 1) {
         // first byte to dest will be a single nibble
         char first_byte[2];
 
         first_byte[0] = '0';
         first_byte[1] = *src++;
-        *p++          = hexstrtobyte(first_byte);
+        *p++ = hexstrtobyte(first_byte);
         --nibble;
     }
 
@@ -116,17 +117,21 @@ int xbee_parse_hexstr(void* dest, const char* src, size_t max_bytes)
         *p++ = hexstrtobyte(src);
     }
 
-    return p - (uint8_t*)dest;
+    return p - (uint8_t *)dest;
 }
 
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-    XBEE_FRAME_HANDLE_LOCAL_AT,      // for processing AT command responses
-    XBEE_FRAME_HANDLE_ATND_RESPONSE, // for processing ATND responses
-    XBEE_FRAME_HANDLE_AO0_NODEID,    // for processing NODEID messages
-    {XBEE_FRAME_REGISTER_DEVICE_STATUS, 0, xbee_dump_register_device_status, NULL},
-    XBEE_FRAME_TABLE_END};
 
-void node_discovered(xbee_dev_t* xbee, const xbee_node_id_t* rec)
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
+    XBEE_FRAME_HANDLE_LOCAL_AT,         // for processing AT command responses
+    XBEE_FRAME_HANDLE_ATND_RESPONSE,    // for processing ATND responses
+    XBEE_FRAME_HANDLE_AO0_NODEID,       // for processing NODEID messages
+    { XBEE_FRAME_REGISTER_DEVICE_STATUS, 0,
+      xbee_dump_register_device_status, NULL },
+    XBEE_FRAME_TABLE_END
+};
+
+
+void node_discovered(xbee_dev_t *xbee, const xbee_node_id_t *rec)
 {
     if (rec != NULL) {
         node_add(rec);
@@ -134,7 +139,8 @@ void node_discovered(xbee_dev_t* xbee, const xbee_node_id_t* rec)
     }
 }
 
-void handle_menu_cmd(xbee_dev_t* xbee, char* command)
+
+void handle_menu_cmd(xbee_dev_t *xbee, char *command)
 {
     XBEE_UNUSED_PARAMETER(xbee);
     XBEE_UNUSED_PARAMETER(command);
@@ -157,10 +163,11 @@ void handle_menu_cmd(xbee_dev_t* xbee, char* command)
     puts("");
 }
 
-void handle_reg_cmd(xbee_dev_t* xbee, char* command)
+
+void handle_reg_cmd(xbee_dev_t *xbee, char *command)
 {
     addr64 addr_be;
-    const char* p = &command[3]; // past "reg"
+    const char *p = &command[3];        // past "reg"
 
     // buffers for address and key -- optional 0x followed by hexits and null
     char address[2 + 2 * 8 + 1];
@@ -169,14 +176,16 @@ void handle_reg_cmd(xbee_dev_t* xbee, char* command)
 
     if (sscanf(p, "%18s %38s%c", &address[0], &key[0], &overflow) == 2) {
         int addr_len = xbee_parse_hexstr(&addr_be, address, 8);
-        int key_len  = xbee_parse_hexstr(key, key, 18);
+        int key_len = xbee_parse_hexstr(key, key, 18);
 
         if (addr_len == 8 && key_len > 0) {
             int result = xbee_register_device(xbee, addr_be, key, key_len);
             if (result < 0) {
-                printf("Error %d sending Register Joining Device frame\n", result);
+                printf("Error %d sending Register Joining Device frame\n",
+                       result);
             } else {
-                printf("Sent Register Joining Device frame id 0x%02X\n", result);
+                printf("Sent Register Joining Device frame id 0x%02X\n",
+                       result);
             }
             return;
         }
@@ -185,10 +194,11 @@ void handle_reg_cmd(xbee_dev_t* xbee, char* command)
     puts("Error parsing address");
 }
 
-void handle_dereg_cmd(xbee_dev_t* xbee, char* command)
+
+void handle_dereg_cmd(xbee_dev_t *xbee, char *command)
 {
     addr64 addr_be;
-    const char* p = &command[5]; // past "dereg"
+    const char *p = &command[5];        // past "dereg"
 
     int result = addr64_parse(&addr_be, p);
     if (result < 0) {
@@ -200,21 +210,25 @@ void handle_dereg_cmd(xbee_dev_t* xbee, char* command)
         } else {
             char buffer[ADDR64_STRING_LENGTH];
 
-            printf("Sent frame id %u to deregister %s\n", frame_id, addr64_format(buffer, &addr_be));
+            printf("Sent frame id %u to deregister %s\n", frame_id,
+                   addr64_format(buffer, &addr_be));
         }
     }
 }
 
+
 const cmd_entry_t commands[] = {
-    ATCMD_CLI_ENTRIES MENU_CLI_ENTRIES NODETABLE_CLI_ENTRIES
+    ATCMD_CLI_ENTRIES
+    MENU_CLI_ENTRIES
+    NODETABLE_CLI_ENTRIES
 
-    {"reg ", &handle_reg_cmd},
-    {"dereg ", &handle_dereg_cmd},
+    { "reg ",           &handle_reg_cmd },
+    { "dereg ",         &handle_dereg_cmd },
 
-    {NULL, NULL} // end of command table
+    { NULL, NULL }                      // end of command table
 };
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     xbee_dev_t my_xbee;
     char cmdstr[256];
@@ -245,7 +259,7 @@ int main(int argc, char* argv[])
     xbee_dev_dump_settings(&my_xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
 
     // receive node discovery notifications
-    xbee_disc_add_node_id_handler(&my_xbee, &node_discovered);
+    xbee_disc_add_node_id_handler( &my_xbee, &node_discovered);
 
     handle_menu_cmd(NULL, NULL);
 
@@ -254,8 +268,8 @@ int main(int argc, char* argv[])
         while ((linelen = xbee_readline(cmdstr, sizeof cmdstr)) == -EAGAIN) {
             status = xbee_dev_tick(&my_xbee);
             if (status < 0) {
-                printf("Error %d from xbee_dev_tick().\n", status);
-                return -1;
+               printf("Error %d from xbee_dev_tick().\n", status);
+               return -1;
             }
         }
 

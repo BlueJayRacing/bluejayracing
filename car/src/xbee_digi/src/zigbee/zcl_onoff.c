@@ -16,9 +16,9 @@
    @file zigbee/zcl_onoff.c
 */
 /*** BeginHeader _zcl_onoff_handler */
-#include "zigbee/zcl_onoff.h"
 #include "wpan/aps.h"
 #include "zigbee/zcl.h"
+#include "zigbee/zcl_onoff.h"
 /*** EndHeader */
 
 /**
@@ -35,35 +35,38 @@
    See the documentation of wpan_aps_handler_fn for parameters and return
    values.
 */
-int _zcl_onoff_handler(const wpan_envelope_t FAR* envelope, void FAR* context)
+int _zcl_onoff_handler( const wpan_envelope_t FAR *envelope,
+   void FAR *context)
 {
-    zcl_command_t zcl;
+   zcl_command_t                 zcl;
 
-    if (zcl_command_build(&zcl, envelope, context) == 0 &&
-        ZCL_CMD_MATCH(&zcl.frame_control, GENERAL, CLIENT_TO_SERVER, CLUSTER)) {
-        uint8_t status = ZCL_STATUS_SUCCESS;
+   if (zcl_command_build( &zcl, envelope, context) == 0 &&
+      ZCL_CMD_MATCH( &zcl.frame_control, GENERAL, CLIENT_TO_SERVER, CLUSTER))
+   {
+      uint8_t status = ZCL_STATUS_SUCCESS;
 
-        switch (zcl.command) {
-        case ZCL_ONOFF_CMD_OFF:
+      switch (zcl.command)
+      {
+         case ZCL_ONOFF_CMD_OFF:
             /// @todo set the OnOff attribute to off and break
 
-        case ZCL_ONOFF_CMD_ON:
+         case ZCL_ONOFF_CMD_ON:
             /// @todo set the OnOff attribute to on and break
 
-        case ZCL_ONOFF_CMD_TOGGLE:
+         case ZCL_ONOFF_CMD_TOGGLE:
             /// @todo toggle the OnOff attribute and break
 
-        default:
+         default:
             status = ZCL_STATUS_UNSUP_CLUSTER_COMMAND;
             break;
-        }
+      }
 
-        return zcl_default_response(&zcl, status);
-    }
+      return zcl_default_response( &zcl, status);
+   }
 
-    // Allow General Command handler to process general
-    // commands and send errors out for unsupported commands.
-    return zcl_general_command(envelope, context);
+   // Allow General Command handler to process general
+   // commands and send errors out for unsupported commands.
+   return zcl_general_command( envelope, context);
 }
 
 ///@}

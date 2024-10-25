@@ -21,51 +21,59 @@
 */
 
 /*** BeginHeader */
-#include "xbee/pxbee_ota_server.h"
 #include <stdio.h>
+#include "xbee/pxbee_ota_server.h"
 /*** EndHeader */
 
 /*** BeginHeader pxbee_ota_server_cmd */
 /*** EndHeader */
-int pxbee_ota_server_cmd(const wpan_envelope_t FAR* envelope, void FAR* context)
+int pxbee_ota_server_cmd( const wpan_envelope_t FAR *envelope,
+   void FAR *context)
 {
-    uint16_t options;
-    const char* err = NULL;
+   uint16_t options;
+   const char *err = NULL;
 
-    if (envelope == NULL) {
-        // Stack should not pass NULL envelope; cover this condition for safety
-        return -EINVAL;
-    }
+   if (envelope == NULL)
+   {
+      // Stack should not pass NULL envelope; cover this condition for safety
+      return -EINVAL;
+   }
 
-    // If cluster configuration requires encryption, make sure this
-    // frame was received encrypted.
+   // If cluster configuration requires encryption, make sure this
+   // frame was received encrypted.
 
-    options = envelope->options & (WPAN_ENVELOPE_RX_APS_ENCRYPT | WPAN_CLUST_FLAG_ENCRYPT);
-    if (options == WPAN_CLUST_FLAG_ENCRYPT) {
-        // cluster requires encryption, but frame wasn't encrypted
-        // This isn't ZCL, so we can't send a Default Response and we
-        // just have to ignore the message.
-        err = "encryption required";
-    } else {
-        // call function provided by the application for starting the update
-        err = xbee_update_firmware_ota(envelope, context);
+   options = envelope->options &
+      (WPAN_ENVELOPE_RX_APS_ENCRYPT | WPAN_CLUST_FLAG_ENCRYPT);
+   if (options == WPAN_CLUST_FLAG_ENCRYPT)
+   {
+      // cluster requires encryption, but frame wasn't encrypted
+      // This isn't ZCL, so we can't send a Default Response and we
+      // just have to ignore the message.
+      err = "encryption required";
+   }
+   else
+   {
+      // call function provided by the application for starting the update
+      err = xbee_update_firmware_ota( envelope, context);
 
-        // xbee_update_firmware_ota won't return if it's able to install the
-        // update and reboot
-    }
+      // xbee_update_firmware_ota won't return if it's able to install the
+      // update and reboot
+   }
 
-    if (err) {
-        wpan_envelope_t reply;
+   if (err)
+   {
+      wpan_envelope_t reply;
 
-        if (wpan_envelope_reply(&reply, envelope) == 0) {
-            reply.payload = err;
-            reply.length  = strlen(err);
+      if (wpan_envelope_reply( &reply, envelope) == 0)
+      {
+         reply.payload = err;
+         reply.length = strlen( err);
 
-            wpan_envelope_send(&reply);
-        }
-    }
+         wpan_envelope_send( &reply);
+      }
+   }
 
-    return 0;
+   return 0;
 }
 
 ///@}

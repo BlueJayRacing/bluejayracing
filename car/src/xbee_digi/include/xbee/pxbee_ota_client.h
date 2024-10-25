@@ -22,34 +22,34 @@
 #ifndef PXBEE_OTA_CLIENT_H
 #define PXBEE_OTA_CLIENT_H
 
+#include "xbee/platform.h"
+#include "xbee/xmodem.h"
 #include "wpan/aps.h"
 #include "xbee/cbuf.h"
-#include "xbee/platform.h"
 #include "xbee/transparent_serial.h"
-#include "xbee/xmodem.h"
 
 XBEE_BEGIN_DECLS
 
-#define PXBEE_OTA_MAX_AUTH_LENGTH 64
+#define PXBEE_OTA_MAX_AUTH_LENGTH      64
 
 /// Structure for tracking state of over-the-air update.
 typedef struct pxbee_ota_t {
-    wpan_dev_t* dev; ///< local device to send updates through
-    addr64 target;   ///< network device to update
-    uint16_t flags;  ///< combination of PXBEE_OTA_FLAG_* values
-/// Send data with APS encryption
-#define PXBEE_OTA_FLAG_APS_ENCRYPT 0x0001
+   wpan_dev_t           *dev;    ///< local device to send updates through
+   addr64               target;  ///< network device to update
+   uint16_t             flags;   ///< combination of PXBEE_OTA_FLAG_* values
+      /// Send data with APS encryption
+      #define PXBEE_OTA_FLAG_APS_ENCRYPT     0x0001
 
-    union {
-        xbee_cbuf_t cbuf; ///< track state of circular buffer
-        /// buffer for xbee_cbuf_t structure and bytes received from target
-        uint8_t raw[255 + XBEE_CBUF_OVERHEAD];
-    } rxbuf;
-    xbee_xmodem_state_t xbxm; ///< track state of Xmodem transfer
+   union {
+      xbee_cbuf_t          cbuf; ///< track state of circular buffer
+      /// buffer for xbee_cbuf_t structure and bytes received from target
+      uint8_t              raw[255 + XBEE_CBUF_OVERHEAD];
+   } rxbuf;
+   xbee_xmodem_state_t  xbxm;    ///< track state of Xmodem transfer
 
-    /// Payload used to initiate update
-    uint8_t auth_data[PXBEE_OTA_MAX_AUTH_LENGTH];
-    uint8_t auth_length; ///< Number of bytes in \c auth_data
+   /// Payload used to initiate update
+   uint8_t              auth_data[PXBEE_OTA_MAX_AUTH_LENGTH];
+   uint8_t              auth_length;      ///< Number of bytes in \c auth_data
 } pxbee_ota_t;
 
 /**
@@ -72,7 +72,7 @@ typedef struct pxbee_ota_t {
    @retval     0        successfully initialized
    @retval     -EINVAL  invalid parameter passed in
 */
-int pxbee_ota_init(pxbee_ota_t* ota, wpan_dev_t* dev, const addr64* target);
+int pxbee_ota_init( pxbee_ota_t *ota, wpan_dev_t *dev, const addr64 *target);
 
 /**
    @internal
@@ -96,7 +96,8 @@ int pxbee_ota_init(pxbee_ota_t* ota, wpan_dev_t* dev, const addr64* target);
 
    @sa wpan_aps_handler_fn()
 */
-int _pxbee_ota_transparent_rx(const wpan_envelope_t FAR* envelope, void FAR* context);
+int _pxbee_ota_transparent_rx( const wpan_envelope_t FAR *envelope,
+   void FAR *context);
 
 /**
    @brief
@@ -108,25 +109,23 @@ int _pxbee_ota_transparent_rx(const wpan_envelope_t FAR* envelope, void FAR* con
    @param[in]  flags additional flags for the cluster; typically 0 or
                      #WPAN_CLUST_FLAG_ENCRYPT
 */
-#define PXBEE_OTA_DATA_CLIENT_CLUST_ENTRY(ota, flags)                                                                  \
-    {                                                                                                                  \
-        DIGI_CLUST_SERIAL, _pxbee_ota_transparent_rx, ota, WPAN_CLUST_FLAG_INOUT | WPAN_CLUST_FLAG_NOT_ZCL | flags     \
-    }
+#define PXBEE_OTA_DATA_CLIENT_CLUST_ENTRY(ota, flags) \
+   { DIGI_CLUST_SERIAL, _pxbee_ota_transparent_rx, ota,     \
+      WPAN_CLUST_FLAG_INOUT | WPAN_CLUST_FLAG_NOT_ZCL | flags }
 
 // client cluster used to kick off OTA updates
 // flag should be WPAN_CLUST_FLAG_NONE or WPAN_CLUST_FLAG_ENCRYPT
-#define PXBEE_OTA_CMD_CLIENT_CLUST_ENTRY(handler, context, flag)                                                       \
-    {                                                                                                                  \
-        DIGI_CLUST_PROG_XBEE_OTA_UPD, handler, context, (flag) | WPAN_CLUST_FLAG_CLIENT | WPAN_CLUST_FLAG_NOT_ZCL      \
-    }
+#define PXBEE_OTA_CMD_CLIENT_CLUST_ENTRY(handler, context, flag)     \
+   {  DIGI_CLUST_PROG_XBEE_OTA_UPD, handler,                         \
+      context, (flag) | WPAN_CLUST_FLAG_CLIENT | WPAN_CLUST_FLAG_NOT_ZCL }
 
 XBEE_BEGIN_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-#use "pxbee_ota_client.c"
+   #use "pxbee_ota_client.c"
 #endif
 
-#endif // PXBEE_OTA_CLIENT_H defined
+#endif      // PXBEE_OTA_CLIENT_H defined
 
 ///@}

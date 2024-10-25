@@ -20,20 +20,21 @@
 #include "xbee/random.h"
 
 #include "mbedtls/config.h"
-#include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
 
 static mbedtls_ctr_drbg_context ctr_drbg;
 static mbedtls_entropy_context entropy;
 
-static int xbee_random_init(const char* seed)
+static int xbee_random_init(const char *seed)
 {
     int ret;
 
     mbedtls_entropy_init(&entropy);
     mbedtls_ctr_drbg_init(&ctr_drbg);
 
-    ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, (const uint8_t*)seed, strlen(seed));
+    ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+                                (const uint8_t *)seed, strlen(seed));
 
     if (ret != 0) {
         // TODO: Consider mapping some MBEDTLS_ERR_xxx values to platform's
@@ -44,7 +45,7 @@ static int xbee_random_init(const char* seed)
     return 0;
 }
 
-int xbee_random(void* output, size_t output_len)
+int xbee_random(void *output, size_t output_len)
 {
     static bool_t needs_init = TRUE;
     int ret;

@@ -1,1 +1,3 @@
 # Record file paths that you want clang-format to ignore
+./car/src/xbee_digi
+./20xt/src/xbee_digi

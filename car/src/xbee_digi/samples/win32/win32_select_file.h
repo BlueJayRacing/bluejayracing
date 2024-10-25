@@ -10,4 +10,5 @@
  * ===========================================================================
  */
 
-char* win32_select_file(const char* title, const char* filter);
+char *win32_select_file(const char *title, const char *filter);
+

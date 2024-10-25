@@ -14,16 +14,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "xbee/platform.h"
 #include "xbee/atcmd.h"
 #include "xbee/byteorder.h"
 #include "xbee/device.h"
 #include "xbee/discovery.h"
-#include "xbee/platform.h"
 
-#include "_atinter.h"   // Common code for processing AT commands
-#include "_nodetable.h" // Common code for handling remote node lists
+#include "_atinter.h"           // Common code for processing AT commands
+#include "_nodetable.h"         // Common code for handling remote node lists
+#include "sample_cli.h"         // Common code for parsing user-entered data
 #include "parse_serial_args.h"
-#include "sample_cli.h" // Common code for parsing user-entered data
 
 xbee_dev_t my_xbee;
 
@@ -34,13 +34,17 @@ xbee_dev_t my_xbee;
     STDIO, pass them to the XBee module and print the result.
 */
 
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {XBEE_FRAME_HANDLE_LOCAL_AT,  // AT command responses
-                                                           XBEE_FRAME_HANDLE_REMOTE_AT, // remote AT command responses
-                                                           XBEE_FRAME_HANDLE_ATND_RESPONSE, // ATND responses
 
-                                                           XBEE_FRAME_MODEM_STATUS_DEBUG, // modem status frames
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
+    XBEE_FRAME_HANDLE_LOCAL_AT,         // AT command responses
+    XBEE_FRAME_HANDLE_REMOTE_AT,        // remote AT command responses
+    XBEE_FRAME_HANDLE_ATND_RESPONSE,    // ATND responses
 
-                                                           XBEE_FRAME_TABLE_END};
+    XBEE_FRAME_MODEM_STATUS_DEBUG,      // modem status frames
+
+    XBEE_FRAME_TABLE_END
+};
+
 
 // Global to signal main input routine to redraw input prompt after we erase
 // it in the AT Command callback routine.
@@ -52,8 +56,9 @@ void clear_input(void)
     redraw_prompt = 1;
 }
 
+
 // Callback registered with xbee_disc_add_node_id_handler to update node list.
-void node_discovered(xbee_dev_t* xbee, const xbee_node_id_t* rec)
+void node_discovered(xbee_dev_t *xbee, const xbee_node_id_t *rec)
 {
     if (rec != NULL) {
         clear_input();
@@ -68,7 +73,8 @@ void node_discovered(xbee_dev_t* xbee, const xbee_node_id_t* rec)
     }
 }
 
-void handle_menu_cmd(xbee_dev_t* xbee, char* command)
+
+void handle_menu_cmd(xbee_dev_t *xbee, char *command)
 {
     XBEE_UNUSED_PARAMETER(xbee);
     XBEE_UNUSED_PARAMETER(command);
@@ -90,12 +96,13 @@ void handle_menu_cmd(xbee_dev_t* xbee, char* command)
     puts("");
 }
 
-const xbee_node_id_t* target = NULL;
+
+const xbee_node_id_t *target = NULL;
 
 // target <n>
-void handle_target_cmd(xbee_dev_t* xbee, char* command)
+void handle_target_cmd(xbee_dev_t *xbee, char *command)
 {
-    const char* p = &command[6]; // point beyond "target"
+    const char *p = &command[6];        // point beyond "target"
     while (isspace((uint8_t)*p)) {
         ++p;
     }
@@ -105,7 +112,7 @@ void handle_target_cmd(xbee_dev_t* xbee, char* command)
         return;
     }
 
-    char* next_param;
+    char *next_param;
     unsigned n = (unsigned)strtoul(p, &next_param, 0);
 
     if (next_param == NULL || next_param == p) {
@@ -118,35 +125,38 @@ void handle_target_cmd(xbee_dev_t* xbee, char* command)
     }
 }
 
-static int _at_cmd_callback(const xbee_cmd_response_t FAR* response)
+static int _at_cmd_callback(const xbee_cmd_response_t FAR *response)
 {
     clear_input();
     return xbee_cmd_callback(response);
 }
 
-void handle_remote_at_cmd(xbee_dev_t* xbee, char* cmdstr)
+void handle_remote_at_cmd(xbee_dev_t *xbee, char *cmdstr)
 {
-    int request = process_command_remote(xbee, cmdstr, target ? &target->ieee_addr_be : NULL);
-    if (request >= 0) {
-        // override the default response handler with our own
-        xbee_cmd_set_callback(request, _at_cmd_callback, NULL);
-    }
+   int request = process_command_remote(xbee, cmdstr,
+                                        target ? &target->ieee_addr_be : NULL);
+   if (request >= 0) {
+       // override the default response handler with our own
+       xbee_cmd_set_callback(request, _at_cmd_callback, NULL);
+   }
 }
+
 
 const cmd_entry_t commands[] = {
     // use our own AT command handler to target remote nodes
-    {"at", &handle_remote_at_cmd},
+    { "at",             &handle_remote_at_cmd },
 
-    MENU_CLI_ENTRIES NODETABLE_CLI_ENTRIES
+    MENU_CLI_ENTRIES
+    NODETABLE_CLI_ENTRIES
 
-    {"target", &handle_target_cmd},
+    { "target",         &handle_target_cmd },
 
-    {NULL, NULL} // end of command table
+    { NULL, NULL }                      // end of command table
 };
 
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
-    char cmdstr[256] = {'\0'};
+    char cmdstr[256] = { '\0' };
     int status, frame_count;
     xbee_serial_t XBEE_SERPORT;
 
@@ -161,18 +171,18 @@ int main(int argc, char* argv[])
     // Initialize the AT Command layer for this XBee device and have the
     // driver query it for basic information (hardware version, firmware version,
     // serial number, IEEE address, etc.)
-    xbee_cmd_init_device(&my_xbee);
-    printf("Waiting for driver to query the XBee device...\n");
+    xbee_cmd_init_device( &my_xbee);
+    printf( "Waiting for driver to query the XBee device...\n");
     do {
-        xbee_dev_tick(&my_xbee);
-        status = xbee_cmd_query_status(&my_xbee);
+        xbee_dev_tick( &my_xbee);
+        status = xbee_cmd_query_status( &my_xbee);
     } while (status == -EBUSY);
     if (status) {
-        printf("Error %d waiting for query to complete.\n", status);
+        printf( "Error %d waiting for query to complete.\n", status);
     }
 
     // report on the settings
-    xbee_dev_dump_settings(&my_xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
+    xbee_dev_dump_settings( &my_xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
 
     // receive node discovery notifications
     xbee_disc_add_node_id_handler(&my_xbee, &node_discovered);
@@ -185,13 +195,15 @@ int main(int argc, char* argv[])
     while (1) {
         int linelen;
         redraw_prompt = 1;
-        *cmdstr       = '\0';
+        *cmdstr = '\0';
         do {
             if (redraw_prompt) {
                 redraw_prompt = 0;
                 if (target) {
-                    printf("[%08" PRIx32 "-%08" PRIx32 "]> %s", be32toh(target->ieee_addr_be.l[0]),
-                           be32toh(target->ieee_addr_be.l[1]), cmdstr);
+                    printf("[%08" PRIx32 "-%08" PRIx32 "]> %s",
+                           be32toh(target->ieee_addr_be.l[0]),
+                           be32toh(target->ieee_addr_be.l[1]),
+                           cmdstr);
                 } else {
                     printf("[LOCAL]> %s", cmdstr);
                 }

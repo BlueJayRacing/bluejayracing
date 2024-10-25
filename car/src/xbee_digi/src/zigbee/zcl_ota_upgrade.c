@@ -26,54 +26,43 @@
 
 #include "zigbee/zcl_ota_upgrade.h"
 
-const char* zcl_ota_zigbee_stack_ver_str(uint16_t v)
+const char *zcl_ota_zigbee_stack_ver_str(uint16_t v)
 {
     switch (v) {
-    case ZCL_OTA_ZIGBEE_STACK_2006:
-        return "ZigBee 2006";
-    case ZCL_OTA_ZIGBEE_STACK_2007:
-        return "ZigBee 2007";
-    case ZCL_OTA_ZIGBEE_STACK_PRO:
-        return "ZigBee Pro";
-    case ZCL_OTA_ZIGBEE_STACK_IP:
-        return "ZigBee IP";
-    default:
-        return "Reserved";
+    case ZCL_OTA_ZIGBEE_STACK_2006:     return "ZigBee 2006";
+    case ZCL_OTA_ZIGBEE_STACK_2007:     return "ZigBee 2007";
+    case ZCL_OTA_ZIGBEE_STACK_PRO:      return "ZigBee Pro";
+    case ZCL_OTA_ZIGBEE_STACK_IP:       return "ZigBee IP";
+    default:                            return "Reserved";
     }
 }
 
-const char* zcl_ota_security_credential_ver_str(uint8_t v)
+
+const char *zcl_ota_security_credential_ver_str(uint8_t v)
 {
     switch (v) {
-    case ZCL_OTA_SECURITY_CRED_SE_10:
-        return "SE 1.0";
-    case ZCL_OTA_SECURITY_CRED_SE_11:
-        return "SE 1.1";
-    case ZCL_OTA_SECURITY_CRED_SE_20:
-        return "SE 2.0";
-    default:
-        return "Reserved";
+    case ZCL_OTA_SECURITY_CRED_SE_10:   return "SE 1.0";
+    case ZCL_OTA_SECURITY_CRED_SE_11:   return "SE 1.1";
+    case ZCL_OTA_SECURITY_CRED_SE_20:   return "SE 2.0";
+    default:                            return "Reserved";
     }
 }
 
-const char* zcl_ota_tag_identifier_str(uint16_t id)
+
+const char *zcl_ota_tag_identifier_str(uint16_t id)
 {
     if (id > 0xF000) {
         return "Mfg. Specific";
     }
     switch (id) {
-    case ZCL_OTA_TAG_ID_UPGRADE_IMAGE:
-        return "Upgrade Image";
-    case ZCL_OTA_TAG_ID_ECDSA_SIGNATURE:
-        return "ECDSA Signature";
-    case ZCL_OTA_TAG_ID_ECDSA_CERTIFICATE:
-        return "ECDSA Signing Cert";
-    case ZCL_OTA_TAG_ID_IMAGE_INTEGRITY_CODE:
-        return "Image Integrity Code";
-    default:
-        return "Reserved";
+    case ZCL_OTA_TAG_ID_UPGRADE_IMAGE:          return "Upgrade Image";
+    case ZCL_OTA_TAG_ID_ECDSA_SIGNATURE:        return "ECDSA Signature";
+    case ZCL_OTA_TAG_ID_ECDSA_CERTIFICATE:      return "ECDSA Signing Cert";
+    case ZCL_OTA_TAG_ID_IMAGE_INTEGRITY_CODE:   return "Image Integrity Code";
+    default:                                    return "Reserved";
     }
 }
+
 
 /**
     @brief
@@ -88,14 +77,10 @@ const char* zcl_ota_tag_identifier_str(uint16_t id)
 uint32_t zcl_ota_tag_identifier_length(uint16_t id)
 {
     switch (id) {
-    case ZCL_OTA_TAG_ID_ECDSA_SIGNATURE:
-        return 0x32;
-    case ZCL_OTA_TAG_ID_ECDSA_CERTIFICATE:
-        return 0x30;
-    case ZCL_OTA_TAG_ID_IMAGE_INTEGRITY_CODE:
-        return 0x10;
-    default:
-        return 0;
+    case ZCL_OTA_TAG_ID_ECDSA_SIGNATURE:        return 0x32;
+    case ZCL_OTA_TAG_ID_ECDSA_CERTIFICATE:      return 0x30;
+    case ZCL_OTA_TAG_ID_IMAGE_INTEGRITY_CODE:   return 0x10;
+    default:                                    return 0;
     }
 }
 

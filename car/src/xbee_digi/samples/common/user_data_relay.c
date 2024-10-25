@@ -38,23 +38,27 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xbee/atcmd.h"
 #include "xbee/platform.h"
+#include "xbee/atcmd.h"
 #include "xbee/tx_status.h"
 #include "xbee/user_data.h"
 
 #include "parse_serial_args.h"
 
+
 // function that handles received User Data frames
-int user_data_rx(xbee_dev_t* xbee, const void FAR* raw, uint16_t length, void FAR* context)
+int user_data_rx(xbee_dev_t *xbee, const void FAR *raw,
+                 uint16_t length, void FAR *context)
 {
     XBEE_UNUSED_PARAMETER(xbee);
     XBEE_UNUSED_PARAMETER(context);
 
-    const xbee_frame_user_data_rx_t FAR* data = raw;
-    int payload_length                        = length - offsetof(xbee_frame_user_data_rx_t, payload);
+    const xbee_frame_user_data_rx_t FAR *data = raw;
+    int payload_length = length - offsetof(xbee_frame_user_data_rx_t,
+                                           payload);
 
-    printf("Message from %s interface:\n", xbee_user_data_interface(data->source));
+    printf("Message from %s interface:\n",
+        xbee_user_data_interface(data->source));
 
     // If all characters of message are printable, just print it as a string
     // with printf().  Otherwise use hex_dump() for non-printable messages.
@@ -74,28 +78,30 @@ int user_data_rx(xbee_dev_t* xbee, const void FAR* raw, uint16_t length, void FA
     return 0;
 }
 
-int dump_tx_status(xbee_dev_t* xbee, const void FAR* frame, uint16_t length, void FAR* context)
+
+int dump_tx_status(xbee_dev_t *xbee, const void FAR *frame,
+                   uint16_t length, void FAR *context)
 {
     XBEE_UNUSED_PARAMETER(xbee);
     XBEE_UNUSED_PARAMETER(length);
     XBEE_UNUSED_PARAMETER(context);
 
-    const xbee_frame_tx_status_t FAR* tx_status = frame;
+    const xbee_frame_tx_status_t FAR *tx_status = frame;
     char buffer[40];
-    const char* status = NULL;
+    const char *status = NULL;
 
     // Provide descriptive strings for the only two errors we expect
     // from sending User Data Relay frames.
     switch (tx_status->delivery) {
-    case XBEE_TX_DELIVERY_INVALID_INTERFACE:
-        status = "invalid interface";
-        break;
-    case XBEE_TX_DELIVERY_INTERFACE_BLOCKED:
-        status = "interface blocked";
-        break;
-    default:
-        sprintf(buffer, "unknown status 0x%X", tx_status->delivery);
-        status = buffer;
+        case XBEE_TX_DELIVERY_INVALID_INTERFACE:
+            status = "invalid interface";
+            break;
+        case XBEE_TX_DELIVERY_INTERFACE_BLOCKED:
+            status = "interface blocked";
+            break;
+        default:
+            sprintf(buffer, "unknown status 0x%X", tx_status->delivery);
+            status = buffer;
     }
 
     printf("Error on message id 0x%02X: %s\n", tx_status->frame_id, status);
@@ -103,15 +109,20 @@ int dump_tx_status(xbee_dev_t* xbee, const void FAR* frame, uint16_t length, voi
     return 0;
 }
 
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {XBEE_FRAME_HANDLE_LOCAL_AT,
-                                                           {XBEE_FRAME_USER_DATA_RX, 0, user_data_rx, NULL},
-                                                           {XBEE_FRAME_TX_STATUS, 0, dump_tx_status, NULL},
-                                                           XBEE_FRAME_TABLE_END};
+
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] =
+{
+    XBEE_FRAME_HANDLE_LOCAL_AT,
+    { XBEE_FRAME_USER_DATA_RX, 0, user_data_rx, NULL },
+    { XBEE_FRAME_TX_STATUS, 0, dump_tx_status, NULL },
+    XBEE_FRAME_TABLE_END
+};
+
 
 xbee_dev_t my_xbee;
 
 // TODO: add a command-line parameter to select the starting interface?
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     char cmdstr[256];
     xbee_serial_t XBEE_SERPORT;
@@ -131,20 +142,21 @@ int main(int argc, char* argv[])
     // driver query it for basic information (hardware version, firmware version,
     // serial number, IEEE address, etc.)
     xbee_cmd_init_device(&my_xbee);
-    printf("Waiting for driver to query the XBee device...\n");
+    printf( "Waiting for driver to query the XBee device...\n");
     do {
         xbee_dev_tick(&my_xbee);
         status = xbee_cmd_query_status(&my_xbee);
     } while (status == -EBUSY);
     if (status) {
-        printf("Error %d waiting for query to complete.\n", status);
+        printf( "Error %d waiting for query to complete.\n", status);
     }
 
     // report on the settings
     xbee_dev_dump_settings(&my_xbee, XBEE_DEV_DUMP_FLAG_DEFAULT);
 
     printf("Enter a blank line to change interface.  CTRL-D to exit.\n");
-    printf("Enter messages for %s interface:\n", xbee_user_data_interface(iface));
+    printf("Enter messages for %s interface:\n",
+           xbee_user_data_interface(iface));
 
     while (1) {
         int linelen;
@@ -155,8 +167,8 @@ int main(int argc, char* argv[])
             }
             status = xbee_dev_tick(&my_xbee);
             if (status < 0) {
-                printf("Error %d from xbee_dev_tick().\n", status);
-                return -1;
+               printf("Error %d from xbee_dev_tick().\n", status);
+               return -1;
             }
         } while (linelen == -EAGAIN);
 
@@ -165,11 +177,13 @@ int main(int argc, char* argv[])
             if (++iface > XBEE_USER_DATA_IF_MICROPYTHON) {
                 iface = XBEE_USER_DATA_IF_SERIAL;
             }
-            printf("Enter messages for %s interface:\n", xbee_user_data_interface(iface));
+            printf("Enter messages for %s interface:\n",
+                   xbee_user_data_interface(iface));
             continue;
         }
 
-        status = xbee_user_data_relay_tx(&my_xbee, iface, cmdstr, strlen(cmdstr));
+        status = xbee_user_data_relay_tx(&my_xbee, iface,
+                                         cmdstr, strlen(cmdstr));
         if (status < 0) {
             printf("error %d sending data\n", status);
         } else {
