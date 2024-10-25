@@ -23,22 +23,24 @@
 #include "_xbee_term.h"
 #include "parse_serial_args.h"
 
-int main(int argc, char* argv[])
+int main( int argc, char *argv[])
 {
     int retval;
     xbee_serial_t serport;
 
-    parse_serial_arguments(argc, argv, &serport);
+    parse_serial_arguments( argc, argv, &serport);
 
-    retval = xbee_ser_open(&serport, serport.baudrate);
-    if (retval != 0) {
-        fprintf(stderr, "Error %d opening serial port\n", retval);
+    retval = xbee_ser_open( &serport, serport.baudrate);
+    if (retval != 0)
+    {
+        fprintf( stderr, "Error %d opening serial port\n", retval);
         return EXIT_FAILURE;
     }
 
-    xbee_term(&serport);
+    xbee_term( &serport);
 
-    xbee_ser_close(&serport);
+    xbee_ser_close( &serport);
 
     return 0;
 }
+

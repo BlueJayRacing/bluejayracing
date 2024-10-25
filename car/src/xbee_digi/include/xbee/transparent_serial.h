@@ -22,8 +22,8 @@
 #ifndef XBEE_TRANSPARENT_SERIAL_H
 #define XBEE_TRANSPARENT_SERIAL_H
 
-#include "wpan/aps.h"
 #include "xbee/platform.h"
+#include "wpan/aps.h"
 
 XBEE_BEGIN_DECLS
 
@@ -43,7 +43,7 @@ XBEE_BEGIN_DECLS
 
    @note This is a preliminary API and may change in a future release.
 */
-int xbee_transparent_serial(wpan_envelope_t* envelope);
+int xbee_transparent_serial(wpan_envelope_t *envelope);
 
 /**
    @brief
@@ -63,13 +63,14 @@ int xbee_transparent_serial(wpan_envelope_t* envelope);
 
    @note This is a preliminary API and may change in a future release.
 */
-int xbee_transparent_serial_str(wpan_envelope_t* envelope, const char FAR* data);
+int xbee_transparent_serial_str(wpan_envelope_t *envelope,
+                                const char FAR *data);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-#use "xbee_transparent_serial.c"
+   #use "xbee_transparent_serial.c"
 #endif
 
 #endif

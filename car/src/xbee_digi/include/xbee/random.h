@@ -10,8 +10,8 @@
  * ===========================================================================
  */
 
-#include "xbee/platform.h"
 #include <stdlib.h>
+#include "xbee/platform.h"
 
 /**
     @brief
@@ -25,4 +25,4 @@
 
     @sa xbee_random_init
 */
-int xbee_random(void* output, size_t output_len);
+int xbee_random(void *output, size_t output_len);

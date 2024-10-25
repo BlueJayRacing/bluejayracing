@@ -34,64 +34,69 @@ XBEE_BEGIN_DECLS
 // "function help" documentation block to document complex structures.
 
 typedef struct xbee_fw_oem_state_t {
-    uint32_t firmware_length;
-    uint32_t block_offset;
-    uint32_t cur_offset;
-    uint16_t block_length;
+   uint32_t          firmware_length;
+   uint32_t          block_offset;
+   uint32_t          cur_offset;
+   uint16_t          block_length;
 } xbee_fw_oem_state_t;
 
-typedef struct xbee_fw_source_t {
-    xbee_dev_t* xbee;
-    int state;
-    int next_state;
-    int tries;
-    char bootloader_cmd; // cmd to initiate XMODEM
-    uint32_t timer;
-    union {
-        xbee_xmodem_state_t xbxm; // sub-status of xmodem transfer
-        xbee_fw_oem_state_t oem;  // sub-status of oem transfer
-    } u;
-    char buffer[128 + 5]; // buffer for xmodem packet, must persist
-                          // for duration of update
-    int (*seek)(void FAR* context, uint32_t offset);
-    int (*read)(void FAR* context, void FAR* buffer, int16_t bytes);
-    void FAR* context; // spot to hold user data
+typedef struct xbee_fw_source_t
+{
+   xbee_dev_t           *xbee;
+   int                  state;
+   int                  next_state;
+   int                  tries;
+   char                 bootloader_cmd;   // cmd to initiate XMODEM
+   uint32_t             timer;
+   union {
+      xbee_xmodem_state_t  xbxm;       // sub-status of xmodem transfer
+      xbee_fw_oem_state_t  oem;        // sub-status of oem transfer
+   } u;
+   char                 buffer[128+5]; // buffer for xmodem packet, must persist
+                                       // for duration of update
+   int      (*seek)( void FAR *context, uint32_t offset);
+   int      (*read)( void FAR *context, void FAR *buffer, int16_t bytes);
+   void           FAR *context;     // spot to hold user data
 } xbee_fw_source_t;
 
-#define XBEE_FW_LOAD_TIMEOUT 5000
+#define XBEE_FW_LOAD_TIMEOUT     5000
 
-int xbee_fw_install_init(xbee_dev_t* xbee, const wpan_address_t FAR* target, xbee_fw_source_t* source);
+int xbee_fw_install_init( xbee_dev_t *xbee, const wpan_address_t FAR *target,
+   xbee_fw_source_t *source);
 
-int xbee_fw_install_ebl_tick(xbee_fw_source_t* source);
-unsigned int xbee_fw_install_ebl_state(xbee_fw_source_t* source);
-char FAR* xbee_fw_status_ebl(xbee_fw_source_t* source, char FAR* buffer);
+int xbee_fw_install_ebl_tick( xbee_fw_source_t *source);
+unsigned int xbee_fw_install_ebl_state( xbee_fw_source_t *source);
+char FAR *xbee_fw_status_ebl( xbee_fw_source_t *source, char FAR *buffer);
 
-int xbee_fw_install_hcs08_tick(xbee_fw_source_t* source);
+int xbee_fw_install_hcs08_tick( xbee_fw_source_t *source);
 /// See documentation for xbee_fw_install_ebl_state().
-#define xbee_fw_install_hcs08_state(source) xbee_fw_install_ebl_state(source)
+#define xbee_fw_install_hcs08_state( source) xbee_fw_install_ebl_state( source)
 /// See documentation for xbee_fw_status_ebl().
-#define xbee_fw_status_hcs08(source, buff) xbee_fw_status_ebl(source, buff)
+#define xbee_fw_status_hcs08( source, buff) xbee_fw_status_ebl( source, buff)
 
-char FAR* xbee_fw_status_ebl(xbee_fw_source_t* source, char FAR* buffer);
+char FAR *xbee_fw_status_ebl( xbee_fw_source_t *source, char FAR *buffer);
 
-int xbee_fw_install_oem_tick(xbee_fw_source_t* source);
-char FAR* xbee_fw_status_oem(xbee_fw_source_t* source, char FAR* buffer);
+int xbee_fw_install_oem_tick( xbee_fw_source_t *source);
+char FAR *xbee_fw_status_oem( xbee_fw_source_t *source, char FAR *buffer);
+
+
 
 // Helper function for installing firmware from a .OEM or .EBL file in memory.
 typedef struct {
-    xbee_fw_source_t source;
-    uint32_t length;
-    const char FAR* address;
-    uint32_t offset;
+   xbee_fw_source_t source;
+   uint32_t       length;
+   const char FAR *address;
+   uint32_t       offset;
 } xbee_fw_buffer_t;
 
-int xbee_fw_buffer_init(xbee_fw_buffer_t* fw, uint32_t length, const char FAR* address);
+int xbee_fw_buffer_init( xbee_fw_buffer_t *fw, uint32_t length,
+   const char FAR *address);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-#use "xbee_firmware.c"
+   #use "xbee_firmware.c"
 #endif
 
 #endif

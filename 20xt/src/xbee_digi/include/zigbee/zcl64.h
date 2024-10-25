@@ -54,7 +54,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_LOAD
 */
-#define ZCL64_INIT(hi, lo) JSLL_INIT(hi, lo)
+#define ZCL64_INIT(hi, lo)          JSLL_INIT(hi, lo)
 
 /** @brief Load a zcl64_t variable with two 32-bit values (high and low).
 
@@ -65,9 +65,9 @@ typedef JSUint64 zcl64_t;
    @sa ZCL64_INIT
 */
 #ifdef XBEE_NATIVE_64BIT
-#define ZCL64_LOAD(r, hi32, lo32) r = (((uint64_t)(hi32) << 32) + lo32)
+   #define ZCL64_LOAD(r, hi32, lo32)   r = (((uint64_t)(hi32) << 32) + lo32)
 #else
-#define ZCL64_LOAD(r, hi32, lo32) ((r).hi = (hi32), (r).lo = (lo32))
+   #define ZCL64_LOAD(r, hi32, lo32)   ((r).hi = (hi32), (r).lo = (lo32))
 #endif
 
 /** @brief Compare a zcl64_t variable to zero.
@@ -78,7 +78,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_EQ, ZCL64_NE, ZCL64_GE_ZERO, ZCL64_CMP, ZCL64_UCMP
 */
-#define ZCL64_IS_ZERO(a) JSLL_IS_ZERO(a)
+#define ZCL64_IS_ZERO(a)            JSLL_IS_ZERO(a)
 
 /** @brief Compare two zcl64_t variables for equality.
 
@@ -89,7 +89,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_IS_ZERO, ZCL64_NE, ZCL64_GE_ZERO, ZCL64_CMP, ZCL64_UCMP
 */
-#define ZCL64_EQ(a, b) JSLL_EQ(a, b)
+#define ZCL64_EQ(a, b)              JSLL_EQ(a, b)
 
 /** @brief Compare two zcl64_t variables for inequality.
 
@@ -100,7 +100,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_IS_ZERO, ZCL64_EQ, ZCL64_GE_ZERO, ZCL64_CMP, ZCL64_UCMP
 */
-#define ZCL64_NE(a, b) JSLL_NE(a, b)
+#define ZCL64_NE(a, b)              JSLL_NE(a, b)
 
 /** @brief Compare a signed zcl64_t variable to 0.
 
@@ -110,7 +110,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_IS_ZERO, ZCL64_EQ, ZCL64_NE, ZCL64_CMP, ZCL64_UCMP
 */
-#define ZCL64_GE_ZERO(a) JSLL_GE_ZERO(a)
+#define ZCL64_GE_ZERO(a)            JSLL_GE_ZERO(a)
 
 /** @brief Compare two zcl64_t variables (signed less-than comparison)
    @param[in]  a     signed zcl64_t variable
@@ -120,7 +120,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_IS_ZERO, ZCL64_EQ, ZCL64_NE, ZCL64_GE_ZERO, ZCL64_LT
 */
-#define ZCL64_LT(a, b) JSLL_REAL_CMP(a, <, b)
+#define ZCL64_LT(a, b)              JSLL_REAL_CMP(a, <, b)
 
 /** @brief Compare two zcl64_t variables (unsigned less-than comparison)
    @param[in]  a     unsigned zcl64_t variable
@@ -130,7 +130,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_IS_ZERO, ZCL64_EQ, ZCL64_NE, ZCL64_GE_ZERO, ZCL64_LTU
 */
-#define ZCL64_LTU(a, b) JSLL_REAL_UCMP(a, <, b)
+#define ZCL64_LTU(a, b)             JSLL_REAL_UCMP(a, <, b)
 
 /** @brief Perform a bitwise AND of two zcl64_t variables.
    @param[out] r     zcl64_t variable to assign (a & b) to
@@ -139,7 +139,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_OR, ZCL64_XOR, ZCL64_NOT, ZCL64_NEG
 */
-#define ZCL64_AND(r, a, b) JSLL_AND(r, a, b)
+#define ZCL64_AND(r, a, b)          JSLL_AND(r, a, b)
 
 /** @brief Perform a bitwise OR of two zcl64_t variables.
    @param[out] r     zcl64_t variable to assign (a | b) to
@@ -148,7 +148,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_AND, ZCL64_XOR, ZCL64_NOT, ZCL64_NEG
 */
-#define ZCL64_OR(r, a, b) JSLL_OR(r, a, b)
+#define ZCL64_OR(r, a, b)           JSLL_OR(r, a, b)
 
 /** @brief Perform a bitwise XOR of two zcl64_t variables.
    @param[out] r     zcl64_t variable to assign (a ^ b) to
@@ -157,7 +157,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_AND, ZCL64_OR, ZCL64_NOT, ZCL64_NEG
 */
-#define ZCL64_XOR(r, a, b) JSLL_XOR(r, a, b)
+#define ZCL64_XOR(r, a, b)          JSLL_XOR(r, a, b)
 
 /** @brief Perform a bitwise NOT of a zcl64_t variable.
    @param[out] r     zcl64_t variable to assign (~a) to
@@ -165,7 +165,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_AND, ZCL64_OR, ZCL64_XOR, ZCL64_NEG
 */
-#define ZCL64_NOT(r, a) JSLL_NOT(r, a)
+#define ZCL64_NOT(r, a)             JSLL_NOT(r, a)
 
 /** @brief Negate a zcl64_t variable.
    @param[out] r     zcl64_t variable to assign (-a) to
@@ -173,7 +173,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_AND, ZCL64_OR, ZCL64_XOR, ZCL64_NOT
 */
-#define ZCL64_NEG(r, a) JSLL_NEG(r, a)
+#define ZCL64_NEG(r, a)             JSLL_NEG(r, a)
 
 /** @brief Add two zcl64_t variables.
    @param[out] r     zcl64_t variable to assign (a + b) to
@@ -182,7 +182,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_SUB, ZCL64_MUL, ZCL64_MUL32, ZCL64_UDIVMOD, ZCL64_DIV, ZCL64_MOD
 */
-#define ZCL64_ADD(r, a, b) JSLL_ADD(r, a, b)
+#define ZCL64_ADD(r, a, b)          JSLL_ADD(r, a, b)
 
 /** @brief Subtract two zcl64_t variables.
    @param[out] r     zcl64_t variable to assign (a - b) to
@@ -191,7 +191,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ADD, ZCL64_MUL, ZCL64_MUL32, ZCL64_UDIVMOD, ZCL64_DIV, ZCL64_MOD
 */
-#define ZCL64_SUB(r, a, b) JSLL_SUB(r, a, b)
+#define ZCL64_SUB(r, a, b)          JSLL_SUB(r, a, b)
 
 /** @brief Multiply two zcl64_t variables.
    @param[out] r     zcl64_t variable to assign (a * b) to
@@ -200,7 +200,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ADD, ZCL64_SUB, ZCL64_MUL32, ZCL64_UDIVMOD, ZCL64_DIV, ZCL64_MOD
 */
-#define ZCL64_MUL(r, a, b) JSLL_MUL(r, a, b)
+#define ZCL64_MUL(r, a, b)          JSLL_MUL(r, a, b)
 
 /** @brief
       Multiply two 32-bit variables (int32_t or uint32_t) and store the result
@@ -211,7 +211,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ADD, ZCL64_SUB, ZCL64_MUL, ZCL64_UDIVMOD, ZCL64_DIV, ZCL64_MOD
 */
-#define ZCL64_MUL32(r, a, b) JSLL_MUL32(r, a, b)
+#define ZCL64_MUL32(r, a, b)        JSLL_MUL32(r, a, b)
 
 /** @brief
       Divide an unsigned zcl64_t variable by another unsigned zcl64_t variable
@@ -240,7 +240,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ADD, ZCL64_SUB, ZCL64_MUL, ZCL64_MUL32, ZCL64_UDIVMOD, ZCL64_MOD
 */
-#define ZCL64_DIV(r, a, b) JSLL_DIV(r, a, b)
+#define ZCL64_DIV(r, a, b)          JSLL_DIV(r, a, b)
 
 /**   @brief
       Perform signed division of two zcl64_t variables and store the remainder.
@@ -250,7 +250,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ADD, ZCL64_SUB, ZCL64_MUL, ZCL64_MUL32, ZCL64_UDIVMOD, ZCL64_DIV
 */
-#define ZCL64_MOD(r, a, b) JSLL_MOD(r, a, b)
+#define ZCL64_MOD(r, a, b)          JSLL_MOD(r, a, b)
 
 /**   @brief
       Arithmetic Shift Left of a zcl64_t variable.  Shifts bits of \c a left
@@ -261,7 +261,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_LSL, ZCL64_ASR, ZCL64_LSR
 */
-#define ZCL64_ASL(r, a, b) JSLL_SHL(r, a, b)
+#define ZCL64_ASL(r, a, b)             JSLL_SHL(r, a, b)
 
 /**   @brief
       Logical Shift Left of a zcl64_t variable.  Shifts bits of \c a left
@@ -272,7 +272,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ASL, ZCL64_ASR, ZCL64_LSR
 */
-#define ZCL64_LSL(r, a, b) ZCL64_SLA(r, a, b)
+#define ZCL64_LSL(r, a, b)             ZCL64_SLA(r, a, b)
 
 /**   @brief
       Arithmetic Shift Right of a signed zcl64_t variable.  Shifts bits of
@@ -283,7 +283,7 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ASL, ZCL64_LSL, ZCL64_LSR
 */
-#define ZCL64_ASR(r, a, b) JSLL_SHR(r, a, b)
+#define ZCL64_ASR(r, a, b)             JSLL_SHR(r, a, b)
 
 /**   @brief
       Logical Shift Right of an unsigned zcl64_t variable.  Shifts bits of
@@ -294,10 +294,10 @@ typedef JSUint64 zcl64_t;
 
    @sa   ZCL64_ASL, ZCL64_LSL, ZCL64_ASR
 */
-#define ZCL64_LSR(r, a, b) JSLL_USHR(r, a, b)
+#define ZCL64_LSR(r, a, b)             JSLL_USHR(r, a, b)
 
 /* a is an JSInt32, b is JSInt32, r is JSInt64 */
-// #define JSLL_ISHL(r, a, b)
+//#define JSLL_ISHL(r, a, b)
 
 /** @brief Cast a signed zcl64_t variable down to a signed 32-bit integer.
    @param[out] i32   int32_t variable to cast \c i64 into
@@ -306,7 +306,7 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_UINT32, ZCL64_TO_FLOAT, ZCL64_TO_DOUBLE, ZCL64_FROM_INT32,
          ZCL64_FROM_UINT32, ZCL64_FROM_FLOAT, ZCL64_FROM_DOUBLE
 */
-#define ZCL64_TO_INT32(i32, i64) JSLL_L2I(i32, i64)
+#define ZCL64_TO_INT32(i32, i64)       JSLL_L2I(i32, i64)
 
 /** @brief Cast an unsigned zcl64_t variable down to an unsigned 32-bit integer.
    @param[out] u32   uint32_t variable to cast \c u64 into
@@ -315,16 +315,16 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_INT32, ZCL64_TO_FLOAT, ZCL64_TO_DOUBLE, ZCL64_FROM_INT32,
          ZCL64_FROM_UINT32, ZCL64_FROM_FLOAT, ZCL64_FROM_DOUBLE
 */
-#define ZCL64_TO_UINT32(u32, u64) JSLL_L2UI(u32, u64)
+#define ZCL64_TO_UINT32(u32, u64)      JSLL_L2UI(u32, u64)
 
 /** @brief The lower-32 bits of a ZCL64 value.
 
    @param[in]  u64      unsigned zcl64_t variable
 */
 #ifdef XBEE_NATIVE_64BIT
-#define ZCL64_LOW32(u64) ((uint32_t)(u64))
+   #define ZCL64_LOW32(u64)            ((uint32_t)(u64))
 #else
-#define ZCL64_LOW32(u64) ((u64).lo)
+   #define ZCL64_LOW32(u64)            ((u64).lo)
 #endif
 
 /** @brief The upper-32 bits of a ZCL64 value.
@@ -332,9 +332,9 @@ typedef JSUint64 zcl64_t;
    @param[in]  u64      unsigned zcl64_t variable
 */
 #ifdef XBEE_NATIVE_64BIT
-#define ZCL64_HIGH32(u64) ((uint32_t)(u64 >> 32))
+   #define ZCL64_HIGH32(u64)           ((uint32_t)(u64 >> 32))
 #else
-#define ZCL64_HIGH32(u64) ((u64).hi)
+   #define ZCL64_HIGH32(u64)           ((u64).hi)
 #endif
 
 /** @brief Cast a signed zcl64_t variable to a \c float.
@@ -344,7 +344,7 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_INT32, ZCL64_TO_UINT32, ZCL64_TO_DOUBLE, ZCL64_FROM_INT32,
          ZCL64_FROM_UINT32, ZCL64_FROM_FLOAT, ZCL64_FROM_DOUBLE,
 */
-#define ZCL64_TO_FLOAT(f, i64) JSLL_L2F(f, i64)
+#define ZCL64_TO_FLOAT(f, i64)         JSLL_L2F(f, i64)
 
 /** @brief Cast a signed zcl64_t variable to a \c double.
    @param[out] d     double variable to cast \c i64 into
@@ -353,7 +353,8 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_INT32, ZCL64_TO_UINT32, ZCL64_TO_FLOAT, ZCL64_FROM_INT32,
          ZCL64_FROM_UINT32, ZCL64_FROM_FLOAT, ZCL64_FROM_DOUBLE
 */
-#define ZCL64_TO_DOUBLE(d, i64) JSLL_L2D(d, i64)
+#define ZCL64_TO_DOUBLE(d, i64)        JSLL_L2D(d, i64)
+
 
 /** @brief Cast a signed 32-bit integer up to a zcl64_t variable.
    @param[out] i64   signed zcl64_t variable to cast \c i32 into
@@ -362,7 +363,7 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_INT32, ZCL64_TO_UINT32, ZCL64_TO_FLOAT, ZCL64_TO_DOUBLE,
          ZCL64_FROM_UINT32, ZCL64_FROM_FLOAT, ZCL64_FROM_DOUBLE
 */
-#define ZCL64_FROM_INT32(i64, i32) JSLL_I2L(i64, i32)
+#define ZCL64_FROM_INT32(i64, i32)     JSLL_I2L(i64, i32)
 
 /** @brief Cast an unsigned 32-bit integer up to a zcl64_t variable.
    @param[out] u64   unsigned zcl64_t variable to cast \c u32 into
@@ -371,7 +372,7 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_INT32, ZCL64_TO_UINT32, ZCL64_TO_FLOAT, ZCL64_TO_DOUBLE,
          ZCL64_FROM_INT32, ZCL64_FROM_FLOAT, ZCL64_FROM_DOUBLE
 */
-#define ZCL64_FROM_UINT32(u64, u32) JSLL_UI2L(u64, u32)
+#define ZCL64_FROM_UINT32(u64, u32)    JSLL_UI2L(u64, u32)
 
 /** @brief Cast a \c double into a signed zcl64_t variable.
    @param[out] i64   signed zcl64_t variable to cast \c f into
@@ -380,7 +381,7 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_INT32, ZCL64_TO_UINT32, ZCL64_TO_FLOAT, ZCL64_TO_DOUBLE,
          ZCL64_FROM_INT32, ZCL64_FROM_UINT32, ZCL64_FROM_DOUBLE
 */
-#define ZCL64_FROM_FLOAT(i64, f) JSLL_F2L(i64, f)
+#define ZCL64_FROM_FLOAT(i64, f)       JSLL_F2L(i64, f)
 
 /** @brief Cast a \c float into a signed zcl64_t variable.
    @param[out] i64   signed zcl64_t variable to cast \c d into
@@ -389,7 +390,8 @@ typedef JSUint64 zcl64_t;
    @sa   ZCL64_TO_INT32, ZCL64_TO_UINT32, ZCL64_TO_FLOAT, ZCL64_TO_DOUBLE,
          ZCL64_FROM_INT32, ZCL64_FROM_UINT32, ZCL64_FROM_FLOAT
 */
-#define ZCL64_FROM_DOUBLE(i64, d) JSLL_D2L(i64, d)
+#define ZCL64_FROM_DOUBLE(i64, d)      JSLL_D2L(i64, d)
+
 
 /**   @brief
       Convert a zcl64_t variable to a 16-character printable hexadecimal
@@ -403,7 +405,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_TO_DECSTR, ZCL64_TO_UDECSTR
 */
-#define ZCL64_TO_HEXSTR(buffer, var) JSLL_HEXSTR(buffer, var)
+#define ZCL64_TO_HEXSTR(buffer, var)   JSLL_HEXSTR(buffer, var)
 
 /**   @brief
       Convert a signed zcl64_t variable to a 20-character printable decimal
@@ -416,7 +418,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_TO_HEXSTR, ZCL64_TO_UDECSTR
 */
-#define ZCL64_TO_DECSTR(buffer, var) JSLL_DECSTR(buffer, var)
+#define ZCL64_TO_DECSTR(buffer, var)   JSLL_DECSTR(buffer, var)
 
 /**   @brief
       Convert an unsigned zcl64_t variable to a 20-character printable decimal
@@ -429,7 +431,7 @@ typedef JSUint64 zcl64_t;
 
    @sa ZCL64_TO_HEXSTR, ZCL64_TO_DECSTR
 */
-#define ZCL64_TO_UDECSTR(buffer, var) JSLL_UDECSTR(buffer, var)
+#define ZCL64_TO_UDECSTR(buffer, var)  JSLL_UDECSTR(buffer, var)
 
 #endif
 
