@@ -21,7 +21,7 @@
 #include "xbee/platform.h"
 
 // Compute the CRC a bit at a time.
-uint16_t crc16buypass_bit(uint16_t crc, void const *mem, size_t len);
+uint16_t crc16buypass_bit(uint16_t crc, void const* mem, size_t len);
 
 // Compute the CRC a byte at a time.
-uint16_t crc16buypass_byte(uint16_t crc, void const *mem, size_t len);
+uint16_t crc16buypass_byte(uint16_t crc, void const* mem, size_t len);
