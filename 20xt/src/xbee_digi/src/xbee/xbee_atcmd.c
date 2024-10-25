@@ -1563,11 +1563,10 @@ _xbee_atcmd_debug int _xbee_cmd_modem_status(xbee_dev_t* xbee, const void FAR* p
 */
 _xbee_atcmd_debug int xbee_cmd_simple(xbee_dev_t* xbee, const char FAR command[3], uint32_t value)
 {
-    XBEE_PACKED(,
-                {
-                    xbee_header_local_at_req_t header;
-                    uint8_t param[4];
-                })
+    XBEE_PACKED(, {
+        xbee_header_local_at_req_t header;
+        uint8_t param[4];
+    })
     request;
     uint16_t request_size;
 

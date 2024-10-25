@@ -111,8 +111,8 @@ __nodebug void serial_bypass(void)
 
             .check_host_rx : ioi bit _HOST_DRIVE_RXD,
         (hl);
-    read A's Rx pin jr z, .host_rx_zero.host_rx_one : ioi set _XBEE_DRIVE_TXD,
-        (ix)jr.check_xbee_rx.host_rx_zero : ioi res _XBEE_DRIVE_TXD,
+    read A's Rx pin jr z, .host_rx_zero.host_rx_one : ioi set _XBEE_DRIVE_TXD, (ix)jr.check_xbee_rx.host_rx_zero
+        : ioi res _XBEE_DRIVE_TXD,
         (ix)
 
             .check_xbee_rx : ioi bit _XBEE_DRIVE_RXD,

@@ -37,11 +37,10 @@ int zcl_ota_upgrade_image_notify(wpan_dev_t* wpan_dev, const zcl_ota_image_id_t*
                                  uint16_t network_addr)
 {
     wpan_envelope_t env;
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    zcl_ota_image_notify_t notify;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        zcl_ota_image_notify_t notify;
+    })
     zcl;
 
     zcl.header.frame_control = ZCL_FRAME_SERVER_TO_CLIENT | ZCL_FRAME_TYPE_CLUSTER;
@@ -83,11 +82,10 @@ static void _set_response_header(zcl_header_nomfg_t* resp, zcl_command_t* req)
 int zcl_ota_next_image_resp(zcl_command_t* zcl_req)
 {
     const zcl_ota_query_next_image_req_t* request = zcl_req->zcl_payload;
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    zcl_ota_query_next_image_resp_t response;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        zcl_ota_query_next_image_resp_t response;
+    })
     frame;
 
     frame.header.command = ZCL_OTA_CMD_QUERY_NEXT_IMAGE_RESP;
@@ -128,12 +126,11 @@ int zcl_ota_next_image_resp(zcl_command_t* zcl_req)
 int zcl_ota_image_block_resp(zcl_command_t* zcl_req)
 {
     const zcl_ota_image_block_req_t* request = zcl_req->zcl_payload;
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    zcl_ota_image_block_resp_t response;
-                    uint8_t data[ZCL_OTA_SERVER_MAX_BLOCK_SIZE];
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        zcl_ota_image_block_resp_t response;
+        uint8_t data[ZCL_OTA_SERVER_MAX_BLOCK_SIZE];
+    })
     frame;
 
     frame.header.command = ZCL_OTA_CMD_IMAGE_BLOCK_RESP;
@@ -185,11 +182,10 @@ int zcl_ota_image_block_resp(zcl_command_t* zcl_req)
 int zcl_ota_upgrade_end_resp(zcl_command_t* zcl_req)
 {
     const zcl_ota_upgrade_end_req_t* request = zcl_req->zcl_payload;
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    zcl_ota_upgrade_end_resp_t response;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        zcl_ota_upgrade_end_resp_t response;
+    })
     frame;
 
 #ifdef ZCL_OTA_VERBOSE

@@ -207,11 +207,10 @@ int zcl_comm_response(const wpan_envelope_t FAR* envelope, uint_fast8_t status)
 {
     const zcl_header_nomfg_t FAR* zcl;
     wpan_envelope_t reply_env;
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    uint8_t status;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        uint8_t status;
+    })
     reply;
     int retval;
 
@@ -335,11 +334,10 @@ int _zcl_comm_command_send(wpan_envelope_t FAR* envelope)
 */
 int zcl_comm_restart_device(wpan_envelope_t FAR* envelope, const zcl_comm_restart_device_cmd_t* parameters)
 {
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    zcl_comm_restart_device_cmd_t parameters;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        zcl_comm_restart_device_cmd_t parameters;
+    })
     request;
     int retval;
 
@@ -387,11 +385,10 @@ int zcl_comm_restart_device(wpan_envelope_t FAR* envelope, const zcl_comm_restar
 */
 int zcl_comm_reset_parameters(wpan_envelope_t FAR* envelope, const zcl_comm_reset_startup_param_t* parameters)
 {
-    XBEE_PACKED(,
-                {
-                    zcl_header_nomfg_t header;
-                    zcl_comm_reset_startup_param_t parameters;
-                })
+    XBEE_PACKED(, {
+        zcl_header_nomfg_t header;
+        zcl_comm_reset_startup_param_t parameters;
+    })
     request;
     int retval;
 
