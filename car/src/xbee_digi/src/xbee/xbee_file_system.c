@@ -33,23 +33,20 @@
     @retval     >0      frame_id assigned to the request
     @retval     <0      error trying to send
 */
-int xbee_fs_req_send_data(xbee_dev_t *xbee,
-                          const void *header_data, uint16_t header_len,
-                          const void *payload, uint16_t payload_len,
-                          const addr64 FAR *target_ieee)
+int xbee_fs_req_send_data(xbee_dev_t* xbee, const void* header_data, uint16_t header_len, const void* payload,
+                          uint16_t payload_len, const addr64 FAR* target_ieee)
 {
     uint8_t buffer[256];
-    uint8_t *p = buffer;
+    uint8_t* p = buffer;
 
     // Build up local or remote request in <buffer>.
 
-    *p++ = target_ieee ? XBEE_FRAME_REMOTE_FS_REQ
-                       : XBEE_FRAME_FILE_SYSTEM_REQ;
+    *p++ = target_ieee ? XBEE_FRAME_REMOTE_FS_REQ : XBEE_FRAME_FILE_SYSTEM_REQ;
     *p++ = xbee_next_frame_id(xbee);
     if (target_ieee) {
         memcpy(p, target_ieee, 8);
         p += 8;
-        *p++ = 0;       // TX Options
+        *p++ = 0; // TX Options
     }
 
     if (header_len > 0) {
@@ -61,14 +58,11 @@ int xbee_fs_req_send_data(xbee_dev_t *xbee,
         p += header_len;
     }
 
-    int result = xbee_frame_write(xbee, buffer, p - buffer,
-                                  payload, payload_len,
-                                  XBEE_WRITE_FLAG_NONE);
+    int result = xbee_frame_write(xbee, buffer, p - buffer, payload, payload_len, XBEE_WRITE_FLAG_NONE);
 
     // return Frame ID on success, or negative error otherwise
     return result == 0 ? buffer[1] : result;
 }
-
 
 /**
     @brief
@@ -81,9 +75,7 @@ int xbee_fs_req_send_data(xbee_dev_t *xbee,
     @retval     >0      number of bytes extracted from payload
     @retval     <0      error trying to send
 */
-int xbee_fs_extract_dir_entry(xbee_fs_dir_entry_t *entry,
-                              const uint8_t FAR *payload,
-                              int length)
+int xbee_fs_extract_dir_entry(xbee_fs_dir_entry_t* entry, const uint8_t FAR* payload, int length)
 {
     if (entry == NULL || payload == NULL) {
         return -EINVAL;
@@ -97,13 +89,13 @@ int xbee_fs_extract_dir_entry(xbee_fs_dir_entry_t *entry,
     uint32_t size_and_flags = be32toh(xbee_get_unaligned32(payload));
     payload += 4;
     length -= 4;
-    entry->filesize = size_and_flags & ~XBEE_FS_DIR_ENTRY_FLAG_MASK;
-    entry->is_dir = (size_and_flags & XBEE_FS_DIR_ENTRY_IS_DIR) != 0;
-    entry->is_secure = (size_and_flags & XBEE_FS_DIR_ENTRY_IS_SECURE) != 0;
+    entry->filesize      = size_and_flags & ~XBEE_FS_DIR_ENTRY_FLAG_MASK;
+    entry->is_dir        = (size_and_flags & XBEE_FS_DIR_ENTRY_IS_DIR) != 0;
+    entry->is_secure     = (size_and_flags & XBEE_FS_DIR_ENTRY_IS_SECURE) != 0;
     entry->is_last_entry = (size_and_flags & XBEE_FS_DIR_ENTRY_IS_LAST) != 0;
 
     // look for a null terminator before end of payload
-    const uint8_t FAR *null_term = memchr(payload, '\0', length);
+    const uint8_t FAR* null_term = memchr(payload, '\0', length);
     if (null_term == NULL) {
         entry->name_len = length;
     } else {
@@ -114,8 +106,7 @@ int xbee_fs_extract_dir_entry(xbee_fs_dir_entry_t *entry,
     }
     memcpy(entry->name, payload, entry->name_len);
 
-    return 4 + length;      // parsed <size_and_flags> & a <length>-byte name
+    return 4 + length; // parsed <size_and_flags> & a <length>-byte name
 }
-
 
 /** @} */

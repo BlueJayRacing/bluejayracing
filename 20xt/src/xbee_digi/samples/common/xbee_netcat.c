@@ -23,16 +23,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "xbee/platform.h"
 #include "xbee/atcmd.h"
 #include "xbee/byteorder.h"
 #include "xbee/device.h"
 #include "xbee/ipv4.h"
+#include "xbee/platform.h"
 #include "xbee/socket.h"
 
-#include "_xbee_term.h"         // for xbee_term_set_color()
+#include "_xbee_term.h" // for xbee_term_set_color()
 
-typedef enum netcat_state {
+typedef enum netcat_state
+{
     NETCAT_STATE_INIT,
     NETCAT_STATE_SEND_ATAI,
     NETCAT_STATE_WAIT_FOR_ATAI,
@@ -52,13 +53,12 @@ typedef enum netcat_state {
 } netcat_state_t;
 
 static netcat_state_t netcat_state;
-uint8_t netcat_atai = 0;
-uint32_t netcat_atmy = 0;
+uint8_t netcat_atai       = 0;
+uint32_t netcat_atmy      = 0;
 xbee_sock_t netcat_listen = 0;
 xbee_sock_t netcat_socket = 0;
 
-static void netcat_sock_notify_cb(xbee_sock_t socket,
-                                  uint8_t frame_type, uint8_t message)
+static void netcat_sock_notify_cb(xbee_sock_t socket, uint8_t frame_type, uint8_t message)
 {
 #if XBEE_TX_DELIVERY_STR_BUF_SIZE > XBEE_SOCK_STR_BUF_SIZE
     char buffer[XBEE_TX_DELIVERY_STR_BUF_SIZE];
@@ -74,24 +74,21 @@ static void netcat_sock_notify_cb(xbee_sock_t socket,
     xbee_term_set_color(SOURCE_STATUS);
 
     switch (frame_type) {
-    case XBEE_FRAME_TX_STATUS:          // message is an XBEE_TX_DELIVERY_xxx
+    case XBEE_FRAME_TX_STATUS: // message is an XBEE_TX_DELIVERY_xxx
         if (message != 0) {
-            fprintf(stderr, "%s: %s\n", "XBEE_TX_DELIVERY",
-                   xbee_tx_delivery_str(message, buffer));
+            fprintf(stderr, "%s: %s\n", "XBEE_TX_DELIVERY", xbee_tx_delivery_str(message, buffer));
         }
         break;
 
-    case XBEE_FRAME_SOCK_STATE:         // message is an XBEE_SOCK_STATE_xxx
+    case XBEE_FRAME_SOCK_STATE: // message is an XBEE_SOCK_STATE_xxx
         if (netcat_state == NETCAT_STATE_WAIT_FOR_CONNECT && message == 0) {
             netcat_state = NETCAT_STATE_CONNECTED;
         } else if (message != 0) {
             // ignore errors on listening socket
             if (socket == netcat_socket) {
-                netcat_state = message == XBEE_SOCK_STATE_TRANSPORT_CLOSED
-                    ? NETCAT_STATE_DONE : NETCAT_STATE_ERROR;
+                netcat_state = message == XBEE_SOCK_STATE_TRANSPORT_CLOSED ? NETCAT_STATE_DONE : NETCAT_STATE_ERROR;
             }
-            fprintf(stderr, "%s: %s\n", "XBEE_SOCK_STATE",
-                   xbee_sock_state_str(message, buffer));
+            fprintf(stderr, "%s: %s\n", "XBEE_SOCK_STATE", xbee_sock_state_str(message, buffer));
         }
         break;
 
@@ -101,8 +98,7 @@ static void netcat_sock_notify_cb(xbee_sock_t socket,
                 netcat_state = NETCAT_STATE_CREATED;
             }
         } else {
-            fprintf(stderr, "%s: %s\n", "XBEE_SOCK_CREATE",
-                   xbee_sock_status_str(message, buffer));
+            fprintf(stderr, "%s: %s\n", "XBEE_SOCK_CREATE", xbee_sock_status_str(message, buffer));
             netcat_state = NETCAT_STATE_ERROR;
         }
         break;
@@ -114,8 +110,7 @@ static void netcat_sock_notify_cb(xbee_sock_t socket,
                 netcat_state = NETCAT_STATE_WAIT_FOR_CONNECT;
             }
         } else {
-            fprintf(stderr, "%s: %s\n", "XBEE_SOCK_CONNECT/LISTEN",
-                    xbee_sock_status_str(message, buffer));
+            fprintf(stderr, "%s: %s\n", "XBEE_SOCK_CONNECT/LISTEN", xbee_sock_status_str(message, buffer));
             netcat_state = NETCAT_STATE_ERROR;
         }
         break;
@@ -128,23 +123,18 @@ static void netcat_sock_notify_cb(xbee_sock_t socket,
     xbee_term_set_color(SOURCE_KEYBOARD);
 }
 
-
-static void netcat_sock_receive_cb(xbee_sock_t socket, uint8_t status,
-                                   const void *payload, size_t payload_length)
+static void netcat_sock_receive_cb(xbee_sock_t socket, uint8_t status, const void* payload, size_t payload_length)
 {
     xbee_term_set_color(SOURCE_SERIAL);
 
     // Since payload isn't null-terminated, use ".*s" to limit length.
-    printf("%.*s", (int)payload_length, (const char *)payload);
+    printf("%.*s", (int)payload_length, (const char*)payload);
 
     xbee_term_set_color(SOURCE_KEYBOARD);
 }
 
-
-xbee_sock_receive_fn netcat_sock_ipv4_client_cb(xbee_sock_t listening_socket,
-                                                xbee_sock_t client_socket,
-                                                uint32_t remote_addr,
-                                                uint16_t remote_port)
+xbee_sock_receive_fn netcat_sock_ipv4_client_cb(xbee_sock_t listening_socket, xbee_sock_t client_socket,
+                                                uint32_t remote_addr, uint16_t remote_port)
 {
     char ipbuf[16];
 
@@ -163,13 +153,10 @@ xbee_sock_receive_fn netcat_sock_ipv4_client_cb(xbee_sock_t listening_socket,
 static struct {
     uint32_t addr;
     uint16_t port;
-} netcat_last_datagram = { 0, 0 };
+} netcat_last_datagram = {0, 0};
 
-static void netcat_sock_receive_from_cb(xbee_sock_t socket, uint8_t status,
-                                        uint32_t remote_addr,
-                                        uint16_t remote_port,
-                                        const void *datagram,
-                                        size_t datagram_length)
+static void netcat_sock_receive_from_cb(xbee_sock_t socket, uint8_t status, uint32_t remote_addr, uint16_t remote_port,
+                                        const void* datagram, size_t datagram_length)
 {
     char ipbuf[16];
 
@@ -180,8 +167,7 @@ static void netcat_sock_receive_from_cb(xbee_sock_t socket, uint8_t status,
 
     xbee_ipv4_ntoa(ipbuf, htobe32(remote_addr));
     // Since payload isn't null-terminated, use ".*s" to limit length.
-    printf("Datagram from %s:%u:\n%.*s",
-           ipbuf, remote_port, (int)datagram_length, (const char *)datagram);
+    printf("Datagram from %s:%u:\n%.*s", ipbuf, remote_port, (int)datagram_length, (const char*)datagram);
 
     xbee_term_set_color(SOURCE_KEYBOARD);
 
@@ -190,25 +176,23 @@ static void netcat_sock_receive_from_cb(xbee_sock_t socket, uint8_t status,
     }
 }
 
-
-int netcat_atcmd_callback( const xbee_cmd_response_t FAR *response)
+int netcat_atcmd_callback(const xbee_cmd_response_t FAR* response)
 {
     if ((response->flags & XBEE_CMD_RESP_MASK_STATUS) != XBEE_AT_RESP_SUCCESS) {
-        fprintf(stderr, "ERROR: sending AT%.2" PRIsFAR "\n",
-                response->command.str);
+        fprintf(stderr, "ERROR: sending AT%.2" PRIsFAR "\n", response->command.str);
         return XBEE_ATCMD_DONE;
     }
 
     switch (netcat_state) {
     case NETCAT_STATE_WAIT_FOR_ATAI:
         if (memcmp(response->command.str, "AI", 2) == 0) {
-            netcat_atai = (uint8_t)response->value;
+            netcat_atai  = (uint8_t)response->value;
             netcat_state = NETCAT_STATE_GOT_ATAI;
         }
         break;
     case NETCAT_STATE_WAIT_FOR_ATMY:
         if (memcmp(response->command.str, "MY", 2) == 0) {
-            netcat_atmy = response->value;
+            netcat_atmy  = response->value;
             netcat_state = NETCAT_STATE_GOT_ATMY;
         }
         break;
@@ -220,14 +204,13 @@ int netcat_atcmd_callback( const xbee_cmd_response_t FAR *response)
     return XBEE_ATCMD_DONE;
 }
 
-int netcat_atcmd(xbee_dev_t *xbee, const char *cmd)
+int netcat_atcmd(xbee_dev_t* xbee, const char* cmd)
 {
     int request;
 
     request = xbee_cmd_create(xbee, cmd);
     if (request < 0) {
-        fprintf(stderr, "ERROR: couldn't create AT%s command (%d)\n",
-                cmd, request);
+        fprintf(stderr, "ERROR: couldn't create AT%s command (%d)\n", cmd, request);
     } else {
         xbee_cmd_set_callback(request, netcat_atcmd_callback, NULL);
         xbee_cmd_send(request);
@@ -237,9 +220,9 @@ int netcat_atcmd(xbee_dev_t *xbee, const char *cmd)
 }
 
 /// Bitfields for \a flags parameter to netcat_simple()
-#define NETCAT_FLAG_CRLF        (1<<0)  ///< send CR/LF for EOL sequence
-#define NETCAT_FLAG_LISTEN      (1<<1)  ///< listen for incoming connections
-#define NETCAT_FLAG_UDP         (1<<2)  ///< use UDP instead of TCP
+#define NETCAT_FLAG_CRLF   (1 << 0) ///< send CR/LF for EOL sequence
+#define NETCAT_FLAG_LISTEN (1 << 1) ///< listen for incoming connections
+#define NETCAT_FLAG_UDP    (1 << 2) ///< use UDP instead of TCP
 /**
     @brief
     Pass data between a socket and stdout/stdin.
@@ -255,8 +238,7 @@ int netcat_atcmd(xbee_dev_t *xbee, const char *cmd)
     @retval     EXIT_SUCCCESS   clean exit from function
     @retval     EXIT_FAILURE    exited due to some failure
 */
-int netcat_sample(xbee_dev_t *xbee, unsigned flags, uint16_t source_port,
-                  const char *remote_host, uint16_t remote_port)
+int netcat_sample(xbee_dev_t* xbee, unsigned flags, uint16_t source_port, const char* remote_host, uint16_t remote_port)
 {
     int result;
     int last_ai = -1;
@@ -293,8 +275,7 @@ int netcat_sample(xbee_dev_t *xbee, unsigned flags, uint16_t source_port,
                     fprintf(stderr, "Cellular module connected...\n");
                     netcat_state = NETCAT_STATE_SEND_ATMY;
                 } else {
-                    fprintf(stderr, "ATAI change from 0x%02X to 0x%02X\n",
-                            last_ai, netcat_atai);
+                    fprintf(stderr, "ATAI change from 0x%02X to 0x%02X\n", last_ai, netcat_atai);
                     last_ai = netcat_atai;
                 }
             }
@@ -312,11 +293,9 @@ int netcat_sample(xbee_dev_t *xbee, unsigned flags, uint16_t source_port,
         case NETCAT_STATE_GOT_ATMY:
             xbee_ipv4_ntoa(linebuf, htobe32(netcat_atmy));
             fprintf(stderr, "My IP is %s\n", linebuf);
-            int proto = flags & NETCAT_FLAG_UDP ? XBEE_SOCK_PROTOCOL_UDP
-                                                : XBEE_SOCK_PROTOCOL_TCP;
-            netcat_socket = xbee_sock_create(xbee, proto,
-                                             netcat_sock_notify_cb);
-            netcat_state = NETCAT_STATE_WAIT_FOR_CREATE;
+            int proto     = flags & NETCAT_FLAG_UDP ? XBEE_SOCK_PROTOCOL_UDP : XBEE_SOCK_PROTOCOL_TCP;
+            netcat_socket = xbee_sock_create(xbee, proto, netcat_sock_notify_cb);
+            netcat_state  = NETCAT_STATE_WAIT_FOR_CREATE;
             break;
 
         case NETCAT_STATE_WAIT_FOR_CREATE:
@@ -329,21 +308,17 @@ int netcat_sample(xbee_dev_t *xbee, unsigned flags, uint16_t source_port,
                 if (flags & NETCAT_FLAG_UDP) {
                     // bind UDP socket
                     fprintf(stderr, "Binding to port %u...", source_port);
-                    result = xbee_sock_bind(netcat_socket, source_port,
-                                            netcat_sock_receive_from_cb);
+                    result = xbee_sock_bind(netcat_socket, source_port, netcat_sock_receive_from_cb);
                 } else {
                     // listen for TCP connections
                     netcat_listen = netcat_socket;
                     netcat_socket = 0;
                     fprintf(stderr, "Listening on port %u...", source_port);
-                    result = xbee_sock_listen(netcat_listen, source_port,
-                                              netcat_sock_ipv4_client_cb);
+                    result = xbee_sock_listen(netcat_listen, source_port, netcat_sock_ipv4_client_cb);
                 }
             } else {
-                fprintf(stderr, "Connecting to %s:%u...",
-                        remote_host, remote_port);
-                result = xbee_sock_connect(netcat_socket, remote_port, 0,
-                                           remote_host, netcat_sock_receive_cb);
+                fprintf(stderr, "Connecting to %s:%u...", remote_host, remote_port);
+                result = xbee_sock_connect(netcat_socket, remote_port, 0, remote_host, netcat_sock_receive_cb);
             }
 
             if (result) {
@@ -383,10 +358,8 @@ int netcat_sample(xbee_dev_t *xbee, unsigned flags, uint16_t source_port,
 
                 if ((flags & NETCAT_FLAG_UDP) && (flags & NETCAT_FLAG_LISTEN)) {
                     // bound UDP socket uses sendto
-                    xbee_sock_sendto(netcat_socket, 0,
-                                     netcat_last_datagram.addr,
-                                     netcat_last_datagram.port,
-                                     linebuf, result);
+                    xbee_sock_sendto(netcat_socket, 0, netcat_last_datagram.addr, netcat_last_datagram.port, linebuf,
+                                     result);
                 } else {
                     xbee_sock_send(netcat_socket, 0, linebuf, result);
                 }
@@ -426,34 +399,33 @@ void print_help(void)
 }
 
 // returns ULONG_MAX if unable to completely parse <str> or <str> is empty
-unsigned long parse_num(const char *str)
+unsigned long parse_num(const char* str)
 {
-    char *endptr;
+    char* endptr;
     unsigned long parsed_num = strtoul(str, &endptr, 0);
 
     return *str == '\0' || *endptr != '\0' ? ULONG_MAX : parsed_num;
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     xbee_dev_t xbee_dev;
     int c;
 
     // parsed command-line options with default values
-    xbee_serial_t xbee_serial = { .baudrate = 115200 };
-    int source_port = -1;
-    unsigned opt_flags = 0;
-    int parse_error = 0;
+    xbee_serial_t xbee_serial = {.baudrate = 115200};
+    int source_port           = -1;
+    unsigned opt_flags        = 0;
+    int parse_error           = 0;
 
-    while ( (c = getopt(argc, argv, "b:Chlp:ux:")) != -1) {
+    while ((c = getopt(argc, argv, "b:Chlp:ux:")) != -1) {
         switch (c) {
         case 'b': {
             unsigned long param = parse_num(optarg);
             if (param > 0 && param <= 1000000) {
                 xbee_serial.baudrate = (uint32_t)param;
             } else {
-                fprintf(stderr, "ERROR: failed to parse baudrate '%s'\n",
-                        optarg);
+                fprintf(stderr, "ERROR: failed to parse baudrate '%s'\n", optarg);
                 ++parse_error;
             }
             break;
@@ -465,8 +437,7 @@ int main(int argc, char *argv[])
                 source_port = (int)param;
                 opt_flags |= NETCAT_FLAG_LISTEN;
             } else {
-                fprintf(stderr, "ERROR: failed to parse source port '%s'\n",
-                        optarg);
+                fprintf(stderr, "ERROR: failed to parse source port '%s'\n", optarg);
                 ++parse_error;
             }
             break;
@@ -489,8 +460,7 @@ int main(int argc, char *argv[])
 
         case 'x':
 #ifdef POSIX
-            snprintf(xbee_serial.device, sizeof xbee_serial.device,
-                    "%s", optarg);
+            snprintf(xbee_serial.device, sizeof xbee_serial.device, "%s", optarg);
 #else // assume Win32
             if (memcmp(optarg, "COM", 3) == 0) {
                 unsigned long param = parse_num(&optarg[3]);
@@ -499,8 +469,7 @@ int main(int argc, char *argv[])
                     break;
                 }
             }
-            fprintf(stderr,
-                    "ERROR: expected 'COM<n>' (1 to 255) for serial port\n");
+            fprintf(stderr, "ERROR: expected 'COM<n>' (1 to 255) for serial port\n");
             ++parse_error;
 #endif
             break;
@@ -511,7 +480,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    const char *hostname = NULL;
+    const char* hostname = NULL;
     uint16_t remote_port = 0;
     if ((opt_flags & NETCAT_FLAG_LISTEN) == 0) {
         // parse non-option arguments (hostname and remote port)
@@ -542,11 +511,9 @@ int main(int argc, char *argv[])
     }
 
 #ifdef POSIX
-    fprintf(stderr, "Opening %s at %u baud...\n",
-            xbee_serial.device, xbee_serial.baudrate);
+    fprintf(stderr, "Opening %s at %u baud...\n", xbee_serial.device, xbee_serial.baudrate);
 #else
-    fprintf(stderr, "Opening COM%u at %u baud...\n",
-            xbee_serial.comport, xbee_serial.baudrate);
+    fprintf(stderr, "Opening COM%u at %u baud...\n", xbee_serial.comport, xbee_serial.baudrate);
 #endif
 
     if (xbee_dev_init(&xbee_dev, &xbee_serial, NULL, NULL)) {
@@ -557,8 +524,7 @@ int main(int argc, char *argv[])
     // make sure there aren't any open sockets on <xbee> from a previous program
     xbee_sock_reset(&xbee_dev);
 
-    int result = netcat_sample(&xbee_dev, opt_flags, source_port,
-                               hostname, remote_port);
+    int result = netcat_sample(&xbee_dev, opt_flags, source_port, hostname, remote_port);
 
     fprintf(stderr, "Closing serial port...\n");
     xbee_ser_close(&xbee_serial);
@@ -566,8 +532,5 @@ int main(int argc, char *argv[])
     return result;
 }
 
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-    XBEE_FRAME_HANDLE_LOCAL_AT,
-    XBEE_SOCK_FRAME_HANDLERS,
-    XBEE_FRAME_TABLE_END
-};
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {XBEE_FRAME_HANDLE_LOCAL_AT, XBEE_SOCK_FRAME_HANDLERS,
+                                                           XBEE_FRAME_TABLE_END};

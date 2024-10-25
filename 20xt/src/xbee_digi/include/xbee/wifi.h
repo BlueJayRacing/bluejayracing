@@ -20,16 +20,16 @@
 #include "xbee/platform.h"
 
 #if !XBEE_WIFI_ENABLED
-    #error "XBEE_WIFI_ENABLED must be defined as non-zero to use this header."
+#error "XBEE_WIFI_ENABLED must be defined as non-zero to use this header."
 #endif
 
 /** @name Values for ATEE (XBEE_WIFI_ENCRYPTION_*)
     @{
 */
-#define XBEE_WIFI_ENCRYPTION_OPEN       0x00    ///< open access point
-#define XBEE_WIFI_ENCRYPTION_WPA        0x01    ///< WPA encryption
-#define XBEE_WIFI_ENCRYPTION_WPA2       0x02    ///< WPA2 encryption
-#define XBEE_WIFI_ENCRYPTION_WEP        0x03    ///< WEP encryption
+#define XBEE_WIFI_ENCRYPTION_OPEN 0x00 ///< open access point
+#define XBEE_WIFI_ENCRYPTION_WPA  0x01 ///< WPA encryption
+#define XBEE_WIFI_ENCRYPTION_WPA2 0x02 ///< WPA2 encryption
+#define XBEE_WIFI_ENCRYPTION_WEP  0x03 ///< WEP encryption
 ///@}
 
 /** @brief
@@ -37,6 +37,6 @@
 
     Returns "0xXX" hex value for unrecognized types.
 */
-const char *xbee_wifi_encryption_name(uint8_t type);
+const char* xbee_wifi_encryption_name(uint8_t type);
 
 ///@}

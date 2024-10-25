@@ -22,32 +22,26 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xbee/atcmd.h" // for XBEE_FRAME_HANDLE_LOCAL_AT
 #include "xbee/bl_gen3.h"
 #include "xbee/device.h"
-#include "xbee/atcmd.h"         // for XBEE_FRAME_HANDLE_LOCAL_AT
-const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-    XBEE_FRAME_HANDLE_LOCAL_AT,
-    XBEE_FRAME_TABLE_END
-};
+const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {XBEE_FRAME_HANDLE_LOCAL_AT, XBEE_FRAME_TABLE_END};
 
 #include "parse_serial_args.h"
 
 xbee_dev_t my_xbee;
 
-int fw_read(void *context, void *buffer, int16_t bytes)
-{
-    return fread(buffer, 1, bytes, context);
-}
+int fw_read(void* context, void* buffer, int16_t bytes) { return fread(buffer, 1, bytes, context); }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-    xbee_gen3_update_t fw = { 0 };
-    char *firmware;
-    FILE *file = NULL;
+    xbee_gen3_update_t fw = {0};
+    char* firmware;
+    FILE* file = NULL;
     char buffer[80];
     uint32_t t;
     int result;
-    int query_only = FALSE;
+    int query_only               = FALSE;
     xbee_gen3_state_t last_state = 0, new_state;
     xbee_serial_t XBEE_SERPORT;
 
@@ -59,7 +53,7 @@ int main(int argc, char *argv[])
             query_only = TRUE;
         } else {
             firmware = argv[argc - 1];
-            file = fopen(firmware, "rb");
+            file     = fopen(firmware, "rb");
         }
     }
     if (!query_only && !file) {
@@ -80,26 +74,24 @@ int main(int argc, char *argv[])
         printf("Querying bootloader for extended version info...\n");
     } else {
         fw.context = file;
-        fw.read = fw_read;
+        fw.read    = fw_read;
         printf("Installing %s...\n", firmware);
     }
     xbee_bl_gen3_install_init(&my_xbee, &fw);
 
     do {
-        t = xbee_millisecond_timer();
-        result = xbee_bl_gen3_install_tick(&fw);
-        t = xbee_millisecond_timer() - t;
+        t         = xbee_millisecond_timer();
+        result    = xbee_bl_gen3_install_tick(&fw);
+        t         = xbee_millisecond_timer() - t;
         new_state = xbee_bl_gen3_install_state(&fw);
 #ifdef BLOCKING_WARNING
         if (t > 50) {
-            printf("!!! blocked for %ums in state 0x%04X (now state 0x%04X)\n",
-                t, last_state, new_state);
+            printf("!!! blocked for %ums in state 0x%04X (now state 0x%04X)\n", t, last_state, new_state);
         }
 #endif
         if (last_state != new_state) {
             last_state = new_state;
-            printf(" Status: %s                          \r",
-                xbee_bl_gen3_install_status(&fw, buffer));
+            printf(" Status: %s                          \r", xbee_bl_gen3_install_status(&fw, buffer));
             fflush(stdout);
         }
     } while (result == -EAGAIN);
@@ -122,4 +114,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
