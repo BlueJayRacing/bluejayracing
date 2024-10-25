@@ -99,11 +99,10 @@ int _xbee_gpm_write(const wpan_envelope_t* envelope, uint16_t block_num, uint16_
                     const void FAR* data, bool_t erase_first)
 {
     wpan_envelope_t gpm_envelope;
-    XBEE_PACKED(,
-                {
-                    xbee_gpm_request_header_t header;
-                    uint8_t data[XBEE_MAX_RFPAYLOAD];
-                })
+    XBEE_PACKED(, {
+        xbee_gpm_request_header_t header;
+        uint8_t data[XBEE_MAX_RFPAYLOAD];
+    })
     frame;
 
     if (envelope == NULL || data == NULL) {

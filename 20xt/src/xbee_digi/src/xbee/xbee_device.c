@@ -462,11 +462,10 @@ _xbee_device_debug uint8_t(_xbee_checksum)(const void FAR* bytes, uint16_t lengt
 _xbee_device_debug int xbee_frame_write(xbee_dev_t* xbee, const void FAR* header, uint16_t headerlen,
                                         const void FAR* data, uint16_t datalen, uint16_t flags)
 {
-    XBEE_PACKED(,
-                {
-                    uint8_t start;
-                    uint16_t length_be;
-                })
+    XBEE_PACKED(, {
+        uint8_t start;
+        uint16_t length_be;
+    })
     prefix;
 
     int cts, free, used, framesize;

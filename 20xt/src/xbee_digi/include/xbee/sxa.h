@@ -109,11 +109,10 @@ typedef XBEE_PACKED(, {
    One extra char is automatically added, for the null terminator.
 */
 #define _SXA_CACHED_STRING(name, len)                                                                                  \
-    XBEE_PACKED(,                                                                                                      \
-                {                                                                                                      \
-                    sxa_cache_flags_t flags;                                                                           \
-                    uint8_t value[len + 1];                                                                            \
-                })                                                                                                     \
+    XBEE_PACKED(, {                                                                                                    \
+        sxa_cache_flags_t flags;                                                                                       \
+        uint8_t value[len + 1];                                                                                        \
+    })                                                                                                                 \
     name
 
 /**
@@ -122,11 +121,10 @@ typedef XBEE_PACKED(, {
    with generally different maximum lengths.
 */
 #define _SXA_CACHED_BIN(name, len)                                                                                     \
-    XBEE_PACKED(,                                                                                                      \
-                {                                                                                                      \
-                    sxa_cache_flags_t flags;                                                                           \
-                    uint8_t value[len];                                                                                \
-                })                                                                                                     \
+    XBEE_PACKED(, {                                                                                                    \
+        sxa_cache_flags_t flags;                                                                                       \
+        uint8_t value[len];                                                                                            \
+    })                                                                                                                 \
     name
 
 struct sxa_cached_group_t;

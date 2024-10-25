@@ -525,7 +525,7 @@ unsigned char lewrite[LEDATLEN + 20]  = {
     13, 0, S2_HAND, 0, 2, 0x40, 0, 8, 0, 4, 0, 4, 0, 0x52, 0x0B, 0, 0}; // len 13 if 1 byte
                                                                          //  [1][2]=device handle  [9]=opcode
                                                                          //  [10][11]=characteristic handle  [12]=data -
-                                                                        //  up to LEDATLEN bytes [3]=size+7 [5]=size+3
+                                                                         //  up to LEDATLEN bytes [3]=size+7 [5]=size+3
 unsigned char leread[20] = {12, 0, S2_HAND, 0, 2, 0x40, 0, 7, 0, 3, 0, 4, 0, 0x0A, 0x12, 0}; // len 12
 
 //  [1][2]=device handle  [9]=0A read req [10][11]=handle of characteristic
@@ -4367,7 +4367,7 @@ int writecticx(int node, int cticn, unsigned char* data, int count, int notflag,
       if ((dp->conflag & CON_LX) != 0 &&
           (gpar.btleflag == 0 || gpar.btlenode == 0 || gpar.btlenode == dp->node)) { // device devn is connected as LE
                                                                                      // client send notification
-        if (flag == 0) { // first loop only
+        if (flag == 0) {                                                             // first loop only
           flag = 1;
           cmd  = lenotify + PAKHEADSIZE;
 

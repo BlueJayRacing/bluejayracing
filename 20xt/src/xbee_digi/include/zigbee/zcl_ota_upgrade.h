@@ -210,27 +210,24 @@ typedef XBEE_PACKED(zcl_ota_image_page_req_t, {
 typedef XBEE_PACKED(zcl_ota_image_block_resp_t, {
     union {
         uint8_t status;
-        XBEE_PACKED(,
-                    {
-                        uint8_t status;        // set to ZCL_STATUS_SUCCESS
-                        zcl_ota_image_id_t id; ///< upgrade image identification
-                        uint32_t file_offset_le;
-                        uint8_t data_size;
-                        // followed by <data_size> bytes of image data
-                    })
+        XBEE_PACKED(, {
+            uint8_t status;        // set to ZCL_STATUS_SUCCESS
+            zcl_ota_image_id_t id; ///< upgrade image identification
+            uint32_t file_offset_le;
+            uint8_t data_size;
+            // followed by <data_size> bytes of image data
+        })
         success;
-        XBEE_PACKED(,
-                    {
-                        uint8_t status; // set to ZCL_STATUS_WAIT_FOR_DATA
-                        zcl_utctime_t current_time_le;
-                        zcl_utctime_t request_time_le;
-                        uint16_t block_request_delay_le;
-                    })
+        XBEE_PACKED(, {
+            uint8_t status; // set to ZCL_STATUS_WAIT_FOR_DATA
+            zcl_utctime_t current_time_le;
+            zcl_utctime_t request_time_le;
+            uint16_t block_request_delay_le;
+        })
         wait_for_data;
-        XBEE_PACKED(,
-                    {
-                        uint8_t status; // set to ZCL_STATUS_ABORT
-                    })
+        XBEE_PACKED(, {
+            uint8_t status; // set to ZCL_STATUS_ABORT
+        })
         abort;
     } u;
 }) zcl_ota_image_block_resp_t;

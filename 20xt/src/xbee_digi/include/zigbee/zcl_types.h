@@ -321,16 +321,15 @@ typedef XBEE_PACKED(zcl_date_t, {
 /// 40-bit unsigned in host-byte-order
 typedef union zcl40_t {
     uint8_t u8[5];
-    XBEE_PACKED(,
-                {
+    XBEE_PACKED(, {
 #if BYTE_ORDER == LITTLE_ENDIAN
-                    uint32_t low32;
-                    uint8_t high8;
+        uint32_t low32;
+        uint8_t high8;
 #else
          uint8_t  high8;
          uint32_t low32;
 #endif
-                })
+    })
     mixed;
 } zcl40_t;
 
@@ -338,16 +337,15 @@ typedef union zcl40_t {
 typedef union zcl48_t {
     uint8_t u8[6];
     uint16_t u16[3];
-    XBEE_PACKED(,
-                {
+    XBEE_PACKED(, {
 #if BYTE_ORDER == LITTLE_ENDIAN
-                    uint32_t low32;
-                    uint16_t high16;
+        uint32_t low32;
+        uint16_t high16;
 #else
          uint16_t high16;
          uint32_t low32;
 #endif
-                })
+    })
     mixed;
 } zcl48_t;
 
