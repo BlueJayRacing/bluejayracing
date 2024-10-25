@@ -226,12 +226,11 @@ zigbee_zcl_debug int zcl_build_header(zcl_header_response_t* rsp, zcl_command_t*
 */
 zigbee_zcl_debug int zcl_default_response(zcl_command_t* request, uint8_t status)
 {
-    XBEE_PACKED(,
-                {
-                    zcl_header_response_t header;
-                    uint8_t command;
-                    uint8_t status;
-                })
+    XBEE_PACKED(, {
+        zcl_header_response_t header;
+        uint8_t command;
+        uint8_t status;
+    })
     response;
     uint8_t* start;
 
@@ -723,11 +722,10 @@ zigbee_zcl_debug int _zcl_write_attributes(zcl_command_t* cmd)
 {
     int16_t length;
     uint_fast8_t pass;
-    XBEE_PACKED(,
-                {
-                    zcl_header_response_t header;
-                    zcl_rec_write_attrib_status_t status[25]; // limit to how many recs?
-                })
+    XBEE_PACKED(, {
+        zcl_header_response_t header;
+        zcl_rec_write_attrib_status_t status[25]; // limit to how many recs?
+    })
     response;
     uint8_t* start_response;
     zcl_rec_write_attrib_status_t* status_rec;
@@ -1080,11 +1078,10 @@ zigbee_zcl_debug int _zcl_read_attributes(zcl_command_t* cmd)
     uint16_t attribute;
     uint16_t FAR* id_le;
     const zcl_attribute_base_t FAR* entry;
-    XBEE_PACKED(,
-                {
-                    zcl_header_response_t header;
-                    uint8_t buffer[80]; // limit to how many bytes?
-                })
+    XBEE_PACKED(, {
+        zcl_header_response_t header;
+        uint8_t buffer[80]; // limit to how many bytes?
+    })
     response;
     uint8_t* start_response;
     uint8_t* end_response;
@@ -1180,12 +1177,11 @@ int _zcl_discover_attributes(zcl_command_t* cmd);
 zigbee_zcl_debug int _zcl_discover_attributes(zcl_command_t* cmd)
 {
     const zcl_discover_attrib_t FAR* discover;
-    XBEE_PACKED(,
-                {
-                    zcl_header_response_t header;
-                    uint8_t complete;
-                    zcl_rec_attrib_report_t attribs[ZCL_DISCOVER_ATTRIB_MAX];
-                })
+    XBEE_PACKED(, {
+        zcl_header_response_t header;
+        uint8_t complete;
+        zcl_rec_attrib_report_t attribs[ZCL_DISCOVER_ATTRIB_MAX];
+    })
     response;
     uint8_t* start_response;
     zcl_rec_attrib_report_t* write_attrib;

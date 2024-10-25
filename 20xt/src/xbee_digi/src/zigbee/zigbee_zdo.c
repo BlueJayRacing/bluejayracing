@@ -305,12 +305,11 @@ zigbee_zdo_debug int _zdo_match_desc_respond(const wpan_envelope_t FAR* envelope
     bool_t search;
 
     // used to build response
-    XBEE_PACKED(,
-                {
-                    uint8_t transaction;
-                    zdo_match_desc_rsp_header_t header;
-                    uint8_t endpoints[ZDO_MAX_ENDPOINTS];
-                })
+    XBEE_PACKED(, {
+        uint8_t transaction;
+        zdo_match_desc_rsp_header_t header;
+        uint8_t endpoints[ZDO_MAX_ENDPOINTS];
+    })
     rsp;
     uint8_t* match_list;
 
@@ -484,8 +483,7 @@ zigbee_zdo_debug int _zdo_simple_desc_respond(const wpan_envelope_t FAR* envelop
     int retval;
 
     XBEE_PACKED(
-        ,
-        _response {
+        , _response {
             uint8_t transaction;
             zdo_simple_desc_resp_header_t header;
             zdo_simple_desc_header_t descriptor;
@@ -597,12 +595,11 @@ int _zdo_active_ep_respond(const wpan_envelope_t FAR* envelope);
 zigbee_zdo_debug int _zdo_active_ep_respond(const wpan_envelope_t FAR* envelope)
 {
     const wpan_endpoint_table_entry_t* ep;
-    XBEE_PACKED(,
-                {
-                    uint8_t transaction;
-                    zdo_active_ep_rsp_header_t header;
-                    uint8_t endpoints[ZDO_MAX_ENDPOINTS];
-                })
+    XBEE_PACKED(, {
+        uint8_t transaction;
+        zdo_active_ep_rsp_header_t header;
+        uint8_t endpoints[ZDO_MAX_ENDPOINTS];
+    })
     rsp;
     uint8_t* active_list;
 
@@ -755,11 +752,10 @@ zigbee_zdo_debug int zdo_send_bind_req(wpan_envelope_t* envelope, uint16_t type,
                                        void FAR* context)
 {
     wpan_envelope_t bind_env;
-    XBEE_PACKED(,
-                {
-                    uint8_t transaction;
-                    zdo_bind_address_req_t req;
-                })
+    XBEE_PACKED(, {
+        uint8_t transaction;
+        zdo_bind_address_req_t req;
+    })
     zdo;
     int trans;
 
@@ -803,11 +799,10 @@ zigbee_zdo_debug int zdo_send_bind_req(wpan_envelope_t* envelope, uint16_t type,
 zigbee_zdo_debug int zdo_mgmt_leave_req(wpan_dev_t* dev, const addr64* address, uint16_t flags)
 {
     wpan_envelope_t envelope;
-    XBEE_PACKED(,
-                {
-                    uint8_t transaction;
-                    zdo_mgmt_leave_req_t request;
-                })
+    XBEE_PACKED(, {
+        uint8_t transaction;
+        zdo_mgmt_leave_req_t request;
+    })
     zdo;
 
     if (dev == NULL) {
@@ -835,11 +830,10 @@ zigbee_zdo_debug int zdo_send_descriptor_req(wpan_envelope_t* envelope, uint16_t
                                              wpan_response_fn callback, const void FAR* context)
 {
     int retval;
-    XBEE_PACKED(,
-                {
-                    uint8_t transaction;
-                    uint16_t network_addr_le;
-                })
+    XBEE_PACKED(, {
+        uint8_t transaction;
+        uint16_t network_addr_le;
+    })
     zdo;
 
     if (envelope == NULL) {

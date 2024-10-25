@@ -42,10 +42,11 @@
 #define MBEDTLS_ERR_MPI_INVALID_CHARACTER -0x0006 /**< There is an invalid character in the digit string. */
 #define MBEDTLS_ERR_MPI_BUFFER_TOO_SMALL  -0x0008 /**< The buffer is too small to write to. */
 #define MBEDTLS_ERR_MPI_NEGATIVE_VALUE    -0x000A /**< The input arguments are negative or result in illegal output. */
-#define MBEDTLS_ERR_MPI_DIVISION_BY_ZERO  -0x000C /**< The input argument for division is zero, which is not allowed.  \
-                                                   */
-#define MBEDTLS_ERR_MPI_NOT_ACCEPTABLE -0x000E    /**< The input arguments are not acceptable. */
-#define MBEDTLS_ERR_MPI_ALLOC_FAILED   -0x0010    /**< Memory allocation failed. */
+#define MBEDTLS_ERR_MPI_DIVISION_BY_ZERO                                                                               \
+    -0x000C                                    /**< The input argument for division is zero, which is not allowed.     \
+                                                */
+#define MBEDTLS_ERR_MPI_NOT_ACCEPTABLE -0x000E /**< The input arguments are not acceptable. */
+#define MBEDTLS_ERR_MPI_ALLOC_FAILED   -0x0010 /**< Memory allocation failed. */
 
 #define MBEDTLS_MPI_CHK(f)                                                                                             \
     do {                                                                                                               \
