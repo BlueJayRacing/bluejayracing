@@ -33,10 +33,10 @@
 #define MBEDTLS_SHA256_C
 
 // Save RAM by adjusting to our exact needs
-#define MBEDTLS_MPI_MAX_SIZE            32 // 384 bits is 48 bytes
+#define MBEDTLS_MPI_MAX_SIZE 32 // 384 bits is 48 bytes
 
 // Reduce stack usage in mbedtls_mpi_exp_mod() by reducing the MPI window size.
-#define MBEDTLS_MPI_WINDOW_SIZE         3
+#define MBEDTLS_MPI_WINDOW_SIZE 3
 
 #include "mbedtls/check_config.h"
 

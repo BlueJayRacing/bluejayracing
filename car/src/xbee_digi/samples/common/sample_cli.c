@@ -15,20 +15,16 @@
 
 #include "sample_cli.h"
 
-void print_cli_help_menu(void)
-{
-    puts(" <menu|help|?>                   Print this menu");
-}
+void print_cli_help_menu(void) { puts(" <menu|help|?>                   Print this menu"); }
 
-int sample_cli_dispatch(xbee_dev_t *xbee, char *cmdstr,
-                        const cmd_entry_t *cmd_table)
+int sample_cli_dispatch(xbee_dev_t* xbee, char* cmdstr, const cmd_entry_t* cmd_table)
 {
     if (cmdstr == NULL || cmd_table == NULL) {
         return -EINVAL;
     }
 
     // Match command to an entry in the command table.
-    const cmd_entry_t *cmd;
+    const cmd_entry_t* cmd;
     for (cmd = cmd_table; cmd->command != NULL; ++cmd) {
         if (strncmpi(cmdstr, cmd->command, strlen(cmd->command)) == 0) {
             cmd->handler(xbee, cmdstr);

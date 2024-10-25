@@ -23,37 +23,27 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "util/srp.h"
 #include "xbee/platform.h"
 #include "xbee/random.h"
-#include "util/srp.h"
 
-#include "_atinter.h"           // Common code for processing AT commands
-#include "sample_cli.h"         // Common code for parsing user-entered data
+#include "_atinter.h" // Common code for processing AT commands
 #include "parse_serial_args.h"
+#include "sample_cli.h" // Common code for parsing user-entered data
 
 typedef struct xbee_verifier_settings_t {
-    const char *description;
-    const char *username;
-    const char *atcmd[5];
+    const char* description;
+    const char* username;
+    const char* atcmd[5];
 } xbee_verifier_settings_t;
 
-const xbee_verifier_settings_t ble_verifier = {
-    "BLE",
-    "apiservice",
-    { "$S", "$V", "$W", "$X", "$Y" }
-};
+const xbee_verifier_settings_t ble_verifier = {"BLE", "apiservice", {"$S", "$V", "$W", "$X", "$Y"}};
 
-const xbee_verifier_settings_t secure_session_verifier = {
-    "SecureSession",
-    "xbee",
-    { "*S", "*V", "*W", "*X", "*Y" }
-};
+const xbee_verifier_settings_t secure_session_verifier = {"SecureSession", "xbee", {"*S", "*V", "*W", "*X", "*Y"}};
 
 const xbee_dispatch_table_entry_t xbee_frame_handlers[] = {
-    XBEE_FRAME_HANDLE_LOCAL_AT,         // for processing AT command responses
-    XBEE_FRAME_TABLE_END
-};
-
+    XBEE_FRAME_HANDLE_LOCAL_AT, // for processing AT command responses
+    XBEE_FRAME_TABLE_END};
 
 // Structure used to hold SRP salt and verifier for BLE or SecureSession.
 typedef struct verifier_data_t {
@@ -74,12 +64,10 @@ xbee_atcmd_reg_t verifier_regs[] = {
     XBEE_ATCMD_REG('$', 'X', XBEE_CLT_COPY, verifier_data_t, verifier[2]),
     XBEE_ATCMD_REG('$', 'Y', XBEE_CLT_COPY, verifier_data_t, verifier[3]),
 
-    XBEE_ATCMD_REG_END       // Mark list end
+    XBEE_ATCMD_REG_END // Mark list end
 };
 
-
-void set_verifier_regs(const xbee_verifier_settings_t *verifier,
-                       bool_t is_write)
+void set_verifier_regs(const xbee_verifier_settings_t* verifier, bool_t is_write)
 {
     for (int i = 0; i < 5; ++i) {
         // copy AT commands to verifier_regs[] and set .type based on is_write
@@ -88,7 +76,7 @@ void set_verifier_regs(const xbee_verifier_settings_t *verifier,
     }
 }
 
-void execute_verifier_regs(xbee_dev_t *xbee)
+void execute_verifier_regs(xbee_dev_t* xbee)
 {
     xbee_command_list_context_t clc;
     int status;
@@ -106,7 +94,7 @@ void execute_verifier_regs(xbee_dev_t *xbee)
     } else {
         for (int i = 0; i < 5; ++i) {
             printf("AT%.2s 0x", verifier_regs[i].command.str);
-            const uint8_t *p = verifier_data.salt + verifier_regs[i].offset;
+            const uint8_t* p = verifier_data.salt + verifier_regs[i].offset;
             for (int b = 0; b < verifier_regs[i].bytes; ++b) {
                 printf("%02X", *p++);
             }
@@ -116,22 +104,17 @@ void execute_verifier_regs(xbee_dev_t *xbee)
     puts("");
 }
 
-void generate_verifier(xbee_dev_t *xbee,
-                       const xbee_verifier_settings_t *verifier,
-                       const char *password)
+void generate_verifier(xbee_dev_t* xbee, const xbee_verifier_settings_t* verifier, const char* password)
 {
-    const uint8_t *bytes_s;
-    const uint8_t *bytes_v;
+    const uint8_t* bytes_s;
+    const uint8_t* bytes_v;
     int len_s, len_v;
 
-    printf("Generating %s verifier with user '%s' and pass '%s':\n",
-           verifier->description, verifier->username, password);
+    printf("Generating %s verifier with user '%s' and pass '%s':\n", verifier->description, verifier->username,
+           password);
 
-    int ret = srp_create_salted_verification_key(verifier->username,
-                                                 (const uint8_t *)password,
-                                                 strlen(password),
-                                                 &bytes_s, &len_s,
-                                                 &bytes_v, &len_v);
+    int ret = srp_create_salted_verification_key(verifier->username, (const uint8_t*)password, strlen(password),
+                                                 &bytes_s, &len_s, &bytes_v, &len_v);
 
     if (ret) {
         printf("Error %d generating verification key.\n", ret);
@@ -146,8 +129,8 @@ void generate_verifier(xbee_dev_t *xbee,
     }
 
     // release memory allocated by srp_create_salted_verification_key()
-    free((void *)bytes_s);
-    free((void *)bytes_v);
+    free((void*)bytes_s);
+    free((void*)bytes_v);
 
     execute_verifier_regs(xbee);
 
@@ -155,8 +138,7 @@ void generate_verifier(xbee_dev_t *xbee,
     puts("");
 }
 
-
-void read_verifier(xbee_dev_t *xbee, const xbee_verifier_settings_t *verifier)
+void read_verifier(xbee_dev_t* xbee, const xbee_verifier_settings_t* verifier)
 {
     printf("Reading %s verifier:\n", verifier->description);
 
@@ -165,8 +147,7 @@ void read_verifier(xbee_dev_t *xbee, const xbee_verifier_settings_t *verifier)
     execute_verifier_regs(xbee);
 }
 
-void handle_verifier(xbee_dev_t *xbee, const char *param,
-                     const xbee_verifier_settings_t *verifier)
+void handle_verifier(xbee_dev_t* xbee, const char* param, const xbee_verifier_settings_t* verifier)
 {
     // skip over whitespace
     while (isspace((uint8_t)*param)) {
@@ -182,17 +163,11 @@ void handle_verifier(xbee_dev_t *xbee, const char *param,
     }
 }
 
-void handle_ble_cmd(xbee_dev_t *xbee, char *command)
-{
-    handle_verifier(xbee, &command[3], &ble_verifier);
-}
+void handle_ble_cmd(xbee_dev_t* xbee, char* command) { handle_verifier(xbee, &command[3], &ble_verifier); }
 
-void handle_ss_cmd(xbee_dev_t *xbee, char *command)
-{
-    handle_verifier(xbee, &command[2], &secure_session_verifier);
-}
+void handle_ss_cmd(xbee_dev_t* xbee, char* command) { handle_verifier(xbee, &command[2], &secure_session_verifier); }
 
-void handle_menu_cmd(xbee_dev_t *xbee, char *command)
+void handle_menu_cmd(xbee_dev_t* xbee, char* command)
 {
     XBEE_UNUSED_PARAMETER(xbee);
     XBEE_UNUSED_PARAMETER(command);
@@ -215,19 +190,16 @@ void handle_menu_cmd(xbee_dev_t *xbee, char *command)
     puts("");
 }
 
-
 const cmd_entry_t commands[] = {
-    ATCMD_CLI_ENTRIES
-    MENU_CLI_ENTRIES
+    ATCMD_CLI_ENTRIES MENU_CLI_ENTRIES
 
-    { "ble",            &handle_ble_cmd },
-    { "ss",             &handle_ss_cmd },
+    {"ble", &handle_ble_cmd},
+    {"ss", &handle_ss_cmd},
 
-    { NULL, NULL }                      // end of command table
+    {NULL, NULL} // end of command table
 };
 
-
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     xbee_dev_t my_xbee;
     char cmdstr[256];

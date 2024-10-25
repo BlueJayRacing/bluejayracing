@@ -27,22 +27,21 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "xbee/platform.h"
 #include "xbee/device.h"
+#include "xbee/platform.h"
 
 #ifndef __DC__
-   #define _xbee_device_debug
+#define _xbee_device_debug
 #elif defined XBEE_DEVICE_DEBUG
-   #define _xbee_device_debug __debug
+#define _xbee_device_debug __debug
 #else
-   #define _xbee_device_debug __nodebug
+#define _xbee_device_debug __nodebug
 #endif
 
 // Load library for sending and receiving frames over serial port.
-#include "xbee/serial.h"
 #include "wpan/aps.h"
+#include "xbee/serial.h"
 /*** EndHeader */
-
 
 /*** BeginHeader xbee_next_frame_id */
 /*** EndHeader */
@@ -57,21 +56,18 @@
    @retval  1-255 Current frame ID (after incrementing) for device
    @retval  0 \a xbee is not a valid XBee device pointer.
 */
-_xbee_device_debug
-uint8_t xbee_next_frame_id( xbee_dev_t *xbee)
+_xbee_device_debug uint8_t xbee_next_frame_id(xbee_dev_t* xbee)
 {
-   if (! xbee)
-   {
-      return 0;
-   }
+    if (!xbee) {
+        return 0;
+    }
 
-   // frame_id ranges from 1 to 255; if incremented to 0, wrap to 1
-   if (! ++xbee->frame_id)
-   {
-      xbee->frame_id = 1;
-   }
+    // frame_id ranges from 1 to 255; if incremented to 0, wrap to 1
+    if (!++xbee->frame_id) {
+        xbee->frame_id = 1;
+    }
 
-   return xbee->frame_id;
+    return xbee->frame_id;
 }
 
 /*** BeginHeader xbee_dev_init */
@@ -121,59 +117,54 @@ uint8_t xbee_next_frame_id( xbee_dev_t *xbee)
             properly initialized, and have various functions check that field
             before continuing.
 */
-_xbee_device_debug
-int xbee_dev_init( xbee_dev_t *xbee, const xbee_serial_t *serport,
-                                 xbee_is_awake_fn is_awake, xbee_reset_fn reset, const xbee_dispatch_table_entry_t* xbee_frame_handlers_arr)
+_xbee_device_debug int xbee_dev_init(xbee_dev_t* xbee, const xbee_serial_t* serport, xbee_is_awake_fn is_awake,
+                                     xbee_reset_fn reset, const xbee_dispatch_table_entry_t* xbee_frame_handlers_arr)
 {
-   int error;
+    int error;
 
-   if (! xbee)
-   {
-      return -EINVAL;
-   }
+    if (!xbee) {
+        return -EINVAL;
+    }
 
-   #ifdef XBEE_PLATFORM_INIT
-      error = XBEE_PLATFORM_INIT();
-      if (error != 0) {
-         return error;
-      }
-   #endif
+#ifdef XBEE_PLATFORM_INIT
+    error = XBEE_PLATFORM_INIT();
+    if (error != 0) {
+        return error;
+    }
+#endif
 
-   // try communicating with the XBee module
-   // set xbee to all zeros, then
-   // set up serial port and attempt communications with module
-   memset( xbee, 0, sizeof( xbee_dev_t));
+    // try communicating with the XBee module
+    // set xbee to all zeros, then
+    // set up serial port and attempt communications with module
+    memset(xbee, 0, sizeof(xbee_dev_t));
 
-   // GLADSON: Added to initialize the frame handlers
-   xbee->xbee_frame_handlers_arr = xbee_frame_handlers_arr;
+    // GLADSON: Added to initialize the frame handlers
+    xbee->xbee_frame_handlers_arr = xbee_frame_handlers_arr;
 
-   // configuration for serial XBee
-   xbee->is_awake = is_awake; // function to read XBee's "ON" pin
-   if (reset)
-   {
-      xbee->reset = reset;    // function to assert XBee's reset pin
-      reset( xbee, 0);        // take XBee out of reset state
-   }
+    // configuration for serial XBee
+    xbee->is_awake = is_awake; // function to read XBee's "ON" pin
+    if (reset) {
+        xbee->reset = reset; // function to assert XBee's reset pin
+        reset(xbee, 0);      // take XBee out of reset state
+    }
 
-   xbee->serport = *serport;
-   error = xbee_ser_open( &xbee->serport, serport->baudrate);
-   if (! error)
-   {
-      error = xbee_ser_flowcontrol( &xbee->serport, 1);
-   }
+    xbee->serport = *serport;
+    error         = xbee_ser_open(&xbee->serport, serport->baudrate);
+    if (!error) {
+        error = xbee_ser_flowcontrol(&xbee->serport, 1);
+    }
 
-   xbee->flags = XBEE_DEV_FLAG_USE_FLOWCONTROL;
+    xbee->flags = XBEE_DEV_FLAG_USE_FLOWCONTROL;
 
-   #ifdef XBEE_DEVICE_ENABLE_ATMODE
-      // fill in default values for GT, CT and CC registers
-      xbee->guard_time = 1000;
-      xbee->escape_char = '+';
-      xbee->idle_timeout = 100;
-   #endif
+#ifdef XBEE_DEVICE_ENABLE_ATMODE
+    // fill in default values for GT, CT and CC registers
+    xbee->guard_time   = 1000;
+    xbee->escape_char  = '+';
+    xbee->idle_timeout = 100;
+#endif
 
-   return error;
+    return error;
 }
-
 
 /*** BeginHeader xbee_dev_flowcontrol */
 /*** EndHeader */
@@ -188,22 +179,16 @@ int xbee_dev_init( xbee_dev_t *xbee, const xbee_serial_t *serport,
 
    @sa xbee_dev_init(), xbee_frame_write()
 */
-_xbee_device_debug
-void xbee_dev_flowcontrol( xbee_dev_t *xbee, bool_t enabled)
+_xbee_device_debug void xbee_dev_flowcontrol(xbee_dev_t* xbee, bool_t enabled)
 {
-   if (xbee != NULL)
-   {
-      if (enabled)
-      {
-         xbee->flags |= XBEE_DEV_FLAG_USE_FLOWCONTROL;
-      }
-      else
-      {
-         xbee->flags &= ~XBEE_DEV_FLAG_USE_FLOWCONTROL;
-      }
-   }
+    if (xbee != NULL) {
+        if (enabled) {
+            xbee->flags |= XBEE_DEV_FLAG_USE_FLOWCONTROL;
+        } else {
+            xbee->flags &= ~XBEE_DEV_FLAG_USE_FLOWCONTROL;
+        }
+    }
 }
-
 
 /*** BeginHeader xbee_dev_dump_settings */
 /*** EndHeader */
@@ -224,25 +209,21 @@ void xbee_dev_flowcontrol( xbee_dev_t *xbee, bool_t enabled)
 
    @sa xbee_cmd_init_device(), xbee_cmd_query_status(), xbee_ser_portname()
 */
-   // ideas for flags:
-   //    show portname
-   //    extended dump
-   //    super dump?  (state information)
-_xbee_device_debug
-void xbee_dev_dump_settings( xbee_dev_t *xbee, uint16_t flags)
+// ideas for flags:
+//    show portname
+//    extended dump
+//    super dump?  (state information)
+_xbee_device_debug void xbee_dev_dump_settings(xbee_dev_t* xbee, uint16_t flags)
 {
-   char addr[ADDR64_STRING_LENGTH];
+    char addr[ADDR64_STRING_LENGTH];
 
-   // flags parameter included in API for future expansion; unused for now
-   XBEE_UNUSED_PARAMETER( flags);
+    // flags parameter included in API for future expansion; unused for now
+    XBEE_UNUSED_PARAMETER(flags);
 
-   printf( "XBee on %s:\nHV=0x%X  HS=0x%X  VR=0x%" PRIX32 "  IEEE=%" PRIsFAR
-      "  net=0x%04x\n\n", xbee_ser_portname( &xbee->serport),
-      xbee->hardware_version, xbee->hardware_series, xbee->firmware_version,
-      addr64_format( addr, &xbee->wpan_dev.address.ieee),
-      xbee->wpan_dev.address.network);
+    printf("XBee on %s:\nHV=0x%X  HS=0x%X  VR=0x%" PRIX32 "  IEEE=%" PRIsFAR "  net=0x%04x\n\n",
+           xbee_ser_portname(&xbee->serport), xbee->hardware_version, xbee->hardware_series, xbee->firmware_version,
+           addr64_format(addr, &xbee->wpan_dev.address.ieee), xbee->wpan_dev.address.network);
 }
-
 
 /*** BeginHeader xbee_dev_reset */
 /*** EndHeader */
@@ -257,33 +238,31 @@ void xbee_dev_dump_settings( xbee_dev_t *xbee, uint16_t flags)
    @retval  -EIO     This XBee device doesn't have an interface to the
                      module's reset pin.
 */
-_xbee_device_debug
-int xbee_dev_reset( xbee_dev_t *xbee)
+_xbee_device_debug int xbee_dev_reset(xbee_dev_t* xbee)
 {
-   uint16_t t;
+    uint16_t t;
 
-   if (! xbee)
-   {
-      return -EINVAL;
-   }
-   if (! xbee->reset)
-   {
-      return -EIO;
-   }
+    if (!xbee) {
+        return -EINVAL;
+    }
+    if (!xbee->reset) {
+        return -EIO;
+    }
 
-   xbee->reset( xbee, 1);
-   // need to hold reset for 250ns
-   // Wait for the millisecond timer to roll over twice to ensure
-   // 250ns elapsed.  Consider adding high-resolution sleep function
-   // to the platform files (usleep?).
-   t = XBEE_SET_TIMEOUT_MS(XBEE_MS_TIMER_RESOLUTION + 1);
-   while (! XBEE_CHECK_TIMEOUT_MS(t));
-   xbee->reset( xbee, 0);
-   #ifdef XBEE_DEVICE_ENABLE_ATMODE
-      xbee->mode = XBEE_MODE_UNKNOWN;
-   #endif
+    xbee->reset(xbee, 1);
+    // need to hold reset for 250ns
+    // Wait for the millisecond timer to roll over twice to ensure
+    // 250ns elapsed.  Consider adding high-resolution sleep function
+    // to the platform files (usleep?).
+    t = XBEE_SET_TIMEOUT_MS(XBEE_MS_TIMER_RESOLUTION + 1);
+    while (!XBEE_CHECK_TIMEOUT_MS(t))
+        ;
+    xbee->reset(xbee, 0);
+#ifdef XBEE_DEVICE_ENABLE_ATMODE
+    xbee->mode = XBEE_MODE_UNKNOWN;
+#endif
 
-   return 0;
+    return 0;
 }
 
 /*** BeginHeader xbee_dev_tick */
@@ -312,37 +291,33 @@ int xbee_dev_reset( xbee_dev_t *xbee)
 @retval  -EIO     Error reading from serial port.
 
 */
-_xbee_device_debug
-int xbee_dev_tick( xbee_dev_t *xbee)
+_xbee_device_debug int xbee_dev_tick(xbee_dev_t* xbee)
 {
-   int frames;
+    int frames;
 
-   if (! xbee)
-   {
-      return -EINVAL;
-   }
+    if (!xbee) {
+        return -EINVAL;
+    }
 
-   INTERRUPT_DISABLE;
+    INTERRUPT_DISABLE;
 
-   // Prevent recursion -- _xbee_frame_load will dispatch frames as read.  If
-   // a frame handler tries to call xbee_dev_tick, don't recurse into
-   // _xbee_frame_load again.
-   if (xbee->flags & XBEE_DEV_FLAG_IN_TICK)
-   {
-      INTERRUPT_ENABLE;
-      return -EBUSY;
-   }
+    // Prevent recursion -- _xbee_frame_load will dispatch frames as read.  If
+    // a frame handler tries to call xbee_dev_tick, don't recurse into
+    // _xbee_frame_load again.
+    if (xbee->flags & XBEE_DEV_FLAG_IN_TICK) {
+        INTERRUPT_ENABLE;
+        return -EBUSY;
+    }
 
-   xbee->flags |= XBEE_DEV_FLAG_IN_TICK;
+    xbee->flags |= XBEE_DEV_FLAG_IN_TICK;
 
-   INTERRUPT_ENABLE;
+    INTERRUPT_ENABLE;
 
-   frames = _xbee_frame_load( xbee);
-   xbee->flags &= ~XBEE_DEV_FLAG_IN_TICK;
+    frames = _xbee_frame_load(xbee);
+    xbee->flags &= ~XBEE_DEV_FLAG_IN_TICK;
 
-   return frames;
+    return frames;
 }
-
 
 /*** BeginHeader _xbee_dispatch_table_dump */
 /*** EndHeader */
@@ -353,35 +328,29 @@ int xbee_dev_tick( xbee_dev_t *xbee)
 
    @param[in]  xbee  XBee device of table to dump.
 */
-_xbee_device_debug
-void _xbee_dispatch_table_dump( const xbee_dev_t *xbee)
+_xbee_device_debug void _xbee_dispatch_table_dump(const xbee_dev_t* xbee)
 {
 #ifndef XBEE_DEVICE_VERBOSE
-   // empty/ignored function unless VERBOSE output enabled
-   XBEE_UNUSED_PARAMETER( xbee);
+    // empty/ignored function unless VERBOSE output enabled
+    XBEE_UNUSED_PARAMETER(xbee);
 #else
-   uint_fast8_t i;
-   const xbee_dispatch_table_entry_t *entry;
+    uint_fast8_t i;
+    const xbee_dispatch_table_entry_t* entry;
 
-   if (! xbee)
-   {
-      return;
-   }
+    if (!xbee) {
+        return;
+    }
 
-   puts( "Index\tType\tID\tHandler\tContext");
-   entry = xbee_frame_handlers;
-   for (i = 0; entry->frame_type != 0xFF; ++i, ++entry)
-   {
-      if (entry->frame_type)
-      {
-         printf( "%3d:\t0x%02x\t0x%02x\t0x%p\t%" PRIpFAR "\n", i,
-            entry->frame_type, entry->frame_id, entry->handler, entry->context);
-      }
-      else
-      {
-         printf( "%3d:\t[empty]\n", i);
-      }
-   }
+    puts("Index\tType\tID\tHandler\tContext");
+    entry = xbee_frame_handlers;
+    for (i = 0; entry->frame_type != 0xFF; ++i, ++entry) {
+        if (entry->frame_type) {
+            printf("%3d:\t0x%02x\t0x%02x\t0x%p\t%" PRIpFAR "\n", i, entry->frame_type, entry->frame_id, entry->handler,
+                   entry->context);
+        } else {
+            printf("%3d:\t[empty]\n", i);
+        }
+    }
 #endif
 }
 
@@ -423,21 +392,18 @@ void _xbee_dispatch_table_dump( const xbee_dev_t *xbee)
 // Function name in parenthesis so platforms can provide an inline assembly
 // version as a replacement, and include a function macro to override this
 // function in their platform.h.  See Rabbit
-_xbee_device_debug
-uint8_t (_xbee_checksum)( const void FAR *bytes, uint16_t length,
-   uint_fast8_t initial)
+_xbee_device_debug uint8_t(_xbee_checksum)(const void FAR* bytes, uint16_t length, uint_fast8_t initial)
 {
-   uint16_t i;
-   uint8_t checksum;
-   const char FAR *p;
+    uint16_t i;
+    uint8_t checksum;
+    const char FAR* p;
 
-   checksum = initial;
-   for (p = (const char FAR *)bytes, i = length; i; ++p, --i)
-   {
-      checksum -= *p;
-   }
+    checksum = initial;
+    for (p = (const char FAR*)bytes, i = length; i; ++p, --i) {
+        checksum -= *p;
+    }
 
-   return checksum;
+    return checksum;
 }
 
 /*** BeginHeader xbee_frame_write */
@@ -493,123 +459,105 @@ uint8_t (_xbee_checksum)( const void FAR *bytes, uint16_t length,
 */
 #include "xbee/byteorder.h"
 
-_xbee_device_debug
-int xbee_frame_write( xbee_dev_t *xbee, const void FAR *header,
-   uint16_t headerlen, const void FAR *data, uint16_t datalen, uint16_t flags)
+_xbee_device_debug int xbee_frame_write(xbee_dev_t* xbee, const void FAR* header, uint16_t headerlen,
+                                        const void FAR* data, uint16_t datalen, uint16_t flags)
 {
-   XBEE_PACKED(, {
-      uint8_t  start;
-      uint16_t length_be;
-   }) prefix;
+    XBEE_PACKED(,
+                {
+                    uint8_t start;
+                    uint16_t length_be;
+                })
+    prefix;
 
-   int cts, free, used, framesize;
-   uint8_t checksum = 0xFF;
-   #ifdef XBEE_DEVICE_VERBOSE
-      uint8_t type, id;       // for debug messages
-   #endif
+    int cts, free, used, framesize;
+    uint8_t checksum = 0xFF;
+#ifdef XBEE_DEVICE_VERBOSE
+    uint8_t type, id; // for debug messages
+#endif
 
-   // flags parameter included in API for future expansion; unused for now
-   XBEE_UNUSED_PARAMETER( flags);
+    // flags parameter included in API for future expansion; unused for now
+    XBEE_UNUSED_PARAMETER(flags);
 
-   if (xbee == NULL || xbee_ser_invalid( &xbee->serport))
-   {
-      cts = -EINVAL;
-   }
-   else if (xbee->flags & XBEE_DEV_FLAG_USE_FLOWCONTROL)
-   {
-      cts = xbee_ser_get_cts( &xbee->serport);
-   }
-   else
-   {
-      cts = 1;
-   }
+    if (xbee == NULL || xbee_ser_invalid(&xbee->serport)) {
+        cts = -EINVAL;
+    } else if (xbee->flags & XBEE_DEV_FLAG_USE_FLOWCONTROL) {
+        cts = xbee_ser_get_cts(&xbee->serport);
+    } else {
+        cts = 1;
+    }
 
-   if (cts == -EINVAL)
-   {
-      // <xbee> is NULL, or xbee->serport is not valid
-      #ifdef XBEE_DEVICE_VERBOSE
-         printf( "%s: return -EINVAL (xbee = 0x%p, cts = %d)\n",
-            __FUNCTION__, xbee, cts);
-      #endif
-      return -EINVAL;
-   }
+    if (cts == -EINVAL) {
+// <xbee> is NULL, or xbee->serport is not valid
+#ifdef XBEE_DEVICE_VERBOSE
+        printf("%s: return -EINVAL (xbee = 0x%p, cts = %d)\n", __FUNCTION__, xbee, cts);
+#endif
+        return -EINVAL;
+    }
 
-   if (! header)
-   {
-      headerlen = 0;    // if header is NULL, set headerlen to 0
-   }
-   if (! data)
-   {
-      datalen = 0;      // if data is NULL, set datalen to 0
-   }
-   if (! (headerlen || datalen))
-   {
-      #ifdef XBEE_DEVICE_VERBOSE
-         printf( "%s: return -ENODATA (headerlen = %u, datalen = %u)\n",
-            __FUNCTION__, headerlen, datalen);
-      #endif
-      return -ENODATA;
-   }
+    if (!header) {
+        headerlen = 0; // if header is NULL, set headerlen to 0
+    }
+    if (!data) {
+        datalen = 0; // if data is NULL, set datalen to 0
+    }
+    if (!(headerlen || datalen)) {
+#ifdef XBEE_DEVICE_VERBOSE
+        printf("%s: return -ENODATA (headerlen = %u, datalen = %u)\n", __FUNCTION__, headerlen, datalen);
+#endif
+        return -ENODATA;
+    }
 
-   // Make sure XBee is asserting CTS and verify that the transmit serial buffer
-   // has enough room for the frame (payload + 3-byte header + 1-byte checksum).
-   free = xbee_ser_tx_free( &xbee->serport);
-   used = xbee_ser_tx_used( &xbee->serport);
-   framesize = headerlen + datalen + 3 + 1;
-   if (! cts || free < framesize)
-   {
-      #ifdef XBEE_DEVICE_VERBOSE
-         printf( "%s: return -EBUSY (cts = %s, free = %d, framesize = %d)\n",
-            __FUNCTION__, cts ? "yes" : "no", free, framesize);
-      #endif
-      return (framesize - free > used) ? -EMSGSIZE : -EBUSY;
-   }
+    // Make sure XBee is asserting CTS and verify that the transmit serial buffer
+    // has enough room for the frame (payload + 3-byte header + 1-byte checksum).
+    free      = xbee_ser_tx_free(&xbee->serport);
+    used      = xbee_ser_tx_used(&xbee->serport);
+    framesize = headerlen + datalen + 3 + 1;
+    if (!cts || free < framesize) {
+#ifdef XBEE_DEVICE_VERBOSE
+        printf("%s: return -EBUSY (cts = %s, free = %d, framesize = %d)\n", __FUNCTION__, cts ? "yes" : "no", free,
+               framesize);
+#endif
+        return (framesize - free > used) ? -EMSGSIZE : -EBUSY;
+    }
 
-   #ifdef XBEE_DEVICE_VERBOSE
-      type = *(const char FAR *) (headerlen ? header : data);
-      if (headerlen < 2)
-      {
-         // if headerlen is 1, id is first byte of data, otherwise second byte
-         id = ((const char FAR *)data)[headerlen ? 0 : 1];
-      }
-      else
-      {
-         id = ((const char FAR *)header)[1];
-      }
-      printf( "%s: frame type 0x%02x, id 0x%02x (%u-byte payload)\n",
-         __FUNCTION__, type, id, headerlen + datalen);
-   #endif
+#ifdef XBEE_DEVICE_VERBOSE
+    type = *(const char FAR*)(headerlen ? header : data);
+    if (headerlen < 2) {
+        // if headerlen is 1, id is first byte of data, otherwise second byte
+        id = ((const char FAR*)data)[headerlen ? 0 : 1];
+    } else {
+        id = ((const char FAR*)header)[1];
+    }
+    printf("%s: frame type 0x%02x, id 0x%02x (%u-byte payload)\n", __FUNCTION__, type, id, headerlen + datalen);
+#endif
 
-   // Send 0x7E (start frame marker) and 16-bit length
-   prefix.start = 0x7E;
-   prefix.length_be = htobe16( headerlen + datalen);
-   xbee_ser_write( &xbee->serport, &prefix, 3);
+    // Send 0x7E (start frame marker) and 16-bit length
+    prefix.start     = 0x7E;
+    prefix.length_be = htobe16(headerlen + datalen);
+    xbee_ser_write(&xbee->serport, &prefix, 3);
 
-   // Send <headerlen> bytes from <header> if it is not NULL
-   if (headerlen)
-   {
-      xbee_ser_write( &xbee->serport, header, headerlen);
-      checksum = _xbee_checksum( header, headerlen, checksum);
-   }
+    // Send <headerlen> bytes from <header> if it is not NULL
+    if (headerlen) {
+        xbee_ser_write(&xbee->serport, header, headerlen);
+        checksum = _xbee_checksum(header, headerlen, checksum);
+    }
 
-   // Send <datalen> bytes from <data> if it is not NULL
-   if (datalen)
-   {
-      xbee_ser_write( &xbee->serport, data, datalen);
-      checksum = _xbee_checksum( data, datalen, checksum);
-   }
+    // Send <datalen> bytes from <data> if it is not NULL
+    if (datalen) {
+        xbee_ser_write(&xbee->serport, data, datalen);
+        checksum = _xbee_checksum(data, datalen, checksum);
+    }
 
-   // Send 1-byte checksum of bytes in payload
-   xbee_ser_write( &xbee->serport, &checksum, 1);
+    // Send 1-byte checksum of bytes in payload
+    xbee_ser_write(&xbee->serport, &checksum, 1);
 
-   return 0;
+    return 0;
 }
-
 
 /*** BeginHeader _xbee_frame_load */
 /*** EndHeader */
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DISABLE C5909    // Assignment in condition is OK
+#pragma MESSAGE DISABLE C5909 // Assignment in condition is OK
 #endif
 /**
    @internal
@@ -628,46 +576,42 @@ int xbee_frame_write( xbee_dev_t *xbee, const void FAR *header,
 
    @see xbee_dev_init(), _xbee_frame_dispatch()
 */
-_xbee_device_debug
-int _xbee_frame_load( xbee_dev_t *xbee)
+_xbee_device_debug int _xbee_frame_load(xbee_dev_t* xbee)
 {
-   // Use xbee_serial API to load multiple bytes at a time.
+    // Use xbee_serial API to load multiple bytes at a time.
 
-   // Based on state, do one of the following:
+    // Based on state, do one of the following:
 
-   // 1) Waiting for start of frame:
-   // Scan through serial buffer until 0x7e byte is found.
-   // Advance to next state.
+    // 1) Waiting for start of frame:
+    // Scan through serial buffer until 0x7e byte is found.
+    // Advance to next state.
 
-   // 2) Waiting for length:
-   // Wait until 2 bytes in serial buffer, read into xbee->rx.bytes_in_frame.
+    // 2) Waiting for length:
+    // Wait until 2 bytes in serial buffer, read into xbee->rx.bytes_in_frame.
 
-   // 3) Waiting for (<length> + 1) bytes of data:
-   // Read as many bytes as possible from the serial buffer and into the
-   // xbee->rx.frame_data[].  Once all bytes have been read, calculate and
-   // verify checksum and then hand off to dispatcher.
+    // 3) Waiting for (<length> + 1) bytes of data:
+    // Read as many bytes as possible from the serial buffer and into the
+    // xbee->rx.frame_data[].  Once all bytes have been read, calculate and
+    // verify checksum and then hand off to dispatcher.
 
-   uint8_t ch;
-   uint16_t length;
-   int bytes_left, ser_read;
-   uint_fast8_t dispatched;
-   xbee_serial_t  *serport;
+    uint8_t ch;
+    uint16_t length;
+    int bytes_left, ser_read;
+    uint_fast8_t dispatched;
+    xbee_serial_t* serport;
 
-   if (xbee == NULL || xbee_ser_invalid( (serport = &xbee->serport) ))
-   {
-      #ifdef XBEE_DEVICE_VERBOSE
-         printf( "%s: return -EINVAL (xbee is %p)\n", __FUNCTION__, xbee);
-      #endif
-      return -EINVAL;
-   }
+    if (xbee == NULL || xbee_ser_invalid((serport = &xbee->serport))) {
+#ifdef XBEE_DEVICE_VERBOSE
+        printf("%s: return -EINVAL (xbee is %p)\n", __FUNCTION__, xbee);
+#endif
+        return -EINVAL;
+    }
 
-   dispatched = 0;      // counter to keep track of frames processed
+    dispatched = 0; // counter to keep track of frames processed
 
-   for (;;)
-   {
-      switch (xbee->rx.state)
-      {
-         case XBEE_RX_STATE_WAITSTART:    // waiting for initial 0x7E
+    for (;;) {
+        switch (xbee->rx.state) {
+        case XBEE_RX_STATE_WAITSTART: // waiting for initial 0x7E
             /*
                It may seem inefficient to read one byte at a time while looking
                for the 0x7E start byte, but in reality we almost always read it
@@ -675,145 +619,125 @@ int _xbee_frame_load( xbee_dev_t *xbee)
                start with 0x7E).
             */
             do {
-               ser_read = xbee_ser_read( serport, &ch, 1);
-               if (ser_read != 1) {
-                  goto _exit_loop;
-               }
+                ser_read = xbee_ser_read(serport, &ch, 1);
+                if (ser_read != 1) {
+                    goto _exit_loop;
+                }
             } while (ch != 0x7E);
-            #ifdef XBEE_DEVICE_VERBOSE
-               printf( "%s: got start-of-frame\n", __FUNCTION__);
-            #endif
+#ifdef XBEE_DEVICE_VERBOSE
+            printf("%s: got start-of-frame\n", __FUNCTION__);
+#endif
             xbee->rx.state = XBEE_RX_STATE_LENGTH_MSB;
             // fall through to next state
 
-         case XBEE_RX_STATE_LENGTH_MSB:
+        case XBEE_RX_STATE_LENGTH_MSB:
             // try to read a character from the serial port
-            ser_read = xbee_ser_read( serport, &ch, 1);
+            ser_read = xbee_ser_read(serport, &ch, 1);
             if (ser_read != 1) {
-               goto _exit_loop;
+                goto _exit_loop;
             }
-            if (ch == 0x7E)
-            {
-               // MSB of length can never be 0x7E, consider it to be the new
-               // start-of-frame character and recheck for the length.
-               #ifdef XBEE_DEVICE_VERBOSE
-                  printf( "%s: ignoring duplicate start-of-frame (0x7E)\n",
-                     __FUNCTION__);
-               #endif
-               break;
+            if (ch == 0x7E) {
+// MSB of length can never be 0x7E, consider it to be the new
+// start-of-frame character and recheck for the length.
+#ifdef XBEE_DEVICE_VERBOSE
+                printf("%s: ignoring duplicate start-of-frame (0x7E)\n", __FUNCTION__);
+#endif
+                break;
             }
             // set MSB of frame length
             xbee->rx.bytes_in_frame = ch << 8;
-            xbee->rx.state = XBEE_RX_STATE_LENGTH_LSB;
+            xbee->rx.state          = XBEE_RX_STATE_LENGTH_LSB;
             // fall through to trying to read LSB of length
-         case XBEE_RX_STATE_LENGTH_LSB:
+        case XBEE_RX_STATE_LENGTH_LSB:
             // try to read a character from the serial port
-            ser_read = xbee_ser_read( serport, &ch, 1);
+            ser_read = xbee_ser_read(serport, &ch, 1);
             if (ser_read != 1) {
-               goto _exit_loop;
+                goto _exit_loop;
             }
 
             // set LSB of frame length, make local copy for range check
             length = (xbee->rx.bytes_in_frame += ch);
-            if (length > XBEE_MAX_RX_FRAME_LEN || length < 2)
-            {
-               // this isn't a valid frame, go back to looking for start marker
-               #ifdef XBEE_DEVICE_VERBOSE
-                  printf( "%s: read bad frame length (%u ! [2 .. %u])\n",
-                     __FUNCTION__, length, XBEE_MAX_RX_FRAME_LEN);
-               #endif
-               if (ch == 0x7E)
-               {
-                  // Handle case of 0x7E 0xXX 0x7E where second 0x7E is actual
-                  // start of frame.
-                  xbee->rx.state = XBEE_RX_STATE_LENGTH_MSB;
-               }
-               else
-               {
-                  xbee->rx.state = XBEE_RX_STATE_WAITSTART;
-               }
-               break;
+            if (length > XBEE_MAX_RX_FRAME_LEN || length < 2) {
+// this isn't a valid frame, go back to looking for start marker
+#ifdef XBEE_DEVICE_VERBOSE
+                printf("%s: read bad frame length (%u ! [2 .. %u])\n", __FUNCTION__, length, XBEE_MAX_RX_FRAME_LEN);
+#endif
+                if (ch == 0x7E) {
+                    // Handle case of 0x7E 0xXX 0x7E where second 0x7E is actual
+                    // start of frame.
+                    xbee->rx.state = XBEE_RX_STATE_LENGTH_MSB;
+                } else {
+                    xbee->rx.state = XBEE_RX_STATE_WAITSTART;
+                }
+                break;
             }
-            #ifdef XBEE_DEVICE_VERBOSE
-               printf( "%s: got length %" PRIu16 "\n", __FUNCTION__, length);
-            #endif
-            xbee->rx.state = XBEE_RX_STATE_RXFRAME;
+#ifdef XBEE_DEVICE_VERBOSE
+            printf("%s: got length %" PRIu16 "\n", __FUNCTION__, length);
+#endif
+            xbee->rx.state      = XBEE_RX_STATE_RXFRAME;
             xbee->rx.bytes_read = 0;
             // fall through to next state
 
-         case XBEE_RX_STATE_RXFRAME:      // receiving frame & trailing checksum
+        case XBEE_RX_STATE_RXFRAME: // receiving frame & trailing checksum
             bytes_left = xbee->rx.bytes_in_frame - xbee->rx.bytes_read + 1;
-            ser_read = xbee_ser_read( serport,
-                     xbee->rx.frame_data + xbee->rx.bytes_read, bytes_left);
-            if (ser_read != bytes_left)
-            {
-               // Not enough bytes to finish reading current frame, record
-               // number of bytes read and return.
-               if (ser_read > 0)
-               {
-                  xbee->rx.bytes_read += ser_read;
-               }
-               goto _exit_loop;
+            ser_read   = xbee_ser_read(serport, xbee->rx.frame_data + xbee->rx.bytes_read, bytes_left);
+            if (ser_read != bytes_left) {
+                // Not enough bytes to finish reading current frame, record
+                // number of bytes read and return.
+                if (ser_read > 0) {
+                    xbee->rx.bytes_read += ser_read;
+                }
+                goto _exit_loop;
             }
 
             // ready to load more frames on next pass
             xbee->rx.state = XBEE_RX_STATE_WAITSTART;
 
-            if (_xbee_checksum( xbee->rx.frame_data,
-                                          xbee->rx.bytes_in_frame + 1, 0xFF))
-            {
-               // checksum failed, throw out the frame
-               #ifdef XBEE_DEVICE_VERBOSE
-                  printf( "%s: checksum failed\n", __FUNCTION__);
-                  hex_dump( xbee->rx.frame_data, xbee->rx.bytes_in_frame + 1,
-                     HEX_DUMP_FLAG_OFFSET);
-               #endif
+            if (_xbee_checksum(xbee->rx.frame_data, xbee->rx.bytes_in_frame + 1, 0xFF)) {
+// checksum failed, throw out the frame
+#ifdef XBEE_DEVICE_VERBOSE
+                printf("%s: checksum failed\n", __FUNCTION__);
+                hex_dump(xbee->rx.frame_data, xbee->rx.bytes_in_frame + 1, HEX_DUMP_FLAG_OFFSET);
+#endif
 
-               /* At this point, we *could* look through the frame data for
-                  another start-of-frame (0x7E) marker, including considering
-                  the LSB of the length field.  We shouldn't have to though --
-                  assuming a good serial connection, we should stay in sync
-                  with XBee frames and not have to work too hard at resyncing.
+                /* At this point, we *could* look through the frame data for
+                   another start-of-frame (0x7E) marker, including considering
+                   the LSB of the length field.  We shouldn't have to though --
+                   assuming a good serial connection, we should stay in sync
+                   with XBee frames and not have to work too hard at resyncing.
 
-                  Also, we only sync to a select range of 3-byte sequences --
-                  0x7E followed by two-byte length of 0 to about 300.
-               */
+                   Also, we only sync to a select range of 3-byte sequences --
+                   0x7E followed by two-byte length of 0 to about 300.
+                */
 
-               break;
-            }
-            else
-            {
-               // frame is ready for dispatch
-               ++dispatched;
-               #ifdef XBEE_DEVICE_VERBOSE
-                  printf( "%s: dispatch frame #%d\n", __FUNCTION__,
-                     dispatched);
-               #endif
-               _xbee_frame_dispatch( xbee, xbee->rx.frame_data,
-                                                   xbee->rx.bytes_in_frame);
+                break;
+            } else {
+                // frame is ready for dispatch
+                ++dispatched;
+#ifdef XBEE_DEVICE_VERBOSE
+                printf("%s: dispatch frame #%d\n", __FUNCTION__, dispatched);
+#endif
+                _xbee_frame_dispatch(xbee, xbee->rx.frame_data, xbee->rx.bytes_in_frame);
 
-               if (dispatched == XBEE_DEV_MAX_DISPATCH_PER_TICK)
-               {
-                  goto _exit_loop;
-               }
+                if (dispatched == XBEE_DEV_MAX_DISPATCH_PER_TICK) {
+                    goto _exit_loop;
+                }
             }
             break;
 
-         default:
-            #ifdef XBEE_DEVICE_VERBOSE
-               printf( "%s: invalid state %d\n", __FUNCTION__,
-                  xbee->rx.state);
-            #endif
+        default:
+#ifdef XBEE_DEVICE_VERBOSE
+            printf("%s: invalid state %d\n", __FUNCTION__, xbee->rx.state);
+#endif
             xbee->rx.state = XBEE_RX_STATE_WAITSTART;
-      }
-   }
-   _exit_loop:
-   return ser_read < 0 ? ser_read : dispatched;
+        }
+    }
+_exit_loop:
+    return ser_read < 0 ? ser_read : dispatched;
 }
 #ifdef __XBEE_PLATFORM_HCS08
-   #pragma MESSAGE DEFAULT C5909    // restore C5909 (Assignment in condition)
+#pragma MESSAGE DEFAULT C5909 // restore C5909 (Assignment in condition)
 #endif
-
 
 /*** BeginHeader _xbee_frame_dispatch */
 /*** EndHeader */
@@ -824,47 +748,43 @@ int _xbee_frame_load( xbee_dev_t *xbee)
 
    @see xbee_frame_handler_fn()
 */
-_xbee_device_debug
-void _xbee_dev_modem_status( wpan_dev_t *wpan, uint_fast8_t status)
+_xbee_device_debug void _xbee_dev_modem_status(wpan_dev_t* wpan, uint_fast8_t status)
 {
-   uint16_t flags = wpan->flags;
+    uint16_t flags = wpan->flags;
 
-   switch (status)
-   {
-      case XBEE_MODEM_STATUS_COORD_START:
-         // We're the coordinator, so we know our network address and are
-         // implicitly joined.  If EO is non-zero (which we aren't checking)
-         // then we're authenticated as well.  Maybe add an EE check to
-         // xbee_cmd_query_device and set another flag?
-         wpan->address.network = WPAN_NET_ADDR_COORDINATOR;
-         flags |= (WPAN_FLAG_JOINED | WPAN_FLAG_AUTHENTICATED);
-         break;
+    switch (status) {
+    case XBEE_MODEM_STATUS_COORD_START:
+        // We're the coordinator, so we know our network address and are
+        // implicitly joined.  If EO is non-zero (which we aren't checking)
+        // then we're authenticated as well.  Maybe add an EE check to
+        // xbee_cmd_query_device and set another flag?
+        wpan->address.network = WPAN_NET_ADDR_COORDINATOR;
+        flags |= (WPAN_FLAG_JOINED | WPAN_FLAG_AUTHENTICATED);
+        break;
 
-      case XBEE_MODEM_STATUS_KEY_ESTABLISHED:
-         flags |= WPAN_FLAG_AUTHENTICATED;
-         // It's possible to go straight to Key Established from a watchdog
-         // timeout, so fall through to the JOINED status as well.
+    case XBEE_MODEM_STATUS_KEY_ESTABLISHED:
+        flags |= WPAN_FLAG_AUTHENTICATED;
+        // It's possible to go straight to Key Established from a watchdog
+        // timeout, so fall through to the JOINED status as well.
 
-      case XBEE_MODEM_STATUS_JOINED:
-         flags |= WPAN_FLAG_JOINED;
-         break;
+    case XBEE_MODEM_STATUS_JOINED:
+        flags |= WPAN_FLAG_JOINED;
+        break;
 
-      case XBEE_MODEM_STATUS_HW_RESET:
-      case XBEE_MODEM_STATUS_WATCHDOG:
-      case XBEE_MODEM_STATUS_DISASSOC:
-         // no longer joined or authenticated
-         flags &= ~(WPAN_FLAG_JOINED | WPAN_FLAG_AUTHENTICATED);
-         wpan->address.network = WPAN_NET_ADDR_UNDEFINED;
-         #ifdef XBEE_DEVICE_VERBOSE
-            printf( "%s: marked network address as invalid (status=0x%02x)\n",
-               __FUNCTION__, status);
-         #endif
-         break;
-   }
+    case XBEE_MODEM_STATUS_HW_RESET:
+    case XBEE_MODEM_STATUS_WATCHDOG:
+    case XBEE_MODEM_STATUS_DISASSOC:
+        // no longer joined or authenticated
+        flags &= ~(WPAN_FLAG_JOINED | WPAN_FLAG_AUTHENTICATED);
+        wpan->address.network = WPAN_NET_ADDR_UNDEFINED;
+#ifdef XBEE_DEVICE_VERBOSE
+        printf("%s: marked network address as invalid (status=0x%02x)\n", __FUNCTION__, status);
+#endif
+        break;
+    }
 
-   wpan->flags = flags;
+    wpan->flags = flags;
 }
-
 
 /**
    @internal
@@ -893,182 +813,166 @@ void _xbee_dev_modem_status( wpan_dev_t *wpan, uint_fast8_t status)
    @retval -EINVAL   Invalid parameter
    @retval  >=0      number of handlers frame was dispatched to
 */
-_xbee_device_debug
-int _xbee_frame_dispatch( xbee_dev_t *xbee, const void FAR *frame,
-   uint16_t length)
+_xbee_device_debug int _xbee_frame_dispatch(xbee_dev_t* xbee, const void FAR* frame, uint16_t length)
 {
-   uint_fast8_t frametype, frameid;
-   bool_t dispatched;
-   const xbee_dispatch_table_entry_t *entry;
+    uint_fast8_t frametype, frameid;
+    bool_t dispatched;
+    const xbee_dispatch_table_entry_t* entry;
 
-   if (! (xbee && frame && length))
-   {
-      // Since this is an internal API, always called correctly, this should
-      // not happen and could be changed to an assert.  Currently part of
-      // unit tests for this module.
-      return -EINVAL;
-   }
+    if (!(xbee && frame && length)) {
+        // Since this is an internal API, always called correctly, this should
+        // not happen and could be changed to an assert.  Currently part of
+        // unit tests for this module.
+        return -EINVAL;
+    }
 
-   // first byte of <frame> is the frametype, second is frame ID
-   frametype = ((const uint8_t FAR *)frame)[0];
-   frameid = ((const uint8_t FAR *)frame)[1];
+    // first byte of <frame> is the frametype, second is frame ID
+    frametype = ((const uint8_t FAR*)frame)[0];
+    frameid   = ((const uint8_t FAR*)frame)[1];
 
-   if (frametype == XBEE_FRAME_MODEM_STATUS)
-   {
-      _xbee_dev_modem_status( &xbee->wpan_dev, frameid);
-   }
+    if (frametype == XBEE_FRAME_MODEM_STATUS) {
+        _xbee_dev_modem_status(&xbee->wpan_dev, frameid);
+    }
 
-   #ifdef XBEE_DEVICE_VERBOSE
-      printf( "%s: dispatch frame type 0x%02x, id 0x%02x\n",
-         __FUNCTION__, frametype, frameid);
-      hex_dump( frame, length, HEX_DUMP_FLAG_NONE);
-   #endif
+#ifdef XBEE_DEVICE_VERBOSE
+    printf("%s: dispatch frame type 0x%02x, id 0x%02x\n", __FUNCTION__, frametype, frameid);
+    hex_dump(frame, length, HEX_DUMP_FLAG_NONE);
+#endif
 
+    // GLADSON: This function has been modified. Creating a global array of frame
+    // handlers was cumbersome. By storing a pointer to the array of frame handlers,
+    // we can give each xbee_dev_t context for handling.
 
-   // GLADSON: This function has been modified. Creating a global array of frame
-   // handlers was cumbersome. By storing a pointer to the array of frame handlers,
-   // we can give each xbee_dev_t context for handling.
+    dispatched = 0;
+    for (entry = xbee->xbee_frame_handlers_arr; entry->frame_type != 0xFF; ++entry) {
+        if (!entry->frame_type || entry->frame_type == frametype) {
+            // entry matches all frame types (0) or matches this frame's type
+            if (!entry->frame_id || entry->frame_id == frameid) {
+                ++dispatched;
+// entry matches all frame IDs (0) or matches this frame's ID
+#ifdef XBEE_DEVICE_VERBOSE
+                printf("%s: calling frame handler @%p, w/context %" PRIpFAR "\n", __FUNCTION__, entry->handler,
+                       entry->context);
+#endif
+                entry->handler(xbee, frame, length, entry->context);
+            }
+        }
+    }
 
-   dispatched = 0;
-   for (entry = xbee->xbee_frame_handlers_arr; entry->frame_type != 0xFF; ++entry)
-   {
-      if (! entry->frame_type || entry->frame_type == frametype)
-      {
-         // entry matches all frame types (0) or matches this frame's type
-         if (! entry->frame_id || entry->frame_id == frameid)
-         {
-            ++dispatched;
-            // entry matches all frame IDs (0) or matches this frame's ID
-            #ifdef XBEE_DEVICE_VERBOSE
-               printf( "%s: calling frame handler @%p, w/context %" \
-                  PRIpFAR "\n", __FUNCTION__, entry->handler, entry->context);
-            #endif
-            entry->handler( xbee, frame, length, entry->context);
-         }
-      }
-   }
+#ifdef XBEE_DEVICE_VERBOSE
+    if (!dispatched) {
+        printf("%s: no handlers for frame type 0x%02x, id 0x%02x\n", __FUNCTION__, frametype, frameid);
+    }
+#endif
 
-   #ifdef XBEE_DEVICE_VERBOSE
-      if (! dispatched)
-      {
-         printf( "%s: no handlers for frame type 0x%02x, id 0x%02x\n",
-            __FUNCTION__, frametype, frameid);
-      }
-   #endif
-
-   return dispatched;
+    return dispatched;
 }
-
 
 /*** BeginHeader xbee_frame_dump_modem_status */
 /*** EndHeader */
 #include <stdio.h>
 // see xbee/device.h for documentation
-_xbee_device_debug
-int xbee_frame_dump_modem_status( xbee_dev_t *xbee,
-   const void FAR *payload, uint16_t length, void FAR *context)
+_xbee_device_debug int xbee_frame_dump_modem_status(xbee_dev_t* xbee, const void FAR* payload, uint16_t length,
+                                                    void FAR* context)
 {
-   const xbee_frame_modem_status_t FAR *frame = payload;
-   char *status_str;
+    const xbee_frame_modem_status_t FAR* frame = payload;
+    char* status_str;
 
-   // Standard frame handler callback API, but we only care about payload.
-   XBEE_UNUSED_PARAMETER( xbee);
-   XBEE_UNUSED_PARAMETER( length);
-   XBEE_UNUSED_PARAMETER( context);
+    // Standard frame handler callback API, but we only care about payload.
+    XBEE_UNUSED_PARAMETER(xbee);
+    XBEE_UNUSED_PARAMETER(length);
+    XBEE_UNUSED_PARAMETER(context);
 
-   // stack will never call us with a NULL frame, but user code might
-   if (frame == NULL)
-   {
-      return -EINVAL;
-   }
+    // stack will never call us with a NULL frame, but user code might
+    if (frame == NULL) {
+        return -EINVAL;
+    }
 
-   // Instead of updating this lib to trigger changes in other layers of the
-   // API, other libraries should register to receive modem status events
-   // directly.
+    // Instead of updating this lib to trigger changes in other layers of the
+    // API, other libraries should register to receive modem status events
+    // directly.
 
-   switch (frame->status)
-   {
-      case XBEE_MODEM_STATUS_HW_RESET:
-         status_str = "hardware reset";
-         break;
+    switch (frame->status) {
+    case XBEE_MODEM_STATUS_HW_RESET:
+        status_str = "hardware reset";
+        break;
 
-      case XBEE_MODEM_STATUS_WATCHDOG:
-         status_str = "watchdog timeout";
-         break;
+    case XBEE_MODEM_STATUS_WATCHDOG:
+        status_str = "watchdog timeout";
+        break;
 
-      case XBEE_MODEM_STATUS_JOINED:
-         status_str = "joined";
-         break;
+    case XBEE_MODEM_STATUS_JOINED:
+        status_str = "joined";
+        break;
 
-      case XBEE_MODEM_STATUS_DISASSOC:
-         status_str = "disassociated";
-         break;
+    case XBEE_MODEM_STATUS_DISASSOC:
+        status_str = "disassociated";
+        break;
 
 #if XBEE_WIFI_ENABLED
-      case XBEE_MODEM_STATUS_IP_CONFIG_ERROR:
-         status_str = "IP config error";
-         break;
+    case XBEE_MODEM_STATUS_IP_CONFIG_ERROR:
+        status_str = "IP config error";
+        break;
 
-      case XBEE_MODEM_STATUS_CLOUD_CONNECTED:
-         status_str = "Device Cloud connected";
-         break;
+    case XBEE_MODEM_STATUS_CLOUD_CONNECTED:
+        status_str = "Device Cloud connected";
+        break;
 
-      case XBEE_MODEM_STATUS_CLOUD_DISCONNECTED:
-         status_str = "Device Cloud disconnected";
-         break;
+    case XBEE_MODEM_STATUS_CLOUD_DISCONNECTED:
+        status_str = "Device Cloud disconnected";
+        break;
 #endif
 
-      case XBEE_MODEM_STATUS_COORD_START:
-         status_str = "coordinator started";
-         break;
+    case XBEE_MODEM_STATUS_COORD_START:
+        status_str = "coordinator started";
+        break;
 
-      case XBEE_MODEM_STATUS_NETWORK_KEY_UPDATED:
-         status_str = "key updated";
-         break;
+    case XBEE_MODEM_STATUS_NETWORK_KEY_UPDATED:
+        status_str = "key updated";
+        break;
 
-      case XBEE_MODEM_STATUS_OVERVOLTAGE:
-         status_str = "overvoltage";
-         break;
+    case XBEE_MODEM_STATUS_OVERVOLTAGE:
+        status_str = "overvoltage";
+        break;
 
-      case XBEE_MODEM_STATUS_WOKE_UP:
-         status_str = "woke up";
-         break;
+    case XBEE_MODEM_STATUS_WOKE_UP:
+        status_str = "woke up";
+        break;
 
-      case XBEE_MODEM_STATUS_SLEEPING:
-         status_str = "sleeping";
-         break;
+    case XBEE_MODEM_STATUS_SLEEPING:
+        status_str = "sleeping";
+        break;
 
-      case XBEE_MODEM_STATUS_KEY_ESTABLISHED:
-         status_str = "key established";
-         break;
+    case XBEE_MODEM_STATUS_KEY_ESTABLISHED:
+        status_str = "key established";
+        break;
 
-      case XBEE_MODEM_STATUS_CONFIG_CHANGE_IN_JOIN:
-         status_str = "config change during join";
-         break;
+    case XBEE_MODEM_STATUS_CONFIG_CHANGE_IN_JOIN:
+        status_str = "config change during join";
+        break;
 
-      case XBEE_MODEM_STATUS_SS_ESTABLISHED:
-         status_str = "secure session established";
-         break;
+    case XBEE_MODEM_STATUS_SS_ESTABLISHED:
+        status_str = "secure session established";
+        break;
 
-      case XBEE_MODEM_STATUS_SS_ENDED:
-         status_str = "secure session ended";
-         break;
+    case XBEE_MODEM_STATUS_SS_ENDED:
+        status_str = "secure session ended";
+        break;
 
-      case XBEE_MODEM_STATUS_SS_AUTH_FAILED:
-         status_str = "secure session auth failed";
-         break;
+    case XBEE_MODEM_STATUS_SS_AUTH_FAILED:
+        status_str = "secure session auth failed";
+        break;
 
-      case XBEE_MODEM_STATUS_STACK_ERROR:
-         status_str = "stack error";
-         break;
+    case XBEE_MODEM_STATUS_STACK_ERROR:
+        status_str = "stack error";
+        break;
 
-      default:
-         status_str = "undefined";
-   }
-   printf( "%s: status: %s (0x%02x)\n", __FUNCTION__,
-      status_str, frame->status);
+    default:
+        status_str = "undefined";
+    }
+    printf("%s: status: %s (0x%02x)\n", __FUNCTION__, status_str, frame->status);
 
-   return 0;
+    return 0;
 }
 
 ///@}

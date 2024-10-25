@@ -20,11 +20,11 @@
 #ifndef __XBEE_TX_STATUS_H
 #define __XBEE_TX_STATUS_H
 
-#include "xbee/device.h"
 #include "xbee/delivery_status.h"
+#include "xbee/device.h"
 
 #if (!XBEE_WIFI_ENABLED) && (!XBEE_CELLULAR_ENABLED)
-    #error "At least one of XBEE_WIFI_ENABLED and XBEE_CELLULAR_ENABLED " \
+#error "At least one of XBEE_WIFI_ENABLED and XBEE_CELLULAR_ENABLED " \
         "must be defined as non-zero to use this header."
 #endif
 
@@ -34,11 +34,10 @@
 XBEE_BEGIN_DECLS
 
 typedef XBEE_PACKED(xbee_frame_tx_status_t, {
-    uint8_t         frame_type;         ///< XBEE_FRAME_TX_STATUS (0x89)
-    uint8_t         frame_id;
-    uint8_t         delivery;           ///< See xbee/delivery_status.h
+    uint8_t frame_type; ///< XBEE_FRAME_TX_STATUS (0x89)
+    uint8_t frame_id;
+    uint8_t delivery; ///< See xbee/delivery_status.h
 }) xbee_frame_tx_status_t;
-
 
 /**
     @brief
@@ -48,14 +47,13 @@ typedef XBEE_PACKED(xbee_frame_tx_status_t, {
     View the documentation of xbee_frame_handler_fn() for this function's
     parameters and return value.
 */
-int xbee_frame_dump_tx_status(xbee_dev_t *xbee,
-    const void FAR *frame, uint16_t length, void FAR *context);
+int xbee_frame_dump_tx_status(xbee_dev_t* xbee, const void FAR* frame, uint16_t length, void FAR* context);
 
 XBEE_END_DECLS
 
 // If compiling in Dynamic C, automatically #use the appropriate C file.
 #ifdef __DC__
-    #use "xbee_tx_status.c"
+#use "xbee_tx_status.c"
 #endif
 
 #endif /* __XBEE_TX_STATUS_H */
