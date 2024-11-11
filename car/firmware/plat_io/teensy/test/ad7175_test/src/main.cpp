@@ -2,6 +2,7 @@
 
 #include "ad5626.hpp"
 #include "ad717x.hpp"
+#include "ad5676.hpp"
 
 #define ADC_CS_PIN 10
 

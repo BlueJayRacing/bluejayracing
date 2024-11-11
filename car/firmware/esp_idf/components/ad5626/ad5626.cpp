@@ -4,6 +4,7 @@
 #include <esp_log.h>
 #include <stdio.h>
 #include <string.h>
+#include <array>
 
 #include "ad5626.hpp"
 
@@ -12,17 +13,12 @@ AD5626::AD5626() {}
 /*******************************************************************************
  * @brief Initializes the AD5626.
  *
- * @param t_cs_pin   - The chip select
- *pin.
- * @param t_ldac_pin - The load to
- *register pin.
- * @param t_clr_pin  - The clear pin. (set
- *to <0 if not used)
- * @param t_spi_host - The SPI host/bus
- *that the device is on.
+ * @param t_cs_pin   - The chip select pin.
+ * @param t_ldac_pin - The load to register pin.
+ * @param t_clr_pin  - The clear pin. (set to <0 if not used)
+ * @param t_spi_host - The SPI host/bus that the device is on.
  *
- * @return Returns 0 for success or
- *negative error code.
+ * @return Returns 0 for success or negative error code.
  *******************************************************************************/
 esp_err_t AD5626::init(const gpio_num_t t_cs_pin, const gpio_num_t t_ldac_pin, const gpio_num_t t_clr_pin,
                        const spi_host_device_t t_spi_host)
@@ -67,24 +63,20 @@ esp_err_t AD5626::init(const gpio_num_t t_cs_pin, const gpio_num_t t_ldac_pin, c
 }
 
 /*******************************************************************************
- * @brief Sets and loads the DAC with a
- *12-bit value.
+ * @brief Sets and loads the DAC with a 12-bit value.
  *
- * @param t_dac_new_level - The 12-bit
- *value to be loaded onto the DAC
- *register.
+ * @param t_dac_new_level - The 12-bit value to be loaded onto the DAC register.
  *
- * @return Returns 0 for success or
- *negative error code.
+ * @return Returns 0 for success or negative error code.
  *******************************************************************************/
 esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level)
 {
     spi_transaction_t t;
     memset(&t, 0, sizeof(spi_transaction_t));
-    uint8_t new_level[2];
+    std::array<uint8_t, 2> new_level;
     new_level[0] = ((t_new_dac_level & 0x0F00) / 16) + ((t_new_dac_level & 0x00F0) / 16);
     new_level[1] = ((t_new_dac_level & 0x000F) * 16);
-    t.tx_buffer  = &new_level;
+    t.tx_buffer  = new_level.data();
     t.length     = 12;
 
     esp_err_t ret = spi_device_polling_transmit(spi_dev_, &t); // Transmit!
@@ -108,10 +100,8 @@ esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level)
 /*******************************************************************************
  * @brief Resets the DAC level to 0.
  *
- * @return Returns 0 for success or
- *negative error code, specfically
- * ESP_ERR_INVALID_STATE if the pin has
- *not been set.
+ * @return Returns 0 for success or negative error code, specfically
+ * ESP_ERR_INVALID_STATE if the pin has not been set.
  *******************************************************************************/
 esp_err_t AD5626::clearLevel(void)
 {

@@ -144,6 +144,13 @@ esp_err_t ADS1120::init(gpio_num_t t_cs_pin, gpio_num_t t_drdy_pin, spi_host_dev
  *******************************************************************************/
 bool ADS1120::isDataReady() { return !gpio_get_level(drdy_pin_); }
 
+/*******************************************************************************
+ * @brief Reads the data value from the ADC and stores it in t_data.
+ * 
+ * @param t_data A pointer to where the ADC value is stored.
+ *
+ * @return Returns 0 for success or negative error code.
+ *******************************************************************************/
 esp_err_t ADS1120::readADC(uint16_t* t_data)
 {
     esp_err_t ret;

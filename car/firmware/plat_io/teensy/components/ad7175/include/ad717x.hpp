@@ -343,21 +343,21 @@ typedef struct ad717x_dev_status {
 #define AD717X_COMM_REG_WEN   (0 << 7)
 #define AD717X_COMM_REG_WR    (0 << 6)
 #define AD717X_COMM_REG_RD    (1 << 6)
-#define AD717X_COMM_REG_RA(x) ((x)&0x3F)
+#define AD717X_COMM_REG_RA(x) ((x) & 0x3F)
 
 /* Status Register bits */
 #define AD717X_STATUS_REG_RDY     (1 << 7)
 #define AD717X_STATUS_REG_ADC_ERR (1 << 6)
 #define AD717X_STATUS_REG_CRC_ERR (1 << 5)
 #define AD717X_STATUS_REG_REG_ERR (1 << 4)
-#define AD717X_STATUS_REG_CH(x)   ((x)&0x0F)
+#define AD717X_STATUS_REG_CH(x)   ((x) & 0x0F)
 
 /* ADC Mode Register bits */
 #define AD717X_ADCMODE_REG_REF_EN    (1 << 15)
 #define AD717X_ADCMODE_SING_CYC      (1 << 13)
-#define AD717X_ADCMODE_REG_DELAY(x)  (((x)&0x7) << 8)
-#define AD717X_ADCMODE_REG_MODE(x)   (((x)&0x7) << 4)
-#define AD717X_ADCMODE_REG_CLKSEL(x) (((x)&0x3) << 2)
+#define AD717X_ADCMODE_REG_DELAY(x)  (((x) & 0x7) << 8)
+#define AD717X_ADCMODE_REG_MODE(x)   (((x) & 0x7) << 4)
+#define AD717X_ADCMODE_REG_CLKSEL(x) (((x) & 0x3) << 2)
 
 /* ADC Mode Register additional bits for AD7172-2, AD7172-4, AD4111 and AD4112
  */
@@ -372,8 +372,8 @@ typedef struct ad717x_dev_status {
 #define AD717X_IFMODE_REG_REG_CHECK   (1 << 5)
 #define AD717X_IFMODE_REG_XOR_EN      (0x01 << 2)
 #define AD717X_IFMODE_REG_CRC_EN      (0x02 << 2)
-#define AD717X_IFMODE_REG_XOR_STAT(x) (((x)&AD717X_IFMODE_REG_XOR_EN) == AD717X_IFMODE_REG_XOR_EN)
-#define AD717X_IFMODE_REG_CRC_STAT(x) (((x)&AD717X_IFMODE_REG_CRC_EN) == AD717X_IFMODE_REG_CRC_EN)
+#define AD717X_IFMODE_REG_XOR_STAT(x) (((x) & AD717X_IFMODE_REG_XOR_EN) == AD717X_IFMODE_REG_XOR_EN)
+#define AD717X_IFMODE_REG_CRC_STAT(x) (((x) & AD717X_IFMODE_REG_CRC_EN) == AD717X_IFMODE_REG_CRC_EN)
 #define AD717X_IFMODE_REG_DATA_WL16   (1 << 0)
 
 /* Interface Mode Register additional bits for AD717x family, not for AD411x */
@@ -382,7 +382,7 @@ typedef struct ad717x_dev_status {
 /* GPIO Configuration Register bits */
 #define AD717X_GPIOCON_REG_MUX_IO    (1 << 12)
 #define AD717X_GPIOCON_REG_SYNC_EN   (1 << 11)
-#define AD717X_GPIOCON_REG_ERR_EN(x) (((x)&0x3) << 9)
+#define AD717X_GPIOCON_REG_ERR_EN(x) (((x) & 0x3) << 9)
 #define AD717X_GPIOCON_REG_ERR_DAT   (1 << 8)
 #define AD717X_GPIOCON_REG_IP_EN1    (1 << 5)
 #define AD717X_GPIOCON_REG_IP_EN0    (1 << 4)
@@ -417,21 +417,21 @@ typedef struct ad717x_dev_status {
 
 /* Channel Map Register 0-3 bits */
 #define AD717X_CHMAP_REG_CH_EN        (1 << 15)
-#define AD717X_CHMAP_REG_SETUP_SEL(x) (((x)&0x7) << 12)
-#define AD717X_CHMAP_REG_AINPOS(x)    (((x)&0x1F) << 5)
-#define AD717X_CHMAP_REG_AINNEG(x)    (((x)&0x1F) << 0)
+#define AD717X_CHMAP_REG_SETUP_SEL(x) (((x) & 0x7) << 12)
+#define AD717X_CHMAP_REG_AINPOS(x)    (((x) & 0x1F) << 5)
+#define AD717X_CHMAP_REG_AINNEG(x)    (((x) & 0x1F) << 0)
 
 /* Channel Map Register additional bits for AD4111, AD4112, AD4114, AD4115,
  * AD4116 */
-#define AD4111_CHMAP_REG_INPUT(x) (((x)&0x3FF) << 0)
+#define AD4111_CHMAP_REG_INPUT(x) (((x) & 0x3FF) << 0)
 
 /* Setup Configuration Register 0-3 bits */
 #define AD717X_SETUP_CONF_REG_BI_UNIPOLAR (1 << 12)
-#define AD717X_SETUP_CONF_REG_REF_SEL(x)  (((x)&0x3) << 4)
+#define AD717X_SETUP_CONF_REG_REF_SEL(x)  (((x) & 0x3) << 4)
 
 /* Setup Configuration Register additional bits for AD7173-8 */
-#define AD717X_SETUP_CONF_REG_REF_BUF(x) (((x)&0x3) << 10)
-#define AD717X_SETUP_CONF_REG_AIN_BUF(x) (((x)&0x3) << 8)
+#define AD717X_SETUP_CONF_REG_REF_BUF(x) (((x) & 0x3) << 10)
+#define AD717X_SETUP_CONF_REG_AIN_BUF(x) (((x) & 0x3) << 8)
 #define AD717X_SETUP_CONF_REG_BURNOUT_EN (1 << 7)
 #define AD717X_SETUP_CONF_REG_BUFCHOPMAX (1 << 6)
 
@@ -446,15 +446,15 @@ typedef struct ad717x_dev_status {
  * AD4115, AD4116 */
 #define AD4111_SETUP_CONF_REG_REFPOS_BUF (1 << 11)
 #define AD4111_SETUP_CONF_REG_REFNEG_BUF (1 << 10)
-#define AD4111_SETUP_CONF_REG_AIN_BUF(x) (((x)&0x3) << 8)
+#define AD4111_SETUP_CONF_REG_AIN_BUF(x) (((x) & 0x3) << 8)
 #define AD4111_SETUP_CONF_REG_BUFCHOPMAX (1 << 6)
 
 /* Filter Configuration Register 0-3 bits */
 #define AD717X_FILT_CONF_REG_SINC3_MAP  (1 << 15)
 #define AD717X_FILT_CONF_REG_ENHFILTEN  (1 << 11)
-#define AD717X_FILT_CONF_REG_ENHFILT(x) (((x)&0x7) << 8)
-#define AD717X_FILT_CONF_REG_ORDER(x)   (((x)&0x3) << 5)
-#define AD717X_FILT_CONF_REG_ODR(x)     (((x)&0x1F) << 0)
+#define AD717X_FILT_CONF_REG_ENHFILT(x) (((x) & 0x7) << 8)
+#define AD717X_FILT_CONF_REG_ORDER(x)   (((x) & 0x3) << 5)
+#define AD717X_FILT_CONF_REG_ODR(x)     (((x) & 0x1F) << 0)
 
 /* ID register mask for relevant bits */
 #define AD717X_ID_REG_MASK 0xFFF0
@@ -508,7 +508,7 @@ typedef struct ad717x_dev_status {
 
 class AD717X {
   public:
-    AD717X() : spi_host_(&SPI), settings_(10000000, MSBFIRST, SPI_MODE3){};
+    AD717X() : spi_host_(&SPI), settings_(10000000, MSBFIRST, SPI_MODE3) {};
     ~AD717X();
 
     int32_t init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
@@ -537,6 +537,8 @@ class AD717X {
     int32_t computeDataregSize(void);
     static uint8_t computeCRC8(uint8_t* t_p_buf, uint8_t t_buf_size);
     static uint8_t computeXOR8(uint8_t* t_p_buf, uint8_t t_buf_size);
+
+  private:
     ad717x_dev_t device_;
     SPIClass* spi_host_;
     SPISettings settings_;
