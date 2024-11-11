@@ -12,20 +12,20 @@
  *******************************************************************************/
 void AD5626::init(int8_t t_cs_pin, int8_t t_ldac_pin, int8_t t_clr_pin, SPIClass* t_spi_host)
 {
-    m_cs_pin   = t_cs_pin;
-    m_spi_host = t_spi_host;
-    m_ldac_pin = t_ldac_pin;
-    m_clr_pin  = t_clr_pin;
+    cs_pin_   = t_cs_pin;
+    spi_host_ = t_spi_host;
+    ldac_pin_ = t_ldac_pin;
+    clr_pin_  = t_clr_pin;
 
-    pinMode(m_cs_pin, OUTPUT);
-    digitalWrite(m_cs_pin, HIGH);
+    pinMode(cs_pin_, OUTPUT);
+    digitalWrite(cs_pin_, HIGH);
 
-    pinMode(m_ldac_pin, OUTPUT);
-    digitalWrite(m_ldac_pin, HIGH);
+    pinMode(ldac_pin_, OUTPUT);
+    digitalWrite(ldac_pin_, HIGH);
 
-    if (m_clr_pin > 0) {
-        pinMode(m_clr_pin, OUTPUT);
-        digitalWrite(m_clr_pin, HIGH);
+    if (clr_pin_ > 0) {
+        pinMode(clr_pin_, OUTPUT);
+        digitalWrite(clr_pin_, HIGH);
     }
 }
 
@@ -38,34 +38,32 @@ void AD5626::init(int8_t t_cs_pin, int8_t t_ldac_pin, int8_t t_clr_pin, SPIClass
  *******************************************************************************/
 void AD5626::setLevel(uint16_t t_dac_new_level)
 {
-    uint8_t buf[2];
+    std::array<uint8_t, 2> buf;
     buf[0] = (t_dac_new_level & 0x0F00) >> 8;
     buf[1] = t_dac_new_level & 0x00FF;
-    uint8_t ret_buf[2];
+    std::array<uint8_t, 2> ret_buf;
 
-    SPISettings settings(1000000, MSBFIRST, SPI_MODE3);
+    digitalWrite(cs_pin_, LOW);
+    spi_host_->beginTransaction(spi_settings_);
 
-    digitalWrite(m_cs_pin, LOW);
-    m_spi_host->beginTransaction(settings);
+    spi_host_->transfer(buf.data(), ret_buf.data(), 2);
 
-    m_spi_host->transfer((void*)buf, (void*)ret_buf, 2);
+    spi_host_->endTransaction();
 
-    m_spi_host->endTransaction();
-    digitalWrite(m_cs_pin, HIGH);
-    digitalWrite(m_ldac_pin, LOW);
-    digitalWrite(m_ldac_pin, HIGH);
+    digitalWrite(cs_pin_, HIGH);
+    digitalWrite(ldac_pin_, LOW);
+    digitalWrite(ldac_pin_, HIGH);
 }
 
 /********************************************************************************
  * @brief Resets the DAC level to 0.
  *
- * @return Returns 0 for success or
- *negative error code.
+ * @return Returns 0 for success or negative error code.
  *******************************************************************************/
 void AD5626::resetLevel(void)
 {
-    if (m_clr_pin >= 0) {
-        digitalWrite(m_clr_pin, LOW);
-        digitalWrite(m_clr_pin, HIGH);
+    if (clr_pin_ >= 0) {
+        digitalWrite(clr_pin_, LOW);
+        digitalWrite(clr_pin_, HIGH);
     }
 }
