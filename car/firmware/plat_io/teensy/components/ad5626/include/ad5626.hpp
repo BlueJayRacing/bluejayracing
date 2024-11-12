@@ -8,8 +8,8 @@
 class AD5626 {
   public:
     AD5626(void) : spi_host_(&SPI), spi_settings_(1000000, MSBFIRST, SPI_MODE3) {};
-    void init(int8_t t_cs_pin, int8_t t_ldac_pin, int8_t t_clr_pin, SPIClass* t_spi_host = &SPI);
-    void setLevel(uint16_t t_new_level);
+    void init(const int8_t t_cs_pin, const int8_t t_ldac_pin, const int8_t t_clr_pin, SPIClass* t_spi_host = &SPI);
+    void setLevel(const uint16_t t_new_level);
     void resetLevel(void);
 
   private:

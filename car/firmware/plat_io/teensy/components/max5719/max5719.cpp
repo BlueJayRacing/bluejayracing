@@ -6,10 +6,8 @@
  * @param t_cs_pin   - The chip select pin for the MAX5719 device.
  * @param t_ldac_pin - The LDAC pin for the MAX5719 device.
  * @param t_spi_host - The Arduino SPI Host instance/bus that the MAX5719 device is on.
- *
- * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-void MAX5719::init(int8_t t_cs_pin, int8_t t_ldac_pin, SPIClass* t_spi_host)
+void MAX5719::init(const int8_t t_cs_pin, const int8_t t_ldac_pin, SPIClass* t_spi_host)
 {
     cs_pin_   = t_cs_pin;
     spi_host_ = t_spi_host;
@@ -26,10 +24,8 @@ void MAX5719::init(int8_t t_cs_pin, int8_t t_ldac_pin, SPIClass* t_spi_host)
  * @brief Sets and loads the DAC with a 20-bit value.
  *
  * @param t_dac_new_level   - The 20-bit value to be loaded onto the DAC register.
- *
- * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-void MAX5719::setLevel(uint32_t t_dac_new_level)
+void MAX5719::setLevel(const uint32_t t_dac_new_level)
 {
     std::array<uint8_t, 3> buf;
     buf[0] = (t_dac_new_level & 0x000F0000) >> 16;

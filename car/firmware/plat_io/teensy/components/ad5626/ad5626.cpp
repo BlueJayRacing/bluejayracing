@@ -10,7 +10,7 @@
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-void AD5626::init(int8_t t_cs_pin, int8_t t_ldac_pin, int8_t t_clr_pin, SPIClass* t_spi_host)
+void AD5626::init(const int8_t t_cs_pin, const int8_t t_ldac_pin, const int8_t t_clr_pin, SPIClass* t_spi_host)
 {
     cs_pin_   = t_cs_pin;
     spi_host_ = t_spi_host;
@@ -36,7 +36,7 @@ void AD5626::init(int8_t t_cs_pin, int8_t t_ldac_pin, int8_t t_clr_pin, SPIClass
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-void AD5626::setLevel(uint16_t t_dac_new_level)
+void AD5626::setLevel(const uint16_t t_dac_new_level)
 {
     std::array<uint8_t, 2> buf;
     buf[0] = (t_dac_new_level & 0x0F00) >> 8;
