@@ -18,29 +18,21 @@ int32_t memoryBlock::write(const std::vector<uint8_t>& t_new_data)
 }
 
 /*******************************************************************************
- * @brief Push a memory block that's been used back to the queue.
- *
- * @return Returns 0 for success or negative error code.
+ * @return Returns a uint8_t* pointer to the data of the memory block.
  *******************************************************************************/
 uint8_t* memoryBlock::data(void) { return data_.data(); }
 
 /*******************************************************************************
- * @brief Push a memory block that's been used back to the queue.
- *
- * @return Returns 0 for success or negative error code.
+ * @return Returns the byte size of the memory block.
  *******************************************************************************/
 int32_t memoryBlock::size(void) { return data_.size(); }
 
 /*******************************************************************************
- * @brief Push a memory block that's been used back to the queue.
- *
- * @return Returns 0 for success or negative error code.
+ * @return Returns the number of bytes left.
  *******************************************************************************/
 int32_t memoryBlock::bytesLeft(void) { return data_.size() - index_; }
 
 /*******************************************************************************
- * @brief Push a memory block that's been used back to the queue.
- *
- * @return Returns 0 for success or negative error code.
+ * @brief Clears a memory block for more writes.
  *******************************************************************************/
 void memoryBlock::clear(void) { index_ = 0; }
