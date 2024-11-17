@@ -1,3 +1,4 @@
+#pragma once
 #ifndef _MEMORY_BLOCK_HPP_
 #define _MEMORY_BLOCK_HPP_
 

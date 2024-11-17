@@ -5,7 +5,8 @@
 
 #include <memoryQueue.hpp>
 
-static portMUX_TYPE queue_spinlock = portMUX_INITIALIZER_UNLOCKED;
+/* Only memory queues within a thread should deallocate themselves */
+memoryQueue::~memoryQueue() { vSemaphoreDelete(mutex_); }
 
 /*******************************************************************************
  * @brief Acquire a memory block from the queue to write data to.
@@ -17,7 +18,7 @@ static portMUX_TYPE queue_spinlock = portMUX_INITIALIZER_UNLOCKED;
  *******************************************************************************/
 memoryBlock* memoryQueue::acquire(void)
 {
-    taskENTER_CRITICAL(&queue_spinlock);
+    xSemaphoreTake(mutex_, portMAX_DELAY);
     if (acquired_lock_) {
         return nullptr;
     }
@@ -29,7 +30,7 @@ memoryBlock* memoryQueue::acquire(void)
     }
 
     acquired_lock_ = true;
-    taskEXIT_CRITICAL(&queue_spinlock);
+    xSemaphoreGive(mutex_);
 
     return &(block_vec_.at(back_index_));
 }
@@ -43,7 +44,7 @@ memoryBlock* memoryQueue::acquire(void)
  *******************************************************************************/
 int8_t memoryQueue::push(memoryBlock* t_mem_block)
 {
-    taskENTER_CRITICAL(&queue_spinlock);
+    xSemaphoreTake(mutex_, portMAX_DELAY);
     if (t_mem_block != &(block_vec_.at(back_index_))) {
         return -1;
     }
@@ -51,7 +52,7 @@ int8_t memoryQueue::push(memoryBlock* t_mem_block)
     acquired_lock_ = false;
     back_index_    = (back_index_ + 1) % block_vec_.size();
     num_pushed_++;
-    taskEXIT_CRITICAL(&queue_spinlock);
+    xSemaphoreGive(mutex_);
 
     return 0;
 }
@@ -65,7 +66,7 @@ int8_t memoryQueue::push(memoryBlock* t_mem_block)
  *******************************************************************************/
 int8_t memoryQueue::pop(memoryBlock& copy_block)
 {
-    taskENTER_CRITICAL(&queue_spinlock);
+    xSemaphoreTake(mutex_, portMAX_DELAY);
     if (num_pushed_ == 0 || copy_block.size() != block_vec_.at(0).size()) {
         return -1;
     }
@@ -74,7 +75,7 @@ int8_t memoryQueue::pop(memoryBlock& copy_block)
     block_vec_.at(front_index_).clear();
     front_index_ = (front_index_ + 1) % block_vec_.size();
     num_pushed_--;
-    taskEXIT_CRITICAL(&queue_spinlock);
+    xSemaphoreGive(mutex_);
 
     return 0;
 }

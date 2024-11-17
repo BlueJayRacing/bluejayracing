@@ -10,6 +10,7 @@ ColumnLimit: 120
 AlignConsecutiveAssignments: true
 AlignConsecutiveMacros : true
 AlignTrailingComments  : true
+AllowShortIfStatementsOnASingleLine: true
 
 BreakBeforeBraces: Custom
 BraceWrapping:
