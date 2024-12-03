@@ -1,5 +1,6 @@
 #include <mqttManager.hpp>
 
+#include <algorithm>
 #include <assert.h>
 #include <esp_err.h>
 #include <esp_event.h>
@@ -8,25 +9,26 @@
 #include <esp_system.h>
 #include <esp_task_wdt.h>
 #include <esp_wifi.h>
+#include <mqtt_client.h>
 #include <nvs_flash.h>
-#include <queue.h>
 
+#define MQTT_CONNECTED_BIT BIT1
 #define WIFI_CONNECTED_BIT BIT0
 
 static const char* TAG = "mqttManager";
 
 mqttManager::~mqttManager()
 {
-    vQueueDelete(recMessageQueue_);
-    vEventGroupDelete(wifiEventGroup_);
+    vQueueDelete(rec_message_queue_);
+    vEventGroupDelete(conn_event_group_);
 }
 
 esp_err_t mqttManager::init(void)
 {
     esp_err_t err;
 
-    recMessageQueue_ = xQueueCreate(5, sizeof(mqtt_message_t));
-    wifiEventGroup_  = xEventGroupCreate();
+    rec_message_queue_ = xQueueCreate(5, sizeof(mqtt_message_t));
+    conn_event_group_  = xEventGroupCreate();
 
     err = nvs_flash_init();
     if (err) {
@@ -52,6 +54,7 @@ esp_err_t mqttManager::init(void)
 
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifiEventHandler, NULL);
     esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifiEventHandler, NULL);
+
     wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();
 
     err = esp_wifi_init(&wifi_init_config);
@@ -71,4 +74,126 @@ esp_err_t mqttManager::init(void)
     }
 
     return ESP_OK;
+}
+
+esp_err_t mqttManager::startWiFi(const std::string& t_ssid, const std::string& t_pswd)
+{
+    esp_err_t err;
+    wifi_config_t wifi_config;
+
+    if (t_ssid.length() > sizeof(wifi_config.sta.ssid) || t_pswd.length() > sizeof(wifi_config.sta.password)) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    memset(&wifi_config, 0, sizeof(wifi_config_t));
+
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA_PSK;
+    wifi_config.sta.scan_method        = WIFI_FAST_SCAN;
+    wifi_config.sta.listen_interval    = 3;
+
+    memcpy(&wifi_config.sta.ssid, t_ssid.data(), t_ssid.length());
+    memcpy(&wifi_config.sta.password, t_pswd.data(), t_pswd.length());
+
+    err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to set WiFi configuration (err: %d)\n", err);
+        return err;
+    }
+    err = esp_wifi_start();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to start WiFi (err: %d)\n", err);
+        return;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t mqttManager::connectWiFi(void)
+{
+    esp_err_t err = esp_wifi_connect();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to start connecting to WiFi (err: %d)\n", err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t mqttManager::stopWiFi(void)
+{
+    esp_err_t err = esp_wifi_stop();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to stop WiFi (err: %d)\n", err);
+        return err;
+    }
+
+    return ESP_OK;
+}
+
+void mqttManager::wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    BaseType_t err = pdFALSE;
+    if (event_base == WIFI_EVENT) {
+        switch ((wifi_event_t)event_id) {
+        case WIFI_EVENT_STA_START:
+            break;
+        case WIFI_EVENT_STA_DISCONNECTED:
+            xEventGroupClearBits(conn_event_group_, WIFI_CONNECTED_BIT);
+            break;
+        default:
+            break;
+        }
+    } else if (event_base == IP_EVENT) {
+        switch ((ip_event_t)event_id) {
+        case IP_EVENT_STA_GOT_IP:
+            xEventGroupSetBits(conn_event_group_, WIFI_CONNECTED_BIT);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void mqttManager::mqttEventHandler(void* args, esp_event_base_t base, int32_t event_id, void* event_data)
+{
+    BaseType_t err = pdFALSE;
+
+    esp_mqtt_event_handle_t event   = (esp_mqtt_event_t*)event_data;
+    esp_mqtt_client_handle_t client = event->client;
+
+    switch ((esp_mqtt_event_id_t)event_id) {
+    case MQTT_EVENT_CONNECTED:
+        xEventGroupSetBits(conn_event_group_, MQTT_CONNECTED_BIT);
+        break;
+    case MQTT_EVENT_DISCONNECTED:
+        xEventGroupClearBits(conn_event_group_, MQTT_CONNECTED_BIT);
+        break;
+    case MQTT_EVENT_SUBSCRIBED:
+        break;
+    case MQTT_EVENT_UNSUBSCRIBED:
+        break;
+    case MQTT_EVENT_PUBLISHED:
+        break;
+    case MQTT_EVENT_DATA:
+        ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
+        ESP_LOGI(TAG, "DATA=%.*s\r\n", event->data_len, event->data);
+
+        mqtt_message_t message;
+
+        if (uxQueueSpacesAvailable(rec_message_queue_) == 0) {
+            err = xQueueReceive(rec_message_queue_, &message, 5);
+            if (!err) {
+                return;
+            }
+        }
+
+        memcpy(message.topic.data(), event->topic, std::min(event->topic_len, (int)message.topic.size()));
+        memcpy(message.payload.data(), event->data, std::min(event->data_len, (int)message.payload.size()));
+        xQueueSend(rec_message_queue_, &message, 5);
+        break;
+    case MQTT_EVENT_ERROR:
+        break;
+    default:
+        break;
+    }
 }

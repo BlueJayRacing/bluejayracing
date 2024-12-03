@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <esp_log.h>
+#include <freertos/FreeRTOS.h>
 #include <stdio.h>
 
 #include <memoryBlock.hpp>

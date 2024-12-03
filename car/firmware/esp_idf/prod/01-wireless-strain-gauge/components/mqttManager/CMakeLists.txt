@@ -9,5 +9,6 @@ idf_component_register( SRCS "mqttManager.cpp"
                             esp_event
                             esp_timer 
                             nvs_flash
+                            freertos
                             log
                             )

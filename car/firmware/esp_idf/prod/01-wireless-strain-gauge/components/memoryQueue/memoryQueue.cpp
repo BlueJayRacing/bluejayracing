@@ -60,7 +60,7 @@ int8_t memoryQueue::push(memoryBlock* t_mem_block)
 /*******************************************************************************
  * @brief Pop a memory block on the queue by copying all data.
  *
- * @param t_mem_block Memory block where the data will be copied into the queue.
+ * @param copy_block Memory block where the data will be copied into the queue.
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
