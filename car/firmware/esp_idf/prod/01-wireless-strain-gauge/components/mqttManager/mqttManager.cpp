@@ -17,8 +17,16 @@
 
 static const char* TAG = "mqttManager";
 
+mqttManager::mqttManager() : wifi_netif_(NULL), mqtt_handle_(NULL)
+{
+    rec_message_queue_ = xQueueCreate(5, sizeof(mqtt_message_t));
+    conn_event_group_  = xEventGroupCreate();
+}
+
 mqttManager::~mqttManager()
 {
+    stopMQTT();
+    stopWiFi();
     vQueueDelete(rec_message_queue_);
     vEventGroupDelete(conn_event_group_);
 }
@@ -26,9 +34,6 @@ mqttManager::~mqttManager()
 esp_err_t mqttManager::init(void)
 {
     esp_err_t err;
-
-    rec_message_queue_ = xQueueCreate(5, sizeof(mqtt_message_t));
-    conn_event_group_  = xEventGroupCreate();
 
     err = nvs_flash_init();
     if (err) {
@@ -46,8 +51,8 @@ esp_err_t mqttManager::init(void)
         return err;
     }
 
-    esp_netif_t* tutorial_netif = esp_netif_create_default_wifi_sta();
-    if (tutorial_netif == NULL) {
+    wifi_netif_ = esp_netif_create_default_wifi_sta();
+    if (wifi_netif_ == NULL) {
         ESP_LOGE(TAG, "Failed to create default WiFi STA interface");
         return ESP_FAIL;
     }
@@ -102,7 +107,7 @@ esp_err_t mqttManager::startWiFi(const std::string& t_ssid, const std::string& t
     err = esp_wifi_start();
     if (err) {
         ESP_LOGE(TAG, "Failed to start WiFi (err: %d)\n", err);
-        return;
+        return err;
     }
 
     return ESP_OK;
@@ -119,20 +124,51 @@ esp_err_t mqttManager::connectWiFi(void)
     return ESP_OK;
 }
 
-esp_err_t mqttManager::stopWiFi(void)
+esp_err_t mqttManager::connectMQTT(const std::string& t_broker_uri)
 {
-    esp_err_t err = esp_wifi_stop();
-    if (err) {
-        ESP_LOGE(TAG, "Failed to stop WiFi (err: %d)\n", err);
+    if (mqtt_handle_ != NULL) {
+        esp_mqtt_client_destroy(mqtt_handle_);
+    }
+
+    esp_mqtt_client_config_t mqtt_config;
+    memset(&mqtt_config, 0, sizeof(esp_mqtt_client_config_t));
+
+    mqtt_config.broker.address.uri = t_broker_uri.data();
+
+    mqtt_handle_ = esp_mqtt_client_init(&mqtt_config);
+    if (mqtt_handle_ == NULL) {
+        return ESP_ERR_NOT_FINISHED;
+    }
+
+    esp_err_t err = esp_mqtt_client_register_event(mqtt_handle_, MQTT_EVENT_ANY, mqttEventHandler, NULL);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = esp_mqtt_client_start(mqtt_handle_);
+    if (err != ESP_OK) {
         return err;
     }
 
     return ESP_OK;
 }
 
+void mqttManager::stopWiFi(void)
+{
+    esp_wifi_stop();
+}
+
+void mqttManager::stopMQTT(void)
+{
+    if (mqtt_handle_ != NULL) {
+        esp_mqtt_client_destroy(mqtt_handle_);
+        mqtt_handle_ = NULL;
+    }
+}
+
+
 void mqttManager::wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    BaseType_t err = pdFALSE;
     if (event_base == WIFI_EVENT) {
         switch ((wifi_event_t)event_id) {
         case WIFI_EVENT_STA_START:
@@ -159,7 +195,6 @@ void mqttManager::mqttEventHandler(void* args, esp_event_base_t base, int32_t ev
     BaseType_t err = pdFALSE;
 
     esp_mqtt_event_handle_t event   = (esp_mqtt_event_t*)event_data;
-    esp_mqtt_client_handle_t client = event->client;
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -196,4 +231,45 @@ void mqttManager::mqttEventHandler(void* args, esp_event_base_t base, int32_t ev
     default:
         break;
     }
+}
+
+bool mqttManager::isWiFiConnected(void) const
+{
+    return xEventGroupGetBits(conn_event_group_) & WIFI_CONNECTED_BIT;
+}
+
+bool mqttManager::isMQTTConnected(void) const
+{
+    return xEventGroupGetBits(conn_event_group_) & MQTT_CONNECTED_BIT;
+}
+
+esp_err_t mqttManager::publishMQTT(const std::vector<char>& t_payload, const std::vector<char>& t_topic, uint8_t t_QoS)
+{
+    if (!isWiFiConnected() || !isMQTTConnected()) {
+        return ESP_ERR_WIFI_NOT_CONNECT;
+    }
+
+    return esp_mqtt_client_publish(mqtt_handle_, t_topic.data(), t_payload.data(), t_payload.size(), 0, 0);
+}
+
+esp_err_t mqttManager::subscribeMQTT(const std::vector<char>& t_topic, uint8_t t_QoS)
+{
+    if (!isWiFiConnected() || !isMQTTConnected()) {
+        return ESP_ERR_WIFI_NOT_CONNECT;
+    }
+
+    return esp_mqtt_client_subscribe(mqtt_handle_, t_topic.data(), t_QoS);
+}
+
+esp_err_t mqttManager::receiveMQTT(mqtt_message_t& t_payload)
+{
+    if (uxQueueSpacesAvailable(rec_message_queue_) == 0) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    if (xQueueReceive(rec_message_queue_, &t_payload, 1) != pdTRUE ) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
 }
