@@ -5,4 +5,5 @@ idf_component_register( SRCS "test.cpp"
                             esp_system 
                             log
                             memoryQueue
+                            mqttManager
                             )

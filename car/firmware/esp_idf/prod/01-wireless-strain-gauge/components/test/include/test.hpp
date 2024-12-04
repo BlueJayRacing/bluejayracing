@@ -4,9 +4,15 @@
 
 #include <memoryBlock.hpp>
 #include <memoryQueue.hpp>
+#include <mqttManager.h>
 
-void test_memory_queue(memoryQueue* queue);
+class Test {
+  public:
+    void testMemoryQueue(void);
 
-void test_memory_queue_acquire_full(memoryQueue* queue);
+  private:
+    void testMemoryQueueBasic(void);
+    void testMemoryQueueAcquireFull(void);
+};
 
 #endif
