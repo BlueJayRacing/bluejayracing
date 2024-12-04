@@ -18,10 +18,11 @@ memoryQueue::~memoryQueue() { vSemaphoreDelete(mutex_); }
  *******************************************************************************/
 memoryBlock* memoryQueue::acquire(void)
 {
-    xSemaphoreTake(mutex_, portMAX_DELAY);
     if (acquired_lock_) {
         return nullptr;
     }
+
+    xSemaphoreTake(mutex_, portMAX_DELAY);
 
     if (num_pushed_ == block_vec_.size()) {
         block_vec_.at(back_index_).clear();
@@ -44,10 +45,11 @@ memoryBlock* memoryQueue::acquire(void)
  *******************************************************************************/
 int8_t memoryQueue::push(memoryBlock* t_mem_block)
 {
-    xSemaphoreTake(mutex_, portMAX_DELAY);
     if (t_mem_block != &(block_vec_.at(back_index_))) {
         return -1;
     }
+
+    xSemaphoreTake(mutex_, portMAX_DELAY);
 
     acquired_lock_ = false;
     back_index_    = (back_index_ + 1) % block_vec_.size();
@@ -66,10 +68,11 @@ int8_t memoryQueue::push(memoryBlock* t_mem_block)
  *******************************************************************************/
 int8_t memoryQueue::pop(memoryBlock& copy_block)
 {
-    xSemaphoreTake(mutex_, portMAX_DELAY);
     if (num_pushed_ == 0 || copy_block.size() != block_vec_.at(0).size()) {
         return -1;
     }
+
+    xSemaphoreTake(mutex_, portMAX_DELAY);
 
     memcpy(copy_block.data(), block_vec_.at(front_index_).data(), copy_block.size());
     block_vec_.at(front_index_).clear();
