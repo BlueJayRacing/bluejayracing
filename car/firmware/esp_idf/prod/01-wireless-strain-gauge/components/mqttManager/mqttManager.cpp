@@ -17,20 +17,27 @@
 
 static const char* TAG = "mqttManager";
 
+QueueHandle_t mqttManager::rec_message_queue_ = xQueueCreate(5, sizeof(mqtt_message_t));
+EventGroupHandle_t mqttManager::conn_event_group_  = xEventGroupCreate();
+
+
 mqttManager::mqttManager() : wifi_netif_(NULL), mqtt_handle_(NULL)
 {
-    rec_message_queue_ = xQueueCreate(5, sizeof(mqtt_message_t));
-    conn_event_group_  = xEventGroupCreate();
 }
 
 mqttManager::~mqttManager()
 {
     stopMQTT();
     stopWiFi();
-    vQueueDelete(rec_message_queue_);
-    vEventGroupDelete(conn_event_group_);
 }
 
+/*******************************************************************************
+ * @brief Initializes the MQTT Manager.
+ *
+ * @return Returns 0 for success or negative error code.
+ * 
+ * @note Should only be called once per application.
+ *******************************************************************************/
 esp_err_t mqttManager::init(void)
 {
     esp_err_t err;
@@ -81,7 +88,7 @@ esp_err_t mqttManager::init(void)
     return ESP_OK;
 }
 
-esp_err_t mqttManager::startWiFi(const std::string& t_ssid, const std::string& t_pswd)
+esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string& t_pswd)
 {
     esp_err_t err;
     wifi_config_t wifi_config;
@@ -104,18 +111,14 @@ esp_err_t mqttManager::startWiFi(const std::string& t_ssid, const std::string& t
         ESP_LOGE(TAG, "Failed to set WiFi configuration (err: %d)\n", err);
         return err;
     }
+
     err = esp_wifi_start();
     if (err) {
         ESP_LOGE(TAG, "Failed to start WiFi (err: %d)\n", err);
         return err;
     }
 
-    return ESP_OK;
-}
-
-esp_err_t mqttManager::connectWiFi(void)
-{
-    esp_err_t err = esp_wifi_connect();
+    err = esp_wifi_connect();
     if (err) {
         ESP_LOGE(TAG, "Failed to start connecting to WiFi (err: %d)\n", err);
         return err;
@@ -161,6 +164,7 @@ void mqttManager::stopWiFi(void)
 void mqttManager::stopMQTT(void)
 {
     if (mqtt_handle_ != NULL) {
+        esp_mqtt_client_stop(mqtt_handle_);
         esp_mqtt_client_destroy(mqtt_handle_);
         mqtt_handle_ = NULL;
     }

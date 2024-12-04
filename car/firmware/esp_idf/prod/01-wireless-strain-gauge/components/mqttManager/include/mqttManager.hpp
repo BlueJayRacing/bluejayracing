@@ -15,16 +15,20 @@ typedef struct mqtt_message {
     std::array<uint8_t, 30> payload;
 } mqtt_message_t;
 
+/*******************************************************************************
+ * @brief An MQTT Manager that manages a single MQTT connection between the ESP32XX
+ *        and a broker through WiFi. Only one MQTT Manager instance should be declared
+ *        per application.
+ *******************************************************************************/
 class mqttManager {
   public:
     mqttManager(void);
     ~mqttManager();
-    esp_err_t init(void); //
-    esp_err_t startWiFi(const std::string& wifi_ssid, const std::string& wifi_pswd); //
-    esp_err_t connectWiFi(void); //
-    esp_err_t connectMQTT(const std::string& broker_uri); //
-    void stopWiFi(void); //
-    void stopMQTT(void); //
+    esp_err_t init(void);
+    esp_err_t connectWiFi(const std::string& wifi_ssid, const std::string& wifi_pswd);
+    esp_err_t connectMQTT(const std::string& broker_uri);
+    void stopWiFi(void);
+    void stopMQTT(void);
     bool isWiFiConnected(void) const;
     bool isMQTTConnected(void) const;
     esp_err_t publishMQTT(const std::vector<char>& payload, const std::vector<char>& topic, uint8_t QoS);
@@ -32,8 +36,8 @@ class mqttManager {
     esp_err_t receiveMQTT(mqtt_message_t& message);
 
   private:
-    static void wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data); //
-    static void mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data); //
+    static void wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+    static void mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
 
   private:
     esp_netif_t* wifi_netif_;

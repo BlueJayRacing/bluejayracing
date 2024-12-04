@@ -14,7 +14,6 @@ static const char* TAG = "main";
 
 extern "C" void app_main(void)
 {
-    vTaskDelay(300);
-    Test test;
-    test.testMemoryQueue();
+    Test test(ESP_LOG_VERBOSE);
+    test.testMQTTManager();
 }
