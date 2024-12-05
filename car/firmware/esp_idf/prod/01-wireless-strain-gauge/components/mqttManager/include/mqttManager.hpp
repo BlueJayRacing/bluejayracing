@@ -27,8 +27,8 @@ class mqttManager {
     esp_err_t init(void);
     esp_err_t connectWiFi(const std::string& wifi_ssid, const std::string& wifi_pswd);
     esp_err_t connectMQTT(const std::string& broker_uri);
-    void stopWiFi(void);
-    void stopMQTT(void);
+    void disconnectWiFi(void);
+    void disconnectMQTT(void);
     bool isWiFiConnected(void) const;
     bool isMQTTConnected(void) const;
     esp_err_t publishMQTT(const std::vector<char>& payload, const std::vector<char>& topic, uint8_t QoS);

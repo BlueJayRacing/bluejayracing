@@ -24,8 +24,6 @@ mqttManager::mqttManager() : wifi_netif_(NULL), mqtt_handle_(NULL) {}
 
 mqttManager::~mqttManager()
 {
-    stopMQTT();
-    stopWiFi();
 }
 
 /*******************************************************************************
@@ -131,7 +129,7 @@ esp_err_t mqttManager::connectMQTT(const std::string& t_broker_uri)
     }
 
     if (mqtt_handle_ != NULL) {
-        stopMQTT();
+        esp_mqtt_client_destroy(mqtt_handle_);
     }
 
     esp_mqtt_client_config_t mqtt_config;
@@ -157,14 +155,12 @@ esp_err_t mqttManager::connectMQTT(const std::string& t_broker_uri)
     return ESP_OK;
 }
 
-void mqttManager::stopWiFi(void) { esp_wifi_stop(); }
+void mqttManager::disconnectWiFi(void) { esp_wifi_disconnect(); }
 
-void mqttManager::stopMQTT(void)
+void mqttManager::disconnectMQTT(void)
 {
     if (mqtt_handle_ != NULL) {
-        esp_mqtt_client_stop(mqtt_handle_);
-        esp_mqtt_client_destroy(mqtt_handle_);
-        mqtt_handle_ = NULL;
+        esp_mqtt_client_disconnect(mqtt_handle_);
     }
 }
 
