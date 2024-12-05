@@ -17,8 +17,16 @@
 
 static const char* TAG = "mqttManager";
 
+mqttManager* mqttManager::instance_ = NULL;
 QueueHandle_t mqttManager::rec_message_queue_     = xQueueCreate(5, sizeof(mqtt_message_t));
 EventGroupHandle_t mqttManager::conn_event_group_ = xEventGroupCreate();
+
+mqttManager* mqttManager::getInstance() {
+    if (!instance_) {
+        instance_ = new mqttManager();
+    }
+    return instance_;
+}
 
 mqttManager::mqttManager() : wifi_netif_(NULL), mqtt_handle_(NULL) {}
 

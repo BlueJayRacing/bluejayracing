@@ -22,8 +22,7 @@ typedef struct mqtt_message {
  *******************************************************************************/
 class mqttManager {
   public:
-    mqttManager(void);
-    ~mqttManager();
+    static mqttManager* getInstance();
     esp_err_t init(void);
     esp_err_t connectWiFi(const std::string& wifi_ssid, const std::string& wifi_pswd);
     esp_err_t connectMQTT(const std::string& broker_uri);
@@ -37,12 +36,15 @@ class mqttManager {
     void clearMQTTMessages(void);
 
   private:
+    mqttManager(void);
+    ~mqttManager();
     static void wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
     static void mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
 
   private:
     esp_netif_t* wifi_netif_;
     esp_mqtt_client_handle_t mqtt_handle_;
+    static mqttManager* instance_;
     static QueueHandle_t rec_message_queue_;
     static EventGroupHandle_t conn_event_group_;
 };

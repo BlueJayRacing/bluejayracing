@@ -21,7 +21,7 @@ class Test {
     void testMQTTManagerMQTTPublishSubscribe(void); // TODO: Make echo server on RPi5 (can use ROS2)
 
   private:
-    mqttManager mqtt_manager_;
+    mqttManager* mqtt_manager_;
 };
 
 #endif

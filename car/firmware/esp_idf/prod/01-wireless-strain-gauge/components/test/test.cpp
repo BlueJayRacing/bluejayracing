@@ -17,7 +17,9 @@ void Test::testMQTTManager(void)
     esp_log_level_set("wifi", ESP_LOG_NONE);
     esp_log_level_set("wifi_init", ESP_LOG_NONE);
 
-    assert(mqtt_manager_.init() == ESP_OK);
+    mqtt_manager_ = mqttManager::getInstance();
+
+    assert(mqtt_manager_->init() == ESP_OK);
     ESP_LOGD(TAG, "Initialized MQTT manager");
 
     testMQTTManagerWiFiConnectDisconnect();
@@ -101,31 +103,31 @@ void Test::testMQTTManagerWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Testing MQTT Manager WiFi Connection");
 
     for (int i = 0; i < 5; i++) {
-        assert(mqtt_manager_.connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_.isWiFiConnected()) {
+            if (mqtt_manager_->isWiFiConnected()) {
                 break;
             }
-            vTaskDelay(100);
+            vTaskDelay(50);
         }
 
-        assert(mqtt_manager_.isWiFiConnected() == true);
+        assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
 
-        mqtt_manager_.disconnectWiFi();
+        mqtt_manager_->disconnectWiFi();
 
         for (int j = 0; j < 5; j++) {
-            if (!mqtt_manager_.isWiFiConnected()) {
+            if (!mqtt_manager_->isWiFiConnected()) {
                 break;
             }
-            vTaskDelay(100);
+            vTaskDelay(50);
         }
 
-        assert(mqtt_manager_.isWiFiConnected() == false);
+        assert(mqtt_manager_->isWiFiConnected() == false);
         ESP_LOGD(TAG, "Disconnected from WiFi");
-        vTaskDelay(200);
+        vTaskDelay(100);
     }
 
     ESP_LOGI(TAG, "Passed MQTT Manager WiFi Connection");
@@ -137,60 +139,60 @@ void Test::testMQTTManagerMQTTConnectDisconnect(void)
 
     // Initialization (Connects to WiFi)
     {
-        assert(mqtt_manager_.connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
-            if (mqtt_manager_.isWiFiConnected()) {
+            if (mqtt_manager_->isWiFiConnected()) {
                 break;
             }
-            vTaskDelay(100);
+            vTaskDelay(50);
         }
 
-        assert(mqtt_manager_.isWiFiConnected() == true);
+        assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
     }
 
     for (int i = 0; i < 5; i++) {
-        assert(mqtt_manager_.connectMQTT("mqtt://10.42.0.1") == ESP_OK);
+        assert(mqtt_manager_->connectMQTT("mqtt://10.42.0.1") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_.isMQTTConnected()) {
+            if (mqtt_manager_->isMQTTConnected()) {
                 break;
             }
-            vTaskDelay(100);
+            vTaskDelay(50);
         }
 
-        assert(mqtt_manager_.isMQTTConnected() == true);
+        assert(mqtt_manager_->isMQTTConnected() == true);
         ESP_LOGD(TAG, "Connected to MQTT");
 
-        mqtt_manager_.disconnectMQTT();
+        mqtt_manager_->disconnectMQTT();
 
         for (int j = 0; j < 20; j++) {
-            if (!mqtt_manager_.isMQTTConnected()) {
+            if (!mqtt_manager_->isMQTTConnected()) {
                 break;
             }
-            vTaskDelay(100);
+            vTaskDelay(50);
         }
 
-        assert(mqtt_manager_.isMQTTConnected() == false);
+        assert(mqtt_manager_->isMQTTConnected() == false);
         ESP_LOGD(TAG, "Disconnected from MQTT");
         vTaskDelay(100);
     }
 
     // Deinitialization (Discnnects from WiFi)
     {
-        mqtt_manager_.disconnectWiFi();
+        mqtt_manager_->disconnectWiFi();
 
         for (int i = 0; i < 5; i++) {
-            if (!mqtt_manager_.isWiFiConnected()) {
+            if (!mqtt_manager_->isWiFiConnected()) {
                 break;
             }
-            vTaskDelay(100);
+            vTaskDelay(50);
         }
 
-        assert(mqtt_manager_.isWiFiConnected() == false);
+        assert(mqtt_manager_->isWiFiConnected() == false);
         ESP_LOGD(TAG, "Disconnected from WiFi");
     }
 
@@ -203,44 +205,44 @@ void Test::testMQTTManagerMQTTWiFiConnectDisconnect(void)
 
     // Initialization (Connects to WiFi + MQTT)
     {
-        assert(mqtt_manager_.connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
-            if (mqtt_manager_.isWiFiConnected()) {
+            if (mqtt_manager_->isWiFiConnected()) {
                 break;
             }
             vTaskDelay(100);
         }
 
-        assert(mqtt_manager_.isWiFiConnected() == true);
+        assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
 
-        assert(mqtt_manager_.connectMQTT("mqtt://10.42.0.1") == ESP_OK);
+        assert(mqtt_manager_->connectMQTT("mqtt://10.42.0.1") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_.isMQTTConnected()) {
+            if (mqtt_manager_->isMQTTConnected()) {
                 break;
             }
             vTaskDelay(100);
         }
 
-        assert(mqtt_manager_.isMQTTConnected() == true);
+        assert(mqtt_manager_->isMQTTConnected() == true);
         ESP_LOGD(TAG, "Connected to MQTT");
     }
 
-    mqtt_manager_.disconnectWiFi();
+    mqtt_manager_->disconnectWiFi();
 
     for (int j = 0; j < 5; j++) {
-        if (!mqtt_manager_.isWiFiConnected()) {
+        if (!mqtt_manager_->isWiFiConnected()) {
             break;
         }
         vTaskDelay(100);
     }
 
-    assert(mqtt_manager_.isWiFiConnected() == false);
-    assert(mqtt_manager_.isMQTTConnected() == false);
+    assert(mqtt_manager_->isWiFiConnected() == false);
+    assert(mqtt_manager_->isMQTTConnected() == false);
     ESP_LOGD(TAG, "Disconnected from WiFi and MQTT");
 
     ESP_LOGI(TAG, "Passed MQTT Manager MQTT + WIFI Disconnect");
@@ -252,57 +254,57 @@ void Test::testMQTTManagerMQTTPublishSubscribe(void)
 
     // Initialization (Connects to WiFi + MQTT)
     {
-        assert(mqtt_manager_.connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
-            if (mqtt_manager_.isWiFiConnected()) {
+            if (mqtt_manager_->isWiFiConnected()) {
                 break;
             }
             vTaskDelay(100);
         }
 
-        assert(mqtt_manager_.isWiFiConnected() == true);
+        assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
 
-        assert(mqtt_manager_.connectMQTT("mqtt://10.42.0.1") == ESP_OK);
+        assert(mqtt_manager_->connectMQTT("mqtt://10.42.0.1") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_.isMQTTConnected()) {
+            if (mqtt_manager_->isMQTTConnected()) {
                 break;
             }
             vTaskDelay(100);
         }
 
-        assert(mqtt_manager_.isMQTTConnected() == true);
+        assert(mqtt_manager_->isMQTTConnected() == true);
         ESP_LOGD(TAG, "Connected to MQTT");
     }
 
     // Deinitialization (Disconnects from WiFi + MQTT)
     {
-        mqtt_manager_.disconnectMQTT();
+        mqtt_manager_->disconnectMQTT();
 
         for (int j = 0; j < 5; j++) {
-            if (!mqtt_manager_.isMQTTConnected()) {
+            if (!mqtt_manager_->isMQTTConnected()) {
                 break;
             }
             vTaskDelay(100);
         }
 
-        assert(mqtt_manager_.isMQTTConnected() == false);
+        assert(mqtt_manager_->isMQTTConnected() == false);
         ESP_LOGD(TAG, "Disconnected from MQTT");
 
-        mqtt_manager_.disconnectWiFi();
+        mqtt_manager_->disconnectWiFi();
 
         for (int i = 0; i < 5; i++) {
-            if (!mqtt_manager_.isWiFiConnected()) {
+            if (!mqtt_manager_->isWiFiConnected()) {
                 break;
             }
             vTaskDelay(100);
         }
 
-        assert(mqtt_manager_.isWiFiConnected() == false);
+        assert(mqtt_manager_->isWiFiConnected() == false);
         ESP_LOGD(TAG, "Disconnected from WiFi");
     }
 
