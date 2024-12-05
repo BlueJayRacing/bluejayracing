@@ -17,13 +17,10 @@
 
 static const char* TAG = "mqttManager";
 
-QueueHandle_t mqttManager::rec_message_queue_ = xQueueCreate(5, sizeof(mqtt_message_t));
-EventGroupHandle_t mqttManager::conn_event_group_  = xEventGroupCreate();
+QueueHandle_t mqttManager::rec_message_queue_     = xQueueCreate(5, sizeof(mqtt_message_t));
+EventGroupHandle_t mqttManager::conn_event_group_ = xEventGroupCreate();
 
-
-mqttManager::mqttManager() : wifi_netif_(NULL), mqtt_handle_(NULL)
-{
-}
+mqttManager::mqttManager() : wifi_netif_(NULL), mqtt_handle_(NULL) {}
 
 mqttManager::~mqttManager()
 {
@@ -35,7 +32,7 @@ mqttManager::~mqttManager()
  * @brief Initializes the MQTT Manager.
  *
  * @return Returns 0 for success or negative error code.
- * 
+ *
  * @note Should only be called once per application.
  *******************************************************************************/
 esp_err_t mqttManager::init(void)
@@ -129,8 +126,12 @@ esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string&
 
 esp_err_t mqttManager::connectMQTT(const std::string& t_broker_uri)
 {
+    if (t_broker_uri.length() == 0) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
     if (mqtt_handle_ != NULL) {
-        esp_mqtt_client_destroy(mqtt_handle_);
+        stopMQTT();
     }
 
     esp_mqtt_client_config_t mqtt_config;
@@ -156,10 +157,7 @@ esp_err_t mqttManager::connectMQTT(const std::string& t_broker_uri)
     return ESP_OK;
 }
 
-void mqttManager::stopWiFi(void)
-{
-    esp_wifi_stop();
-}
+void mqttManager::stopWiFi(void) { esp_wifi_stop(); }
 
 void mqttManager::stopMQTT(void)
 {
@@ -169,7 +167,6 @@ void mqttManager::stopMQTT(void)
         mqtt_handle_ = NULL;
     }
 }
-
 
 void mqttManager::wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
@@ -198,7 +195,7 @@ void mqttManager::mqttEventHandler(void* args, esp_event_base_t base, int32_t ev
 {
     BaseType_t err = pdFALSE;
 
-    esp_mqtt_event_handle_t event   = (esp_mqtt_event_t*)event_data;
+    esp_mqtt_event_handle_t event = (esp_mqtt_event_t*)event_data;
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -237,15 +234,9 @@ void mqttManager::mqttEventHandler(void* args, esp_event_base_t base, int32_t ev
     }
 }
 
-bool mqttManager::isWiFiConnected(void) const
-{
-    return xEventGroupGetBits(conn_event_group_) & WIFI_CONNECTED_BIT;
-}
+bool mqttManager::isWiFiConnected(void) const { return xEventGroupGetBits(conn_event_group_) & WIFI_CONNECTED_BIT; }
 
-bool mqttManager::isMQTTConnected(void) const
-{
-    return xEventGroupGetBits(conn_event_group_) & MQTT_CONNECTED_BIT;
-}
+bool mqttManager::isMQTTConnected(void) const { return xEventGroupGetBits(conn_event_group_) & MQTT_CONNECTED_BIT; }
 
 esp_err_t mqttManager::publishMQTT(const std::vector<char>& t_payload, const std::vector<char>& t_topic, uint8_t t_QoS)
 {
@@ -271,9 +262,11 @@ esp_err_t mqttManager::receiveMQTT(mqtt_message_t& t_payload)
         return ESP_ERR_NOT_FOUND;
     }
 
-    if (xQueueReceive(rec_message_queue_, &t_payload, 1) != pdTRUE ) {
+    if (xQueueReceive(rec_message_queue_, &t_payload, 1) != pdTRUE) {
         return ESP_FAIL;
     }
 
     return ESP_OK;
 }
+
+void mqttManager::clearMQTTMessages(void) { xQueueReset(rec_message_queue_); }

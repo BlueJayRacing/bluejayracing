@@ -34,6 +34,7 @@ class mqttManager {
     esp_err_t publishMQTT(const std::vector<char>& payload, const std::vector<char>& topic, uint8_t QoS);
     esp_err_t subscribeMQTT(const std::vector<char>& topic, uint8_t QoS);
     esp_err_t receiveMQTT(mqtt_message_t& message);
+    void clearMQTTMessages(void);
 
   private:
     static void wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
