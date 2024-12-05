@@ -83,6 +83,14 @@ esp_err_t mqttManager::init(void)
     return ESP_OK;
 }
 
+/*******************************************************************************
+ * @brief Connects to the WiFi Access Point
+ *
+ * @param t_ssid The SSID of the WiFi Access Point
+ * @param t_pwd  The password of the WiFi Access Point
+ * 
+ * @return Returns 0 for success or negative error code.
+ *******************************************************************************/
 esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string& t_pswd)
 {
     esp_err_t err;
@@ -122,10 +130,23 @@ esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string&
     return ESP_OK;
 }
 
+/*******************************************************************************
+ * @brief Connects to the MQTT Broker
+ *
+ * @param t_broker_uri The URI of the MQTT Broker
+ * 
+ * @return Returns 0 for success or negative error code.
+ * 
+ * @note Will not attempt to connect to MQTT unless WiFi is also connected
+ *******************************************************************************/
 esp_err_t mqttManager::connectMQTT(const std::string& t_broker_uri)
 {
     if (t_broker_uri.length() == 0) {
         return ESP_ERR_INVALID_SIZE;
+    }
+
+    if (!isWiFiConnected()) {
+        return ESP_ERR_WIFI_NOT_CONNECT;
     }
 
     if (mqtt_handle_ != NULL) {
@@ -155,8 +176,16 @@ esp_err_t mqttManager::connectMQTT(const std::string& t_broker_uri)
     return ESP_OK;
 }
 
+/*******************************************************************************
+ * @brief Disconnects from WiFi
+ *
+ * @note Will also trigger a disconnect for MQTT
+ *******************************************************************************/
 void mqttManager::disconnectWiFi(void) { esp_wifi_disconnect(); }
 
+/*******************************************************************************
+ * @brief Disconnects from MQTT (will not impact WiFi connection)
+ *******************************************************************************/
 void mqttManager::disconnectMQTT(void)
 {
     if (mqtt_handle_ != NULL) {
