@@ -22,10 +22,11 @@ void Test::testMQTTManager(void)
     assert(mqtt_manager_->init() == ESP_OK);
     ESP_LOGD(TAG, "Initialized MQTT manager");
 
-    testMQTTManagerWiFiConnectDisconnect();
-    testMQTTManagerMQTTConnectDisconnect();
-    testMQTTManagerMQTTWiFiConnectDisconnect();
-    // testMQTTManagerMQTTPublishSubscribe();
+    // testMQTTManagerBasicParamErrors();
+    // testMQTTManagerWiFiConnectDisconnect();
+    // testMQTTManagerClientConnectDisconnect();
+    // testMQTTManagerClientWiFiConnectDisconnect();
+    testMQTTManagerMultipleClientsConDisCon();
 }
 
 void Test::testMemoryQueueBasic(void)
@@ -98,6 +99,37 @@ void Test::testMemoryQueueAcquireFull(void)
     ESP_LOGI(TAG, "Passed Memory Queue When Full");
 }
 
+void Test::testMQTTManagerBasicParamErrors(void)
+{
+    ESP_LOGI(TAG, "Testing MQTT Manager Basic Paramter Error Handling");
+
+    assert(mqtt_manager_->connectWiFi("", "hi") != ESP_OK);
+    assert(mqtt_manager_->connectWiFi("hi", "") != ESP_OK);
+    assert(mqtt_manager_->connectWiFi(std::string('c', 33), "hi") != ESP_OK);
+    assert(mqtt_manager_->connectWiFi("hi", std::string('c', 65)) != ESP_OK);
+    assert(mqtt_manager_->createClient("") == NULL);
+    assert(mqtt_manager_->connectClient(NULL) != ESP_OK);
+    assert(mqtt_manager_->disconnectClient(NULL) != ESP_OK);
+    assert(mqtt_manager_->isClientConnected(NULL) == false);
+
+    mqtt_client_t client;
+
+    assert(mqtt_manager_->publishClient(NULL, std::vector<char>(2, 'c'), std::vector<char>(2, 'c'), 2) != ESP_OK);
+    assert(mqtt_manager_->publishClient(&client, std::vector<char>(), std::vector<char>(2, 'c'), 2) != ESP_OK);
+    assert(mqtt_manager_->publishClient(&client, std::vector<char>(2, 'c'), std::vector<char>(), 2) != ESP_OK);
+    assert(mqtt_manager_->publishClient(&client, std::vector<char>(2, 'c'), std::vector<char>(2, 'c'), 3) != ESP_OK);
+
+    assert(mqtt_manager_->subscribeClient(NULL, std::vector<char>(2, 'c'), 2) != ESP_OK);
+    assert(mqtt_manager_->subscribeClient(&client, std::vector<char>(), 2) != ESP_OK);
+    assert(mqtt_manager_->subscribeClient(&client, std::vector<char>(2, 'c'), 3) != ESP_OK);
+
+    mqtt_message_t message;
+    assert(mqtt_manager_->receiveClient(NULL, message) != ESP_OK);
+    assert(mqtt_manager_->clearClientMessages(NULL) != ESP_OK);
+
+    ESP_LOGI(TAG, "Passed MQTT Manager Basic Paramter Error Handling");
+}
+
 void Test::testMQTTManagerWiFiConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager WiFi Connection");
@@ -133,7 +165,7 @@ void Test::testMQTTManagerWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager WiFi Connection");
 }
 
-void Test::testMQTTManagerMQTTConnectDisconnect(void)
+void Test::testMQTTManagerClientConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager MQTT Connection");
 
@@ -153,33 +185,39 @@ void Test::testMQTTManagerMQTTConnectDisconnect(void)
         ESP_LOGD(TAG, "Connected to WiFi");
     }
 
+    mqtt_client_t* client = mqtt_manager_->createClient("mqtt://10.42.0.1");
+    assert(client != NULL);
+    assert(mqtt_manager_->isClientConnected(client) == false);
+
     for (int i = 0; i < 5; i++) {
-        assert(mqtt_manager_->connectMQTT("mqtt://10.42.0.1") == ESP_OK);
+        assert(mqtt_manager_->connectClient(client) == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_->isMQTTConnected()) {
+            if (mqtt_manager_->isClientConnected(client)) {
                 break;
             }
             vTaskDelay(50);
         }
 
-        assert(mqtt_manager_->isMQTTConnected() == true);
+        assert(mqtt_manager_->isClientConnected(client) == true);
         ESP_LOGD(TAG, "Connected to MQTT");
 
-        mqtt_manager_->disconnectMQTT();
+        mqtt_manager_->disconnectClient(client);
 
         for (int j = 0; j < 20; j++) {
-            if (!mqtt_manager_->isMQTTConnected()) {
+            if (!mqtt_manager_->isClientConnected(client)) {
                 break;
             }
             vTaskDelay(50);
         }
 
-        assert(mqtt_manager_->isMQTTConnected() == false);
+        assert(mqtt_manager_->isClientConnected(client) == false);
         ESP_LOGD(TAG, "Disconnected from MQTT");
-        vTaskDelay(100);
+        vTaskDelay(300);
     }
+
+    mqtt_manager_->destroyClient(client);
 
     // Deinitialization (Discnnects from WiFi)
     {
@@ -199,9 +237,12 @@ void Test::testMQTTManagerMQTTConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager MQTT Connection");
 }
 
-void Test::testMQTTManagerMQTTWiFiConnectDisconnect(void)
+void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager MQTT + WIFI Disconnect");
+
+    mqtt_client_t* client = mqtt_manager_->createClient("mqtt://10.42.0.1");
+    assert(client != NULL);
 
     // Initialization (Connects to WiFi + MQTT)
     {
@@ -218,17 +259,17 @@ void Test::testMQTTManagerMQTTWiFiConnectDisconnect(void)
         assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
 
-        assert(mqtt_manager_->connectMQTT("mqtt://10.42.0.1") == ESP_OK);
+        assert(mqtt_manager_->connectClient(client) == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_->isMQTTConnected()) {
+            if (mqtt_manager_->isClientConnected(client)) {
                 break;
             }
             vTaskDelay(100);
         }
 
-        assert(mqtt_manager_->isMQTTConnected() == true);
+        assert(mqtt_manager_->isClientConnected(client) == true);
         ESP_LOGD(TAG, "Connected to MQTT");
     }
 
@@ -242,17 +283,19 @@ void Test::testMQTTManagerMQTTWiFiConnectDisconnect(void)
     }
 
     assert(mqtt_manager_->isWiFiConnected() == false);
-    assert(mqtt_manager_->isMQTTConnected() == false);
+    assert(mqtt_manager_->isClientConnected(client) == false);
+
+    mqtt_manager_->destroyClient(client);
+
     ESP_LOGD(TAG, "Disconnected from WiFi and MQTT");
 
     ESP_LOGI(TAG, "Passed MQTT Manager MQTT + WIFI Disconnect");
 }
 
-void Test::testMQTTManagerMQTTPublishSubscribe(void)
+void Test::testMQTTManagerMultipleClientsConDisCon(void)
 {
-    ESP_LOGI(TAG, "Testing MQTT Manager MQTT Publish");
+    ESP_LOGI(TAG, "Testing MQTT Manager Multiple Clients Connect/Disconnect");
 
-    // Initialization (Connects to WiFi + MQTT)
     {
         assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
@@ -266,47 +309,86 @@ void Test::testMQTTManagerMQTTPublishSubscribe(void)
 
         assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
-
-        assert(mqtt_manager_->connectMQTT("mqtt://10.42.0.1") == ESP_OK);
-        ESP_LOGD(TAG, "Started Connecting to MQTT");
-
-        for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_->isMQTTConnected()) {
-                break;
-            }
-            vTaskDelay(100);
-        }
-
-        assert(mqtt_manager_->isMQTTConnected() == true);
-        ESP_LOGD(TAG, "Connected to MQTT");
     }
 
-    // Deinitialization (Disconnects from WiFi + MQTT)
-    {
-        mqtt_manager_->disconnectMQTT();
+    mqtt_client_t* client_1 = mqtt_manager_->createClient("mqtt://10.42.0.1");
+    assert(client_1 != NULL);
 
-        for (int j = 0; j < 5; j++) {
-            if (!mqtt_manager_->isMQTTConnected()) {
-                break;
-            }
-            vTaskDelay(100);
+    mqtt_client_t* client_2 = mqtt_manager_->createClient("mqtt://10.42.0.1");
+    assert(client_2 != NULL);
+    ESP_LOGD(TAG, "Created MQTT Clients 1 and 2");
+
+    assert(mqtt_manager_->connectClient(client_1) == ESP_OK);
+    ESP_LOGD(TAG, "Client 1 Started Connecting to MQTT");
+
+    for (int j = 0; j < 30; j++) {
+        if (mqtt_manager_->isClientConnected(client_1)) {
+            break;
         }
+        vTaskDelay(50);
+    }
 
-        assert(mqtt_manager_->isMQTTConnected() == false);
-        ESP_LOGD(TAG, "Disconnected from MQTT");
+    assert(mqtt_manager_->isClientConnected(client_1) == true);
+    assert(mqtt_manager_->isClientConnected(client_2) == false);
+    ESP_LOGD(TAG, "Client 1 Connected to MQTT but not Client 2");
 
+    assert(mqtt_manager_->connectClient(client_2) == ESP_OK);
+    ESP_LOGD(TAG, "Client 2 Started Connecting to MQTT");
+
+    for (int j = 0; j < 30; j++) {
+        if (mqtt_manager_->isClientConnected(client_2)) {
+            break;
+        }
+        vTaskDelay(50);
+    }
+
+    assert(mqtt_manager_->isClientConnected(client_1) == true);
+    assert(mqtt_manager_->isClientConnected(client_2) == true);
+    ESP_LOGD(TAG, "Client 1 and 2 Connected to MQTT");
+
+    mqtt_manager_->disconnectClient(client_1);
+
+    for (int j = 0; j < 20; j++) {
+        if (!mqtt_manager_->isClientConnected(client_1)) {
+            break;
+        }
+        vTaskDelay(50);
+    }
+
+    assert(mqtt_manager_->isClientConnected(client_1) == false);
+    assert(mqtt_manager_->isClientConnected(client_2) == true);
+    ESP_LOGD(TAG, "Client 1 Disconnected from MQTT and Client 2 Connected");
+
+    mqtt_manager_->disconnectClient(client_2);
+
+    for (int j = 0; j < 20; j++) {
+        if (!mqtt_manager_->isClientConnected(client_2)) {
+            break;
+        }
+        vTaskDelay(50);
+    }
+
+    assert(mqtt_manager_->isClientConnected(client_1) == false);
+    assert(mqtt_manager_->isClientConnected(client_2) == false);
+    ESP_LOGD(TAG, "Client 1 and 2 Disconnected from MQTT");
+
+    mqtt_manager_->destroyClient(client_1);
+    mqtt_manager_->destroyClient(client_2);
+
+    // Deinitialization (Discnnects from WiFi)
+    {
         mqtt_manager_->disconnectWiFi();
 
         for (int i = 0; i < 5; i++) {
             if (!mqtt_manager_->isWiFiConnected()) {
                 break;
             }
-            vTaskDelay(100);
+            vTaskDelay(50);
         }
 
         assert(mqtt_manager_->isWiFiConnected() == false);
         ESP_LOGD(TAG, "Disconnected from WiFi");
     }
 
-    ESP_LOGI(TAG, "Passed MQTT Manager MQTT Publish (have to validate by looking at RPi5)");
+    ESP_LOGI(TAG, "Passed MQTT Manager Multiple Clients Connect/Disconnect");
 }

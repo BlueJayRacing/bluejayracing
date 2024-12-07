@@ -15,10 +15,11 @@ class Test {
   private:
     void testMemoryQueueBasic(void);
     void testMemoryQueueAcquireFull(void);
+    void testMQTTManagerBasicParamErrors(void);
     void testMQTTManagerWiFiConnectDisconnect(void);
-    void testMQTTManagerMQTTConnectDisconnect(void);
-    void testMQTTManagerMQTTWiFiConnectDisconnect(void);
-    void testMQTTManagerMQTTPublishSubscribe(void); // TODO: Make echo server on RPi5 (can use ROS2)
+    void testMQTTManagerClientConnectDisconnect(void);
+    void testMQTTManagerClientWiFiConnectDisconnect(void);
+    void testMQTTManagerMultipleClientsConDisCon(void);
 
   private:
     mqttManager* mqtt_manager_;
