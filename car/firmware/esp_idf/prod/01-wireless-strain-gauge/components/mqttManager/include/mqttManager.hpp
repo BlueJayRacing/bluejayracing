@@ -41,7 +41,8 @@ class mqttManager {
     esp_err_t connectClient(mqtt_client_t* mqtt_client);
     esp_err_t disconnectClient(mqtt_client_t* mqtt_client);
     bool isClientConnected(mqtt_client_t* mqtt_client) const;
-    esp_err_t publishClient(mqtt_client_t* mqtt_client, const std::vector<char>& payload, const std::vector<char>& topic, uint8_t QoS);
+    esp_err_t enqueueClient(mqtt_client_t* mqtt_client, const std::vector<char>& payload, const std::vector<char>& topic, uint8_t QoS);
+    esp_err_t waitPublishClient(mqtt_client_t* mqtt_client, TickType_t timeout);
     esp_err_t subscribeClient(mqtt_client_t* mqtt_client, const std::vector<char>& topic, uint8_t QoS);
     esp_err_t receiveClient(mqtt_client_t* mqtt_client, mqtt_message_t& message);
     esp_err_t clearClientMessages(mqtt_client_t* mqtt_client);

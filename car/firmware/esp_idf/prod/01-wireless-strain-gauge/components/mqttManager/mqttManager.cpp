@@ -13,7 +13,9 @@
 #include <nvs_flash.h>
 #include <lockGuard.hpp>
 
-#define MQTT_CONNECTED_BIT BIT1
+#define MQTT_CONNECTED_BIT BIT0
+#define MQTT_PUBLISHED_BIT BIT1
+
 #define WIFI_CONNECTED_BIT BIT0
 
 static const char* TAG = "mqttManager";
@@ -254,7 +256,7 @@ void mqttManager::mqttEventHandler(void* arg, esp_event_base_t base, int32_t eve
     mqtt_client_t* mqtt_client = (mqtt_client_t*)arg;
     BaseType_t err             = pdFALSE;
 
-    esp_mqtt_event_handle_t event = (esp_mqtt_event_t*)event_data;
+    esp_mqtt_event_handle_t event = (esp_mqtt_event_t*) event_data;
 
     switch ((esp_mqtt_event_id_t)event_id) {
     case MQTT_EVENT_CONNECTED:
@@ -268,6 +270,7 @@ void mqttManager::mqttEventHandler(void* arg, esp_event_base_t base, int32_t eve
     case MQTT_EVENT_UNSUBSCRIBED:
         break;
     case MQTT_EVENT_PUBLISHED:
+        xEventGroupClearBits(mqtt_client->conn_event_, MQTT_PUBLISHED_BIT);
         break;
     case MQTT_EVENT_DATA:
         ESP_LOGI(TAG, "TOPIC=%.*s\r\n", event->topic_len, event->topic);
@@ -304,7 +307,7 @@ bool mqttManager::isClientConnected(mqtt_client_t* mqtt_client) const
     }
 }
 
-esp_err_t mqttManager::publishClient(mqtt_client_t* mqtt_client, const std::vector<char>& t_payload,
+esp_err_t mqttManager::enqueueClient(mqtt_client_t* mqtt_client, const std::vector<char>& t_payload,
                                      const std::vector<char>& t_topic, uint8_t t_QoS)
 {
     if (mqtt_client == NULL || t_topic.size() == 0 || t_payload.size() == 0 || t_QoS >= 3) {
@@ -316,6 +319,16 @@ esp_err_t mqttManager::publishClient(mqtt_client_t* mqtt_client, const std::vect
     }
 
     return esp_mqtt_client_enqueue(mqtt_client->client_, t_topic.data(), t_payload.data(), t_payload.size(), 0, true, true);
+}
+
+esp_err_t mqttManager::waitPublishClient(mqtt_client_t* mqtt_client, TickType_t timeout)
+{
+    EventBits_t ret = xEventGroupWaitBits(mqtt_client->conn_event_, MQTT_PUBLISHED_BIT, true, true, timeout);
+    if (ret & MQTT_PUBLISHED_BIT != 0) {
+        return ESP_OK;
+    } else {
+        return ESP_ERR_TIMEOUT;
+    }
 }
 
 esp_err_t mqttManager::subscribeClient(mqtt_client_t* mqtt_client, const std::vector<char>& t_topic, uint8_t t_QoS)
