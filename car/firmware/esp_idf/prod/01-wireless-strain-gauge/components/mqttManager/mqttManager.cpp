@@ -11,6 +11,7 @@
 #include <esp_wifi.h>
 #include <mqtt_client.h>
 #include <nvs_flash.h>
+#include <lockGuard.hpp>
 
 #define MQTT_CONNECTED_BIT BIT1
 #define WIFI_CONNECTED_BIT BIT0
@@ -18,6 +19,7 @@
 static const char* TAG = "mqttManager";
 
 mqttManager* mqttManager::instance_              = NULL;
+SemaphoreHandle_t mqttManager::mutex_ = xSemaphoreCreateMutex();
 EventGroupHandle_t mqttManager::wifi_conn_group_ = xEventGroupCreate();
 int mqttManager::client_id_counter = 0;
 
@@ -42,6 +44,7 @@ mqttManager::~mqttManager() {}
  *******************************************************************************/
 esp_err_t mqttManager::init(void)
 {
+    lockGuard guard(mutex_);
     esp_err_t err;
 
     err = nvs_flash_init();
@@ -100,6 +103,8 @@ esp_err_t mqttManager::init(void)
  *******************************************************************************/
 esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string& t_pswd)
 {
+    lockGuard guard(mutex_);
+
     if (t_ssid.length() == 0 || t_pswd.length() == 0) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -143,6 +148,8 @@ esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string&
 
 mqtt_client_t* mqttManager::createClient(const std::string& t_broker_uri)
 {
+    lockGuard guard(mutex_);
+
     if (t_broker_uri.length() == 0) {
         return NULL;
     }

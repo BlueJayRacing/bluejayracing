@@ -22,10 +22,10 @@ void Test::testMQTTManager(void)
     assert(mqtt_manager_->init() == ESP_OK);
     ESP_LOGD(TAG, "Initialized MQTT manager");
 
-    // testMQTTManagerBasicParamErrors();
-    // testMQTTManagerWiFiConnectDisconnect();
-    // testMQTTManagerClientConnectDisconnect();
-    // testMQTTManagerClientWiFiConnectDisconnect();
+    testMQTTManagerBasicParamErrors();
+    testMQTTManagerWiFiConnectDisconnect();
+    testMQTTManagerClientConnectDisconnect();
+    testMQTTManagerClientWiFiConnectDisconnect();
     testMQTTManagerMultipleClientsConDisCon();
 }
 

@@ -55,6 +55,7 @@ class mqttManager {
 
   private:
     esp_netif_t* wifi_netif_;
+    static SemaphoreHandle_t mutex_;
     static mqttManager* instance_;
     static EventGroupHandle_t wifi_conn_group_;
 };
