@@ -16,7 +16,7 @@ if ! docker ps | grep -q bjr_docker_ros; then
 	    -v /dev/:/dev/ \
 	    --device-cgroup-rule='c 81:* rmw' \
 	    --device-cgroup-rule='c 189:* rmw' \
-        --mount type=bind,source=$SCRIPTPATH/../src/rsp_baja,target=/20xt_ws/src/rsp_baja \
+        --mount type=bind,source=$SCRIPTPATH/../src,target=/bjr_ws/src/bjr_packages \
         --device=/dev/ttyAMA0 \
         --device=/dev/ttyACM0 \
 	    --device=/dev/ttyACM1 \
@@ -28,8 +28,8 @@ if ! docker ps | grep -q bjr_docker_ros; then
         -c "source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch rpi_launch comp.launch.py"
     docker container exec \
         -d \
-        -w /20xt_ws/src/rsp_baja/endurance_bags \
+        -w /bjr_ws/src/bjr_packages/endurance_bags \
         $(docker ps | grep bjr_docker_ros | awk '{print $NF}') \
         /bin/bash \
-        -c 'source /opt/ros/humble/setup.bash && source /20xt_ws/install/setup.bash && ros2 bag record -a --storage-preset-profile resilient'
+        -c 'source /opt/ros/humble/setup.bash && source /bjr_ws/install/setup.bash && ros2 bag record -a --storage-preset-profile resilient'
 fi
