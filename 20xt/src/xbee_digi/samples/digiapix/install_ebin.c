@@ -1,1 +1,0 @@
-../posix/install_ebin.c
