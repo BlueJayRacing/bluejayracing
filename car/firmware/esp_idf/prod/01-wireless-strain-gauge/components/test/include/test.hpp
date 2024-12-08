@@ -20,6 +20,7 @@ class Test {
     void testMQTTManagerClientConnectDisconnect(void);
     void testMQTTManagerClientWiFiConnectDisconnect(void);
     void testMQTTManagerMultipleClientsConDisCon(void);
+    void testMQTTManagerClientPublishSubscribe(void);
 
   private:
     mqttManager* mqtt_manager_;

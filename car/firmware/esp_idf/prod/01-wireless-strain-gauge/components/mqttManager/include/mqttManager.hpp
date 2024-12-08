@@ -11,11 +11,11 @@
 #include <vector>
 
 typedef struct mqtt_client {
-  esp_mqtt_client_handle_t client_;
-  QueueHandle_t rec_queue_;
-  EventGroupHandle_t conn_event_;
+    esp_mqtt_client_handle_t client_handle;
+    QueueHandle_t rec_queue;
+    EventGroupHandle_t conn_event;
 
-  mqtt_client(void) : client_(NULL), rec_queue_(NULL), conn_event_(NULL) {};
+    mqtt_client(void) : client_handle(NULL), rec_queue(NULL), conn_event(NULL) {};
 } mqtt_client_t;
 
 typedef struct mqtt_message {
@@ -37,15 +37,16 @@ class mqttManager {
     bool isWiFiConnected(void) const;
 
     mqtt_client_t* createClient(const std::string& t_broker_uri);
-    void destroyClient(mqtt_client_t* mqtt_client);
-    esp_err_t connectClient(mqtt_client_t* mqtt_client);
-    esp_err_t disconnectClient(mqtt_client_t* mqtt_client);
-    bool isClientConnected(mqtt_client_t* mqtt_client) const;
-    esp_err_t enqueueClient(mqtt_client_t* mqtt_client, const std::vector<char>& payload, const std::vector<char>& topic, uint8_t QoS);
-    esp_err_t waitPublishClient(mqtt_client_t* mqtt_client, TickType_t timeout);
-    esp_err_t subscribeClient(mqtt_client_t* mqtt_client, const std::vector<char>& topic, uint8_t QoS);
-    esp_err_t receiveClient(mqtt_client_t* mqtt_client, mqtt_message_t& message);
-    esp_err_t clearClientMessages(mqtt_client_t* mqtt_client);
+    void destroyClient(mqtt_client_t* client);
+    esp_err_t connectClient(mqtt_client_t* client);
+    esp_err_t disconnectClient(mqtt_client_t* client);
+    bool isClientConnected(mqtt_client_t* client) const;
+    esp_err_t enqueueClient(mqtt_client_t* client, const std::string& payload, const std::string& topic, uint8_t QoS);
+    esp_err_t waitPublishClient(mqtt_client_t* client, TickType_t timeout);
+    esp_err_t subscribeClient(mqtt_client_t* client, const std::string& topic, uint8_t QoS);
+    esp_err_t waitSubscribeClient(mqtt_client_t* client, TickType_t timeout);
+    esp_err_t receiveClient(mqtt_client_t* client, mqtt_message_t& message);
+    esp_err_t clearClientMessages(mqtt_client_t* client);
 
   private:
     mqttManager(void);
