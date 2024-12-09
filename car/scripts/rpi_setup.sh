@@ -1,4 +1,8 @@
-#!/bin/sh
+#!/bin/bash
+SCRIPT=$(readlink -f "$0")
+SCRIPTPATH=$(dirname "$SCRIPT")
+pushd $SCRIPTPATH
+
 sudo apt update -y
 sudo apt upgrade -y
 sudo apt autoremove -y
@@ -13,6 +17,10 @@ curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh ./get-docker.sh
 sudo groupadd docker
 sudo usermod -aG docker $USER
+git submodule update --init --recursive
 newgrp docker
+
+popd
+
 
 
