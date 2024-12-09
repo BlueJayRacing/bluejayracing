@@ -1,0 +1,1 @@
+This is in bin so that the bin folder gets added to the github repository.
