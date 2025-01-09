@@ -38,15 +38,15 @@ class mqttManager {
 
     mqtt_client_t* createClient(const std::string& t_broker_uri);
     void destroyClient(mqtt_client_t* client);
-    esp_err_t connectClient(mqtt_client_t* client);
-    esp_err_t disconnectClient(mqtt_client_t* client);
+    esp_err_t clientConnect(mqtt_client_t* client);
+    esp_err_t clientDisconnect(mqtt_client_t* client);
     bool isClientConnected(mqtt_client_t* client) const;
-    esp_err_t enqueueClient(mqtt_client_t* client, const std::string& payload, const std::string& topic, uint8_t QoS);
-    esp_err_t waitPublishClient(mqtt_client_t* client, TickType_t timeout);
-    esp_err_t subscribeClient(mqtt_client_t* client, const std::string& topic, uint8_t QoS);
-    esp_err_t waitSubscribeClient(mqtt_client_t* client, TickType_t timeout);
-    esp_err_t receiveClient(mqtt_client_t* client, mqtt_message_t& message);
-    esp_err_t clearClientMessages(mqtt_client_t* client);
+    esp_err_t clientEnqueue(mqtt_client_t* client, const std::string& payload, const std::string& topic, uint8_t QoS);
+    esp_err_t clientWaitPublish(mqtt_client_t* client, TickType_t timeout);
+    esp_err_t clientSubscribe(mqtt_client_t* client, const std::string& topic, uint8_t QoS);
+    esp_err_t clientWaitSubscribe(mqtt_client_t* client, TickType_t timeout);
+    esp_err_t clientReceive(mqtt_client_t* client, mqtt_message_t& message);
+    esp_err_t clientClearMessages(mqtt_client_t* client);
 
   private:
     mqttManager(void);

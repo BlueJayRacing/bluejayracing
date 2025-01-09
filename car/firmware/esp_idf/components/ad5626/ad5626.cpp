@@ -20,18 +20,17 @@ AD5626::AD5626() {}
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-esp_err_t AD5626::init(const gpio_num_t t_cs_pin, const gpio_num_t t_ldac_pin, const gpio_num_t t_clr_pin,
-                       const spi_host_device_t t_spi_host)
+esp_err_t AD5626::init(const ad5626_init_param_t t_init_param)
 {
-    ldac_pin_ = t_ldac_pin;
-    clr_pin_  = t_clr_pin;
+    ldac_pin_ = t_init_param.ldac_pin;
+    clr_pin_  = t_init_param.clr_pin;
 
     spi_device_interface_config_t ad5626_cfg;
     memset(&ad5626_cfg, 0, sizeof(spi_device_interface_config_t));
 
     ad5626_cfg.mode           = 3;
     ad5626_cfg.clock_speed_hz = 1000000;
-    ad5626_cfg.spics_io_num   = t_cs_pin;
+    ad5626_cfg.spics_io_num   = t_init_param.cs_pin;
     ad5626_cfg.flags          = SPI_DEVICE_HALFDUPLEX;
     ad5626_cfg.queue_size     = 1;
     ad5626_cfg.pre_cb         = NULL;
@@ -59,7 +58,7 @@ esp_err_t AD5626::init(const gpio_num_t t_cs_pin, const gpio_num_t t_ldac_pin, c
         }
     }
 
-    return spi_bus_add_device(t_spi_host, &ad5626_cfg, &(spi_dev_));
+    return spi_bus_add_device(t_init_param.spi_host, &ad5626_cfg, &(spi_dev_));
 }
 
 /*******************************************************************************
@@ -69,7 +68,7 @@ esp_err_t AD5626::init(const gpio_num_t t_cs_pin, const gpio_num_t t_ldac_pin, c
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level)
+esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level) const
 {
     spi_transaction_t t;
     memset(&t, 0, sizeof(spi_transaction_t));
@@ -103,7 +102,7 @@ esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level)
  * @return Returns 0 for success or negative error code, specfically
  * ESP_ERR_INVALID_STATE if the pin has not been set.
  *******************************************************************************/
-esp_err_t AD5626::clearLevel(void)
+esp_err_t AD5626::clearLevel(void) const
 {
     if (clr_pin_ < 0) {
         return ESP_ERR_INVALID_STATE;

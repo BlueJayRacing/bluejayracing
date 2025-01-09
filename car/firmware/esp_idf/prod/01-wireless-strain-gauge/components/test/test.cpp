@@ -113,25 +113,25 @@ void Test::testMQTTManagerBasicParamErrors(void)
 
     assert(mqtt_manager_->createClient("") == NULL);
 
-    assert(mqtt_manager_->connectClient(NULL) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->connectClient(&client) == ESP_ERR_WIFI_NOT_CONNECT); // Fail because WiFi not connected
+    assert(mqtt_manager_->clientConnect(NULL) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientConnect(&client) == ESP_ERR_WIFI_NOT_CONNECT); // Fail because WiFi not connected
 
-    assert(mqtt_manager_->disconnectClient(NULL) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientDisconnect(NULL) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->isClientConnected(NULL) == false);
 
-    assert(mqtt_manager_->enqueueClient(NULL, "payload", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "payload", "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "payload", "topic", 3) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "payload", "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
+    assert(mqtt_manager_->clientEnqueue(NULL, "payload", "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "", "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "payload", "", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 3) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
 
-    assert(mqtt_manager_->subscribeClient(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->subscribeClient(&client, "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->subscribeClient(&client, "topic", 3) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientSubscribe(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientSubscribe(&client, "", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientSubscribe(&client, "topic", 3) == ESP_ERR_INVALID_ARG);
 
     mqtt_message_t message;
-    assert(mqtt_manager_->receiveClient(NULL, message) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clearClientMessages(NULL) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientReceive(NULL, message) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientClearMessages(NULL) == ESP_ERR_INVALID_ARG);
 
     ESP_LOGI(TAG, "Passed MQTT Manager Basic Paramter Error Handling");
 }
@@ -196,7 +196,7 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
     assert(mqtt_manager_->isClientConnected(client) == false);
 
     for (int i = 0; i < 5; i++) {
-        assert(mqtt_manager_->connectClient(client) == ESP_OK);
+        assert(mqtt_manager_->clientConnect(client) == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
@@ -209,7 +209,7 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
         assert(mqtt_manager_->isClientConnected(client) == true);
         ESP_LOGD(TAG, "Connected to MQTT");
 
-        mqtt_manager_->disconnectClient(client);
+        mqtt_manager_->clientDisconnect(client);
 
         for (int j = 0; j < 20; j++) {
             if (!mqtt_manager_->isClientConnected(client)) {
@@ -265,7 +265,7 @@ void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
         assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
 
-        assert(mqtt_manager_->connectClient(client) == ESP_OK);
+        assert(mqtt_manager_->clientConnect(client) == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
@@ -324,7 +324,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(client_2 != NULL);
     ESP_LOGD(TAG, "Created MQTT Clients 1 and 2");
 
-    assert(mqtt_manager_->connectClient(client_1) == ESP_OK);
+    assert(mqtt_manager_->clientConnect(client_1) == ESP_OK);
     ESP_LOGD(TAG, "Client 1 Started Connecting to MQTT");
 
     for (int j = 0; j < 30; j++) {
@@ -338,7 +338,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(mqtt_manager_->isClientConnected(client_2) == false);
     ESP_LOGD(TAG, "Client 1 Connected to MQTT but not Client 2");
 
-    assert(mqtt_manager_->connectClient(client_2) == ESP_OK);
+    assert(mqtt_manager_->clientConnect(client_2) == ESP_OK);
     ESP_LOGD(TAG, "Client 2 Started Connecting to MQTT");
 
     for (int j = 0; j < 30; j++) {
@@ -352,7 +352,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(mqtt_manager_->isClientConnected(client_2) == true);
     ESP_LOGD(TAG, "Client 1 and 2 Connected to MQTT");
 
-    mqtt_manager_->disconnectClient(client_1);
+    mqtt_manager_->clientDisconnect(client_1);
 
     for (int j = 0; j < 20; j++) {
         if (!mqtt_manager_->isClientConnected(client_1)) {
@@ -365,7 +365,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(mqtt_manager_->isClientConnected(client_2) == true);
     ESP_LOGD(TAG, "Client 1 Disconnected from MQTT and Client 2 Connected");
 
-    mqtt_manager_->disconnectClient(client_2);
+    mqtt_manager_->clientDisconnect(client_2);
 
     for (int j = 0; j < 20; j++) {
         if (!mqtt_manager_->isClientConnected(client_2)) {
@@ -421,7 +421,7 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     mqtt_client_t* client = mqtt_manager_->createClient("mqtt://10.42.0.1");
     assert(client != NULL);
 
-    assert(mqtt_manager_->connectClient(client) == ESP_OK);
+    assert(mqtt_manager_->clientConnect(client) == ESP_OK);
     ESP_LOGD(TAG, "Client Started Connecting to MQTT");
 
     for (int j = 0; j < 30; j++) {
@@ -434,23 +434,23 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     assert(mqtt_manager_->isClientConnected(client) == true);
     ESP_LOGD(TAG, "Client Connected to MQTT");
 
-    assert(mqtt_manager_->subscribeClient(client, "esp32/test_subscribe", 2) == ESP_OK);
-    assert(mqtt_manager_->waitSubscribeClient(client, 1000) == ESP_OK);
-    assert(mqtt_manager_->waitSubscribeClient(client, 10) == ESP_ERR_TIMEOUT);
+    assert(mqtt_manager_->clientSubscribe(client, "esp32/test_subscribe", 2) == ESP_OK);
+    assert(mqtt_manager_->clientWaitSubscribe(client, 1000) == ESP_OK);
+    assert(mqtt_manager_->clientWaitSubscribe(client, 10) == ESP_ERR_TIMEOUT);
     ESP_LOGD(TAG, "Client Subscribed to MQTT");
 
     mqtt_message_t rec_mes;
 
     for (int i = 0; i < 10; i++) {
-        assert(mqtt_manager_->enqueueClient(client, "hi " + std::to_string(i), "esp32/test_publish", 2) == ESP_OK);
-        assert(mqtt_manager_->waitPublishClient(client, 1000) == ESP_OK);
-        assert(mqtt_manager_->waitPublishClient(client, 10) == ESP_ERR_TIMEOUT);
+        assert(mqtt_manager_->clientEnqueue(client, "hi " + std::to_string(i), "esp32/test_publish", 2) == ESP_OK);
+        assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
+        assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
         ESP_LOGD(TAG, "Client Published to MQTT");
 
         memset(&rec_mes, 0, sizeof(mqtt_message_t));
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_->receiveClient(client, rec_mes) == ESP_OK) {
+            if (mqtt_manager_->clientReceive(client, rec_mes) == ESP_OK) {
                 ESP_LOGD(TAG, "Received topic: %s", rec_mes.topic.data());
                 ESP_LOGD(TAG, "Received data: %s", rec_mes.payload.data());
                 break;

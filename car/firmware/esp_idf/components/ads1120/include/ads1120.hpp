@@ -49,40 +49,69 @@
 #define ADS1120_REG_MASK_DRDY_MODE     0x02
 #define ADS1120_REG_MASK_RESERVED      0x01
 
+typedef struct ads1120_init_param {
+  gpio_num_t cs_pin;
+  gpio_num_t drdy_pin;
+  spi_host_device_t spi_host;
+} ads1120_init_param_t;
+
+// refer to the private class function docs to see what values to set
+typedef struct ads1120_regs {
+  uint8_t analog_channels;
+  uint8_t volt_refs;
+  uint8_t gain;
+  bool pga_bypass;
+  uint8_t data_rate;
+  uint8_t op_mode;
+  uint8_t conv_mode;
+  uint8_t temp_mode;
+  uint8_t burn_sources;
+  uint8_t fir;
+  uint8_t power_switch;
+  uint8_t idac_current;
+  uint8_t idac1_routing;
+  uint8_t idac2_routing;
+  uint8_t drdy_mode;
+} ads1120_regs_t;
+
 class ADS1120 {
   public:
     ADS1120();
+    esp_err_t init(ads1120_init_param_t t_init_param);
+    esp_err_t configure(ads1120_regs_t t_new_regs);
+    void getRegs(ads1120_regs_t* regs);
+    bool isDataReady(void) const;
+    esp_err_t readADC(uint16_t* t_data) const;
 
+  private:
+    esp_err_t readRegister(uint8_t t_address, uint8_t* t_data) const;
     esp_err_t writeRegister(uint8_t t_address, uint8_t t_value);
-    esp_err_t readRegister(uint8_t t_address, uint8_t* t_data);
-    esp_err_t init(gpio_num_t t_cs_pin, gpio_num_t t_drdy_pin, spi_host_device_t t_spi_host);
-    bool isDataReady(void);
-    esp_err_t readADC(uint16_t* t_data);
-    esp_err_t sendCommand(uint8_t t_command);
-    esp_err_t reset(void);
-    esp_err_t startSync(void);
-    esp_err_t powerDown(void);
-    esp_err_t rdata(void);
     esp_err_t writeRegisterMasked(uint8_t t_value, uint8_t t_mask, uint8_t t_address);
-    esp_err_t setMultiplexer(uint8_t t_value);
-    esp_err_t setGain(uint8_t t_gain);
-    esp_err_t setPGAbypass(bool t_value);
+    esp_err_t sendCommand(uint8_t t_command);
+    esp_err_t setAnalogChannels(uint8_t t_value);
+    esp_err_t setVoltageReferences(uint8_t t_value);
+    esp_err_t setGain(uint8_t t_value);
+    esp_err_t setPGABypass(bool t_value);
     esp_err_t setDataRate(uint8_t t_value);
     esp_err_t setOpMode(uint8_t t_value);
     esp_err_t setConversionMode(uint8_t t_value);
     esp_err_t setTemperatureMode(uint8_t t_value);
     esp_err_t setBurnoutCurrentSources(bool t_value);
-    esp_err_t setVoltageRef(uint8_t t_value);
     esp_err_t setFIR(uint8_t t_value);
     esp_err_t setPowerSwitch(uint8_t t_value);
-    esp_err_t setIDACcurrent(uint8_t t_value);
-    esp_err_t setIDAC1routing(uint8_t t_value);
-    esp_err_t setIDAC2routing(uint8_t t_value);
-    esp_err_t setDRDYmode(uint8_t t_value);
+    esp_err_t setIDACCurrent(uint8_t t_value);
+    esp_err_t setIDAC1Routing(uint8_t t_value);
+    esp_err_t setIDAC2Routing(uint8_t t_value);
+    esp_err_t setDRDYMode(uint8_t t_value);
+    esp_err_t reset(void);
+    esp_err_t startSync(void);
+    esp_err_t powerDown(void);
+    esp_err_t rdata(void);
 
   private:
     gpio_num_t drdy_pin_;
     spi_device_handle_t spi_dev_;
+    ads1120_regs_t regs_;
 };
 
 #endif

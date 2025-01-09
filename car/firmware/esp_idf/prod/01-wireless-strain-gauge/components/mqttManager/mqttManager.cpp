@@ -197,7 +197,7 @@ void mqttManager::destroyClient(mqtt_client_t* client)
     delete client;
 }
 
-esp_err_t mqttManager::connectClient(mqtt_client_t* client)
+esp_err_t mqttManager::clientConnect(mqtt_client_t* client)
 {
     if (client == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -219,7 +219,7 @@ esp_err_t mqttManager::connectClient(mqtt_client_t* client)
 
 void mqttManager::disconnectWiFi(void) { esp_wifi_disconnect(); }
 
-esp_err_t mqttManager::disconnectClient(mqtt_client_t* client)
+esp_err_t mqttManager::clientDisconnect(mqtt_client_t* client)
 {
     if (client == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -311,7 +311,7 @@ bool mqttManager::isClientConnected(mqtt_client_t* client) const
     }
 }
 
-esp_err_t mqttManager::enqueueClient(mqtt_client_t* client, const std::string& t_payload, const std::string& t_topic,
+esp_err_t mqttManager::clientEnqueue(mqtt_client_t* client, const std::string& t_payload, const std::string& t_topic,
                                      uint8_t t_QoS)
 {
     if (client == NULL || t_topic.size() == 0 || t_payload.length() == 0 || t_QoS >= 3) {
@@ -332,7 +332,7 @@ esp_err_t mqttManager::enqueueClient(mqtt_client_t* client, const std::string& t
     return ESP_OK;
 }
 
-esp_err_t mqttManager::waitPublishClient(mqtt_client_t* client, TickType_t timeout)
+esp_err_t mqttManager::clientWaitPublish(mqtt_client_t* client, TickType_t timeout)
 {
     EventBits_t ret = xEventGroupWaitBits(client->conn_event, MQTT_PUBLISHED_BIT, true, true, timeout);
     if ((ret & MQTT_PUBLISHED_BIT) != 0) {
@@ -342,7 +342,7 @@ esp_err_t mqttManager::waitPublishClient(mqtt_client_t* client, TickType_t timeo
     }
 }
 
-esp_err_t mqttManager::subscribeClient(mqtt_client_t* client, const std::string& t_topic, uint8_t t_QoS)
+esp_err_t mqttManager::clientSubscribe(mqtt_client_t* client, const std::string& t_topic, uint8_t t_QoS)
 {
     if (client == NULL || t_topic.length() == 0 || t_QoS >= 3) {
         ESP_LOGE(TAG, "subscribeClient: invalid parameters");
@@ -363,7 +363,7 @@ esp_err_t mqttManager::subscribeClient(mqtt_client_t* client, const std::string&
     return ESP_OK;
 }
 
-esp_err_t mqttManager::waitSubscribeClient(mqtt_client_t* client, TickType_t timeout)
+esp_err_t mqttManager::clientWaitSubscribe(mqtt_client_t* client, TickType_t timeout)
 {
     EventBits_t ret = xEventGroupWaitBits(client->conn_event, MQTT_SUBSCRIBED_BIT, true, true, timeout);
     if ((ret & MQTT_SUBSCRIBED_BIT) != 0) {
@@ -373,7 +373,7 @@ esp_err_t mqttManager::waitSubscribeClient(mqtt_client_t* client, TickType_t tim
     }
 }
 
-esp_err_t mqttManager::receiveClient(mqtt_client_t* client, mqtt_message_t& t_payload)
+esp_err_t mqttManager::clientReceive(mqtt_client_t* client, mqtt_message_t& t_payload)
 {
     if (client == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -390,7 +390,7 @@ esp_err_t mqttManager::receiveClient(mqtt_client_t* client, mqtt_message_t& t_pa
     return ESP_OK;
 }
 
-esp_err_t mqttManager::clearClientMessages(mqtt_client_t* client)
+esp_err_t mqttManager::clientClearMessages(mqtt_client_t* client)
 {
     if (client == NULL) {
         return ESP_ERR_INVALID_ARG;
