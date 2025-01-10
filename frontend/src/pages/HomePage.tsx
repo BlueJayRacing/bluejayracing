@@ -33,14 +33,17 @@ const Orbit = ({horizontalPosition, verticalPosition}) => { //add props // pass 
   );
 };
 
-const PanCameraFront = ({
+const PanCamera = ({
   horizontalPosition, verticalPosition, 
   setHorizontalPosition, setVerticalPosition, 
-  toFront, setToFront
+  isGoingToFront, setIsGoingToFront,
+  isGoingToBack, setIsGoingToBack,
+  isGoingToLeft, setIsGoingToLeft,
+  isGoingToRight, setIsGoingToRight
 
 }) => {
   useFrame(() => {
-    if(toFront) {
+    if(isGoingToFront) {
       if (horizontalPosition > -1.55) {
         setHorizontalPosition((horizontalPosition - 0.01));
       } else if (horizontalPosition < -1.55) {
@@ -52,26 +55,10 @@ const PanCameraFront = ({
         setVerticalPosition(verticalPosition + 0.01);
       }
       if (Math.abs(horizontalPosition + 1.55) < 0.01 && Math.abs(verticalPosition - 1.5) < 0.01) {
-        setToFront(false);
+        setIsGoingToFront(false);
       }
     }
-
-  })
-
-  return(
-    <></>
-  )
-}
-
-
-const PanCameraBack = ({
-  horizontalPosition, verticalPosition, 
-  setHorizontalPosition, setVerticalPosition, 
-  toBack, setToBack
-
-}) => {
-  useFrame(() => {
-    if(toBack) {
+    if(isGoingToBack) {
       if (horizontalPosition > 1.55) {
         setHorizontalPosition((horizontalPosition - 0.01));
       } else if (horizontalPosition < 1.55) {
@@ -83,24 +70,10 @@ const PanCameraBack = ({
         setVerticalPosition(verticalPosition + 0.01);
       }
       if (Math.abs(horizontalPosition - 1.55 ) < 0.01 && Math.abs(verticalPosition - 1.50) < 0.01) {
-        setToBack(false);
+        setIsGoingToBack(false);
       }
     }
-  })
-
-  return(
-    <></>
-  )
-}
-
-const PanCameraLeft = ({
-  horizontalPosition, verticalPosition, 
-  setHorizontalPosition, setVerticalPosition, 
-  toLeft, setToLeft
-
-}) => {
-  useFrame(() => {
-    if(toLeft) {
+    if(isGoingToLeft) {
       if (horizontalPosition > 0) {
         setHorizontalPosition((horizontalPosition - 0.01));
       } else if (horizontalPosition < 0) {
@@ -112,24 +85,10 @@ const PanCameraLeft = ({
         setVerticalPosition(verticalPosition + 0.01);
       }
       if (Math.abs(horizontalPosition - 0 ) < 0.01 && Math.abs(verticalPosition - 1.50) < 0.01) {
-        setToLeft(false);
+        setIsGoingToLeft(false);
       }
     }
-  })
-
-  return(
-    <></>
-  )
-}
-
-const PanCameraRight = ({
-  horizontalPosition, verticalPosition, 
-  setHorizontalPosition, setVerticalPosition, 
-  toRight, setToRight
-
-}) => {
-  useFrame(() => {
-    if(toRight) {
+    if(isGoingToRight) {
       if (horizontalPosition > 3.14) {
         setHorizontalPosition((horizontalPosition - 0.01));
       } else if (horizontalPosition < 3.14) {
@@ -141,15 +100,17 @@ const PanCameraRight = ({
         setVerticalPosition(verticalPosition + 0.01);
       }
       if (Math.abs(horizontalPosition - 3.14 ) < 0.01 && Math.abs(verticalPosition - 1.50) < 0.01) {
-        setToRight(false);
+        setIsGoingToRight(false);
       }
     }
+
   })
 
   return(
     <></>
   )
 }
+
 
 const HomePage: React.FC = () => {
   // const [shockExtension, setShockExtension] = useState(0);
@@ -164,29 +125,31 @@ const HomePage: React.FC = () => {
   const [rightBackShockExtension, setRightBackShockExtension] = useState(0);
   const [horizontalPosition, setHorizontalPosition] = useState(0);
   const [verticalPosition, setVerticalPosition] = useState(0);
-  const [toFront, setToFront] = useState(false);
-  const [toBack, setToBack] = useState(false);
-  const [toLeft, setToLeft] = useState(false);
-  const [toRight, setToRight] = useState(false);
+  // isGoingToFront is true when the camera is currently panning to
+  // the front of the car, occurs when the "Front" button is pressed.
+  // setIsGoingToFront sets isGoingToFront true when the "Front" button
+  // is pressed, and is false when the camera has finished moving or does.
+  // Likewise for the other isGoingTo___ and setIsGoingTo___
+  const [isGoingToFront, setIsGoingToFront] = useState(false);
+  const [isGoingToBack, setIsGoingToBack] = useState(false);
+  const [isGoingToLeft, setIsGoingToLeft] = useState(false);
+  const [isGoingToRight, setIsGoingToRight] = useState(false);
   //const { camera, gl } = useThree();
 
+  const goToFront = () => {
+    setIsGoingToFront(true);
+  }
 
   const goToBack = () => {
-    setToBack(true);
+    setIsGoingToBack(true);
   }
-
-  const goToFront = () => {
-    setToFront(true);
-  }
-
   const goToLeft = () => {
-    setToLeft(true);
+    setIsGoingToLeft(true);
   }
 
   const goToRight = () => {
-    setToRight(true);
+    setIsGoingToRight(true);
   }
-
 
   useSuspensionData(); // Start polling for suspension data
   
@@ -219,13 +182,13 @@ const HomePage: React.FC = () => {
           setHorizontalPosition={setHorizontalPosition}
           verticalPosition={verticalPosition}
           setVerticalPosition={setVerticalPosition}
-          toFront={toFront}
+          isGoingToFront={isGoingToFront}
           goToFront={goToFront}
-          toBack={toBack}
+          isGoingToBack={isGoingToBack}
           goToBack={goToBack}
-          toLeft={toLeft}
+          isGoingToLeft={isGoingToLeft}
           goToLeft={goToLeft}
-          toRight={toRight}
+          isGoingToRight={isGoingToRight}
           goToRight={goToRight}
           />
        
@@ -237,33 +200,18 @@ const HomePage: React.FC = () => {
         >
 
           <Orbit horizontalPosition={horizontalPosition} verticalPosition={verticalPosition} /> 
-          <PanCameraFront horizontalPosition={horizontalPosition} 
+          <PanCamera horizontalPosition={horizontalPosition} 
           verticalPosition={verticalPosition} 
           setHorizontalPosition={setHorizontalPosition} 
           setVerticalPosition={setVerticalPosition}
-          toFront={toFront}
-          setToFront={setToFront}
-          />
-         <PanCameraBack horizontalPosition={horizontalPosition} 
-          verticalPosition={verticalPosition} 
-          setHorizontalPosition={setHorizontalPosition} 
-          setVerticalPosition={setVerticalPosition}
-          toBack={toBack}
-          setToBack={setToBack}
-          />
-          <PanCameraLeft horizontalPosition={horizontalPosition} 
-          verticalPosition={verticalPosition} 
-          setHorizontalPosition={setHorizontalPosition} 
-          setVerticalPosition={setVerticalPosition}
-          toLeft={toLeft}
-          setToLeft={setToLeft}
-          />
-          <PanCameraRight horizontalPosition={horizontalPosition} 
-          verticalPosition={verticalPosition} 
-          setHorizontalPosition={setHorizontalPosition} 
-          setVerticalPosition={setVerticalPosition}
-          toRight={toRight}
-          setToRight={setToRight}
+          isGoingToFront={isGoingToFront}
+          setIsGoingToFront={setIsGoingToFront}
+          isGoingToBack={isGoingToBack}
+          setIsGoingToBack={setIsGoingToBack}
+          isGoingToLeft={isGoingToLeft}
+          setIsGoingToLeft={setIsGoingToLeft}
+          isGoingToRight={isGoingToRight}
+          setIsGoingToRight={setIsGoingToRight}
           />
           <LightingEffects />
           <CarModel showSuspension={!showSuspension} />

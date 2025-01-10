@@ -8,13 +8,13 @@ interface CameraControlProps {
       setHorizontalPosition: (value: number) => void;
       verticalPosition: number;
       setVerticalPosition: (value: number) => void;
-      toFront: boolean;
+      isGoingToFront: boolean;
       goToFront: (value: boolean) => void;
-      toBack: boolean;
+      isGoingToBack: boolean;
       goToBack: (value: boolean) => void;
-      toLeft: boolean;
+      isGoingToLeft: boolean;
       goToLeft: (value: boolean) => void;
-      toRight: boolean;
+      isGoingToRight: boolean;
       goToRight: (value: boolean) => void;
 
 }
@@ -24,13 +24,13 @@ const CameraControls: React.FC<CameraControlProps> = ({
   setHorizontalPosition,
   verticalPosition,
   setVerticalPosition,
-  toFront,
+  isGoingToFront,
   goToFront,
-  toBack,
+  isGoingToBack,
   goToBack,
-  toLeft,
+  isGoingToLeft,
   goToLeft,
-  toRight,
+  isGoingToRight,
   goToRight,
 
 }) => {
