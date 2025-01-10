@@ -28,10 +28,10 @@ const CarModel: React.FC<CarModelProps> = ({ showSuspension }) => {
           newMeshes[object.name] = object;
 
           // Debug logging
-          console.log(`Mesh: ${object.name}`);
-          console.log(`Material: ${object.material.name}`);
+          //console.log(`Mesh: ${object.name}`);
+          //console.log(`Material: ${object.material.name}`);
           if (object.material instanceof THREE.MeshStandardMaterial) {
-            console.log(`Base Color Map: ${object.material.map ? 'Yes' : 'No'}`);
+            //console.log(`Base Color Map: ${object.material.map ? 'Yes' : 'No'}`);
           }
         }
       }
