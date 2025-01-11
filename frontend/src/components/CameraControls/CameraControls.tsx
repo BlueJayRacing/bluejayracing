@@ -26,13 +26,9 @@ const CameraControls: React.FC<CameraControlProps> = ({
   setHorizontalPosition,
   verticalPosition,
   setVerticalPosition,
-  isGoingToFront,
   goToFront,
-  isGoingToBack,
   goToBack,
-  isGoingToLeft,
   goToLeft,
-  isGoingToRight,
   goToRight,
 
 }) => {
