@@ -18,13 +18,17 @@ class Test {
   private:
     void testMemoryQueueBasic(void);
     void testMemoryQueueAcquireFull(void);
+
     void testMQTTManagerBasicParamErrors(void);
     void testMQTTManagerWiFiConnectDisconnect(void);
     void testMQTTManagerClientConnectDisconnect(void);
     void testMQTTManagerClientWiFiConnectDisconnect(void);
     void testMQTTManagerMultipleClientsConDisCon(void);
     void testMQTTManagerClientPublishSubscribe(void);
+
+    void testADCDACCheckSPIBus(void);
     void testADCDACReadDACBias(void);
+    void testADCDACCheckADCPGA(void);
 
   private:
     mqttManager* mqtt_manager_;

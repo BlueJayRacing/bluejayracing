@@ -1,6 +1,13 @@
 #include <esp_log.h>
 #include <esp_system.h>
 #include <test.hpp>
+#include <esp_timer.h>
+
+#define SPI2_MOSI_PIN 18
+#define SPI2_MISO_PIN 20
+#define SPI2_SCLK_PIN 19
+
+#define ADC_VALUE_ERROR_MARGIN 500
 
 static const char* TAG = "test";
 
@@ -19,9 +26,11 @@ void Test::testMQTTManager(void)
 
     mqtt_manager_ = mqttManager::getInstance();
 
+    // Initialize the MQTT Manager
     assert(mqtt_manager_->init() == ESP_OK);
     ESP_LOGD(TAG, "Initialized MQTT manager");
 
+    // Run MQTT manager tests
     testMQTTManagerBasicParamErrors();
     testMQTTManagerWiFiConnectDisconnect();
     testMQTTManagerClientConnectDisconnect();
@@ -30,6 +39,10 @@ void Test::testMQTTManager(void)
     testMQTTManagerClientPublishSubscribe();
 }
 
+/* We check basic memory queue functions like acquiring, writing to, and pushing
+ * blocks onto the memory queue. We also cover function returns on invalid input
+ * or invalid operation for that state.
+ */
 void Test::testMemoryQueueBasic(void)
 {
     ESP_LOGI(TAG, "Testing Basic Memory Queue Functions");
@@ -72,6 +85,9 @@ void Test::testMemoryQueueBasic(void)
     ESP_LOGI(TAG, "Passed Basic Memory Queue Functions");
 }
 
+/* We check to see if the queue can properly free the oldest memory blocks when
+ * acquiring memory blocks on a full queue.
+ */
 void Test::testMemoryQueueAcquireFull(void)
 {
     ESP_LOGI(TAG, "Testing Memory Queue When Full");
@@ -100,6 +116,8 @@ void Test::testMemoryQueueAcquireFull(void)
     ESP_LOGI(TAG, "Passed Memory Queue When Full");
 }
 
+/* We check to see if the MQTT manager returns the correct return values on error.
+ */
 void Test::testMQTTManagerBasicParamErrors(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager Basic Paramter Error Handling");
@@ -136,6 +154,9 @@ void Test::testMQTTManagerBasicParamErrors(void)
     ESP_LOGI(TAG, "Passed MQTT Manager Basic Paramter Error Handling");
 }
 
+/* We check to see if the MQTT manager can successfully connect/disconnect from WiFi,
+ * as well as properly signal the WiFi connection event group.
+ */
 void Test::testMQTTManagerWiFiConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager WiFi Connection");
@@ -171,6 +192,9 @@ void Test::testMQTTManagerWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager WiFi Connection");
 }
 
+/* We check to see if the MQTT manager can successfully connect/disconnect from MQTT,
+ * as well as properly signal the MQTT connection event group.
+ */
 void Test::testMQTTManagerClientConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager MQTT Connection");
@@ -243,6 +267,9 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager MQTT Connection");
 }
 
+/* We check to see if the MQTT manager can properly signal an MQTT disconnection if the WiFi
+ * connection breaks down.
+ */
 void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager MQTT + WIFI Disconnect");
@@ -298,6 +325,9 @@ void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager MQTT + WIFI Disconnect");
 }
 
+/* We check to see if the MQTT manager can properly handle connecting and disconnecting multiple
+ * MQTT clients.
+ */
 void Test::testMQTTManagerMultipleClientsConDisCon(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager Multiple Clients Connect/Disconnect");
@@ -399,6 +429,8 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     ESP_LOGI(TAG, "Passed MQTT Manager Multiple Clients Connect/Disconnect");
 }
 
+/* We check to see if the MQTT manager can properly publish and subscribe to topics from the MQTT broker.
+ */
 void Test::testMQTTManagerClientPublishSubscribe(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager Client Publish/Subscribe");
@@ -479,18 +511,15 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     ESP_LOGI(TAG, "Passed MQTT Manager Client Publish/Subscribe");
 }
 
-#define SPI_MOSI_PIN 18
-#define SPI_MISO_PIN 20
-#define SPI_SCLK_PIN 19
-
 void Test::testADCDAC(void)
 {
+    // Configure the SPI bus
     spi_bus_config_t spi_cfg;
     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
 
-    spi_cfg.mosi_io_num   = SPI_MOSI_PIN;
-    spi_cfg.miso_io_num   = SPI_MISO_PIN;
-    spi_cfg.sclk_io_num   = SPI_SCLK_PIN;
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
     spi_cfg.quadwp_io_num = -1;
     spi_cfg.quadhd_io_num = -1;
 
@@ -500,7 +529,7 @@ void Test::testADCDAC(void)
         return;
     }
 
-    // Need to connect to DAC output in order to see if it works
+    // Initialize the DAC instance
     ad5626_init_param_t dac_params;
     dac_params.cs_pin   = GPIO_NUM_0;
     dac_params.ldac_pin = GPIO_NUM_23;
@@ -513,6 +542,7 @@ void Test::testADCDAC(void)
         return;
     }
 
+    // Initialize the ADC instance
     ads1120_init_param_t adc_params;
     adc_params.cs_pin = GPIO_NUM_21;
     adc_params.drdy_pin = GPIO_NUM_2;
@@ -524,11 +554,56 @@ void Test::testADCDAC(void)
         return;
     }
 
+    // Start running ADC/DAC tests
+    testADCDACCheckSPIBus();
     testADCDACReadDACBias();
+    testADCDACCheckADCPGA();
 }
 
-#define ADC_VALUE_ERROR_MARGIN 500
+/* We check whether the SPI bus on the WSG board is functional by programming
+ * the ADC to read data at a specific sample rate, and then check to see if the
+ * programmed sample rate is close to the real sample rate.
+ */
+void Test::testADCDACCheckSPIBus(void)
+{
+    ESP_LOGI(TAG, "Testing Reading ADC to check SPI bus");
 
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    adc_regs.conv_mode = 1; // continuous
+    adc_regs.op_mode = 2;   // turbo
+    adc_regs.data_rate = 6; // 2000 SPS
+
+    adc_.configure(adc_regs);
+
+    uint16_t data;
+    int num_success_reads = 0;
+    int num_failed_reads = 0;
+    int start_time = esp_timer_get_time();
+    int current_time = esp_timer_get_time();
+
+    while (current_time - 1000000 < start_time) {
+        if (adc_.isDataReady()) {
+            if (adc_.readADC(&data) == ESP_OK) {
+                num_success_reads++;
+            } else {
+                num_failed_reads++;
+            }
+        }
+        current_time = esp_timer_get_time();
+    }
+
+    ESP_LOGD(TAG, "Number of successful reads: %d", num_success_reads);
+    ESP_LOGD(TAG, "Number of failed reads: %d", num_failed_reads);
+    assert(num_success_reads > 1800 && num_success_reads < 2200);
+
+    ESP_LOGI(TAG, "Passed Testing Reading ADC to check SPI bus");
+}
+
+/* We check whether the DAC bias is being set properly by having the ADC read it
+ * as a single-ended input between the DAC bias and ground.
+ */
 void Test::testADCDACReadDACBias(void)
 {
     ESP_LOGI(TAG, "Testing Reading DAC Bias from ADC");
@@ -569,8 +644,8 @@ void Test::testADCDACReadDACBias(void)
             continue;
         }
 
-        ESP_LOGI(TAG, "Expected DAC Voltage Value: %f", 4.096 * i / 16);
-        ESP_LOGI(TAG, "Measured DAC Voltage Value: %f", 5.00 * read_value / (1 << 15));
+        ESP_LOGD(TAG, "Expected DAC Voltage Value: %f", 4.096 * i / 16);
+        ESP_LOGD(TAG, "Measured DAC Voltage Value: %f", 5.00 * read_value / (1 << 15));
     }
 
     ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
