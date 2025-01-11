@@ -3,11 +3,13 @@ import { useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { Slider, Box, Switch, FormControlLabel , Button} from '@mui/material';
 
-interface CameraControlProps {
-      horizontalPosition: number;
-      setHorizontalPosition: (value: number) => void;
-      verticalPosition: number;
-      setVerticalPosition: (value: number) => void;
+export interface CameraPositionProps {
+  horizontalPosition: number;
+  setHorizontalPosition: (value: number) => void;
+  verticalPosition: number;
+  setVerticalPosition: (value: number) => void;
+}
+export interface CameraControlProps extends CameraPositionProps{
       isGoingToFront: boolean;
       goToFront: (value: boolean) => void;
       isGoingToBack: boolean;

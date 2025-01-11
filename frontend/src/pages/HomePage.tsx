@@ -1,23 +1,26 @@
 // HomePage.tsx
-import React, { useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect, FC} from 'react';
 import { Canvas, render } from '@react-three/fiber';
 import CarModel from '../components/CarModel/CarModel';
 import SuspensionModel from '../components/SuspensionModel/SuspensionModel';
 import SuspensionControls from '../components/SuspensionControls/SuspensionControls';
 import CameraControls from '../components/CameraControls/CameraControls';
+import {CameraPositionProps, CameraControlProps} from '../components/CameraControls/CameraControls';
 import LightingEffects from '../components/LightingEffects/LightingEffects';
 import useSuspensionData from '../hooks/useSuspensionData';
 import { OrbitControls } from '@react-three/drei';
 import { useThree , useFrame} from '@react-three/fiber';
 import { RenderTarget } from 'three';
 
+interface OrbitControlProps extends CameraControlProps {
+  setIsGoingToFront: (value: boolean) => void;
+  setIsGoingToBack: (value: boolean) => void;
+  setIsGoingToLeft: (value: boolean) => void;
+  setIsGoingToRight: (value: boolean) => void;
+}
 
-const Orbit = ({horizontalPosition, verticalPosition}) => { //add props // pass in car center
+const Orbit: FC<CameraPositionProps> = ({horizontalPosition, verticalPosition}) => {
   const { camera, gl } = useThree();
-  //const xPosition2 = xPosition
-  //let origin = {xPosition, yPosition,xPosition2};
-  //let origin = [0, 0, -20];
-  //let normalizedHorizontalPosition = (horizontalPosition + 2 * Math.PI) / (4 * Math.PI);
   
   return (
     <OrbitControls
@@ -33,7 +36,7 @@ const Orbit = ({horizontalPosition, verticalPosition}) => { //add props // pass 
   );
 };
 
-const PanCamera = ({
+const PanCamera: FC<OrbitControlProps> = ({
   horizontalPosition, verticalPosition, 
   setHorizontalPosition, setVerticalPosition, 
   isGoingToFront, setIsGoingToFront,
@@ -42,64 +45,62 @@ const PanCamera = ({
   isGoingToRight, setIsGoingToRight
 
 }) => {
+  // how much to increment the camera by when panning
+  const increment = 0.01;
+  // the threshold for how close the camera has to be to
+  // a certain position (front, back, left, right), before it
+  // is considered at that position
+  const threshold = 0.01;
+  // the front, back, left, and right view have the same verticalPosition
+  const goToPresetVerticalPosition = () => {
+    if (verticalPosition > 1.5) {
+      setVerticalPosition(verticalPosition - increment);
+    } else if (verticalPosition < 1.5) {
+      setVerticalPosition(verticalPosition + increment);
+    }
+  }
   useFrame(() => {
     if(isGoingToFront) {
       if (horizontalPosition > -1.55) {
-        setHorizontalPosition((horizontalPosition - 0.01));
+        setHorizontalPosition((horizontalPosition - increment));
       } else if (horizontalPosition < -1.55) {
-        setHorizontalPosition(horizontalPosition + 0.01);
+        setHorizontalPosition(horizontalPosition + increment);
       } 
-      if (verticalPosition > 1.5) {
-        setVerticalPosition(verticalPosition - 0.01);
-      } else if (verticalPosition < 1.5) {
-        setVerticalPosition(verticalPosition + 0.01);
-      }
-      if (Math.abs(horizontalPosition + 1.55) < 0.01 && Math.abs(verticalPosition - 1.5) < 0.01) {
+      goToPresetVerticalPosition();
+      if (Math.abs(horizontalPosition + 1.55) < threshold && Math.abs(verticalPosition - 1.5) < threshold) {
         setIsGoingToFront(false);
       }
     }
     if(isGoingToBack) {
       if (horizontalPosition > 1.55) {
-        setHorizontalPosition((horizontalPosition - 0.01));
+        setHorizontalPosition((horizontalPosition - increment));
       } else if (horizontalPosition < 1.55) {
-        setHorizontalPosition(horizontalPosition + 0.01);
+        setHorizontalPosition(horizontalPosition + increment);
       } 
-      if (verticalPosition > 1.5) {
-        setVerticalPosition(verticalPosition - 0.01);
-      } else if (verticalPosition < 1.5) {
-        setVerticalPosition(verticalPosition + 0.01);
-      }
-      if (Math.abs(horizontalPosition - 1.55 ) < 0.01 && Math.abs(verticalPosition - 1.50) < 0.01) {
+      goToPresetVerticalPosition();
+      if (Math.abs(horizontalPosition - 1.55 ) < threshold && Math.abs(verticalPosition - 1.50) < threshold) {
         setIsGoingToBack(false);
       }
     }
     if(isGoingToLeft) {
       if (horizontalPosition > 0) {
-        setHorizontalPosition((horizontalPosition - 0.01));
+        setHorizontalPosition((horizontalPosition - increment));
       } else if (horizontalPosition < 0) {
-        setHorizontalPosition(horizontalPosition + 0.01);
+        setHorizontalPosition(horizontalPosition + increment);
       } 
-      if (verticalPosition > 1.5) {
-        setVerticalPosition(verticalPosition - 0.01);
-      } else if (verticalPosition < 1.5) {
-        setVerticalPosition(verticalPosition + 0.01);
-      }
-      if (Math.abs(horizontalPosition - 0 ) < 0.01 && Math.abs(verticalPosition - 1.50) < 0.01) {
+      goToPresetVerticalPosition();
+      if (Math.abs(horizontalPosition - 0 ) < threshold && Math.abs(verticalPosition - 1.50) < threshold) {
         setIsGoingToLeft(false);
       }
     }
     if(isGoingToRight) {
       if (horizontalPosition > 3.14) {
-        setHorizontalPosition((horizontalPosition - 0.01));
+        setHorizontalPosition((horizontalPosition - increment));
       } else if (horizontalPosition < 3.14) {
-        setHorizontalPosition(horizontalPosition + 0.01);
+        setHorizontalPosition(horizontalPosition + increment);
       } 
-      if (verticalPosition > 1.5) {
-        setVerticalPosition(verticalPosition - 0.01);
-      } else if (verticalPosition < 1.5) {
-        setVerticalPosition(verticalPosition + 0.01);
-      }
-      if (Math.abs(horizontalPosition - 3.14 ) < 0.01 && Math.abs(verticalPosition - 1.50) < 0.01) {
+      goToPresetVerticalPosition();
+      if (Math.abs(horizontalPosition - 3.14 ) < threshold && Math.abs(verticalPosition - 1.50) < threshold) {
         setIsGoingToRight(false);
       }
     }
@@ -113,12 +114,7 @@ const PanCamera = ({
 
 
 const HomePage: React.FC = () => {
-  // const [shockExtension, setShockExtension] = useState(0);
   const [showSuspension, setShowSuspension] = useState(true);
-  // const [suspensionAngle, setSuspensionAngle] = useState(0);
-  // const [leftShockExtension, setLeftShockExtension] = useState(0);
-  // const [rightShockExtension, setRightShockExtension] = useState(0);
-
   const [leftFrontShockExtension, setLeftFrontShockExtension] = useState(0);
   const [leftBackShockExtension, setLeftBackShockExtension] = useState(0);
   const [rightFrontShockExtension, setRightFrontShockExtension] = useState(0);
@@ -134,41 +130,32 @@ const HomePage: React.FC = () => {
   const [isGoingToBack, setIsGoingToBack] = useState(false);
   const [isGoingToLeft, setIsGoingToLeft] = useState(false);
   const [isGoingToRight, setIsGoingToRight] = useState(false);
-  //const { camera, gl } = useThree();
 
+  // if the Front button is pressed
   const goToFront = () => {
     setIsGoingToFront(true);
   }
-
+  // if the Back button is pressed
   const goToBack = () => {
     setIsGoingToBack(true);
   }
+  // if the Left button is pressed
   const goToLeft = () => {
     setIsGoingToLeft(true);
   }
-
+  // if the Right button is pressed
   const goToRight = () => {
     setIsGoingToRight(true);
   }
 
   useSuspensionData(); // Start polling for suspension data
   
-
   return (
     <div className="flex h-screen" style={{ width: "100vw", height: "100vh" }}>
       <div className="w-1/4 p-4 overflow-y-auto">
         <SuspensionControls
-          // shockExtension={shockExtension}
-          // setShockExtension={setShockExtension}
           showSuspension={showSuspension}
           setShowSuspension={setShowSuspension}
-          // suspensionAngle={suspensionAngle}
-          // setSuspensionAngle={setSuspensionAngle}
-          // leftShockExtension={leftShockExtension}
-          // setLeftShockExtension={setLeftShockExtension}
-          // rightShockExtension={rightShockExtension}
-          // setRightShockExtension={setRightShockExtension}
-
           leftFrontShockExtension={leftFrontShockExtension}
           setLeftFrontShockExtension={setLeftFrontShockExtension}
           leftBackShockExtension={leftBackShockExtension}
@@ -198,8 +185,8 @@ const HomePage: React.FC = () => {
           className="absolute top-0 left-0 w-full h-full"
           camera={{ position: [0, 50, 100], fov: 60 }}
         >
-
-          <Orbit horizontalPosition={horizontalPosition} verticalPosition={verticalPosition} /> 
+          <Orbit horizontalPosition={horizontalPosition} verticalPosition={verticalPosition} 
+          setHorizontalPosition={setHorizontalPosition} setVerticalPosition={setVerticalPosition}/> 
           <PanCamera horizontalPosition={horizontalPosition} 
           verticalPosition={verticalPosition} 
           setHorizontalPosition={setHorizontalPosition} 
@@ -212,6 +199,10 @@ const HomePage: React.FC = () => {
           setIsGoingToLeft={setIsGoingToLeft}
           isGoingToRight={isGoingToRight}
           setIsGoingToRight={setIsGoingToRight}
+          goToFront={goToFront}
+          goToBack={goToBack}
+          goToLeft={goToLeft}
+          goToRight={goToRight}
           />
           <LightingEffects />
           <CarModel showSuspension={!showSuspension} />
