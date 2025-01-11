@@ -478,3 +478,100 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
 
     ESP_LOGI(TAG, "Passed MQTT Manager Client Publish/Subscribe");
 }
+
+#define SPI_MOSI_PIN 18
+#define SPI_MISO_PIN 20
+#define SPI_SCLK_PIN 19
+
+void Test::testADCDAC(void)
+{
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+        return;
+    }
+
+    // Need to connect to DAC output in order to see if it works
+    ad5626_init_param_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_0;
+    dac_params.ldac_pin = GPIO_NUM_23;
+    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.spi_host = SPI2_HOST;
+
+    ret = dac_.init(dac_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize AD5626: %d", ret);
+        return;
+    }
+
+    ads1120_init_param_t adc_params;
+    adc_params.cs_pin = GPIO_NUM_21;
+    adc_params.drdy_pin = GPIO_NUM_2;
+    adc_params.spi_host = SPI2_HOST;
+
+    ret = adc_.init(adc_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ADS1120: %d", ret);
+        return;
+    }
+
+    testADCDACReadDACBias();
+}
+
+#define ADC_VALUE_ERROR_MARGIN 500
+
+void Test::testADCDACReadDACBias(void)
+{
+    ESP_LOGI(TAG, "Testing Reading DAC Bias from ADC");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    adc_regs.conv_mode = 1;
+    adc_regs.op_mode = 2;
+    adc_regs.analog_channels = 0X0A;
+    adc_regs.data_rate = 6;
+    adc_regs.volt_refs = 1;
+
+    esp_err_t ret = adc_.configure(adc_regs);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+        return;
+    }
+
+    for (int i = 0; i <= 16; i++) {
+        ret = dac_.setLevel(AD5626::MAX_LEVEL_VALUE * i / 16);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set DAC level: %d", ret);
+            continue;
+        }
+
+        vTaskDelay(500);
+
+        while (!adc_.isDataReady()) {
+            vTaskDelay(1);
+        }
+        
+        uint16_t read_value;
+
+        ret = adc_.readADC(&read_value);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+            continue;
+        }
+
+        ESP_LOGI(TAG, "Expected DAC Voltage Value: %f", 4.096 * i / 16);
+        ESP_LOGI(TAG, "Measured DAC Voltage Value: %f", 5.00 * read_value / (1 << 15));
+    }
+
+    ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
+}

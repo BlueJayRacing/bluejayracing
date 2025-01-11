@@ -5,7 +5,7 @@
 static const char* TAG = "ads1120";
 
 #define ADS_SPI_LOCK_TIMEOUT       10
-#define ADS_SPI_CLOCK_SPEED_HZ     1 * 1000 * 1000
+#define ADS_SPI_CLOCK_SPEED_HZ     2 * 1000 * 1000
 #define ADS_SPI_MODE               1
 #define ADS_CS_EN_PRE_WAIT_CYCLES  2
 #define ADS_CS_EN_POST_WAIT_CYCLES 0
@@ -20,7 +20,7 @@ ADS1120::ADS1120() { memset(&regs_, 0x00, sizeof(ads1120_regs_t)); }
  * @param t_drdy_pin - The data ready pin.
  * @param t_spi_host - The SPI host/bus that the device is on.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::init(ads1120_init_param_t t_init_param)
 {
@@ -61,11 +61,12 @@ esp_err_t ADS1120::init(ads1120_init_param_t t_init_param)
 }
 
 /*******************************************************************************
- * @brief Configures the ADS1120 with the proper registers (if necessary).
+ * @brief Configures the ADS1120 with the proper registers. If a new register
+ *        is equivalent to an old register, no spi transaction occurs.
  *
  * @param t_new_regs   - The new registers to write to the ADC.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::configure(ads1120_regs t_new_regs)
 {
@@ -266,7 +267,7 @@ bool ADS1120::isDataReady() const { return !gpio_get_level(drdy_pin_); }
  *
  * @param t_data A pointer to where the ADC value is stored.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::readADC(uint16_t* t_data) const
 {
@@ -295,7 +296,7 @@ esp_err_t ADS1120::readADC(uint16_t* t_data) const
  *
  * @param t_command  - 8-bit command to be sent.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::sendCommand(uint8_t t_command)
 {
@@ -315,7 +316,7 @@ esp_err_t ADS1120::sendCommand(uint8_t t_command)
  * @param t_addr  - The register address.
  * @param t_value - The register value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::writeRegister(uint8_t t_addr, uint8_t t_value)
 {
@@ -336,7 +337,7 @@ esp_err_t ADS1120::writeRegister(uint8_t t_addr, uint8_t t_value)
  * @param t_addr  - The register address.
  * @param t_value - A pointer to where the read data will be stored.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::readRegister(uint8_t t_addr, uint8_t* t_data) const
 {
@@ -367,7 +368,7 @@ esp_err_t ADS1120::readRegister(uint8_t t_addr, uint8_t* t_data) const
  * @param t_mask     - The register mask.
  * @param t_address  - The register address.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::writeRegisterMasked(uint8_t t_value, uint8_t t_mask, uint8_t t_address)
 {
@@ -389,7 +390,7 @@ esp_err_t ADS1120::writeRegisterMasked(uint8_t t_value, uint8_t t_mask, uint8_t 
  *
  * @param t_value    - The new multiplexer value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note | Value | AINp | AINn |
  * @note |-------|------|------|
@@ -423,7 +424,7 @@ esp_err_t ADS1120::setAnalogChannels(uint8_t t_value)
  *
  * @param t_value - The new gain value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note Possible gain values are 1, 2, 4, 8, 16, 32, 64, 128.
  *******************************************************************************/
@@ -468,7 +469,7 @@ esp_err_t ADS1120::setGain(uint8_t t_gain)
  *
  * @param t_value - The new PGA bypass value. Bypasses the PGA if true.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note PGA can only be disabled for gains 1, 2, 4.
  *******************************************************************************/
@@ -482,7 +483,7 @@ esp_err_t ADS1120::setPGABypass(bool t_value)
  *
  * @param t_value - The new data rate value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note |   Normal Mode   | Duty-Cycle Mode |   Turbo Mode    |
  * @note |-----------------|-----------------|-----------------|
@@ -510,7 +511,7 @@ esp_err_t ADS1120::setDataRate(uint8_t t_value)
  *
  * @param t_value - The new op mode value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note 0 - Normal mode
  * @note 1 - Duty-cycle mode
@@ -530,7 +531,7 @@ esp_err_t ADS1120::setOpMode(uint8_t t_value)
  *
  * @param t_value - The new conversion mode value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note 0 - Single shot mode
  * @note 1 - Continuous conversion mode
@@ -549,7 +550,7 @@ esp_err_t ADS1120::setConversionMode(uint8_t t_value)
  *
  * @param t_value - The new temperature mode value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note 0 - Disables temperature sensor
  * @note 1 - Enables temperature sensor
@@ -568,7 +569,7 @@ esp_err_t ADS1120::setTemperatureMode(uint8_t t_value)
  *
  * @param t_value - True for on, false for off.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::setBurnoutCurrentSources(bool t_value)
 {
@@ -580,7 +581,7 @@ esp_err_t ADS1120::setBurnoutCurrentSources(bool t_value)
  *
  * @param t_value - The new voltage reference value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  * @note 0 - Internal 2.048 V
  * @note 1 - External on REFP0 and REFN0 inputs
  * @note 2 - External on AIN0/REFP1 and AIN3/REFN1 inputs
@@ -600,7 +601,7 @@ esp_err_t ADS1120::setVoltageReferences(uint8_t t_value)
  *
  * @param t_value - The new FIR value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  * @note 0 - No 50 or 60 Hz rejection
  * @note 1 - Both 50 and 60 Hz rejection
  * @note 2 - 50 Hz rejection
@@ -620,7 +621,7 @@ esp_err_t ADS1120::setFIR(uint8_t t_value)
  *
  * @param t_value - new power switch value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  * @note 0 - Always open
  * @note 1 - Automatically closes when START/SYNC command is sent and opens when
  * @note     POWERDOWN command is issues.
@@ -639,7 +640,7 @@ esp_err_t ADS1120::setPowerSwitch(uint8_t t_value)
  *
  * @param t_value - new IDAC current value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  * @note 0 - Off
  * @note 1 - 10 uA
  * @note 2 - 50 uA
@@ -662,7 +663,7 @@ esp_err_t ADS1120::setIDACCurrent(uint8_t t_value)
  *
  * @param t_value - new IDAC1 routing value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note 0 - Disabled
  * @note 1 - AIN0/REFP1
@@ -686,7 +687,7 @@ esp_err_t ADS1120::setIDAC1Routing(uint8_t t_value)
  *
  * @param t_value - new IDAC2 routing value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note 0 - Disabled
  * @note 1 - AIN0/REFP1
@@ -710,7 +711,7 @@ esp_err_t ADS1120::setIDAC2Routing(uint8_t t_value)
  *
  * @param t_value - new DRDY mode value.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *
  * @note 0 - Only the dedicated DRDY pin is used  (Default)
  * @note 1 - Data ready indicated on DOUT/DRDY and DRDY
@@ -727,21 +728,21 @@ esp_err_t ADS1120::setDRDYMode(uint8_t t_value)
 /*******************************************************************************
  * @brief Resets the ADS1120.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::reset() { return sendCommand(ADS1120_CMD_RESET); }
 
 /*******************************************************************************
  * @brief Start syncing with the ADS1120.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::startSync() { return sendCommand(ADS1120_CMD_START_SYNC); }
 
 /*******************************************************************************
  * @brief Powers down the ADS1120.
  *
- * @return Returns 0 for success or a non-zero value otherwise.
+ * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
 esp_err_t ADS1120::powerDown() { return sendCommand(ADS1120_CMD_PWRDWN); }
 

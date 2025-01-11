@@ -6,4 +6,6 @@ idf_component_register( SRCS "test.cpp"
                             log
                             memoryQueue
                             mqttManager
+                            ads1120
+                            ad5626
                             )

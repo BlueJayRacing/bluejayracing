@@ -56,6 +56,7 @@ typedef struct ads1120_init_param {
 } ads1120_init_param_t;
 
 // refer to the private class function docs to see what values to set
+// memset to 0 to achieve default behavior
 typedef struct ads1120_regs {
   uint8_t analog_channels;
   uint8_t volt_refs;

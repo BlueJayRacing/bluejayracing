@@ -15,7 +15,7 @@ typedef struct mqtt_client {
     QueueHandle_t rec_queue;
     EventGroupHandle_t conn_event;
 
-    mqtt_client(void) : client_handle(NULL), rec_queue(NULL), conn_event(NULL) {};
+    mqtt_client(void) : client_handle(NULL), rec_queue(NULL), conn_event(NULL){};
 } mqtt_client_t;
 
 typedef struct mqtt_message {
