@@ -28,7 +28,7 @@ class Test {
 
     void testADCDACCheckSPIBus(void);
     void testADCDACReadDACBias(void);
-    void testADCDACCheckADCPGA(void);
+    void testADCDACReadAnalogFrontEnd(void);
 
   private:
     mqttManager* mqtt_manager_;

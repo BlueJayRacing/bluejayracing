@@ -7,7 +7,7 @@
 #define SPI2_MISO_PIN 20
 #define SPI2_SCLK_PIN 19
 
-#define ADC_VALUE_ERROR_MARGIN 500
+#define ADC_VALUE_ERROR_MARGIN 0.001
 
 static const char* TAG = "test";
 
@@ -533,7 +533,7 @@ void Test::testADCDAC(void)
     ad5626_init_param_t dac_params;
     dac_params.cs_pin   = GPIO_NUM_0;
     dac_params.ldac_pin = GPIO_NUM_23;
-    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.clr_pin  = GPIO_NUM_17;
     dac_params.spi_host = SPI2_HOST;
 
     ret = dac_.init(dac_params);
@@ -557,7 +557,7 @@ void Test::testADCDAC(void)
     // Start running ADC/DAC tests
     testADCDACCheckSPIBus();
     testADCDACReadDACBias();
-    testADCDACCheckADCPGA();
+    testADCDACReadAnalogFrontEnd();
 }
 
 /* We check whether the SPI bus on the WSG board is functional by programming
@@ -601,6 +601,8 @@ void Test::testADCDACCheckSPIBus(void)
     ESP_LOGI(TAG, "Passed Testing Reading ADC to check SPI bus");
 }
 
+#define NUM_DAC_SAMPLES 315
+
 /* We check whether the DAC bias is being set properly by having the ADC read it
  * as a single-ended input between the DAC bias and ground.
  */
@@ -614,7 +616,7 @@ void Test::testADCDACReadDACBias(void)
     adc_regs.conv_mode = 1;
     adc_regs.op_mode = 2;
     adc_regs.analog_channels = 0X0A;
-    adc_regs.data_rate = 6;
+    adc_regs.data_rate = 3;
     adc_regs.volt_refs = 1;
 
     esp_err_t ret = adc_.configure(adc_regs);
@@ -623,14 +625,16 @@ void Test::testADCDACReadDACBias(void)
         return;
     }
 
-    for (int i = 0; i <= 16; i++) {
-        ret = dac_.setLevel(AD5626::MAX_LEVEL_VALUE * i / 16);
+    float sum_diff = 0;
+
+    for (int i = 0; i < NUM_DAC_SAMPLES; i++) {
+        ret = dac_.setLevel(AD5626::MAX_LEVEL_VALUE * i / (NUM_DAC_SAMPLES));
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set DAC level: %d", ret);
             continue;
         }
 
-        vTaskDelay(500);
+        vTaskDelay(5);
 
         while (!adc_.isDataReady()) {
             vTaskDelay(1);
@@ -644,9 +648,31 @@ void Test::testADCDACReadDACBias(void)
             continue;
         }
 
-        ESP_LOGD(TAG, "Expected DAC Voltage Value: %f", 4.096 * i / 16);
-        ESP_LOGD(TAG, "Measured DAC Voltage Value: %f", 5.00 * read_value / (1 << 15));
+        float expected_dac_voltage = 4.095 * i / (NUM_DAC_SAMPLES);
+        float measured_dac_voltage = 5.001 * read_value / ((1 << 15) - 1);
+        sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
+
+        ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
+        ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
+
+        assert((measured_dac_voltage - ADC_VALUE_ERROR_MARGIN < expected_dac_voltage) && (measured_dac_voltage + ADC_VALUE_ERROR_MARGIN > expected_dac_voltage));
     }
 
+    ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_DAC_SAMPLES);
+
     ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
+}
+
+void Test::testADCDACReadAnalogFrontEnd(void)
+{
+    ESP_LOGI(TAG, "Testing Reading Analog FrontEnd");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    adc_regs.conv_mode = 1;
+    adc_regs.op_mode = 2;
+    adc_regs.analog_channels = 0X0A;
+    adc_regs.data_rate = 3;
+    adc_regs.volt_refs = 1;
 }
