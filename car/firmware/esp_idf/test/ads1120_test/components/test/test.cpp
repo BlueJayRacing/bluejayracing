@@ -53,19 +53,19 @@ void Test::testConfigureADS1120(void)
 
     ads1120_regs_t readout_regs;
 
-    adc_regs.analog_channels = 0x01;
+    adc_regs.channels = AIN0_AIN1;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully changed analog channels");
 
-    adc_regs.volt_refs = 0x02;
+    adc_regs.volt_refs = REFP0_REFN0;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set voltage references");
 
-    adc_regs.gain = 0x04;
+    adc_regs.gain = GAIN_32;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
@@ -83,61 +83,61 @@ void Test::testConfigureADS1120(void)
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set data rate");
 
-    adc_regs.op_mode = 0x02;
+    adc_regs.op_mode = TURBO;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set op mode");
 
-    adc_regs.conv_mode = 0x01;
+    adc_regs.conv_mode = CONTINUOUS;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set conv mode");
 
-    adc_regs.temp_mode = 0x01;
+    adc_regs.temp_mode = TEMPMODE_ENABLED;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set temp mode");
 
-    adc_regs.burn_sources = 0x01;
+    adc_regs.burn_sources = true;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set current burnout sources");
 
-    adc_regs.fir = 0x03;
+    adc_regs.fir = REJ_60HZ;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set FIR");
 
-    adc_regs.power_switch = 0x01;
+    adc_regs.power_switch = true;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set power switch");
 
-    adc_regs.idac_current = 0x04;
+    adc_regs.idac_current = IDAC_ON_1500uA;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set IDAC current");
 
-    adc_regs.idac1_routing = 0x06;
+    adc_regs.idac1_routing = REFN0;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set IDAC1 routing");
 
-    adc_regs.idac2_routing = 0x04;
+    adc_regs.idac2_routing = REFP0;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
     ESP_LOGV(TAG, "Successfully set IDAC2 routing");
     
-    adc_regs.drdy_mode = 0x01;
+    adc_regs.drdy_mode = DRDY_DOUT;
     assert(adc_.configure(adc_regs) == ESP_OK);
     adc_.getRegs(&readout_regs);
     assert(memcmp(&adc_regs, &readout_regs, sizeof(ads1120_regs_t)) == 0);
@@ -153,8 +153,8 @@ void Test::testReadADS1120(void)
     ads1120_regs_t adc_regs;
     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    adc_regs.conv_mode = 1; // continuous
-    adc_regs.op_mode = 2;   // turbo
+    adc_regs.conv_mode = CONTINUOUS; // continuous
+    adc_regs.op_mode = TURBO;   // turbo
     adc_regs.data_rate = 6; // 2000 SPS
 
     adc_.configure(adc_regs);

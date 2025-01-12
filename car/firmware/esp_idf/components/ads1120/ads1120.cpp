@@ -64,177 +64,179 @@ esp_err_t ADS1120::init(ads1120_init_param_t t_init_param)
  * @brief Configures the ADS1120 with the proper registers. If a new register
  *        is equivalent to an old register, no spi transaction occurs.
  *
- * @param t_new_regs   - The new registers to write to the ADC.
+ * @param t_nregs   - The new registers to write to the ADC.
  *
  * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
-esp_err_t ADS1120::configure(ads1120_regs t_new_regs)
+esp_err_t ADS1120::configure(ads1120_regs t_nregs)
 {
     esp_err_t ret;
 
-    if (t_new_regs.analog_channels != regs_.analog_channels) {
-        ret = setAnalogChannels(t_new_regs.analog_channels);
+    if (t_nregs.channels != regs_.channels) {
+        ret = writeRegisterMasked(t_nregs.channels << 4, ADS1120_REG_MASK_MUX, ADS1120_CONFIG_REG0_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set analog channels");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set analog channels w/: %d", t_new_regs.analog_channels);
-        regs_.analog_channels = t_new_regs.analog_channels;
+        ESP_LOGI(TAG, "Set analog channels w/: %d", t_nregs.channels);
+        regs_.channels = t_nregs.channels;
     }
 
-    if (t_new_regs.volt_refs != regs_.volt_refs) {
-        ret = setVoltageReferences(t_new_regs.volt_refs);
+    if (t_nregs.volt_refs != regs_.volt_refs) {
+        ret = writeRegisterMasked(t_nregs.volt_refs << 6, ADS1120_REG_MASK_VOLTAGE_REF, ADS1120_CONFIG_REG2_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set voltage references");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set voltage references w/: %d", t_new_regs.volt_refs);
-        regs_.volt_refs = t_new_regs.volt_refs;
+        ESP_LOGI(TAG, "Set voltage references w/: %d", t_nregs.volt_refs);
+        regs_.volt_refs = t_nregs.volt_refs;
     }
 
-    if (t_new_regs.gain != regs_.gain) {
-        ret = setGain(t_new_regs.gain);
+    if (t_nregs.gain != regs_.gain) {
+        ret = writeRegisterMasked(t_nregs.gain << 1, ADS1120_REG_MASK_GAIN, ADS1120_CONFIG_REG0_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set gain");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set gain w/: %d", t_new_regs.gain);
-        regs_.gain = t_new_regs.gain;
+        ESP_LOGI(TAG, "Set gain w/: %d", t_nregs.gain);
+        regs_.gain = t_nregs.gain;
     }
 
-    if (t_new_regs.pga_bypass != regs_.pga_bypass) {
-        ret = setPGABypass(t_new_regs.pga_bypass);
+    if (t_nregs.pga_bypass != regs_.pga_bypass) {
+        ret = writeRegisterMasked(t_nregs.pga_bypass, ADS1120_REG_MASK_PGA_BYPASS, ADS1120_CONFIG_REG0_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set PGA bypass");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set PGA bypass w/: %d", t_new_regs.pga_bypass);
-        regs_.pga_bypass = t_new_regs.pga_bypass;
+        ESP_LOGI(TAG, "Set PGA bypass w/: %d", t_nregs.pga_bypass);
+        regs_.pga_bypass = t_nregs.pga_bypass;
     }
 
-    if (t_new_regs.data_rate != regs_.data_rate) {
-        ret = setDataRate(t_new_regs.data_rate);
+    if (t_nregs.data_rate != regs_.data_rate) {
+        ret = setDataRate(t_nregs.data_rate);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set data rate");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set data rate w/: %d", t_new_regs.data_rate);
-        regs_.data_rate = t_new_regs.data_rate;
+        ESP_LOGI(TAG, "Set data rate w/: %d", t_nregs.data_rate);
+        regs_.data_rate = t_nregs.data_rate;
     }
 
-    if (t_new_regs.op_mode != regs_.op_mode) {
-        ret = setOpMode(t_new_regs.op_mode);
+    if (t_nregs.op_mode != regs_.op_mode) {
+        ret = writeRegisterMasked(t_nregs.op_mode << 3, ADS1120_REG_MASK_OP_MODE, ADS1120_CONFIG_REG1_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set op mode");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set op mode w/: %d", t_new_regs.op_mode);
-        regs_.op_mode = t_new_regs.op_mode;
+        ESP_LOGI(TAG, "Set op mode w/: %d", t_nregs.op_mode);
+        regs_.op_mode = t_nregs.op_mode;
     }
 
-    if (t_new_regs.conv_mode != regs_.conv_mode) {
-        ret = setConversionMode(t_new_regs.conv_mode);
+    if (t_nregs.conv_mode != regs_.conv_mode) {
+        ret = writeRegisterMasked(t_nregs.conv_mode << 2, ADS1120_REG_MASK_CONV_MODE, ADS1120_CONFIG_REG1_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set conversion mode");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set conversion mode w/: %d", t_new_regs.conv_mode);
-        regs_.conv_mode = t_new_regs.conv_mode;
+        ESP_LOGI(TAG, "Set conversion mode w/: %d", t_nregs.conv_mode);
+        regs_.conv_mode = t_nregs.conv_mode;
     }
 
-    if (t_new_regs.temp_mode != regs_.temp_mode) {
-        ret = setTemperatureMode(t_new_regs.temp_mode);
+    if (t_nregs.temp_mode != regs_.temp_mode) {
+        ret = writeRegisterMasked(t_nregs.temp_mode << 1, ADS1120_REG_MASK_TEMP_MODE, ADS1120_CONFIG_REG1_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set temperature mode");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set temperature mode w/: %d", t_new_regs.temp_mode);
-        regs_.temp_mode = t_new_regs.temp_mode;
+        ESP_LOGI(TAG, "Set temperature mode w/: %d", t_nregs.temp_mode);
+        regs_.temp_mode = t_nregs.temp_mode;
     }
 
-    if (t_new_regs.burn_sources != regs_.burn_sources) {
-        ret = setBurnoutCurrentSources(t_new_regs.burn_sources);
+    if (t_nregs.burn_sources != regs_.burn_sources) {
+        ret = writeRegisterMasked(t_nregs.burn_sources, ADS1120_REG_MASK_BURNOUT_SOURCES, ADS1120_CONFIG_REG1_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set burnout current sources");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set burnout current sources w/: %d", t_new_regs.burn_sources);
-        regs_.burn_sources = t_new_regs.burn_sources;
+        ESP_LOGI(TAG, "Set burnout current sources w/: %d", t_nregs.burn_sources);
+        regs_.burn_sources = t_nregs.burn_sources;
     }
 
-    if (t_new_regs.fir != regs_.fir) {
-        ret = setFIR(t_new_regs.fir);
+    if (t_nregs.fir != regs_.fir) {
+        ret = writeRegisterMasked(t_nregs.fir << 4, ADS1120_REG_MASK_FIR_CONF, ADS1120_CONFIG_REG2_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set fir");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set fir w/: %d", t_new_regs.fir);
-        regs_.fir = t_new_regs.fir;
+        ESP_LOGI(TAG, "Set fir w/: %d", t_nregs.fir);
+        regs_.fir = t_nregs.fir;
     }
 
-    if (t_new_regs.power_switch != regs_.power_switch) {
-        ret = setPowerSwitch(t_new_regs.power_switch);
+    if (t_nregs.power_switch != regs_.power_switch) {
+        ret = writeRegisterMasked(t_nregs.power_switch << 3, ADS1120_REG_MASK_PWR_SWITCH, ADS1120_CONFIG_REG2_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set power switch");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set power switch w/: %d", t_new_regs.power_switch);
-        regs_.power_switch = t_new_regs.power_switch;
+        ESP_LOGI(TAG, "Set power switch w/: %d", t_nregs.power_switch);
+        regs_.power_switch = t_nregs.power_switch;
     }
 
-    if (t_new_regs.idac_current != regs_.idac_current) {
-        ret = setIDACCurrent(t_new_regs.idac_current);
+    if (t_nregs.idac_current != regs_.idac_current) {
+        ret = writeRegisterMasked(t_nregs.idac_current, ADS1120_REG_MASK_IDAC_CURRENT, ADS1120_CONFIG_REG2_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set IDAC current");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set IDAC current w/: %d", t_new_regs.idac_current);
-        regs_.idac_current = t_new_regs.idac_current;
+        ESP_LOGI(TAG, "Set IDAC current w/: %d", t_nregs.idac_current);
+        regs_.idac_current = t_nregs.idac_current;
     }
 
-    if (t_new_regs.idac1_routing != regs_.idac1_routing) {
-        ret = setIDAC1Routing(t_new_regs.idac1_routing);
+    if (t_nregs.idac1_routing != regs_.idac1_routing) {
+        ret = writeRegisterMasked(t_nregs.idac1_routing << 5, ADS1120_REG_MASK_IDAC1_ROUTING,
+                                  ADS1120_CONFIG_REG3_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set IDAC1 routing");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set IDAC1 routing w/: %d", t_new_regs.idac1_routing);
-        regs_.idac1_routing = t_new_regs.idac1_routing;
+        ESP_LOGI(TAG, "Set IDAC1 routing w/: %d", t_nregs.idac1_routing);
+        regs_.idac1_routing = t_nregs.idac1_routing;
     }
 
-    if (t_new_regs.idac2_routing != regs_.idac2_routing) {
-        ret = setIDAC2Routing(t_new_regs.idac2_routing);
+    if (t_nregs.idac2_routing != regs_.idac2_routing) {
+        ret = writeRegisterMasked(t_nregs.idac2_routing << 2, ADS1120_REG_MASK_IDAC2_ROUTING,
+                                  ADS1120_CONFIG_REG3_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set IDAC2 routing");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set IDAC2 routing w/: %d", t_new_regs.idac2_routing);
-        regs_.idac2_routing = t_new_regs.idac2_routing;
+        ESP_LOGI(TAG, "Set IDAC2 routing w/: %d", t_nregs.idac2_routing);
+        regs_.idac2_routing = t_nregs.idac2_routing;
     }
 
-    if (t_new_regs.drdy_mode != regs_.drdy_mode) {
-        ret = setDRDYMode(t_new_regs.drdy_mode);
+    if (t_nregs.drdy_mode != regs_.drdy_mode) {
+        ret = writeRegisterMasked(t_nregs.drdy_mode << 1, ADS1120_REG_MASK_DRDY_MODE, ADS1120_CONFIG_REG3_ADDRESS);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set DRDY mode");
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set DRDY mode w/: %d", t_new_regs.drdy_mode);
-        regs_.drdy_mode = t_new_regs.drdy_mode;
+        ESP_LOGI(TAG, "Set DRDY mode w/: %d", t_nregs.drdy_mode);
+        regs_.drdy_mode = t_nregs.drdy_mode;
     }
 
     return ESP_OK;
@@ -386,99 +388,6 @@ esp_err_t ADS1120::writeRegisterMasked(uint8_t t_value, uint8_t t_mask, uint8_t 
 }
 
 /*******************************************************************************
- * @brief Select the analog channels on the ADS1120 via a multiplexer.
- *
- * @param t_value    - The new multiplexer value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note | Value | AINp | AINn |
- * @note |-------|------|------|
- * @note | 0x00  | AIN0 | AIN1 |
- * @note | 0X01  | AIN0 | AIN2 |
- * @note | 0X02  | AIN0 | AIN3 |
- * @note | 0X03  | AIN1 | AIN2 |
- * @note | 0X04  | AIN1 | AIN3 |
- * @note | 0X05  | AIN2 | AIN3 |
- * @note | 0X06  | AIN1 | AIN0 |
- * @note | 0X07  | AIN3 | AIN2 |
- * @note | 0X08  | AIN0 | AVSS |
- * @note | 0X09  | AIN1 | AVSS |
- * @note | 0X0A  | AIN2 | AVSS |
- * @note | 0X0B  | AIN3 | AVSS |
- * @note | 0X0C  |  REF/4 MON  |
- * @note | 0X0D  | APWR/4 MON  |
- * @note | 0X0E  |   SHORTED   |
- *******************************************************************************/
-esp_err_t ADS1120::setAnalogChannels(uint8_t t_value)
-{
-    if (t_value > 0x0E) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 4; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_MUX, ADS1120_CONFIG_REG0_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Set the gain on the ADS1120.
- *
- * @param t_value - The new gain value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note Possible gain values are 1, 2, 4, 8, 16, 32, 64, 128.
- *******************************************************************************/
-esp_err_t ADS1120::setGain(uint8_t t_gain)
-{
-    uint8_t value = 0x00;
-    switch (t_gain) {
-    case 1:
-        value = 0x00;
-        break;
-    case 2:
-        value = 0x01;
-        break;
-    case 4:
-        value = 0x02;
-        break;
-    case 8:
-        value = 0x03;
-        break;
-    case 16:
-        value = 0x04;
-        break;
-    case 32:
-        value = 0x05;
-        break;
-    case 64:
-        value = 0x06;
-        break;
-    case 128:
-        value = 0x07;
-        break;
-    default:
-        value = 0x00;
-        break;
-    }
-    value = value << 1; // Shift to match with mask
-    return writeRegisterMasked(value, ADS1120_REG_MASK_GAIN, ADS1120_CONFIG_REG0_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Set the PGA bypass on the ADS1120.
- *
- * @param t_value - The new PGA bypass value. Bypasses the PGA if true.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note PGA can only be disabled for gains 1, 2, 4.
- *******************************************************************************/
-esp_err_t ADS1120::setPGABypass(bool t_value)
-{
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_PGA_BYPASS, ADS1120_CONFIG_REG0_ADDRESS);
-}
-
-/*******************************************************************************
  * @brief Set the data rate of the ADS1120.
  *
  * @param t_value - The new data rate value.
@@ -504,225 +413,6 @@ esp_err_t ADS1120::setDataRate(uint8_t t_value)
 
     t_value = t_value << 5; // Shift to match with mask
     return writeRegisterMasked(t_value, ADS1120_REG_MASK_DATARATE, ADS1120_CONFIG_REG1_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Set the operational mode of the ADS1120.
- *
- * @param t_value - The new op mode value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note 0 - Normal mode
- * @note 1 - Duty-cycle mode
- * @note 2 - Turbo mode
- *******************************************************************************/
-esp_err_t ADS1120::setOpMode(uint8_t t_value)
-{
-    if (t_value > 0x02) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 3; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_OP_MODE, ADS1120_CONFIG_REG1_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Set the conversion mode of the ADS1120.
- *
- * @param t_value - The new conversion mode value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note 0 - Single shot mode
- * @note 1 - Continuous conversion mode
- *******************************************************************************/
-esp_err_t ADS1120::setConversionMode(uint8_t t_value)
-{
-    if (t_value > 0x01) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 2; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_CONV_MODE, ADS1120_CONFIG_REG1_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Set the temperature mode of the ADS1120.
- *
- * @param t_value - The new temperature mode value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note 0 - Disables temperature sensor
- * @note 1 - Enables temperature sensor
- *******************************************************************************/
-esp_err_t ADS1120::setTemperatureMode(uint8_t t_value)
-{
-    if (t_value > 0x01) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 1; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_TEMP_MODE, ADS1120_CONFIG_REG1_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Turns on/off the current burn-out sources of the ADS1120.
- *
- * @param t_value - True for on, false for off.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *******************************************************************************/
-esp_err_t ADS1120::setBurnoutCurrentSources(bool t_value)
-{
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_BURNOUT_SOURCES, ADS1120_CONFIG_REG1_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Sets the voltage reference of the ADS1120.
- *
- * @param t_value - The new voltage reference value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- * @note 0 - Internal 2.048 V
- * @note 1 - External on REFP0 and REFN0 inputs
- * @note 2 - External on AIN0/REFP1 and AIN3/REFN1 inputs
- * @note 3 - Use analog supply as reference
- *******************************************************************************/
-esp_err_t ADS1120::setVoltageReferences(uint8_t t_value)
-{
-    if (t_value > 0x03) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 6; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_VOLTAGE_REF, ADS1120_CONFIG_REG2_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Sets the filter for the ADS1120.
- *
- * @param t_value - The new FIR value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- * @note 0 - No 50 or 60 Hz rejection
- * @note 1 - Both 50 and 60 Hz rejection
- * @note 2 - 50 Hz rejection
- * @note 3 - 60 Hz rejection
- *******************************************************************************/
-esp_err_t ADS1120::setFIR(uint8_t t_value)
-{
-    if (t_value > 0x03) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 4; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_FIR_CONF, ADS1120_CONFIG_REG2_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Configures the low-side power switch between AIN3/REFN1 and AVSS.
- *
- * @param t_value - new power switch value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- * @note 0 - Always open
- * @note 1 - Automatically closes when START/SYNC command is sent and opens when
- * @note     POWERDOWN command is issues.
- *******************************************************************************/
-esp_err_t ADS1120::setPowerSwitch(uint8_t t_value)
-{
-    if (t_value > 0x01) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 3; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_PWR_SWITCH, ADS1120_CONFIG_REG2_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Sets current for both IDAC1 and IDAC2 excitation sources.
- *
- * @param t_value - new IDAC current value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- * @note 0 - Off
- * @note 1 - 10 uA
- * @note 2 - 50 uA
- * @note 3 - 100 uA
- * @note 4 - 250 uA
- * @note 5 - 500 uA
- * @note 6 - 1000 uA
- * @note 7 - 1500 uA
- *******************************************************************************/
-esp_err_t ADS1120::setIDACCurrent(uint8_t t_value)
-{
-    if (t_value > 0x07) {
-        t_value = 0x00;
-    }
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_IDAC_CURRENT, ADS1120_CONFIG_REG2_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Selects where IDAC1 is routed to.
- *
- * @param t_value - new IDAC1 routing value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note 0 - Disabled
- * @note 1 - AIN0/REFP1
- * @note 2 - AIN1
- * @note 3 - AIN2
- * @note 4 - AIN3/REFN1
- * @note 5 - REFP0
- * @note 6 - REFN0
- *******************************************************************************/
-esp_err_t ADS1120::setIDAC1Routing(uint8_t t_value)
-{
-    if (t_value > 0x06) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 5; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_IDAC1_ROUTING, ADS1120_CONFIG_REG3_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Selects where IDAC2 is routed to.
- *
- * @param t_value - new IDAC2 routing value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note 0 - Disabled
- * @note 1 - AIN0/REFP1
- * @note 2 - AIN1
- * @note 3 - AIN2
- * @note 4 - AIN3/REFN1
- * @note 5 - REFP0
- * @note 6 - REFN0
- *******************************************************************************/
-esp_err_t ADS1120::setIDAC2Routing(uint8_t t_value)
-{
-    if (t_value > 0x06) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 2; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_IDAC2_ROUTING, ADS1120_CONFIG_REG3_ADDRESS);
-}
-
-/*******************************************************************************
- * @brief Sets the DRDY mode for the device on continuous mode.
- *
- * @param t_value - new DRDY mode value.
- *
- * @return Returns ESP_OK for success or a non-zero value otherwise.
- *
- * @note 0 - Only the dedicated DRDY pin is used  (Default)
- * @note 1 - Data ready indicated on DOUT/DRDY and DRDY
- *******************************************************************************/
-esp_err_t ADS1120::setDRDYMode(uint8_t t_value)
-{
-    if (t_value > 0x01) {
-        t_value = 0x00;
-    }
-    t_value = t_value << 1; // Shift to match with mask
-    return writeRegisterMasked(t_value, ADS1120_REG_MASK_DRDY_MODE, ADS1120_CONFIG_REG3_ADDRESS);
 }
 
 /*******************************************************************************

@@ -1,7 +1,8 @@
 #include <esp_log.h>
 #include <esp_system.h>
-#include <test.hpp>
 #include <esp_timer.h>
+#include <test.hpp>
+
 
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
@@ -544,7 +545,7 @@ void Test::testADCDAC(void)
 
     // Initialize the ADC instance
     ads1120_init_param_t adc_params;
-    adc_params.cs_pin = GPIO_NUM_21;
+    adc_params.cs_pin   = GPIO_NUM_21;
     adc_params.drdy_pin = GPIO_NUM_2;
     adc_params.spi_host = SPI2_HOST;
 
@@ -564,6 +565,7 @@ void Test::testADCDAC(void)
  * the ADC to read data at a specific sample rate, and then check to see if the
  * programmed sample rate is close to the real sample rate.
  */
+
 void Test::testADCDACCheckSPIBus(void)
 {
     ESP_LOGI(TAG, "Testing Reading ADC to check SPI bus");
@@ -571,17 +573,17 @@ void Test::testADCDACCheckSPIBus(void)
     ads1120_regs_t adc_regs;
     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    adc_regs.conv_mode = 1; // continuous
-    adc_regs.op_mode = 2;   // turbo
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = TURBO; // turbo
     adc_regs.data_rate = 6; // 2000 SPS
 
     adc_.configure(adc_regs);
 
     uint16_t data;
     int num_success_reads = 0;
-    int num_failed_reads = 0;
-    int start_time = esp_timer_get_time();
-    int current_time = esp_timer_get_time();
+    int num_failed_reads  = 0;
+    int start_time        = esp_timer_get_time();
+    int current_time      = esp_timer_get_time();
 
     while (current_time - 1000000 < start_time) {
         if (adc_.isDataReady()) {
@@ -613,11 +615,11 @@ void Test::testADCDACReadDACBias(void)
     ads1120_regs_t adc_regs;
     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    adc_regs.conv_mode = 1;
-    adc_regs.op_mode = 2;
-    adc_regs.analog_channels = 0X0A;
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = TURBO;
+    adc_regs.channels  = AIN2_AVSS;
     adc_regs.data_rate = 3;
-    adc_regs.volt_refs = 1;
+    adc_regs.volt_refs = REFP0_REFN0;
 
     esp_err_t ret = adc_.configure(adc_regs);
     if (ret != ESP_OK) {
@@ -639,7 +641,7 @@ void Test::testADCDACReadDACBias(void)
         while (!adc_.isDataReady()) {
             vTaskDelay(1);
         }
-        
+
         uint16_t read_value;
 
         ret = adc_.readADC(&read_value);
@@ -655,7 +657,8 @@ void Test::testADCDACReadDACBias(void)
         ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
         ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
 
-        assert((measured_dac_voltage - ADC_VALUE_ERROR_MARGIN < expected_dac_voltage) && (measured_dac_voltage + ADC_VALUE_ERROR_MARGIN > expected_dac_voltage));
+        assert((measured_dac_voltage - ADC_VALUE_ERROR_MARGIN < expected_dac_voltage) &&
+               (measured_dac_voltage + ADC_VALUE_ERROR_MARGIN > expected_dac_voltage));
     }
 
     ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_DAC_SAMPLES);
@@ -663,6 +666,10 @@ void Test::testADCDACReadDACBias(void)
     ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
 }
 
+/**
+ * We try to read the analog frontend (i.e. the filtered signal from the inst. amplifier)
+ * to confirm that the numbers we see are reasonable.
+ */
 void Test::testADCDACReadAnalogFrontEnd(void)
 {
     ESP_LOGI(TAG, "Testing Reading Analog FrontEnd");
@@ -670,9 +677,9 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     ads1120_regs_t adc_regs;
     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    adc_regs.conv_mode = 1;
-    adc_regs.op_mode = 2;
-    adc_regs.analog_channels = 0X0A;
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = TURBO;
+    adc_regs.channels  = AIN1_AVSS;
     adc_regs.data_rate = 3;
-    adc_regs.volt_refs = 1;
+    adc_regs.volt_refs = REFP0_REFN0;
 }
