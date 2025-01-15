@@ -13,7 +13,8 @@ class Test {
     Test(esp_log_level_t test_log_level);
     void testMemoryQueue(void);
     void testMQTTManager(void);
-    void testADCDAC(void);
+    void testADCDACEndtoEnd(void);
+    void testADCDACReadAnalogFrontEnd(void);
 
   private:
     void testMemoryQueueBasic(void);
@@ -28,7 +29,8 @@ class Test {
 
     void testADCDACCheckSPIBus(void);
     void testADCDACReadDACBias(void);
-    void testADCDACReadAnalogFrontEnd(void);
+    void testADCDACTestADCGain2(void);
+    void testADCDACTestADCGain4(void);
 
   private:
     mqttManager* mqtt_manager_;

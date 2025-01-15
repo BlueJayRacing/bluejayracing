@@ -176,7 +176,7 @@ class ADS1120 {
     esp_err_t configure(ads1120_regs_t t_new_regs);
     void getRegs(ads1120_regs_t* regs);
     bool isDataReady(void) const;
-    esp_err_t readADC(uint16_t* t_data) const;
+    esp_err_t readADC(int16_t* t_data) const;
     esp_err_t reset(void);
     esp_err_t startSync(void);
     esp_err_t powerDown(void);

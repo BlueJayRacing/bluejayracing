@@ -5,7 +5,7 @@
 static const char* TAG = "ads1120";
 
 #define ADS_SPI_LOCK_TIMEOUT       10
-#define ADS_SPI_CLOCK_SPEED_HZ     2 * 1000 * 1000
+#define ADS_SPI_CLOCK_SPEED_HZ     4 * 1000 * 1000
 #define ADS_SPI_MODE               1
 #define ADS_CS_EN_PRE_WAIT_CYCLES  2
 #define ADS_CS_EN_POST_WAIT_CYCLES 0
@@ -271,7 +271,7 @@ bool ADS1120::isDataReady() const { return !gpio_get_level(drdy_pin_); }
  *
  * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
-esp_err_t ADS1120::readADC(uint16_t* t_data) const
+esp_err_t ADS1120::readADC(int16_t* t_data) const
 {
     esp_err_t ret;
     spi_transaction_t t;
