@@ -28,7 +28,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "nanopb": "~1.0"
+    "nanopb": "0.4.91"
   },
   "frameworks": "*",
   "platforms": "*"
