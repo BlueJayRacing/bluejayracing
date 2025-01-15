@@ -1,0 +1,19 @@
+{
+    "name": "ad5676",
+    "version": "1.0.0",
+    "description": "device driver for ad5676",
+    "authors":
+    [
+      {
+        "name": "Travis Chen",
+        "email": "travis.yu.chen@gmail.com",
+        "maintainer": true
+      }
+    ],
+    "license": "MIT",
+    "dependencies": {
+      "SPI": "~1.0"
+    },
+    "frameworks": "*",
+    "platforms": "*"
+  }

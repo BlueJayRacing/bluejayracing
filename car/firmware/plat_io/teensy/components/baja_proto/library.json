@@ -2,9 +2,15 @@
   "name": "baja_proto",
   "version": "1.0.0",
   "keywords": "protocol buffers, protobuf, google",
-  "authors": [{
-    "name": "Travis Chen"
-  }],
+  "description": "place where all the proto files are stored",
+  "authors":
+  [
+    {
+      "name": "Travis Chen",
+      "email": "travis.yu.chen@gmail.com",
+      "maintainer": true
+    }
+  ],
   "export": {
     "include": [
       "*.c",
@@ -19,6 +25,10 @@
     "srcFilter": [
       "+<*.c>"
     ]
+  },
+  "license": "MIT",
+  "dependencies": {
+    "nanopb": "~1.0"
   },
   "frameworks": "*",
   "platforms": "*"
