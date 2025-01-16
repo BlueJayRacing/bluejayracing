@@ -8,6 +8,7 @@
 #include <esp_system.h>
 #include <vector>
 
+#define W25N04KV_OP_CODE_JEDEC_ID       0x9F
 #define W25N04KV_OP_CODE_RESET          0xFF
 #define W25N04KV_OP_CODE_READ_STAT_REG  0x0F
 #define W25N04KV_OP_CODE_WRITE_STAT_REG 0x1F
@@ -37,9 +38,10 @@ typedef enum w25n04kv_ecc_status
 } w25n04kv_ecc_status_t;
 
 typedef struct w25n04kv_device_status {
-    w25n04kv_ecc_status_t status;
+    w25n04kv_ecc_status_t ecc_status;
     bool program_failure;
     bool erase_failure;
+    bool write_enable;
     bool is_busy;
 } w25n04kv_device_status_t;
 
@@ -51,8 +53,8 @@ class W25N04KV {
     esp_err_t eraseBlock(const std::array<uint8_t, 3>& address);
     esp_err_t writePage(const std::vector<uint8_t>& tx_data, const std::array<uint8_t, 3>& page_address);
     esp_err_t readPage(std::vector<uint8_t>& rx_data, const std::array<uint8_t, 3>& page_address);
-    bool isDeviceBusy(void);
-    bool isDeviceInError(void);
+    esp_err_t readStatus(w25n04kv_device_status_t* device_status);
+    esp_err_t isCorrectDevice(void);
 
   private:
     esp_err_t enableWrite(void);

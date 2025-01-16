@@ -166,3 +166,40 @@ esp_err_t W25N04KV::readPage(std::vector<uint8_t>& rx_data, const std::array<uin
 
     return transfer(W25N04KV_OP_CODE_READ_DATA, rx_data, dummy_page_address, 3);
 }
+
+esp_err_t W25N04KV::readStatus(w25n04kv_device_status_t* device_status)
+{
+    std::vector<uint8_t> rx_data(0, 1);
+    std::vector<uint8_t> address = {0x0C};
+
+    esp_err_t ret = transfer(W25N04KV_OP_CODE_READ_STAT_REG, rx_data, address);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read status register: %d", ret);
+        return ret;
+    }
+    device_status->ecc_status      = w25n04kv_ecc_status_t((rx_data[0] >> 6) & 0x03);
+    device_status->program_failure = rx_data[0] & 0x08;
+    device_status->erase_failure   = rx_data[0] & 0x04;
+    device_status->write_enable    = rx_data[0] & 0x02;
+    device_status->is_busy         = rx_data[0] & 0x01;
+
+    return ESP_OK;
+}
+
+esp_err_t W25N04KV::isCorrectDevice(void)
+{
+    std::vector<uint8_t> rx_data(0, 3);
+    std::vector<uint8_t> dummy_address;
+
+    esp_err_t ret = transfer(W25N04KV_OP_CODE_JEDEC_ID, rx_data, dummy_address, 1);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to read JEDEC ID: %d", ret);
+        return ret;
+    }
+
+    if (rx_data[0] != 0xEF || rx_data[1] != 0xAA || rx_data[2] != 0x21) {
+        return ESP_ERR_INVALID_RESPONSE;
+    }
+
+    return ESP_OK;
+}
