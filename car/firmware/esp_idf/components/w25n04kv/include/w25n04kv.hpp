@@ -25,6 +25,24 @@ typedef struct w25n04kv_init_param {
     spi_host_device_t spi_host;
 } w25n04kv_init_param_t;
 
+/** IN_TOL stands for in tolerance error
+ *  OUT_TOL stands for out of tolerance error
+ */
+typedef enum w25n04kv_ecc_status
+{
+    NO_ERROR                = 0x0,
+    IN_TOL_ERROR_CORRECTED  = 0x1,
+    ERROR_NOT_CORRECTED     = 0x2,
+    OUT_TOL_ERROR_CORRECTED = 0x3
+} w25n04kv_ecc_status_t;
+
+typedef struct w25n04kv_device_status {
+    w25n04kv_ecc_status_t status;
+    bool program_failure;
+    bool erase_failure;
+    bool is_busy;
+} w25n04kv_device_status_t;
+
 class W25N04KV {
   public:
     W25N04KV();
