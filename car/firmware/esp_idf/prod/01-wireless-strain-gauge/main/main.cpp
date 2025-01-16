@@ -3,11 +3,6 @@
 #include <freertos/FreeRTOS.h>
 #include <stdio.h>
 
-#include <memoryBlock.hpp>
-#include <memoryQueue.hpp>
-
-#include <ad5626.hpp>
-
 #include <test.hpp>
 
 static const char* TAG = "main";

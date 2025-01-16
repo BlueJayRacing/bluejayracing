@@ -4,5 +4,5 @@ idf_component_register( SRCS "externalFlash.cpp"
                             driver
                             esp_system 
                             log
-                            
+                            dataFormat
                             )
