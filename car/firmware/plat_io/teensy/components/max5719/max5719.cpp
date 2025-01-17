@@ -28,11 +28,11 @@ void MAX5719::init(const int8_t t_cs_pin, const int8_t t_ldac_pin, SPIClass* t_s
 void MAX5719::setLevel(const uint32_t t_dac_new_level)
 {
     std::array<uint8_t, 3> buf;
-    buf[0] = (t_dac_new_level & 0x000F0000) >> 16;
-    buf[1] = (t_dac_new_level & 0x0000FF00) >> 8;
-    buf[2] = t_dac_new_level & 0x000000FF;
+    buf[0] = (t_dac_new_level & 0x000FF000) >> 12;
+    buf[1] = (t_dac_new_level & 0x00000FF0) >> 4;
+    buf[2] = (t_dac_new_level & 0x0000000F) << 4;
     std::array<uint8_t, 3> ret_buf;
-
+    
     digitalWrite(cs_pin_, LOW);
     spi_host_->beginTransaction(spi_settings_);
 
