@@ -44,11 +44,26 @@ esp_err_t W25N04KV::init(w25n04kv_init_param_t t_init_param)
         return ret;
     }
 
+    ESP_LOGI(TAG, "Added device to SPI Bus");
+
+    vTaskDelay(5);
+
+    ret = reset();
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to reset device: %d", ret);
+        return ret;
+    }
+
     ret = disableWriteProtection();
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to disable write protection on device: %d", ret);
         return ret;
     }
+
+    vTaskDelay(5);
+
+    ESP_LOGI(TAG, "Initialized W25N04KV Device");
+
     return ESP_OK;
 }
 
@@ -64,7 +79,7 @@ esp_err_t W25N04KV::transfer(const uint8_t op_code, std::vector<uint8_t>& rx_dat
     // Set Length of Command, Address, and Dummy Bits
     ext_t.command_bits = 8;
     ext_t.address_bits = address.size() << 3;
-    ext_t.dummy_bits   = dummy_byte_len * 8;
+    ext_t.dummy_bits   = dummy_byte_len << 3;
 
     // Set command bits
     ext_t.base.cmd = op_code;
@@ -74,16 +89,17 @@ esp_err_t W25N04KV::transfer(const uint8_t op_code, std::vector<uint8_t>& rx_dat
 
     // Set tx data buffer
     ext_t.base.tx_buffer = tx_data.data();
-    ext_t.base.length    = tx_data.size();
+    ext_t.base.length    = tx_data.size() << 3;
 
     // Set rx data buffer
     ext_t.base.rx_buffer = rx_data.data();
-    ext_t.base.rxlength  = rx_data.size();
+    ext_t.base.rxlength  = rx_data.size() << 3;
 
     esp_err_t err = spi_device_polling_transmit(spi_dev_, &(ext_t.base));
     if (err) {
         return err;
     }
+
     return ESP_OK;
 }
 
@@ -169,7 +185,7 @@ esp_err_t W25N04KV::readPage(std::vector<uint8_t>& rx_data, const std::array<uin
 
 esp_err_t W25N04KV::readStatus(w25n04kv_device_status_t* device_status)
 {
-    std::vector<uint8_t> rx_data(0, 1);
+    std::vector<uint8_t> rx_data(1);
     std::vector<uint8_t> address = {0x0C};
 
     esp_err_t ret = transfer(W25N04KV_OP_CODE_READ_STAT_REG, rx_data, address);
@@ -177,7 +193,10 @@ esp_err_t W25N04KV::readStatus(w25n04kv_device_status_t* device_status)
         ESP_LOGE(TAG, "Failed to read status register: %d", ret);
         return ret;
     }
-    device_status->ecc_status      = w25n04kv_ecc_status_t((rx_data[0] >> 6) & 0x03);
+
+    ESP_LOGI(TAG, "Value of read status register: %d", (int)rx_data[0]);
+
+    device_status->ecc_status      = w25n04kv_ecc_status_t((rx_data[0] >> 4) & 0x03);
     device_status->program_failure = rx_data[0] & 0x08;
     device_status->erase_failure   = rx_data[0] & 0x04;
     device_status->write_enable    = rx_data[0] & 0x02;
@@ -188,7 +207,7 @@ esp_err_t W25N04KV::readStatus(w25n04kv_device_status_t* device_status)
 
 esp_err_t W25N04KV::isCorrectDevice(void)
 {
-    std::vector<uint8_t> rx_data(0, 3);
+    std::vector<uint8_t> rx_data(3, 0);
     std::vector<uint8_t> dummy_address;
 
     esp_err_t ret = transfer(W25N04KV_OP_CODE_JEDEC_ID, rx_data, dummy_address, 1);
@@ -197,7 +216,9 @@ esp_err_t W25N04KV::isCorrectDevice(void)
         return ret;
     }
 
-    if (rx_data[0] != 0xEF || rx_data[1] != 0xAA || rx_data[2] != 0x21) {
+    ESP_LOGI(TAG, "Recorded Device ID: %d, %d, %d", int(rx_data[0]), int(rx_data[1]), int(rx_data[2]));
+
+    if (rx_data[0] != 0xEF || rx_data[1] != 0xAA || rx_data[2] != 0x23) {
         return ESP_ERR_INVALID_RESPONSE;
     }
 

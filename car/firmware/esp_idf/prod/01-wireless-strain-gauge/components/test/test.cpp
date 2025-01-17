@@ -2,6 +2,7 @@
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <test.hpp>
+#include <w25n04kv.hpp>
 
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
@@ -37,6 +38,39 @@ void Test::testMQTTManager(void)
     testMQTTManagerClientWiFiConnectDisconnect();
     testMQTTManagerMultipleClientsConDisCon();
     testMQTTManagerClientPublishSubscribe();
+}
+
+void Test::testSPIFlash(void)
+{ 
+    // Configure the SPI bus
+    esp_err_t ret;
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+
+    w25n04kv_init_param_t flash_init_params;
+    flash_init_params.cs_pin = GPIO_NUM_1;
+    flash_init_params.wp_pin = GPIO_NUM_NC;
+    flash_init_params.spi_host = SPI2_HOST;
+
+    ESP_LOGI(TAG, "Initialized SPI Bus");
+
+    ret = spi_flash_.init(flash_init_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize SPI Flash: %d", ret);
+        return;
+    }
+
+    ESP_LOGI(TAG, "Initialized SPI Flash");
+
+    testSPIFlashReadDeviceIDInitialStatus();
 }
 
 /* We check basic memory queue functions like acquiring, writing to, and pushing
@@ -523,11 +557,7 @@ void Test::testADCDACEndtoEnd(void)
     spi_cfg.quadwp_io_num = -1;
     spi_cfg.quadhd_io_num = -1;
 
-    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
-        return;
-    }
+    spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
 
     // Initialize the DAC instance
     ad5626_init_param_t dac_params;
@@ -536,7 +566,7 @@ void Test::testADCDACEndtoEnd(void)
     dac_params.clr_pin  = GPIO_NUM_17;
     dac_params.spi_host = SPI2_HOST;
 
-    ret = dac_.init(dac_params);
+    esp_err_t ret = dac_.init(dac_params);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize AD5626: %d", ret);
         return;
@@ -793,7 +823,8 @@ void Test::testADCDACReadAnalogFrontEnd(void)
 {
     ESP_LOGI(TAG, "Testing Reading Analog FrontEnd");
 
-        // Configure the SPI bus
+    // Configure the SPI bus
+    esp_err_t ret;
     spi_bus_config_t spi_cfg;
     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
 
@@ -803,11 +834,7 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     spi_cfg.quadwp_io_num = -1;
     spi_cfg.quadhd_io_num = -1;
 
-    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
-        return;
-    }
+    ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
 
     // Initialize the DAC instance
     ad5626_init_param_t dac_params;
@@ -873,4 +900,23 @@ void Test::testADCDACReadAnalogFrontEnd(void)
             vTaskDelay(1);
         }
     }
+}
+
+void Test::testSPIFlashReadDeviceIDInitialStatus(void)
+{
+    ESP_LOGI(TAG, "Testing SPI Flash Reading Device ID and initial status");
+
+    assert(spi_flash_.isCorrectDevice() == ESP_OK);
+
+    w25n04kv_device_status_t dev_status;
+
+    assert(spi_flash_.readStatus(&dev_status) == ESP_OK);
+
+    assert(dev_status.ecc_status == NO_ERROR);
+    assert(dev_status.erase_failure == false);
+    assert(dev_status.is_busy == false);
+    assert(dev_status.program_failure == false);
+    assert(dev_status.write_enable == false);
+
+    ESP_LOGI(TAG, "Passed Testing SPI Flash Reading Device ID and initial status");
 }
