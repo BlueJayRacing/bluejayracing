@@ -33,15 +33,16 @@ void AD5689::transfer(const t_ad5689_command t_command, const ad5689_channel_t t
     buf[1] = t_data[0];
     buf[2] = t_data[1];
     std::array<uint8_t, 3> ret_buf;
-    SPI.begin();
-    digitalWrite(params.t_sync_pin, LOW);
-    SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE1));
-    Serial.println("Begun Transaction");
+    SPI1.begin();
 
-    SPI.transfer(buf.data(), ret_buf.data(), 3);
-    Serial.println("About to end Transaction");
-    SPI.endTransaction();
-    Serial.println("Transaction finished");
+    // SPI.setMOSI(26);
+    // SPI.setMISO(39);
+    // SPI.setSCK(27);
+
+    digitalWrite(params.t_sync_pin, LOW);
+    SPI1.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE1));
+    SPI1.transfer(buf.data(), ret_buf.data(), 3);
+    SPI1.endTransaction();
     digitalWrite(params.t_sync_pin, HIGH);
 
     digitalWrite(params.t_ldac_pin, LOW);

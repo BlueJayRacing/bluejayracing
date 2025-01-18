@@ -6,6 +6,7 @@
 
 AD5689 ad5689;
 uint16_t level = 0xFFFF;
+double voltage_val;
 
 void setup() {
   // put your setup code here, to run once:
@@ -15,9 +16,9 @@ void setup() {
   // SPI.begin();
 
   ad5689_init_params_t init_params;
-  init_params.t_sync_pin = 13;
-  init_params.t_ldac_pin = 9;
-  init_params.t_rst_pin = 15;
+  init_params.t_sync_pin = 31;
+  init_params.t_ldac_pin = 32;
+  // init_params.t_rst_pin = 15;
   // init_params.t_spi_host = &SPI;
 
   ad5689.init(init_params);
@@ -26,7 +27,10 @@ void setup() {
 void loop() {
   level += 100;
 
-  ad5689.setLevel(B, level);
+  voltage_val = 2.5 * level * pow(2, -15);
+
+  ad5689.setLevel(A, level);
   Serial.println(level);
-  delay(1000);
+  Serial.println(voltage_val);
+  delay(500);
 }
