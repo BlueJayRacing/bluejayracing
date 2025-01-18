@@ -21,7 +21,7 @@ typedef enum ad5689_command {
   REF_SETUP_REG = 0x07,
   SETUP_DCEN_REG = 0x08,
   SETUP_READBACK_REG = 0x0A,
-  NO_OP_DC_MODE = 0xFF
+  NO_OP_DC_MODE = 0x0F
 } t_ad5689_command;
 
 typedef enum ad5689_channel {
