@@ -15,7 +15,13 @@ void setup() {
 
   SPI.begin();
   // max5719.init(10, 9, &SPI);
-  ad5676.init(10, 9, 8, &SPI);
+  ad5676_init_params_t init_params;
+  init_params.t_cs_pin = 10;
+  init_params.t_ldac_pin = 9;
+  init_params.t_rst_pin = 8;
+  init_params.t_spi_host = &SPI;
+
+  ad5676.init(init_params);
 }
 
 void loop() {

@@ -1,12 +1,5 @@
 #include "ad5676.hpp"
 
-typedef struct ad5676_init_params_t {
-    int8_t t_cs_pin; // The chip select pin for the AD5676 device.
-    int8_t t_ldac_pin; // The LDAC pin for the AD5676 device.
-    int8_t t_rst_pin; // The RST pin for the AD5676 device.
-    SPIClass* t_spi_host; // The Arduino SPI Host instance/bus that the AD5676 device is on.
-};
-
 /*******************************************************************************
  * @brief Initializes the AD5676.
  *
@@ -19,14 +12,14 @@ void AD5676::init(const ad5676_init_params_t init_params)
     rst_pin_  = init_params.t_rst_pin;
     spi_host_ = init_params.t_spi_host;
 
-    pinMode(init_params.t_cs_pin, OUTPUT);
-    digitalWrite(init_params.t_cs_pin, HIGH);
+    pinMode(cs_pin_, OUTPUT);
+    digitalWrite(cs_pin_, HIGH);
 
-    pinMode(init_params.t_ldac_pin, OUTPUT);
-    digitalWrite(init_params.t_ldac_pin, HIGH);
+    pinMode(ldac_pin_, OUTPUT);
+    digitalWrite(ldac_pin_, HIGH);
 
-    pinMode(init_params.t_rst_pin, OUTPUT);
-    digitalWrite(init_params.t_rst_pin, HIGH);
+    pinMode(rst_pin_, OUTPUT);
+    digitalWrite(rst_pin_, HIGH);
 }
 
 /*******************************************************************************
@@ -53,6 +46,9 @@ void AD5676::transfer(const ad5676_command_t t_command, const int8_t t_chan_addr
     spi_host_->endTransaction();
 
     digitalWrite(cs_pin_, HIGH);
+
+    digitalWrite(ldac_pin_, LOW);
+    digitalWrite(ldac_pin_, HIGH);
 }
 
 /*******************************************************************************

@@ -7,11 +7,11 @@
  * @param t_ldac_pin - The LDAC pin for the MAX5719 device.
  * @param t_spi_host - The Arduino SPI Host instance/bus that the MAX5719 device is on.
  *******************************************************************************/
-void MAX5719::init(const int8_t t_cs_pin, const int8_t t_ldac_pin, SPIClass* t_spi_host)
+void MAX5719::init(const max5719_init_params_t init_params)
 {
-    cs_pin_   = t_cs_pin;
-    spi_host_ = t_spi_host;
-    ldac_pin_ = t_ldac_pin;
+    cs_pin_   = init_params.t_cs_pin;
+    spi_host_ = init_params.t_spi_host;
+    ldac_pin_ = init_params.t_ldac_pin;
 
     pinMode(cs_pin_, OUTPUT);
     digitalWrite(cs_pin_, HIGH);
