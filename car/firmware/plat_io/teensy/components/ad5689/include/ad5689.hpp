@@ -32,14 +32,15 @@ typedef enum ad5689_channel {
 
 class AD5689 {
   public:
-    AD5689() : spi_settings_(20000000, MSBFIRST, SPI_MODE1) {};
+    AD5689() : spi_host_(&SPI), spi_settings_(20000000, MSBFIRST, SPI_MODE1) {};
     void init(const ad5689_init_params_t init_params);
-    void transfer(const t_ad5689_command command, const ad5689_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data)
+    void transfer(const t_ad5689_command command, const ad5689_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data);
     void setLevel(const ad5689_channel_t t_chan_mode, const uint16_t t_new_dac_level);
 
   private:
     ad5689_init_params_t params;
     SPISettings spi_settings_;
-}
+    SPIClass* spi_host_;
+};
 
 #endif

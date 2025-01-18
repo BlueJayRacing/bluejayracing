@@ -840,7 +840,7 @@ int32_t AD717X::setGain(double gain, uint8_t t_setup_id)
     }
 
     // Clear the ODR bits, configure the requested ODR
-    gain_reg->value = (uint32_t)(gain * 0x555550);
+    gain_reg->value = (uint32_t)(gain * 0x555555);
 
     if (writeRegister(AD717X_GAIN0_REG + t_setup_id) < 0)
         return -EINVAL;

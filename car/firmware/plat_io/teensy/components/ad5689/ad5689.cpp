@@ -7,6 +7,7 @@
  *******************************************************************************/
 void AD5689::init(ad5689_init_params_t init_params) {
     params = init_params;
+    spi_host_ = init_params.t_spi_host;
 
     pinMode(init_params.t_sync_pin, OUTPUT);
     digitalWrite(init_params.t_sync_pin, HIGH);
@@ -25,18 +26,22 @@ void AD5689::init(ad5689_init_params_t init_params) {
  * @param t_chan_mode - The desired DAC channel (A, B, BOTH).
  * @param t_data      - The data to be sent to the AD5689 device.
  *******************************************************************************/
-void AD5689::transfer(const t_ad5689_command T_command, const ad5689_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data) {
-    std::array<uint8_t, 4> buf;
-    buf[0] = (t_command << 4) | t_chan_mode;
+void AD5689::transfer(const t_ad5689_command t_command, const ad5689_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data) {
+    std::array<uint8_t, 3> buf;
+    buf[0] = (t_command << 4) | t_chan_mode;     // same as buf[0] = 0x31;
+    // buf[0] = 0b00110001; // same as buf[0] = 49;
     buf[1] = t_data[0];
     buf[2] = t_data[1];
-    std::array<uint8_t, 4> ret_buf;
+    std::array<uint8_t, 3> ret_buf;
 
     params.t_spi_host->beginTransaction(spi_settings_);
+    Serial.println("Begun Transaction");
 
     digitalWrite(params.t_sync_pin, LOW);
-    params.t_spi_host->transfer(buf.data(), ret_buf.data(), 4);
+    params.t_spi_host->transfer(buf.data(), ret_buf.data(), 3);
+    Serial.println("About to end Transaction");
     params.t_spi_host->endTransaction();
+    Serial.println("Transaction finished");
     digitalWrite(params.t_sync_pin, HIGH);
 
     digitalWrite(params.t_ldac_pin, LOW);
@@ -51,6 +56,7 @@ void AD5689::transfer(const t_ad5689_command T_command, const ad5689_channel_t t
  *******************************************************************************/
 void AD5689::setLevel(const ad5689_channel_t t_chan_mode, const uint16_t t_new_dac_level) {
     std::array<uint8_t, 2> t_data;
+    Serial.println("Starting Set Level");
     t_data[0] = (t_new_dac_level & 0xFF00) >> 8;
     t_data[1] = (t_new_dac_level & 0x00FF);
     transfer(WRITE_DAC_REG, t_chan_mode, t_data);

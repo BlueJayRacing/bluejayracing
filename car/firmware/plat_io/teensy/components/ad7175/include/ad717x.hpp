@@ -212,38 +212,40 @@ typedef struct ad717x_st_reg {
 
 /*
  *@struct ad717x_channel_map
- *@details Channel mapping
+ *@details Channel mapping (channel register pg 20, also Figure 45A: channel configuration)
  **/
 typedef struct ad717x_channel_map {
-    bool channel_enable;
-    uint8_t setup_sel;
+    bool channel_enable; // channel can be either on or off, independent of input
+    uint8_t setup_sel; // choosing setup index
     ad717x_analog_inputs_t inputs;
 } ad717x_channel_map_t;
 
 /*
  *@struct ad717x_channel_setup
- *@details Channel setup
+ *@details Channel setup // pg 20 actually setup configuration
  **/
 typedef struct ad717x_channel_config {
-    bool bi_polar;
-    bool ref_buff;
-    bool input_buff;
-    ad717x_ref_source_t ref_source;
+    bool bi_polar; // bipolar (neg diff, offset binary) vs unipolar (pos diff, straight binary) mode 
+    bool ref_buff; // enable
+    bool input_buff; // enable
+    ad717x_ref_source_t ref_source; // the min & max value that the input can be, based on reference
 } ad717x_channel_config_t;
 
 /*
  *@struct ad717x_filtcon
- *@details Filter configuration
+ *@details Filter configuration (pg 20 Figure 45B: Setup configuration?)
  **/
 typedef struct ad717x_filter_config {
     bool sinc3_map;
     bool enhfilten;
     ad717x_enhfilt_t enhfilt;
-    ad717x_order_t oder;
+    ad717x_order_t oder; // Digital filter type
     ad717x_odr_t odr;
 } ad717x_filter_config_t;
 
+// pg 21
 typedef struct ad717x_setup {
+    // no offset register, why
     double gain;
     ad717x_channel_config_t setup;
     ad717x_filter_config_t filter_config; // Not configured
