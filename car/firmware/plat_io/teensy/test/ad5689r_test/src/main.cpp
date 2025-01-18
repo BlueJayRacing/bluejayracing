@@ -1,18 +1,32 @@
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+#include "component_template.hpp"
+
+#include "ad5689.hpp"
+
+AD5689 ad5689;
+uint16_t level = 0xFFFF;
 
 void setup() {
   // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(115200);
+  // comp_temp_func();
+
+  SPI.begin();
+
+  ad5689_init_params_t init_params;
+  init_params.t_sync_pin = 13;
+  init_params.t_ldac_pin = 9;
+  init_params.t_rst_pin = 15;
+  init_params.t_spi_host = &SPI;
+
+  ad5689.init(init_params);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
+  level += 100;
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  ad5689.setLevel(A, level);
+  Serial.println(level);
+  delay(1000);
 }
