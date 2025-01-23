@@ -73,3 +73,5 @@ samples/rabbit/my_config.h
 **.pb.cc
 **.pb.h
 **.pb.c
+
+**/get-docker.sh
