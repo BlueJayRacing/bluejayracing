@@ -1,6 +1,3 @@
-[submodule "20xt/src/paho.mqtt.c"]
-	path = 20xt/src/paho.mqtt.c
-	url = https://github.com/BlueJayRacing/paho.mqtt.c.git
 [submodule "car/src/paho.mqtt.c"]
 	path = car/src/paho.mqtt.c
 	url = git@github.com:BlueJayRacing/paho.mqtt.c.git
