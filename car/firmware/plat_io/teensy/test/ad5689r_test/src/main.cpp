@@ -5,7 +5,7 @@
 #include "ad5689.hpp"
 
 AD5689 ad5689;
-uint16_t level = 0xFFFF;
+uint16_t level = 1;
 double voltage_val;
 
 void setup() {
@@ -13,24 +13,28 @@ void setup() {
   Serial.begin(115200);
   // comp_temp_func();
 
-  // SPI.begin();
+  SPI.begin();
 
-  ad5689_init_params_t init_params;
-  init_params.t_sync_pin = 31;
-  init_params.t_ldac_pin = 32;
-  // init_params.t_rst_pin = 15;
-  // init_params.t_spi_host = &SPI;
+  ad5689_init_param_t init_params;
+  init_params.cs_pin = 10;
+  init_params.ldac_pin = 32;
+  init_params.clr_pin = 15;
+  init_params.spi_host = &SPI;
 
   ad5689.init(init_params);
 }
 
 void loop() {
-  level += 100;
+  if (level == 0x8000) {
+    level = 1;
+  } else {
+    level = level << 1;
+  }
 
   voltage_val = 2.5 * level * pow(2, -15);
 
   ad5689.setLevel(A, level);
   Serial.println(level);
   Serial.println(voltage_val);
-  delay(500);
+  delay(4000);
 }
