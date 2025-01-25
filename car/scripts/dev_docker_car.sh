@@ -21,6 +21,8 @@ if ! docker ps | grep -q bjr_docker_ros; then
         -it --device=/dev/ttyAMA0 \
         -it --device=/dev/ttyACM0 \
 	    -it --device=/dev/ttyACM1 \
+        -it --device=/dev/ttyAMA10 \
+        -it --device=/dev/serial/by-id/usb-STMicroelectronics_STM32_Virtual_ComPort_2073376B5450-if00 \
         -it --device=/dev/i2c-1 \
         bjr_docker_ros > /dev/null
 fi
