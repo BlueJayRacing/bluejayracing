@@ -51,7 +51,6 @@ void AD5689::transfer(const ad5689_command_t t_command, const ad5689_channel_t t
  *******************************************************************************/
 void AD5689::setLevel(const ad5689_channel_t t_chan_mode, const uint16_t t_new_dac_level) {
     std::array<uint8_t, 2> t_data;
-    Serial.println("Starting Set Level");
     t_data[0] = (t_new_dac_level & 0xFF00) >> 8;
     t_data[1] = (t_new_dac_level & 0x00FF);
     transfer(WRITE_DAC_REG, t_chan_mode, t_data);
