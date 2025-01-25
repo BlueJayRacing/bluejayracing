@@ -27,8 +27,7 @@ void AD5689::init(ad5689_init_param_t init_params) {
  *******************************************************************************/
 void AD5689::transfer(const ad5689_command_t t_command, const ad5689_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data) {
     std::array<uint8_t, 3> buf;
-    buf[0] = (t_command << 4) | t_chan_mode;     // same as buf[0] = 0x31;
-    // buf[0] = 0b00110001; // same as buf[0] = 49;
+    buf[0] = (t_command << 4) | t_chan_mode;
     buf[1] = t_data[0];
     buf[2] = t_data[1];
     std::array<uint8_t, 3> ret_buf;
