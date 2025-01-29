@@ -6,7 +6,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 
 function Wedge() {
-  const result = useLoader(GLTFLoader, "./models/wedge.glb");
+  const result = useLoader(GLTFLoader, "./models/penn2.glb");
   // let mesh = useLoader(STLLoader,'./models/wedge.stl');
   
   const geometry =result.scene.children[0].geometry;

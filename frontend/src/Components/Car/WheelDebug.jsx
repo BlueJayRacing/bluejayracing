@@ -1,4 +1,4 @@
-const debug = true;
+const debug = false;
 
 export const WheelDebug = ({ radius, wheelRef }) => {
   return debug && (

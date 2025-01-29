@@ -5,10 +5,10 @@ import { useLoader} from '@react-three/fiber';
 const debug = true;
 function FrontCorner (props) {
   const { scale, flip } = props;
-  let mesh = useLoader(
-    STLLoader,
-    './public/models/lowminpolyfront.STL'
-  );
+  // let mesh = useLoader(
+  //   STLLoader,
+  //   // './public/models/lowminpolyfront.STL'
+  // );
   let scale_new = JSON.parse(JSON.stringify(scale));
  
   const rotation = [-0, -Math.PI, 0];
@@ -25,7 +25,7 @@ function FrontCorner (props) {
   return debug && (
     <group>
       <group scale={scale_new} rotation={rotation} position={position}>
-          <mesh geometry={mesh}><meshLambertMaterial color="red" /></mesh>
+          {/* <mesh geometry={mesh}><meshLambertMaterial color="red" /></mesh> */}
           
         </group>
     </group>

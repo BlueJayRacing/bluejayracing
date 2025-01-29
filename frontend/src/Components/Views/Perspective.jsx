@@ -8,7 +8,7 @@ function Perspective(props) {
     <>
       <PerspectiveCamera makeDefault position={cameraPosition} fov={40} />
       {!thirdPerson && (
-        <OrbitControls target={[-2.64, -.71, .03]}/>
+        <OrbitControls target={[0, -.7, .13]}/>
       )}
     </>
   );

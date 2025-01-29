@@ -35,7 +35,11 @@ function Path() {
 
 
 
-      <GroundFeature />
+      {/* <GroundFeature /> */}
+      <GroundFeature 
+  					position={[0, -.5250, 0]}
+  					rotation={[0,0,0]} // 30 degrees around X axis
+					/>
       {/* <Wedge/> */}
       {/*
       <CollisionBox position={[1.75, 0, 0.5]} scale={[0.3, .1, 0.3]}/>

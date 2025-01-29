@@ -7,14 +7,15 @@ import Path from "./Path";
 function Terrain() {
 	const [ref] = usePlane(() => ({
 		type: 'Static',
+		position: [0,-1,-1],
 		rotation: [-Math.PI / 2, 0, 0],
 	}), useRef(null));
 	return (
 		<>
-		<mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]}>
+		{/* <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]}>
 			<planeGeometry attach="geometry" args={[12, 12]} />
 			<meshLambertMaterial attach="material" color="lightblue" />
-		</mesh>
+		</mesh> */}
 		<Path/>
 		</>
 	);
