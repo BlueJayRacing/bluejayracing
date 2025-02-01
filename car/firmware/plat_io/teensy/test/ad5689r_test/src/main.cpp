@@ -4,7 +4,7 @@
 
 #include "ad5689r.hpp"
 
-AD5689R ad5689;
+AD5689R ad5689r;
 uint16_t level = 1;
 double voltage_val;
 
@@ -21,7 +21,7 @@ void setup() {
   init_params.clr_pin = 15;
   init_params.spi_host = &SPI;
 
-  ad5689.init(init_params);
+  ad5689r.init(init_params);
 }
 
 void loop() {
@@ -33,7 +33,7 @@ void loop() {
 
   voltage_val = 2.5 * level * pow(2, -15);
 
-  ad5689.setLevel(A, level);
+  ad5689r.setLevel(A, level);
   Serial.println(level);
   Serial.println(voltage_val);
   delay(4000);
