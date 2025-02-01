@@ -5,11 +5,11 @@
 #include <SPI.h>
 
 typedef struct ad5689_init_params {
-    int8_t t_sync_pin;
-    int8_t t_ldac_pin; 
-    int8_t t_rst_pin;
-    SPIClass* t_spi_host;
-} ad5689_init_params_t;
+    int8_t cs_pin;
+    int8_t ldac_pin; 
+    int8_t clr_pin;
+    SPIClass* spi_host;
+} ad5689_init_param_t;
 
 typedef enum ad5689_command {
   WRITE_IN_REG = 0x01,
@@ -22,7 +22,7 @@ typedef enum ad5689_command {
   SETUP_DCEN_REG = 0x08,
   SETUP_READBACK_REG = 0x0A,
   NO_OP_DC_MODE = 0x0F
-} t_ad5689_command;
+} ad5689_command_t;
 
 typedef enum ad5689_channel {
   A = 0x01,
@@ -32,13 +32,13 @@ typedef enum ad5689_channel {
 
 class AD5689 {
   public:
-    AD5689() : spi_host_(&SPI), spi_settings_(20000000, MSBFIRST, SPI_MODE1) {};
-    void init(const ad5689_init_params_t init_params);
-    void transfer(const t_ad5689_command command, const ad5689_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data);
+    AD5689() : spi_host_(&SPI), spi_settings_(2000000, MSBFIRST, SPI_MODE1) {};
+    void init(const ad5689_init_param_t init_params);
+    void transfer(const ad5689_command_t command, const ad5689_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data);
     void setLevel(const ad5689_channel_t t_chan_mode, const uint16_t t_new_dac_level);
 
   private:
-    ad5689_init_params_t params;
+    ad5689_init_param_t bus_params_;
     SPISettings spi_settings_;
     SPIClass* spi_host_;
 };
