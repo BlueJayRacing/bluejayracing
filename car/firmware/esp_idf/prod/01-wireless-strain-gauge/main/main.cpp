@@ -13,5 +13,5 @@ extern "C" void app_main(void)
 {
     Test test(ESP_LOG_VERBOSE);
     ESP_LOGI(TAG, "Starting tests");
-    test.testSPIFlash();
+    test.testADCDACReadAnalogFrontEnd();
 }

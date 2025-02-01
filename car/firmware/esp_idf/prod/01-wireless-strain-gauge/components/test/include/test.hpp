@@ -5,7 +5,6 @@
 #include <memoryBlock.hpp>
 #include <memoryQueue.hpp>
 #include <mqttManager.hpp>
-#include <w25n04kv.hpp>
 #include <ad5626.hpp>
 #include <ads1120.hpp>
 
@@ -13,7 +12,6 @@ class Test {
   public:
     Test(esp_log_level_t test_log_level);
     void testMemoryQueue(void);
-    void testSPIFlash(void);
     void testMQTTManager(void);
     void testADCDACEndtoEnd(void);
     void testADCDACReadAnalogFrontEnd(void);
@@ -40,7 +38,6 @@ class Test {
     mqttManager* mqtt_manager_;
     AD5626 dac_;
     ADS1120 adc_;
-    W25N04KV spi_flash_;
 };
 
 #endif

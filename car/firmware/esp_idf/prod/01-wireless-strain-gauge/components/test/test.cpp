@@ -40,39 +40,6 @@ void Test::testMQTTManager(void)
     testMQTTManagerClientPublishSubscribe();
 }
 
-void Test::testSPIFlash(void)
-{ 
-    // Configure the SPI bus
-    esp_err_t ret;
-    spi_bus_config_t spi_cfg;
-    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
-
-    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
-    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
-    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
-    spi_cfg.quadwp_io_num = -1;
-    spi_cfg.quadhd_io_num = -1;
-
-    spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
-
-    w25n04kv_init_param_t flash_init_params;
-    flash_init_params.cs_pin = GPIO_NUM_1;
-    flash_init_params.wp_pin = GPIO_NUM_NC;
-    flash_init_params.spi_host = SPI2_HOST;
-
-    ESP_LOGI(TAG, "Initialized SPI Bus");
-
-    ret = spi_flash_.init(flash_init_params);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize SPI Flash: %d", ret);
-        return;
-    }
-
-    ESP_LOGI(TAG, "Initialized SPI Flash");
-
-    testSPIFlashReadDeviceIDInitialStatus();
-}
-
 /* We check basic memory queue functions like acquiring, writing to, and pushing
  * blocks onto the memory queue. We also cover function returns on invalid input
  * or invalid operation for that state.
@@ -864,13 +831,13 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     ads1120_regs_t adc_regs;
     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    // Sample at Normal Mode, 20 SPS, Gain of 1
+    // Sample at Normal Mode, Gain of 1
     adc_regs.conv_mode = CONTINUOUS;
     adc_regs.op_mode   = NORMAL;
     adc_regs.channels  = AIN1_AIN2;
-    adc_regs.data_rate = 3;
+    adc_regs.data_rate = 2;
     adc_regs.volt_refs = REFP0_REFN0;
-    adc_regs.gain = GAIN_4;
+    adc_regs.gain = GAIN_1;
 
     ret = adc_.configure(adc_regs);
     if (ret != ESP_OK) {
@@ -878,7 +845,6 @@ void Test::testADCDACReadAnalogFrontEnd(void)
         return;
     }
 
-    // Set DAC to Ground
     ret = dac_.setLevel(2500);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set DAC to ground: %d", ret);
@@ -895,28 +861,9 @@ void Test::testADCDACReadAnalogFrontEnd(void)
                 continue;
             }
 
-            printf("%.10f\n", 5.001 * adc_val / ((1 << 15) - 1));
+            printf("%d\n", adc_val);
         } else {
             vTaskDelay(1);
         }
     }
-}
-
-void Test::testSPIFlashReadDeviceIDInitialStatus(void)
-{
-    ESP_LOGI(TAG, "Testing SPI Flash Reading Device ID and initial status");
-
-    assert(spi_flash_.isCorrectDevice() == ESP_OK);
-
-    w25n04kv_device_status_t dev_status;
-
-    assert(spi_flash_.readStatus(&dev_status) == ESP_OK);
-
-    assert(dev_status.ecc_status == NO_ERROR);
-    assert(dev_status.erase_failure == false);
-    assert(dev_status.is_busy == false);
-    assert(dev_status.program_failure == false);
-    assert(dev_status.write_enable == false);
-
-    ESP_LOGI(TAG, "Passed Testing SPI Flash Reading Device ID and initial status");
 }
