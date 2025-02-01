@@ -1,7 +1,7 @@
 #include "ad5689r.hpp"
 
 /*******************************************************************************
- * @brief Initializes the AD5689.
+ * @brief Initializes the AD5689R.
  * 
  * @param init_params - pins and SPI host
  *******************************************************************************/
@@ -19,11 +19,11 @@ void AD5689R::init(ad5689r_init_param_t init_params) {
 }
 
 /*******************************************************************************
- * @brief Sends an SPI transaction to the AD5689 device.
+ * @brief Sends an SPI transaction to the AD5689R device.
  *
- * @param t_command   - The type of command to send to the AD5689.
+ * @param t_command   - The type of command to send to the AD5689R.
  * @param t_chan_mode - The desired DAC channel (A, B, BOTH).
- * @param t_data      - The data to be sent to the AD5689 device.
+ * @param t_data      - The data to be sent to the AD5689R device.
  *******************************************************************************/
 void AD5689R::transfer(const ad5689r_command_t t_command, const ad5689r_channel_t t_chan_mode, const std::array<uint8_t, 2>& t_data) {
     std::array<uint8_t, 3> buf;
@@ -43,7 +43,7 @@ void AD5689R::transfer(const ad5689r_command_t t_command, const ad5689r_channel_
 }
 
 /*******************************************************************************
- * @brief Sets the level for one of the DAC channels on the AD5689.
+ * @brief Sets the level for one of the DAC channels on the AD5689R.
  *
  * @param t_chan_id  - The desired DAC channel (A, B, BOTH).
  * @param t_new_dac_level - The new value for the DAC channel.
