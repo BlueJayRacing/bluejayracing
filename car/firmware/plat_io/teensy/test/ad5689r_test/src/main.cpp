@@ -2,9 +2,9 @@
 
 #include "component_template.hpp"
 
-#include "ad5689.hpp"
+#include "ad5689r.hpp"
 
-AD5689 ad5689;
+AD5689R ad5689;
 uint16_t level = 1;
 double voltage_val;
 
@@ -15,7 +15,7 @@ void setup() {
 
   SPI.begin();
 
-  ad5689_init_param_t init_params;
+  ad5689r_init_param_t init_params;
   init_params.cs_pin = 10;
   init_params.ldac_pin = 32;
   init_params.clr_pin = 15;
