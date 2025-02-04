@@ -9,16 +9,22 @@ export interface CameraPositionProps {
   verticalPosition: number;
   setVerticalPosition: (value: number) => void;
 }
+
 export interface CameraControlProps extends CameraPositionProps{
       isGoingToFront: boolean;
-      goToFront: (value: boolean) => void;
+      setIsGoingToFront: (value: boolean) => void;
       isGoingToBack: boolean;
-      goToBack: (value: boolean) => void;
+      setIsGoingToBack: (value: boolean) => void;
       isGoingToLeft: boolean;
-      goToLeft: (value: boolean) => void;
+      setIsGoingToLeft: (value: boolean) => void;
       isGoingToRight: boolean;
-      goToRight: (value: boolean) => void;
-
+      setIsGoingToRight: (value: boolean) => void;
+      goToSetPosition: () => void;
+      // handlePanToFront: () => void;
+      // handlePanToBack: () => void;
+      // handlePanToLeft: () => void;
+      // handlePanToRight: () => void;
+      handleMoveToRequiredPosition: (value: number[]) => void;
 }
 
 const CameraControls: React.FC<CameraControlProps> = ({
@@ -26,24 +32,41 @@ const CameraControls: React.FC<CameraControlProps> = ({
   setHorizontalPosition,
   verticalPosition,
   setVerticalPosition,
-  goToFront,
-  goToBack,
-  goToLeft,
-  goToRight,
+  setIsGoingToFront,
+  setIsGoingToBack,
+  setIsGoingToLeft,
+  setIsGoingToRight,
+  goToSetPosition,
+  isGoingToFront,
+  handleMoveToRequiredPosition
 
 }) => {
-  //const { camera, gl } = useThree();
   const handleHorizontalPosition = (event: Event, newValue: number | number[]) => {
     setHorizontalPosition(newValue as number);}
   const handleVerticalPosition = (event: Event, newValue: number |  number[]) => {
     setVerticalPosition(newValue as number);}
-  const handlePanToFront = () => {goToFront(false);}
-  const handlePanToBack = () => {goToBack(false);}
-  const handlePanToLeft = () => {goToLeft(false);}
-  const handlePanToRight = () => {goToRight(false);}
+    
+  // const handlePanToFront = () => {
+  //   setIsGoingToFront(true);
+  //   console.log(isGoingToFront);
+  //   goToSetPosition();
+  //   console.log('Front clicked');
+    
+  // }
+  // const handlePanToBack = () => {
+  //   setIsGoingToBack(true);
+  //   goToSetPosition();
+  // }
+  // const handlePanToLeft = () => {
+  //   setIsGoingToLeft(true);
+  //   goToSetPosition();
+  // }
+  // const handlePanToRight = () => {
+  //   setIsGoingToRight(true);
+  //   goToSetPosition();
+  // }
   return ( 
     <>
-    {/* <OrbitControls args={[camera, gl.domElement]} />; */}
     <Box sx ={{width: 300, padding: 2}}>
         <h2>Camera Controls</h2>
           <Slider
@@ -68,22 +91,22 @@ const CameraControls: React.FC<CameraControlProps> = ({
           <Button 
             
             variant = "contained"
-            onClick={handlePanToFront}
+            onClick={handleMoveToRequiredPosition([-1.55, 1.5])}
             >Front
           </Button>
           <Button 
             variant = "contained"
-            onClick={handlePanToBack}
+            onClick={handleMoveToRequiredPosition([1.55, 1.5])}
           >Back
           </Button>
           <Button 
             variant = "contained"
-            onClick={handlePanToLeft}
+            onClick={handleMoveToRequiredPosition([0, 1.5])}
           >Left
           </Button>
           <Button 
             variant = "contained"
-            onClick={handlePanToRight}
+            onClick={handleMoveToRequiredPosition([3.14, 1.5])}
           >Right
           </Button>
           </Box>

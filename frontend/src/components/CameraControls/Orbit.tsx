@@ -4,12 +4,6 @@ import {CameraPositionProps, CameraControlProps} from 'src/components/CameraCont
 import { OrbitControls } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
-export interface OrbitControlProps extends CameraControlProps {
-  setIsGoingToFront: (value: boolean) => void;
-  setIsGoingToBack: (value: boolean) => void;
-  setIsGoingToLeft: (value: boolean) => void;
-  setIsGoingToRight: (value: boolean) => void;
-}
 
 export const Orbit: FC<CameraPositionProps> = ({horizontalPosition, verticalPosition}) => {
   const { camera, gl } = useThree();
