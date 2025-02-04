@@ -15,7 +15,7 @@
 #define W25N04KV_OP_CODE_WRITE_ENABLE   0x06
 #define W25N04KV_OP_CODE_WRITE_DISABLE  0x04
 #define W25N04KV_OP_CODE_BLOCK_ERASE    0xD8
-#define W25N04KV_OP_CODE_DATA_LOAD      0xD8
+#define W25N04KV_OP_CODE_DATA_LOAD      0x02
 #define W25N04KV_OP_CODE_DATA_EXECUTE   0x10
 #define W25N04KV_OP_CODE_PAGE_READ_DATA 0x13
 #define W25N04KV_OP_CODE_READ_DATA      0x03
@@ -51,8 +51,8 @@ class W25N04KV {
     esp_err_t init(w25n04kv_init_param_t t_init_param);
     esp_err_t reset(void);
     esp_err_t eraseBlock(const std::array<uint8_t, 3>& address);
-    esp_err_t writePage(const std::vector<uint8_t>& tx_data, const std::array<uint8_t, 3>& page_address);
-    esp_err_t readPage(std::vector<uint8_t>& rx_data, const std::array<uint8_t, 3>& page_address);
+    esp_err_t writePage(const std::vector<uint8_t>& tx_data, uint32_t page_address);
+    esp_err_t readPage(std::vector<uint8_t>& rx_data, uint32_t page_address);
     esp_err_t readStatus(w25n04kv_device_status_t* device_status);
     esp_err_t isCorrectDevice(void);
 
@@ -61,6 +61,10 @@ class W25N04KV {
     esp_err_t disableWriteProtection(void);
     esp_err_t transfer(const uint8_t op_code, std::vector<uint8_t>& rx_data, const std::vector<uint8_t>& address,
                        const uint8_t dummy_byte_len, const std::vector<uint8_t>& tx_data);
+
+  public:
+    const static int NUM_PAGES = (1 << 17);
+    const static int PAGE_SIZE = (1 << 11);
 
   private:
     spi_device_handle_t spi_dev_;

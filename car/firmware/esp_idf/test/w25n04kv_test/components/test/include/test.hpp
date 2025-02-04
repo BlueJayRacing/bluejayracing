@@ -10,10 +10,12 @@
 class Test {
   public:
     Test(esp_log_level_t test_log_level);
-    void testW25N04KV(spi_bus_config_t spi_cfg);
+    void testW25N04KV(void);
 
   private:
     void testReadDeviceStatus(void);
+    void testParamErrors(void);
+    void testReadWriteMemory(void);
 
   private:
     W25N04KV spi_flash_;
