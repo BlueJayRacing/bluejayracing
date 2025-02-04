@@ -113,7 +113,7 @@ function World() {
       <Canvas camera={{ fov: 75, position: [5, 5, -5] }} frameloop="demand" dpr={2}>
 				<Stats showPanel={0} className="stats" />  
         <Stars />
-        <ambientLight intensity={1} />
+        <ambientLight intensity={4} />
         <spotLight position={[100, 15, 10]} angle={0.3} />
 
         <Perspective cameraPosition={cameraPosition} thirdPerson={thirdPerson} />

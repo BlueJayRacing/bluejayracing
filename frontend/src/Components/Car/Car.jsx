@@ -186,7 +186,7 @@ function Car({ thirdPerson, adjust }) {
   // Camera follow setup
   const followDistance = 2.0;  // Distance behind the car
   const followHeight = 0.75;    // Height above the car
-  const followSpeed = 0.01;     // How quickly camera follows (0-1)
+  const followSpeed = 0.1;     // How quickly camera follows (0-1)
 
   useFrame((state) => {
     if (!vehicle.current || !chassisBody.current) return;

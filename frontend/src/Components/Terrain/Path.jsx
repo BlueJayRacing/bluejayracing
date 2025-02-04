@@ -37,6 +37,7 @@ function Path() {
 
       {/* <GroundFeature /> */}
       <GroundFeature 
+            scale = {[1.5, 1.5, 1.5]}
   					position={[0, -.5250, 0]}
   					rotation={[0,0,0]} // 30 degrees around X axis
 					/>
