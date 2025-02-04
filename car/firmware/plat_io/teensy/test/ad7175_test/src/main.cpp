@@ -6,13 +6,12 @@
 
 #define CENTER 0x800000
 
+#define NUMBER_OF_CHANNELS 1
+
 AD717X ad7175;
 int32_t data_val;
 
 double voltage_val;
-
-int num = 0;
-int start_millis;
 
 void setup()
 {
@@ -27,31 +26,54 @@ void setup()
     ad717x_analog_inputs_t chan_0_inputs;
     chan_0_inputs.ainp.pos_input = AIN10;
     chan_0_inputs.ainp.neg_input = AIN9;
-
     ad717x_channel_map_t chan_0_map       = {true, 0, chan_0_inputs};
-    ad717x_channel_config_t chan_0_config = {true, false, false, AVDD_AVSS};
-    ad717x_filter_config_t filt_con       = {false, false, SPS27_DB47_MS36P7, SINC5_SINC1, SPS_100};
-    ad717x_setup_t setup                  = {0.5, chan_0_config, filt_con};
+
+    ad717x_channel_config_t chan_config = {true, false, false, AVDD_AVSS};
+    ad717x_filter_config_t filt_con       = {false, false, SPS27_DB47_MS36P7, SINC5_SINC1, SPS_250000};
+    ad717x_setup_t setup                  = {1, chan_config, filt_con};
 
     ad7175_params.active_device = ID_AD7175_8;
     ad7175_params.ref_en        = true;
     ad7175_params.mode          = CONTINUOUS;
+    ad7175_params.stat_on_read_en = true;
 
-    ad7175_params.chan_map.push_back(chan_0_map);
+    for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+        ad7175_params.chan_map.push_back(chan_0_map);
+    }
+
     ad7175_params.setups.push_back(setup);
 
     ad7175.init(ad7175_params, &SPI, ADC_CS_PIN);
-
-    start_millis = millis();
 }
+
+uint64_t channel_count[NUMBER_OF_CHANNELS];
 
 void loop()
 {
-    ad7175.waitForReady(0xFFFFFFFF);
-    ad7175.readData(&data_val);
+    for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+        channel_count[i] = 0;
+    }
 
-    voltage_val = ((double)(data_val)-CENTER) / CENTER * 5;
-    num++;
+    uint32_t start_time = millis();
+    while (millis() - start_time < 5000) {
+        ad717x_data_t data;
 
-    Serial.println(voltage_val, 6);
+        ad7175.waitForReady(0xFFFFFFFF);
+        ad7175.contConvReadData(&data);
+
+        channel_count[data.status.active_channel]++;
+    }
+    
+    uint64_t total = 0;
+
+    for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+        Serial.print("Channel ");
+        Serial.print(i);
+        Serial.print(" Count: ");
+        total += channel_count[i];
+        Serial.println(channel_count[i]);
+    }
+    Serial.print("Total Count per second: ");
+    Serial.println(total / 5);
+
 }
