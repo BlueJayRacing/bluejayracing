@@ -102,7 +102,7 @@ RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
 
 
 # Set ROS_DOMAIN_ID from hostname
-RUN echo 'export ROS_DOMAIN_ID=$(hostname | grep -o '[0-9]*$')' >> /home/$USER/.bashrc
+# RUN echo 'export ROS_DOMAIN_ID=0' >> /home/$USER/.bashrc
 ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
 RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
