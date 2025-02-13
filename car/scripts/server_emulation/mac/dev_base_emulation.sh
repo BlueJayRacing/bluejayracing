@@ -17,6 +17,8 @@ if [ -z "$CONTAINER_ID" ]; then
         --env "QT_X11_NO_MITSHM=1" \
         -v "$HOME/.ssh:/home/dock/.ssh" \
         -v "$HOME/.Xauthority:/tmp/.X11-unix:rw" \
+        -p 0.0.0.0:9365:9365 \
+        -t \
         bjr_base_ros)
 fi
 
