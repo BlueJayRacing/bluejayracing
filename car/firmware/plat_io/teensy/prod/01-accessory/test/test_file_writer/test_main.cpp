@@ -1,17 +1,25 @@
 #include <Arduino.h>
 #include <unity.h>
+#include <fileWriter.hpp>
+#include <SD.h>
 
 #include "verify_file_writer.hpp"
 
+
+void setUp(void) {
+}
+
+void tearDown(void) {
+}
+
 void RUN_UNITY_TESTS() {
     UNITY_BEGIN();
+    RUN_TEST(test_file_writer_error_handling);
     UNITY_END();
 }
 
 void setup() {
-    // NOTE!!! Wait for >2 secs
-    // if board doesn't support software reset via Serial.DTR/RTS
-    delay(2000);
+    SD.begin(BUILTIN_SDCARD);
 
     RUN_UNITY_TESTS();
 }
