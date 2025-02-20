@@ -32,8 +32,6 @@ class Test {
     void testADCDACTestADCGain2(void);
     void testADCDACTestADCGain4(void);
 
-    void testSPIFlashReadDeviceIDInitialStatus(void);
-
   private:
     mqttManager* mqtt_manager_;
     AD5626 dac_;

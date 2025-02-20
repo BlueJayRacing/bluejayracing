@@ -514,6 +514,19 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
 
 void Test::testADCDACEndtoEnd(void)
 {
+    gpio_config_t config;
+    config.mode = GPIO_MODE_OUTPUT;
+    config.intr_type = GPIO_INTR_DISABLE;
+    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+
+    esp_err_t ret = gpio_config(&config);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+        return;
+    }
+
     // Configure the SPI bus
     spi_bus_config_t spi_cfg;
     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
@@ -529,11 +542,11 @@ void Test::testADCDACEndtoEnd(void)
     // Initialize the DAC instance
     ad5626_init_param_t dac_params;
     dac_params.cs_pin   = GPIO_NUM_0;
-    dac_params.ldac_pin = GPIO_NUM_23;
-    dac_params.clr_pin  = GPIO_NUM_17;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
     dac_params.spi_host = SPI2_HOST;
 
-    esp_err_t ret = dac_.init(dac_params);
+    ret = dac_.init(dac_params);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize AD5626: %d", ret);
         return;
@@ -633,7 +646,7 @@ void Test::testADCDACReadDACBias(void)
             continue;
         }
 
-        vTaskDelay(5);
+        vTaskDelay(1);
 
         while (!adc_.isDataReady()) {
             vTaskDelay(1);
@@ -648,7 +661,7 @@ void Test::testADCDACReadDACBias(void)
         }
 
         float expected_dac_voltage = 4.095 * i / (NUM_DAC_BIAS_SAMPLES);
-        float measured_dac_voltage = 5.001 * read_value / ((1 << 15) - 1);
+        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
         sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
 
         ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
@@ -696,7 +709,7 @@ void Test::testADCDACTestADCGain2(void)
             continue;
         }
 
-        vTaskDelay(5);
+        vTaskDelay(1);
 
         while (!adc_.isDataReady()) {
             vTaskDelay(1);
@@ -711,7 +724,7 @@ void Test::testADCDACTestADCGain2(void)
         }
 
         float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 2;
-        float measured_dac_voltage = 5.001 * read_value / ((1 << 15) - 1);
+        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
         sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
 
         ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
@@ -755,7 +768,7 @@ void Test::testADCDACTestADCGain4(void)
             continue;
         }
 
-        vTaskDelay(5);
+        vTaskDelay(1);
 
         while (!adc_.isDataReady()) {
             vTaskDelay(1);
@@ -770,7 +783,7 @@ void Test::testADCDACTestADCGain4(void)
         }
 
         float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 4;
-        float measured_dac_voltage = 5.001 * read_value / ((1 << 15) - 1);
+        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
         sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
 
         ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
@@ -806,8 +819,8 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     // Initialize the DAC instance
     ad5626_init_param_t dac_params;
     dac_params.cs_pin   = GPIO_NUM_0;
-    dac_params.ldac_pin = GPIO_NUM_23;
-    dac_params.clr_pin  = GPIO_NUM_17;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
     dac_params.spi_host = SPI2_HOST;
 
     ret = dac_.init(dac_params);
