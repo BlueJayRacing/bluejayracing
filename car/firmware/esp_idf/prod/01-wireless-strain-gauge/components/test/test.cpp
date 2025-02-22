@@ -815,6 +815,9 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     spi_cfg.quadhd_io_num = -1;
 
     ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret) {
+        return;
+    }
 
     // Initialize the DAC instance
     ad5626_init_param_t dac_params;
