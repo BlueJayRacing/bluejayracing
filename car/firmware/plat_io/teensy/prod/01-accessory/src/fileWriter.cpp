@@ -49,8 +49,9 @@ int32_t fileWriter::logChannel(uint8_t chan_index, uint32_t data_val) {
     }
 
     void* curr_ptr = file_channels_[chan_index].buf_ptr + file_channels_[chan_index].buf_index;
-    uint8_t data_point[2] = {micros(), data_val};
-    memcpy(curr_ptr, data_point, sizeof(data_point));
+
+    uint32_t data_point[2] = {micros(), data_val};
+    memcpy(curr_ptr, (void*) data_point, sizeof(data_point));
 
     file_channels_[chan_index].buf_index += sizeof(data_point);
 

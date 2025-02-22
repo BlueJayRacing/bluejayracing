@@ -3,6 +3,14 @@
 
 #include "verify_file_writer.hpp"
 
+void setUp(void) {
+    // set stuff up here
+}
+
+void tearDown(void) {
+    // clean stuff up here
+}
+
 void RUN_UNITY_TESTS() {
     UNITY_BEGIN();
     UNITY_END();
