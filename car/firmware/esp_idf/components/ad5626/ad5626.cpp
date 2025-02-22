@@ -8,7 +8,7 @@
 
 #include "ad5626.hpp"
 
-AD5626::AD5626() {}
+AD5626::AD5626() {current_level_ = 0; }
 
 /*******************************************************************************
  * @brief Initializes the AD5626.
@@ -58,7 +58,12 @@ esp_err_t AD5626::init(const ad5626_init_param_t t_init_param)
         }
     }
 
-    return spi_bus_add_device(t_init_param.spi_host, &ad5626_cfg, &(spi_dev_));
+    ret = spi_bus_add_device(t_init_param.spi_host, &ad5626_cfg, &(spi_dev_));
+    if (ret) {
+        return ret;
+    }
+
+    return setLevel(0);
 }
 
 /*******************************************************************************
@@ -68,7 +73,7 @@ esp_err_t AD5626::init(const ad5626_init_param_t t_init_param)
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level) const
+esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level)
 {
     spi_transaction_t t;
     memset(&t, 0, sizeof(spi_transaction_t));
@@ -92,6 +97,8 @@ esp_err_t AD5626::setLevel(const uint16_t t_new_dac_level) const
     if (ret) {
         return ret;
     }
+
+    current_level_ = t_new_dac_level;
 
     return ESP_OK;
 }
@@ -119,4 +126,8 @@ esp_err_t AD5626::clearLevel(void) const
     }
 
     return ESP_OK;
+}
+
+uint16_t AD5626::getLevel(void) {
+    return current_level_;
 }

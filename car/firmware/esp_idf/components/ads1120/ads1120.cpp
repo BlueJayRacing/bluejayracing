@@ -68,7 +68,7 @@ esp_err_t ADS1120::init(ads1120_init_param_t t_init_param)
  *
  * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
-esp_err_t ADS1120::configure(ads1120_regs t_nregs)
+esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
 {
     esp_err_t ret;
 
@@ -271,9 +271,19 @@ bool ADS1120::isDataReady() const { return !gpio_get_level(drdy_pin_); }
  *
  * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
-esp_err_t ADS1120::readADC(int16_t* t_data) const
+esp_err_t ADS1120::readADC(int16_t* t_data)
 {
     esp_err_t ret;
+
+    if (regs_.conv_mode == SINGLE_SHOT) {
+        ret = startSync();
+        if (ret) {
+            return ret;
+        }
+
+        while (!isDataReady()){};
+    }
+
     spi_transaction_t t;
     memset(&t, 0, sizeof(spi_transaction_t));
 
@@ -283,13 +293,18 @@ esp_err_t ADS1120::readADC(int16_t* t_data) const
     t.length   = 2 * 8; // 2 bytes
     t.rxlength = 2 * 8; // 2 bytes
 
-    ret = spi_device_polling_transmit(spi_dev_, &t); // Transmit!
+    ret = spi_device_queue_trans(spi_dev_, &t, portMAX_DELAY); // Transmit!
     if (ret != ESP_OK) {
         return ret;
     }
 
-    *t_data = t.rx_data[0];
-    *t_data = (*t_data << 8) | t.rx_data[1];
+    spi_transaction_t* trans_result;
+
+    ret = spi_device_get_trans_result(spi_dev_, &trans_result, portMAX_DELAY);
+
+    *t_data = trans_result->rx_data[0];
+    *t_data = (*t_data << 8) | trans_result->rx_data[1];
+
     return ESP_OK;
 }
 
