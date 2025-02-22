@@ -1,6 +1,7 @@
 #include <esp_log.h>
 #include <esp_system.h>
 #include <test.hpp>
+#include <atomic>
 #include "esp_timer.h"
 
 static const char* TAG = "test";
@@ -14,6 +15,8 @@ Test::Test(esp_log_level_t test_log_level) { esp_log_level_set(TAG, test_log_lev
 // Tested with WSG v2.0 board as labeled physically (could be labeled as v1.0 on KiCAD)
 void Test::testADS1120(void)
 {
+    gpio_install_isr_service(0);
+
     ads1120_init_param_t adc_params;
     adc_params.cs_pin = GPIO_NUM_21;
     adc_params.drdy_pin = GPIO_NUM_2;
@@ -41,7 +44,9 @@ void Test::testADS1120(void)
     }
 
     testConfigureADS1120();
-    testReadADS1120();
+    testSingleReadADS1120();
+    testContinuousReadADS1120();
+    testContinousReadViaInterruptADS1120();
 }
 
 void Test::testConfigureADS1120(void)
@@ -146,39 +151,136 @@ void Test::testConfigureADS1120(void)
     ESP_LOGI(TAG, "Passed configuring ADC");
 }
 
-void Test::testReadADS1120(void)
+#define NUM_SINGLE_SAMPLES 10
+
+void Test::testSingleReadADS1120(void)
 {
-    ESP_LOGI(TAG, "Testing Reading ADC");
+    ESP_LOGI(TAG, "Testing Single Reading ADC");
 
     ads1120_regs_t adc_regs;
     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    adc_regs.conv_mode = CONTINUOUS; // continuous
-    adc_regs.op_mode = TURBO;   // turbo
+    adc_regs.conv_mode = SINGLE_SHOT;
+
+    adc_.configure(adc_regs);
+
+    int16_t data;
+    int num_success_reads = 0;
+    
+    for (int i = 0; i < NUM_SINGLE_SAMPLES; i++) {
+        if (adc_.readADC(&data) == ESP_OK) {
+            num_success_reads++;
+        }
+    }    
+
+    ESP_LOGI(TAG, "Number of successful reads: %d", num_success_reads);
+    assert(num_success_reads == NUM_SINGLE_SAMPLES);
+
+    ESP_LOGI(TAG, "Passed Single Testing Reading ADC");
+}
+
+void Test::testContinuousReadADS1120(void)
+{
+    ESP_LOGI(TAG, "Testing Continuous Reading ADC");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode = TURBO;
     adc_regs.data_rate = 6; // 2000 SPS
 
     adc_.configure(adc_regs);
 
-    uint16_t data;
+    int16_t data;
     int num_success_reads = 0;
     int num_failed_reads = 0;
     int start_time = esp_timer_get_time();
     int current_time = esp_timer_get_time();
 
     while (current_time - 1000000 < start_time) {
-        if (adc_.isDataReady()) {
-            if (adc_.readADC(&data) == ESP_OK) {
-                num_success_reads++;
-            } else {
-                num_failed_reads++;
-            }
+        while (!adc_.isDataReady()) {}
+        if (adc_.readADC(&data) == ESP_OK) {
+            num_success_reads++;
+        } else {
+            num_failed_reads++;
         }
+
         current_time = esp_timer_get_time();
     }
 
     ESP_LOGI(TAG, "Number of successful reads: %d", num_success_reads);
     ESP_LOGI(TAG, "Number of failed reads: %d", num_failed_reads);
-    assert(num_success_reads > 1800 && num_success_reads < 2200);
+    assert(num_success_reads > 1900 && num_success_reads < 2100);
 
-    ESP_LOGI(TAG, "Passed Testing Reading ADC");
+    ESP_LOGI(TAG, "Passed Continuous Testing Reading ADC");
+}
+
+
+std::atomic<bool> data_ready;
+int num_success_reads = 0;
+int num_failed_reads = 0;
+
+void IRAM_ATTR Test::ADCReadInterrupt(void*) {
+    BaseType_t woken;
+    data_ready = true;
+}
+
+void Test::testContinousReadViaInterruptADS1120(void) {
+    ESP_LOGI(TAG, "Testing Continuous Reading via Interrupt ADC");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode = TURBO;
+    adc_regs.data_rate = 6; // 2000 SPS
+
+    adc_.configure(adc_regs);
+
+    int start_time = esp_timer_get_time();
+    int current_time = esp_timer_get_time();
+
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << GPIO_NUM_2),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_NEGEDGE // Interrupt on rising edge
+    };
+    
+    gpio_config(&io_conf);
+
+    esp_err_t ret = gpio_isr_handler_add(GPIO_NUM_2, Test::ADCReadInterrupt, NULL);
+    if (ret) {
+        return;
+    }
+
+    int16_t data;
+
+    while (current_time - 1000000 < start_time) {
+        while (data_ready == false) {};
+        data_ready = false;
+
+        ret = adc_.readADC(&data);
+        if (ret) {
+            num_failed_reads++;
+        } else {
+            num_success_reads++;
+        }
+
+        current_time = esp_timer_get_time();
+    }
+
+    ret = gpio_isr_handler_remove(GPIO_NUM_2);
+    if (ret) {
+        return;
+    }
+
+    ESP_LOGI(TAG, "Number of successful reads: %d", num_success_reads);
+    ESP_LOGI(TAG, "Number of failed reads: %d", num_failed_reads);
+    
+    assert(num_success_reads > 1900 && num_success_reads < 2100);
+
+    ESP_LOGI(TAG, "Testing Continuous Reading via Interrupt ADC");
 }

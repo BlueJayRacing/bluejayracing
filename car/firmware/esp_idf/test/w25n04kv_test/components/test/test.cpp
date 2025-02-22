@@ -3,7 +3,6 @@
 #include <test.hpp>
 #include <cstring>
 
-// Tested on 2025 WSG v1.0
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
 #define SPI2_SCLK_PIN 19
@@ -32,6 +31,8 @@ void Test::testW25N04KV(void) {
     flash_init_params.spi_host = SPI2_HOST;
 
     ESP_LOGI(TAG, "Initialized SPI Bus");
+
+    vTaskDelay(100);
 
     ret = spi_flash_.init(flash_init_params);
     if (ret != ESP_OK) {
@@ -94,7 +95,15 @@ void Test::testReadWriteMemory(void)
     uint32_t page_address = std::rand() % W25N04KV::NUM_PAGES;
 
     assert(spi_flash_.writePage(tx_data, page_address) == ESP_OK);
+
+    vTaskDelay(1);
+
     assert(spi_flash_.readPage(rx_data, page_address) == ESP_OK);
+
+    for (int i = 0; i < W25N04KV::PAGE_SIZE; i++) {
+        ESP_LOGI(TAG, "TX: %d, RX: %d\n", tx_data[i], rx_data[i]);
+        // assert(tx_data[i] == rx_data[i]);
+    }
     
 
     ESP_LOGI(TAG, "Passed Testing SPI Flash reading/writing to memory");

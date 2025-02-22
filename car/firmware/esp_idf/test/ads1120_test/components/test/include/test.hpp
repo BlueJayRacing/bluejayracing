@@ -11,7 +11,10 @@ class Test {
 
   private:
     void testConfigureADS1120(void);
-    void testReadADS1120(void);
+    void testSingleReadADS1120(void);
+    void testContinuousReadADS1120(void);
+    void testContinousReadViaInterruptADS1120(void);
+    static void IRAM_ATTR ADCReadInterrupt(void* adc);
 
   private:
     ADS1120 adc_;
