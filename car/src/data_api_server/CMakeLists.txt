@@ -8,6 +8,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # Pistache might have a CMake config file named 'pistache'.
 # If it doesn't, you can still include its headers and link 
@@ -41,9 +42,61 @@ add_executable(pistache_hello_world_node
 ament_target_dependencies(pistache_hello_world_node rclcpp)
 target_link_libraries(pistache_hello_world_node pistache_hello_world)
 
+
+
+
+# Build the library for the server node
+add_library(pistache_realtime_data_api_server
+  src/pistache_realtime_data_api_server.cpp
+)
+ament_target_dependencies(pistache_realtime_data_api_server rclcpp std_msgs)
+if(pistache_FOUND)
+  target_link_libraries(pistache_realtime_data_api_server ${pistache_LIBRARIES})
+else()
+  target_link_libraries(pistache_realtime_data_api_server pistache)
+endif()
+
+# Build the executable for the main node
+add_executable(pistache_realtime_data_api_server_node
+  src/pistache_realtime_data_api_server_main.cpp
+)
+ament_target_dependencies(pistache_realtime_data_api_server_node rclcpp std_msgs)
+target_link_libraries(pistache_realtime_data_api_server_node pistache_realtime_data_api_server)
+
+
+
+# Build the library for the mock data API server
+add_library(mock_data_api_server
+  src/mock_data_api_server.cpp
+)
+ament_target_dependencies(mock_data_api_server rclcpp std_msgs)
+if(pistache_FOUND)
+  target_link_libraries(mock_data_api_server ${pistache_LIBRARIES})
+else()
+  target_link_libraries(mock_data_api_server pistache)
+endif()
+# Add nlohmann/json if found
+if(nlohmann_json_FOUND)
+  target_link_libraries(mock_data_api_server nlohmann_json::nlohmann_json)
+endif()
+
+# Build the executable for the mock data API server node
+add_executable(mock_data_api_server_node
+  src/mock_data_api_server_main.cpp
+)
+ament_target_dependencies(mock_data_api_server_node rclcpp std_msgs)
+target_link_libraries(mock_data_api_server_node mock_data_api_server)
+
+
+
+
 install(TARGETS
   pistache_hello_world
   pistache_hello_world_node
+  pistache_realtime_data_api_server
+  pistache_realtime_data_api_server_node
+  mock_data_api_server
+  mock_data_api_server_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
