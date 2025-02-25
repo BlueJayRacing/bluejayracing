@@ -1,0 +1,15 @@
+[submodule "car/src/paho.mqtt.c"]
+	path = car/src/paho.mqtt.c
+	url = git@github.com:BlueJayRacing/paho.mqtt.c.git
+[submodule "car/src/serial"]
+	path = car/src/serial
+	url = https://github.com/joshnewans/serial.git
+[submodule "car/src/inertial_sense_ros_humble/lib/inertial-sense-sdk"]
+	path = car/src/inertial_sense_ros_humble/lib/inertial-sense-sdk
+	url = https://github.com/inertialsense/inertial-sense-sdk.git
+[submodule "car/firmware/esp_idf/components/nanopb"]
+	path = car/firmware/esp_idf/components/nanopb
+	url = git@github.com:BlueJayRacing/nanopb.git
+[submodule "car/firmware/plat_io/teensy/components/nanopb"]
+	path = car/firmware/plat_io/teensy/components/nanopb
+	url = git@github.com:BlueJayRacing/nanopb.git

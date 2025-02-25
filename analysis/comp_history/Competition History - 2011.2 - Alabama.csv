@@ -1,0 +1,60 @@
+Rank,Car No,School,Team,Overall (1000),Overall Dynamic (300),Overall Static (300),Cost (100),Design (200),Business Presentation (50),Acceleration (60),Land Manuverability (60),Pulling (60),Suspension & Traction (60),Endurance Race (400),Event Penalty,Water Manuverability (60),Register,Passed Tech
+1,21,Tennessee Tech Univ,TTU Baja ,930.40,280.28,250.12,86.25,163.87,,57.09,54.46,50.64,58.77,400.00,,59.32,,Pass
+2,58,Universite Laval,Alerion ,903.25,291.84,255.85,94.10,161.75,,60.00,60.00,60.00,59.36,355.56,,52.48,,Pass
+3,32,Univ of Alabama - Birmingham,Blazer Motorsports 1,822.60,258.76,230.51,86.52,143.99,,42.70,54.46,53.35,58.85,333.33,,49.40,,Pass
+4,14,Universite de Sherbrooke,Sherbrooke Racing Team ,773.69,259.27,247.75,83.26,164.49,,44.70,55.08,47.24,58.75,266.67,,53.50,,Pass
+5,16,Ohio Northern Univ,Polar Bear Racing,765.40,241.78,212.51,79.14,133.37,,43.37,55.69,47.24,41.29,311.11,,54.19,,Pass
+6,4,Ecole De Technologie Superieure,ETS Motorsports ,737.62,185.30,263.43,89.08,174.35,,45.18,28.00,56.22,0.00,288.89,,55.90,,Pass
+7,29,Queen's Univ - Ontario Canada,Queen's Baja SAE ,733.40,245.51,221.22,63.27,157.95,,43.59,54.46,50.71,60.00,266.67,,36.75,,Pass
+8,3,Rochester Institute of Technology,RIOT Racing ,728.61,231.95,229.99,71.62,158.37,,36.49,45.85,48.76,52.82,266.67,,48.03,,Pass
+9,47,Virginia Tech,Virginia Tech Baja SAE ,724.25,265.94,236.09,77.60,158.49,,53.55,50.15,51.46,53.86,222.22,,56.92,,Pass
+10,1,Cornell Univ,BIG RED RACING ,718.48,216.80,235.01,66.39,168.62,,56.87,0.00,53.46,52.97,266.67,,53.50,,Pass
+11,30,Univ of Maryland - College Park,Terps Racing ,683.01,183.69,188.21,72.72,115.49,,58.70,13.85,57.64,0.00,311.11,,53.50,,Pass
+12,25,Georgia Southern Univ,Georgia Southern Eagles,672.86,246.69,181.73,79.24,102.49,,46.53,52.00,45.63,56.21,244.44,,46.32,,Pass
+13,49,Univ of Alabama - Birmingham,Blazer Motorsports 2,658.73,179.26,235.03,85.91,149.12,,31.96,45.85,50.34,0.00,244.44,,51.11,,Pass
+14,42,College of New Jersey,TCNJ Baja ,652.60,158.53,205.18,86.03,119.15,,10.07,52.00,36.46,0.00,288.89,,60.00,,Pass
+15,6,Northeastern Univ,NU Motorsports ,612.26,169.03,154.34,51.35,102.99,,22.62,56.31,42.75,0.00,288.89,,47.35,,Pass
+16,36,Keimyung University,Speed Limit,541.02,162.82,178.20,72.71,105.49,,41.67,36.00,48.40,0.00,200.00,,36.75,,Pass
+17,33,Bucknell Univ,Bucknell Racing,525.18,128.64,174.32,51.33,122.99,,32.04,0.00,37.63,0.00,222.22,,58.97,,Pass
+18,60,Kansas State Univ,Wet Willies ,520.56,153.91,188.87,72.88,115.99,,32.28,34.77,39.51,0.00,177.78,,47.35,,Pass
+19,48,Utah State University,USU Scotsmen ,506.09,207.44,143.09,54.97,88.12,,35.36,48.31,42.04,48.40,155.56,,33.33,,Pass
+20,5,Univ of Maryland - Baltimore County,UMBC Racing,497.16,165.92,242.35,97.00,145.35,,54.14,28.62,37.18,0.00,88.89,,45.98,,Pass
+21,20,Middle Tennessee State Univ,Blue Raider Baja ,492.98,90.12,158.42,77.43,80.99,,21.43,8.92,41.48,0.00,244.44,,18.29,,Pass
+22,27,Univ of Tennessee - Martin,UTM Motorsports,472.32,202.33,181.10,77.75,103.35,,41.08,24.92,42.37,41.48,88.89,,52.48,,Pass
+23,15,Univ of South Carolina,Gamecock Baja,462.06,84.71,177.35,76.86,100.49,,29.91,0.00,10.53,0.00,200.00,,44.27,,Pass
+24,19,Univ of Central Florida,Knights Who Say Ni ,450.06,175.69,229.93,97.94,131.99,,0.00,49.54,31.58,45.17,44.44,,49.40,,Pass
+25,37,Northwestern Michigan College,NMC Baja,430.06,188.82,85.68,19.19,66.49,,22.78,47.08,35.63,50.00,155.56,,33.33,,Pass
+26,8,Michigan State Univ,Spartan Baja Racing ,422.65,185.03,237.62,84.47,153.15,,34.82,58.77,46.48,0.00,0.00,,44.96,,Pass
+27,31,Concordia University,Stingers ,419.96,143.38,187.69,76.32,111.37,,45.94,0.00,40.86,0.00,88.89,,56.58,,Pass
+28,22,Auburn Univ,War Eagle Motorsports ,378.69,80.96,186.62,71.13,115.49,,21.94,0.00,40.39,0.00,111.11,,18.63,,Pass
+29,26,University of Vermont,Catamount Racing ,345.54,204.38,74.49,0.00,74.49,,50.23,45.23,51.46,46.69,66.67,,10.77,,Pass
+30,63,Univ of Michigan - Ann Arbor,Maize,345.47,126.31,219.16,89.01,130.15,,36.22,0.00,55.05,0.00,0.00,,35.04,,Pass
+31,28,North Carolina A & T State Univ,Aggie Racing ,344.19,100.83,221.14,84.77,136.37,,40.40,12.62,47.81,0.00,22.22,,0.00,,Pass
+32,35,Johns Hopkins Univ,Hopkins Baja ,339.02,156.51,138.07,82.07,56.00,,40.40,43.38,43.50,0.00,44.44,,29.23,,Pass
+33,34,Univ of New Hampshire,UNH Wildcat Racing ,264.31,100.22,75.20,16.20,59.00,,29.20,0.00,42.81,0.00,88.89,,28.21,,Pass
+34,59,California State Univ - Los Angeles,Eagles,243.09,129.42,47.00,0.00,47.00,,25.45,40.92,29.03,0.00,66.67,,34.02,,Pass
+35,12,US Military Academy,West Point Military Academy,238.95,65.57,84.49,7.00,77.49,,21.43,23.08,20.21,0.00,88.89,,0.85,,Pass
+36,24,Lipscomb Univ,Lipscomb Motorsports,223.05,111.56,111.49,7.00,104.49,,33.95,0.00,33.68,0.00,0.00,,43.93,,Pass
+37,46,Instituto Tecnologico de Queretaro,ZORROS RACING ,194.17,110.01,17.49,13.00,4.49,,31.04,0.00,38.46,0.00,66.67,,40.51,,Pass
+38,17,Clarkson University,Golden Knights Racing,185.15,84.66,100.49,1.00,99.49,,14.28,0.00,31.58,0.00,0.00,,38.80,,Pass
+39,45,Missouri University of Science and Tech,Miner Baja SAE ,182.50,44.84,70.99,0.00,70.99,,6.05,0.00,38.79,0.00,66.67,,0.00,,Pass
+40,23,Western Kentucky Univ,BROD,176.30,94.29,82.01,33.52,48.49,,9.64,48.92,35.73,0.00,0.00,,0.00,,Pass
+41,38,Univ of Alabama - Tuscaloosa,Bama Racing,126.91,50.69,54.00,0.00,54.00,,29.69,0.00,21.00,0.00,22.22,,0.00,,Pass
+42,54,Louisiana Tech Univ,Mud Dawgs,106.99,0.00,106.99,2.00,104.99,,0.00,0.00,0.00,0.00,0.00,,0.00,,
+43,62,Cornell Univ,Big Red Racing 2,80.62,0.00,80.62,10.00,70.62,,0.00,0.00,0.00,0.00,0.00,,0.00,,
+44,39,Univ of Rochester,Yellowjackets ,64.37,0.00,64.37,13.00,51.37,,0.00,0.00,0.00,0.00,0.00,,0.00,,Pass
+45,50,Michigan State Univ,Spartan Off-Road ,61.56,0.00,61.56,9.00,52.56,,0.00,0.00,0.00,0.00,0.00,,0.00,,
+46,57,Univ of Memphis,Tiger Baja,33.99,0.00,33.99,0.00,33.99,,0.00,0.00,0.00,0.00,0.00,,0.00,,
+47,61,Ryerson Univ,Ryerson University ,23.00,0.00,23.00,0.00,23.00,,0.00,0.00,0.00,0.00,0.00,,0.00,,
+48,41,Escuela Sup De Ing Automotriz Tlalnepa,blue frog ,0.00,0.00,0.00,0.00,0.00,,0.00,0.00,0.00,0.00,0.00,,0.00,,
+48,43,Univ of New Orleans,Univ of New Orleans Baja SAE,0.00,0.00,0.00,0.00,0.00,,0.00,0.00,0.00,0.00,0.00,,0.00,,
+,11,US Air Force Academy,USAFA ,56.87,0.00,56.87,0.00,56.87,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,13,Georgia Institute of Technology,Georgia Tech Offroad ,75.62,0.00,75.62,11.00,64.62,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,18,Univ of Tennessee - Knoxville,Team Tennessee,33.99,0.00,33.99,0.00,33.99,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,40,Univ of Alabama - Huntsville,Va Buja,19.99,0.00,19.99,0.00,19.99,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,44,Univ of Oklahoma,Sooner Offroad,9.00,0.00,9.00,9.00,0.00,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,51,Western Nevada Community Colleg,Battle Born Baja,0.00,0.00,0.00,0.00,0.00,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,52,ITESM - Campus Toluca,Baja Toluca Racing Team ,12.00,0.00,12.00,12.00,0.00,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,53,Clemson Univ,CU Baja Racing,13.00,0.00,13.00,13.00,0.00,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,55,Univ of Rhode Island,Team RamRod,37.99,0.00,37.99,6.00,31.99,,0.00,0.00,0.00,0.00,0.00,,0.00,No,
+,56,Univ of Kentucky - Paducah,Big Blue Baja,0.00,0.00,0.00,0.00,0.00,,0.00,0.00,0.00,0.00,0.00,,0.00,No,

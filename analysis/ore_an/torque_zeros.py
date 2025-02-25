@@ -70,7 +70,7 @@ axs.set_ylabel("Torque(in-lbs)")
 axs.set_xlabel("Time since logging(s)")
 
 
-axs.scatter(time, tau, s=1)
+axs.scatter(time[0:-1:50], tau[0:-1:50], s=1)
 
 plt.show()
 

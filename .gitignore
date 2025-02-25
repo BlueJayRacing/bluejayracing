@@ -68,6 +68,10 @@ coverity
 # auto-generated files
 samples/rabbit/main-node_discovery.c
 samples/rabbit/my_config.h
-**/bin
+**/bin*
+**/build
 **.pb.cc
 **.pb.h
+**.pb.c
+
+**/get-docker.sh

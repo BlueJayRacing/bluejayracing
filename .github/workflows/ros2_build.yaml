@@ -1,0 +1,59 @@
+name: Combined ROS and ESP32-C3 Firmware Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_ros:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: ./car
+        file: ./car/docker/Dockerfile_car_ros
+        push: false
+        load: true
+        tags: bjr_docker_ros:latest
+        platforms: linux/arm64
+        buildkitd-flags: --debug
+    
+    - name: Store ROS Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ros-artifacts
+        path: /car/build
+
+  build_esp32:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+
+    - name: ESP-IDF build
+      uses: espressif/esp-idf-ci-action@v1
+      with:
+        esp_idf_version: v5.1
+        target: esp32c6
+        path: 'car/firmware/esp_idf/prod/01-wireless-strain-gauge'
+
+    - name: Archive ESP32 firmware
+      uses: actions/upload-artifact@v4
+      with:
+        name: esp32-firmware
+        path: car/firmware/esp_idf/prod/01-wireless-strain-gauge/build/*.bin

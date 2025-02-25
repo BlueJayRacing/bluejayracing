@@ -1,0 +1,83 @@
+Rank,Car #,School,Team,Overall (1000),Overall Dynamic (300),Overall Static (300),Cost Event (100),Design Event (150),Sales Presentation (50),Acceleration (75),Maneuverability (75),Hill Climb (75),Suspension (75),Endurance (400),Adjustments,Registered,Passed Tech,Passed Tech On Time,Public Comments
+1,21,Univ of Michigan - Ann Arbor,Michigan Baja Racing,712.18,231.18,252.77,87.77,110,55,68.7,71.75,59.3,31.43,401,80,TRUE,TRUE,TRUE,4WD Bonus
+2,47,Rochester Institute of Technology,RIOT RACING,702.93,270.38,271.17,90.06,139,42.11,59.14,70.06,66.18,75,352.54,80,TRUE,TRUE,TRUE,4WD Bonus
+3,98,Clarkson University,Golden Knights Racing,636.89,224.68,179.07,78,60,41.07,58.92,67.5,66.83,31.43,332.2,80,TRUE,TRUE,TRUE,4WD Bonus
+4,28,Pennsylvania College of Technology,PCT Baja,621.4,219.4,130.03,58.71,40,31.32,75,69.08,42.58,32.74,402,0,TRUE,TRUE,TRUE,
+5,14,Virginia Tech,VT Baja,600.5,269.66,125.82,30,60,35.82,62.36,69.72,70.3,67.28,250.85,80,TRUE,TRUE,TRUE,4WD Bonus
+6,90,Cornell Univ,Cornell Baja Racing,599.95,201.3,250.43,84.09,145,21.34,55.49,69.5,44.88,31.43,318.64,80,TRUE,TRUE,TRUE,4WD Bonus
+7,22,Georgia Institute of Technology,GT Off-Road,589.72,181.72,251.86,71.44,140,40.42,44.54,56.19,60.04,20.96,403,5,TRUE,TRUE,TRUE,4WD Bonus; Incorrect Documentation Penalty
+8,31,Northwestern Univ,Northwestern MotorCats,576.29,143.75,114.17,7,80,27.17,42.19,37.6,48.23,15.72,352.54,80,TRUE,TRUE,TRUE,4WD Bonus
+9,29,Purdue Univ - W Lafayette,Purdue Baja Racing,566.73,174.87,220.86,62.88,110,47.98,54.97,62.31,47.11,10.48,311.86,80,TRUE,TRUE,TRUE,4WD Bonus
+10,46,South Dakota School of Mines & Tech,Hardrocker Gold,543.03,157.94,168.34,58.99,80,29.35,40.02,56.58,45.62,15.72,305.08,80,TRUE,TRUE,TRUE,4WD Bonus
+11,96,Lehigh Univ,Lehigh Engineers,539.98,194.22,155.16,48.56,70,36.6,56.18,63.52,41.77,32.74,345.76,0,TRUE,TRUE,TRUE,
+12,60,Iowa State Univ,Cyclone Off-Road Racing,537.15,208.15,147.49,54.78,60,32.71,61.14,68.28,46,32.74,404,-75,TRUE,TRUE,FALSE,Incorrect Documentation Penalty
+13,76,Cleveland State Univ,Vikings Racing,526.2,173.66,97.51,54.61,20,22.9,51.1,56.63,34.5,31.43,352.54,0,TRUE,TRUE,TRUE,
+14,91,North Carolina State Univ - Raleigh,Pack Motorsports,506.65,167.67,154.68,44.94,80,29.74,43.5,66.26,26.48,31.43,338.98,0,TRUE,TRUE,TRUE,
+15,88,Tennessee Tech Univ,TN Tech Baja,505.83,173.62,126.56,39.26,50,37.3,50.58,56.96,45.13,20.96,332.2,0,TRUE,TRUE,TRUE,
+16,54,Lawrence Technological Univ,Blue Devil Motorsports,494.58,163.74,179.84,43.36,100,36.48,30.37,69.3,32.63,31.43,250.85,80,TRUE,TRUE,TRUE,4WD Bonus
+17,32,Youngstown State Univ,penguin baja racing,485.99,194.46,165.35,48,80,37.35,58.88,63.44,40.71,31.43,291.53,0,TRUE,TRUE,TRUE,
+18,44,Michigan Tech Univ,Blizzard Baja,484.78,172.92,132.1,60.84,40,31.26,51.75,49.22,43.14,28.81,311.86,0,TRUE,TRUE,TRUE,
+19,25,Rowan Univ,Rowan Motorsports,483.09,178.01,210.72,89.24,80,41.48,42.89,62.3,44.01,28.81,305.08,0,TRUE,TRUE,FALSE,
+20,99,Texas A&M Univ,Fightin' Texas Aggie Motorsports,480.95,163.67,239.9,88.62,110,41.28,42.37,55.86,49.73,15.72,237.29,80,TRUE,TRUE,TRUE,4WD Bonus
+21,23,Univ of Rochester,Yellowjacket Racing,465.35,180.6,193.88,61.88,100,32,64.66,62.51,42.95,10.48,284.75,0,TRUE,TRUE,TRUE,
+22,56,Univ of Illinois - Urbana Champaign,Off-Road Illini,456.88,153.15,219.41,68.2,110,41.21,39.8,61.24,45.56,6.55,223.73,80,TRUE,TRUE,TRUE,4WD Bonus
+23,55,Univ of Oklahoma,Sooner Off-Road,453.4,222.89,261,100,110,51,73.7,66.22,47.61,35.36,230.51,0,TRUE,TRUE,TRUE,
+24,110,Univ of Maryland - Baltimore County,UMBC Racing,451.08,181.25,191.35,71.86,90,29.49,56.62,69.95,42.89,11.79,189.83,80,TRUE,TRUE,TRUE,4WD Bonus
+25,67,Kansas State Univ,Wildcat Offroad,437.86,159.89,98.15,37.46,30,30.69,45.97,60.61,41.52,11.79,277.97,0,TRUE,TRUE,TRUE,
+26,45,Oklahoma State Univ,Cowboy Racing,424.02,146.05,163.62,79.88,50,33.74,46.67,45.67,32.76,20.96,277.97,0,TRUE,TRUE,TRUE,
+27,49,Georgia Southern Univ,Eagle Motorsports,395.32,83.87,166.29,80.43,50,35.86,0,48.55,30.08,5.24,386.44,-75,TRUE,TRUE,FALSE,Incorrect Documentation Penalty
+28,15,Case Western Reserve Univ,CWRU Motorsports,389.22,221.09,259.81,86.81,120,53,61.92,75,75,9.17,88.14,80,TRUE,TRUE,TRUE,4WD Bonus
+29,79,Univ of Missouri - Kansas City,Roo Racing,326.98,110.03,90.18,48.97,0,41.21,25.55,50.65,28.59,5.24,216.95,0,TRUE,TRUE,TRUE,
+30,92,Johns Hopkins Univ,Blue Jay Racing,321.97,133.49,231.76,83.03,100,48.73,33.59,62.41,32.26,5.24,108.47,80,TRUE,TRUE,TRUE,4WD Bonus
+31,117,The Ohio State University,Baja Buckeyes,280.48,132.69,201.83,77.3,80,44.53,42.24,42.32,42.89,5.24,67.8,80,TRUE,TRUE,FALSE,4WD Bonus
+32,86,Auburn Univ,Auburn Off-Road,275.12,125.96,100.16,65.85,0,34.31,54.97,43.15,27.85,0,149.15,0,TRUE,TRUE,FALSE,
+33,42,Mississippi State Univ,Mud Dawg Motorsports,270.79,80.96,104.87,41.03,30,33.84,37.54,0,32.94,10.48,189.83,0,TRUE,TRUE,TRUE,
+34,104,Univ of Alabama - Tuscaloosa,Bama Racing,260.37,126.14,133.51,43.6,60,29.91,28.29,45.84,40.22,11.79,54.24,80,TRUE,TRUE,TRUE,4WD Bonus
+35,50,Univ of Iowa,Iowa Baja Racing,240.1,99.08,112.79,48.48,30,34.31,37.93,0,29.71,31.43,61.02,80,TRUE,TRUE,TRUE,4WD Bonus
+36,36,Manhattan College,Manhattan College Jasper Racing,231.18,75.25,102.1,44.16,20,37.94,37.07,0,32.94,5.24,155.93,0,TRUE,TRUE,TRUE,
+37,66,Missouri University of Science and Tech,Miner Baja SAE,230.83,169.81,182.68,81.87,60,40.81,44.24,58.1,38.66,28.81,61.02,0,TRUE,TRUE,TRUE,
+38,81,Univ of Central Florida,Knights Racing,226.96,199.84,192.7,60.21,100,32.49,60.53,65.75,46.06,27.5,27.12,0,TRUE,TRUE,TRUE,
+39,19,Univ of Nevada - Las Vegas,Rebel Racing,220.69,166.45,230.47,77.31,110,43.16,50.49,57.98,42.27,15.72,54.24,0,TRUE,TRUE,TRUE,
+40,95,Penn State Univ - Altoona,Penn State Altoona Motorsports Club,208.49,66.11,43.03,15,0,28.03,17.47,0,36.86,11.79,142.37,0,TRUE,TRUE,TRUE,
+41,43,Univ of Virginia,Virginia Motorsports,199.3,111.17,23.63,0,0,23.63,18.99,47.17,24.05,20.96,88.14,0,TRUE,TRUE,FALSE,
+42,65,Univ of Notre Dame,Irish Racing,162.88,142.54,66.73,46.73,20,0,50.54,53.03,38.97,0,20.34,0,TRUE,TRUE,TRUE,
+43,30,Western New England University,Golden Bear Racing,155.79,74.43,166.29,70.58,50,45.71,39.28,0,25.98,9.17,81.36,0,TRUE,TRUE,TRUE,
+44,80,Citadel,Bulldog Baja,148.61,27.6,86.57,0,50,36.57,0,0,27.6,0,61.02,60,TRUE,TRUE,FALSE,4WD Bonus
+45,64,Virginia Military Inst,MoePowa,146.57,105.89,75.83,20,30,25.83,41.8,29.39,30.77,3.93,40.68,0,TRUE,TRUE,FALSE,
+46,75,Alfred Univ,Saxon Racing,131.75,84.97,145.74,47.68,70,28.06,0,57.25,27.72,0,6.78,40,TRUE,TRUE,FALSE,4WD Bonus
+47,18,Purdue Univ - Northwest,PNW Baja Motorsports,120,92.88,139.26,52.83,60,26.43,7.52,52.96,25.86,6.55,27.12,0,TRUE,TRUE,TRUE,
+48,89,Univ of Puerto Rico-Mayaquez,Rum Racing Baja,116.17,82.27,162.05,33.18,100,28.87,49.67,0,22.13,10.48,33.9,0,TRUE,TRUE,FALSE,
+49,109,Univ of Akron,Zips Baja,109.15,55.59,185.65,78.71,70,36.94,32.16,0,23.43,0,13.56,40,TRUE,TRUE,TRUE,4WD Bonus
+50,51,Fairfield Univ,Fairfield University,106.43,58.97,78.2,41.39,0,36.81,24.33,0,29.4,5.24,47.46,0,TRUE,TRUE,FALSE,
+51,68,West Virginia Univ,Mountaineers,96.65,62.75,114.79,38.31,40,36.48,40.06,0,22.69,0,33.9,0,TRUE,TRUE,FALSE,
+52,38,Olivet Nazarene Univ,ONU Baja Racing,89.48,48.8,66.78,38.44,0,28.34,48.8,0,0,0,40.68,0,TRUE,TRUE,TRUE,
+53,82,South Dakota State Univ,Jackrabbit Baja,57.02,43.47,158.46,72.14,50,36.32,19.6,0,23.87,0,13.56,0,TRUE,TRUE,TRUE,
+54,40,Christian Brothers Univ,Desert Demons,27.12,0,25.57,0,0,25.57,0,0,0,0,27.12,0,TRUE,TRUE,FALSE,
+55,41,Montana State Univ - Bozeman,Bobcat Motorsports,20,0,152.29,47.46,70,34.83,0,0,0,0,0,20,TRUE,TRUE,FALSE,4WD Bonus
+56,39,Univ of Evansville,Aces Racing,13.56,0,31.5,0,0,31.5,0,0,0,0,13.56,0,TRUE,TRUE,FALSE,
+57,11,Universidade de Santa Cruz do Sul,Baja de Galpão,0,0,228.31,72.69,120,35.62,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,12,Univ Federal do Rio Grande do Norte,Car-Kará,0,0,233.88,95.62,100,38.26,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,13,Centro Universitario Da FEI,FEI Baja,0,0,249.28,90,120,39.28,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,16,Ohio Northern Univ,Polar Bear Racing,0,0,139.38,56.96,60,22.42,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,17,York College of Pennsylvania,Spartan Baja,0,0,81.41,41.41,40,0,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,27,Middle Tennessee State Univ,MTSU motorsports,0,0,72.12,0,50,22.12,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,34,Univ of West Florida,Argo Racing,0,0,84.51,47.48,10,27.03,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,35,Wright State Univ,Raider Racing,0,0,80.1,0,40,40.1,0,0,0,0,0,0,TRUE,TRUE,TRUE,
+57,48,Louisiana Tech Univ,LA Tech Baja,0,0,56.41,20.96,0,35.45,0,0,0,0,0,0,TRUE,TRUE,FALSE,
+57,52,Univ of Tennessee -Chattanooga,UTC Racing Mocs,0,0,92.07,17.21,30,44.86,0,0,0,0,0,0,TRUE,TRUE,FALSE,
+57,57,Syracuse Univ,Cuse Baja,0,0,111.73,34,50,27.73,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,58,Eastern Michigan Univ,EMU Baja,0,0,128.64,59.65,30,38.99,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,59,Binghamton Univ,Binghamton University Baja,0,0,22.43,22.43,0,0,0,0,0,0,0,0,TRUE,TRUE,FALSE,
+57,61,Southern Illinois Univ - Edwardville,SIUE Cougar Baja,0,0,92.97,55.71,0,37.26,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,62,Union College,Union College BAJA Racing,0,0,120.83,24,60,36.83,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,71,Univ of Michigan - Flint,Vehicle City Baja,0,0,73.74,0,40,33.74,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,72,Embry-Riddle Aero Univ - Daytona Beach,ERAU Lady Eagles Baja,0,0,73.17,37.67,0,35.5,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,74,Lamar Univ,Boomtown BAJA,0,0,48.34,26,0,22.34,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,77,Univ of Southern Indiana,Screaming Eagles Racing,0,0,94.52,35.79,20,38.73,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,78,Central Michigan Univ,Chippewa Performance,0,0,129.56,51.83,50,27.73,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,84,Liberty Univ,Liberty Off-Road,0,0,44.91,22.5,0,22.41,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,85,Quinnipiac University,QU,0,0,48,18,30,0,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,97,North Carolina A & T State Univ,Aggie Racing,0,0,167.87,31.26,100,36.61,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,101,Lipscomb Univ,Lipscomb Motorsports,0,0,101.96,41.89,30,30.07,0,0,0,0,0,,TRUE,FALSE,FALSE,
+57,102,Univ of Tennessee - Martin,Sky Hawk Racing,0,0,72.55,42.91,0,29.64,0,0,0,0,0,0,TRUE,TRUE,FALSE,
+57,103,Univ of Pittsburgh - Johnstown,Steel Panther Racing,0,0,55.88,25.88,30,0,0,0,0,0,0,,TRUE,FALSE,FALSE,
