@@ -36,6 +36,12 @@ export const useDataApi = (pollingInterval = 200) => {
         if (useMockData) {
           const mockData = generateMockData();
           
+          // Debug mock data
+          console.log("Generated mock data:", 
+            mockData.channels.length + " channels, " + 
+            mockData.channels[0].samples.length + " samples per channel"
+          );
+          
           // Update timestamps to be current
           const updatedChannels = mockData.channels.map(channel => ({
             ...channel,
@@ -56,6 +62,11 @@ export const useDataApi = (pollingInterval = 200) => {
         const response = await ApiService.getAllChannelData();
         
         if (response && response.channels) {
+          console.log("API data received:", 
+            response.channels.length + " channels" + 
+            (response.channels.length > 0 ? ", " + response.channels[0].samples.length + " samples" : "")
+          );
+          
           setChannels(response.channels);
           setIsLoading(false);
           connectionAttempts.current = 0; // Reset connection attempts on success
@@ -80,6 +91,9 @@ export const useDataApi = (pollingInterval = 200) => {
         }
       }
     };
+
+    // Debug initial state
+    console.log("useDataApi hook initialized", { pollingInterval, useMockData });
 
     // Fetch initial data
     fetchData();

@@ -17,7 +17,7 @@ interface DataBufferManagerProps {
 }
 
 const DataBufferManager: React.FC<DataBufferManagerProps> = ({ 
-  bufferSize = 20 // Default 20 seconds
+  bufferSize = 100 // Default 100 samples (not seconds)
 }) => {
   const { channels, maxDataRate, isLoading, useMockData } = useDataContext();
   const [bufferUsage, setBufferUsage] = useState(0);
@@ -47,8 +47,8 @@ const DataBufferManager: React.FC<DataBufferManagerProps> = ({
     const now = Date.now();
     const timeDiff = now - lastUpdateTime;
     
-    if (timeDiff > 1000) { // Only update once per second for stability
-      setUpdateRate(1000 / updateInterval);
+    if (timeDiff > 100) { // Only update once per second for stability
+      setUpdateRate(100 / updateInterval);
       setLastUpdateTime(now);
     }
   }, [channels, bufferSize, maxDataRate, lastUpdateTime, updateInterval]);
@@ -97,7 +97,7 @@ const DataBufferManager: React.FC<DataBufferManagerProps> = ({
         
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Buffer Size: {bufferSize} seconds
+            Buffer Size: {bufferSize} samples per channel
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Max Data Rate: {maxDataRate} Hz

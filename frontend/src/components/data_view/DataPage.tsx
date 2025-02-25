@@ -1,13 +1,14 @@
 // src/components/data_view/DataPage.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useDataContext } from '../../hooks/useDataContext';
 import MultiViewGraph from './MultiViewGraph';
+import SimpleChartComponent from './SimpleChartComponent';
 import ChannelSelector from './ChannelSelector';
 import NumericDisplay from './NumericDisplay';
 import DataBufferManager from './DataBufferManager';
 import CarTerrainScene from '../car_terrain_scene/CarTerrainScene';
 import { DEFAULT_TERRAIN_CONFIG } from '../car_terrain_scene/ct_configs/terrainConfig';
-import { Button, CircularProgress, Box, Divider, IconButton, Paper, Typography } from '@mui/material';
+import { Button, CircularProgress, Box, Divider, IconButton, Paper, Typography, Switch, FormControlLabel } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -22,6 +23,8 @@ const DataPage: React.FC = () => {
     { id: 1, selectedChannels: [] }
   ]);
   const cameraConfigRef = useRef<any>({ current: {} });
+  const [useSimpleCharts, setUseSimpleCharts] = useState(false); // Default to regular charts
+
 
   const addGraph = () => {
     const newId = Math.max(0, ...graphInstances.map(g => g.id)) + 1;
@@ -38,6 +41,37 @@ const DataPage: React.FC = () => {
 
   const removeGraph = (id: number) => {
     setGraphInstances(graphInstances.filter(graph => graph.id !== id));
+  };
+
+  // Debug: Force mock data mode for testing
+  useEffect(() => {
+    console.log("Graph instances:", graphInstances);
+    
+    // After the component mounts, add some default channel selections for testing
+    if (channels.length > 0 && graphInstances.length === 1 && graphInstances[0].selectedChannels.length === 0) {
+      console.log("Setting default channel selections for testing");
+      
+      // Get available channel names
+      const channelNames = channels.map(c => c.name);
+      console.log("Available channels:", channelNames);
+      
+      // Select a few channels by default for the first graph
+      const defaultSelections = [
+        "linpot_front_left",
+        "linpot_front_right",
+        "brake_pressure_front"
+      ].filter(name => channelNames.includes(name));
+      
+      if (defaultSelections.length > 0) {
+        updateGraphChannels(1, defaultSelections);
+      }
+    }
+  }, [channels, graphInstances]);
+
+  const getChannelValue = (channelName: string): number => {
+    const channel = channels.find(c => c.name === channelName);
+    if (!channel || !channel.samples.length) return 0;
+    return channel.samples[channel.samples.length - 1].value;
   };
 
   const getCarState = () => {
@@ -61,12 +95,6 @@ const DataPage: React.FC = () => {
         rotation: [0, 0, 0, 1]
       }
     };
-  };
-
-  const getChannelValue = (channelName: string): number => {
-    const channel = channels.find(c => c.name === channelName);
-    if (!channel || !channel.samples.length) return 0;
-    return channel.samples[channel.samples.length - 1].value;
   };
 
   if (isLoading) {
@@ -101,14 +129,29 @@ const DataPage: React.FC = () => {
       <div className="bg-gray-100 p-4 border-b">
         <DataBufferManager />
         <Box display="flex" justifyContent="space-between" mt={2}>
-          <Button 
-            variant="contained" 
-            color="primary"
-            startIcon={<AddIcon />}
-            onClick={addGraph}
-          >
-            Add Graph
-          </Button>
+          <Box display="flex" alignItems="center">
+            <Button 
+              variant="contained" 
+              color="primary"
+              startIcon={<AddIcon />}
+              onClick={addGraph}
+              className="mr-4"
+            >
+              Add Graph
+            </Button>
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={useSimpleCharts}
+                  onChange={(e) => setUseSimpleCharts(e.target.checked)}
+                  color="primary"
+                />
+              }
+              label="Use Simple Charts"
+            />
+          </Box>
+          
           <Button 
             variant="outlined"
             color="error"
@@ -150,11 +193,19 @@ const DataPage: React.FC = () => {
                 <Divider className="my-4" />
                 
                 {graph.selectedChannels.length > 0 ? (
-                  <MultiViewGraph 
-                    key={`graph-${graph.id}-${graph.selectedChannels.join('-')}`}
-                    channelNames={graph.selectedChannels} 
-                    height={250}
-                  />
+                  useSimpleCharts ? (
+                    <SimpleChartComponent 
+                      key={`graph-${graph.id}-simple-${Date.now()}`}
+                      channelNames={graph.selectedChannels} 
+                      height={250}
+                    />
+                  ) : (
+                    <MultiViewGraph 
+                      key={`graph-${graph.id}-multi-${Date.now()}`}
+                      channelNames={graph.selectedChannels} 
+                      height={250}
+                    />
+                  )
                 ) : (
                   <Box 
                     display="flex" 

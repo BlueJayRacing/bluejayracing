@@ -1,10 +1,14 @@
-// src/components/data_view/MultiViewGraph.tsx
+// Force draw all points option for debugging
+const forceDrawAllPoints = true;// src/components/data_view/MultiViewGraph.tsx
 import React, { useEffect, useRef } from 'react';
 import { Chart, ChartConfiguration, ChartDataset, registerables } from 'chart.js';
 import 'chartjs-plugin-streaming';
 import { StreamingPlugin } from 'chartjs-plugin-streaming';
 import { useDataContext } from '../../hooks/useDataContext';
 import { Channel, TimeValue } from '../shared/types';
+
+// Import necessary adapters
+import 'chartjs-adapter-date-fns'; // This is important for time-based charts
 
 // Register Chart.js components and plugins
 Chart.register(...registerables);
@@ -47,7 +51,7 @@ const MultiViewGraph: React.FC<MultiViewGraphProps> = ({
       backgroundColor: `hsla(${index * 30}, 70%, 50%, 0.2)`,
       borderColor: `hsla(${index * 30}, 70%, 50%, 1)`,
       borderWidth: 1.5,
-      pointRadius: 0, // Disable points for performance
+      pointRadius: 1, // Disable points for performance
       data: channel.samples.map(sample => ({
         x: sample.timestamp,
         y: sample.value
@@ -59,58 +63,47 @@ const MultiViewGraph: React.FC<MultiViewGraphProps> = ({
     const ctx = chartRef.current.getContext('2d');
     if (!ctx) return;
 
-    // Use a simple line chart with time scale instead of realtime plugin for now
-    const config: ChartConfiguration<"line"> = {
+    // Use a simple line chart with a basic configuration
+    const config = {
       type: 'line',
       data: { datasets },
       options: {
-        animation: { duration: 0 }, // Disable animation for performance
-        scales: {
-          x: {
-            type: 'time',
-            time: {
-              unit: 'second',
-              displayFormats: {
-                second: 'HH:mm:ss'
-              }
-            },
-            ticks: {
-              maxRotation: 0,
-              autoSkipPadding: 20
-            }
-          },
-          y: {
-            beginAtZero: false,
-            // Dynamic y-axis range based on data
-            suggestedMin: Math.min(...selectedChannels.map(c => c.min_value || 0)),
-            suggestedMax: Math.max(...selectedChannels.map(c => c.max_value || 100)),
-            ticks: {
-              maxTicksLimit: 8
-            }
-          }
-        },
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
         plugins: {
           legend: {
             position: 'top',
             labels: {
-              usePointStyle: true,
-              boxWidth: 6,
               font: { size: 11 }
             }
           },
           tooltip: {
             mode: 'nearest',
-            intersect: false,
-            callbacks: {
-              label: (context) => {
-                const value = context.parsed.y;
-                return `${context.dataset.label}: ${value.toFixed(2)}`;
-              }
-            }
+            intersect: false
           }
         },
-        responsive: true,
-        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'linear',
+            min: Date.now() - 20000, // Show the last 20 seconds
+            max: Date.now(),
+            ticks: {
+              maxRotation: 0,
+              autoSkip: true,
+              callback: function(value) {
+                // Format timestamp as HH:MM:SS
+                const date = new Date(value);
+                return date.toTimeString().substring(0, 8);
+              }
+            }
+          },
+          y: {
+            beginAtZero: false,
+            suggestedMin: Math.min(...selectedChannels.map(c => c.min_value || 0)),
+            suggestedMax: Math.max(...selectedChannels.map(c => c.max_value || 100))
+          }
+        },
         interaction: {
           mode: 'nearest',
           axis: 'x',
@@ -119,7 +112,11 @@ const MultiViewGraph: React.FC<MultiViewGraphProps> = ({
       }
     };
 
-    chartInstance.current = new Chart(ctx, config);
+    try {
+      chartInstance.current = new Chart(ctx, config as any);
+    } catch (error) {
+      console.error("Error creating chart:", error);
+    }
 
     // Function to push new data to chart
     const pushData = () => {
@@ -158,16 +155,27 @@ const MultiViewGraph: React.FC<MultiViewGraphProps> = ({
     const updateInterval = setInterval(() => {
       if (!chartInstance.current) return;
       
-      // Update each dataset with new data points
-      selectedChannels.forEach((channel, index) => {
-        if (!chartInstance.current?.data.datasets?.[index]) return;
+      try {
+        // Update each dataset with new data points
+        selectedChannels.forEach((channel, index) => {
+          if (!chartInstance.current?.data.datasets?.[index]) return;
+          
+          // Clear existing data and add all current samples
+          chartInstance.current.data.datasets[index].data = channel.samples
+            .map(sample => ({ x: sample.timestamp, y: sample.value }));
+        });
         
-        // Clear existing data and add all current samples
-        chartInstance.current.data.datasets[index].data = channel.samples
-          .map(sample => ({ x: sample.timestamp, y: sample.value }));
-      });
-      
-      chartInstance.current.update('quiet');
+        // Update x-axis min and max to scroll with time
+        const now = Date.now();
+        if (chartInstance.current.options.scales?.['x']) {
+          chartInstance.current.options.scales['x'].min = now - 20000; // 20 seconds of data
+          chartInstance.current.options.scales['x'].max = now;
+        }
+        
+        chartInstance.current.update();
+      } catch (error) {
+        console.error("Error updating chart:", error);
+      }
     }, 100);
     
     // Cleanup on unmount

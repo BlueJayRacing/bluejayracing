@@ -22,25 +22,27 @@ export const DataProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [maxDataRate, setMaxDataRate] = useState(5); // 5 Hz default
+  const [useMockData, setUseMockData] = useState(true); // Default to mock data for testing
 
   // Custom hooks for data fetching and buffering
-  const { channels, isLoading, useMockData } = useDataApi();
+  const { channels, isLoading, useMockData: apiUsingMock } = useDataApi();
   const { bufferedData } = useDataBuffer(channels, maxDataRate);
 
-  // Poll API occasionally to check max data rate
+  // Update useMockData state when API changes
   useEffect(() => {
-    const checkMaxDataRate = async () => {
-      // This would normally query the API to determine max rate
-      // For now, we'll use a fixed value
-      setMaxDataRate(5);
-    };
+    setUseMockData(apiUsingMock);
+  }, [apiUsingMock]);
 
-    // Initial check
-    checkMaxDataRate();
-
-    const interval = setInterval(checkMaxDataRate, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Debug data context
+  useEffect(() => {
+    console.log("DataContext state:", {
+      channelsCount: bufferedData.length,
+      samplesPerChannel: bufferedData.length > 0 ? 
+        bufferedData.map(c => ({ name: c.name, samples: c.samples.length })) : [],
+      isLoading,
+      useMockData
+    });
+  }, [bufferedData, isLoading, useMockData]);
 
   return (
     <DataContext.Provider
