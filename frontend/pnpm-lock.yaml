@@ -38,9 +38,27 @@ importers:
       '@types/three':
         specifier: ^0.169.0
         version: 0.169.0
+      axios:
+        specifier: ^1.7.9
+        version: 1.7.9
+      chart.js:
+        specifier: 3.9.1
+        version: 3.9.1
+      chartjs-adapter-luxon:
+        specifier: ^1.3.1
+        version: 1.3.1(chart.js@3.9.1)(luxon@3.5.0)
+      chartjs-plugin-streaming:
+        specifier: ^2.0.0
+        version: 2.0.0(chart.js@3.9.1)
+      luxon:
+        specifier: ^3.5.0
+        version: 3.5.0
       react:
         specifier: ^18.0.2
         version: 18.3.1
+      react-chartjs-2:
+        specifier: ^4.3.1
+        version: 4.3.1(chart.js@3.9.1)(react@18.3.1)
       react-dom:
         specifier: ^18.0.2
         version: 18.3.1(react@18.3.1)
@@ -68,7 +86,7 @@ importers:
         version: 7.25.7(@babel/core@7.25.8)
       '@pmmmwh/react-refresh-webpack-plugin':
         specifier: ^0.4.2
-        version: 0.4.3(@types/webpack@4.41.39)(react-refresh@0.8.3)(sockjs-client@1.6.1)(webpack-dev-server@3.11.3(webpack-cli@3.3.12)(webpack@4.47.0))(webpack@4.47.0)
+        version: 0.4.3(@types/webpack@4.41.39)(react-refresh@0.8.3)(sockjs-client@1.6.1)(webpack-dev-server@3.11.3(webpack-cli@3.3.12(webpack@4.47.0))(webpack@4.47.0(webpack-cli@3.3.12)))(webpack@4.47.0(webpack-cli@3.3.12))
       '@testing-library/jest-dom':
         specifier: ^6.6.1
         version: 6.6.1
@@ -92,10 +110,10 @@ importers:
         version: 10.4.20(postcss@8.4.47)
       babel-loader:
         specifier: ^8.1.0
-        version: 8.4.1(@babel/core@7.25.8)(webpack@4.47.0)
+        version: 8.4.1(@babel/core@7.25.8)(webpack@4.47.0(webpack-cli@3.3.12))
       css-loader:
         specifier: ^5.2.7
-        version: 5.2.7(webpack@4.47.0)
+        version: 5.2.7(webpack@4.47.0(webpack-cli@3.3.12))
       eslint:
         specifier: ^9.12.0
         version: 9.12.0(jiti@1.21.6)
@@ -107,7 +125,7 @@ importers:
         version: 5.0.0(eslint@9.12.0(jiti@1.21.6))
       html-webpack-plugin:
         specifier: ^4.4.1
-        version: 4.5.2(webpack@4.47.0)
+        version: 4.5.2(webpack@4.47.0(webpack-cli@3.3.12))
       jsdom:
         specifier: ^25.0.1
         version: 25.0.1
@@ -122,7 +140,7 @@ importers:
         version: 0.8.3
       style-loader:
         specifier: ^1.2.1
-        version: 1.3.0(webpack@4.47.0)
+        version: 1.3.0(webpack@4.47.0(webpack-cli@3.3.12))
       vite:
         specifier: ^5.4.9
         version: 5.4.9(@types/node@22.7.6)
@@ -137,7 +155,7 @@ importers:
         version: 3.3.12(webpack@4.47.0)
       webpack-dev-server:
         specifier: ^3.11.0
-        version: 3.11.3(webpack-cli@3.3.12)(webpack@4.47.0)
+        version: 3.11.3(webpack-cli@3.3.12(webpack@4.47.0))(webpack@4.47.0(webpack-cli@3.3.12))
 
 packages:
 
@@ -1724,6 +1742,9 @@ packages:
     resolution: {integrity: sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==}
     engines: {node: '>= 0.4'}
 
+  axios@1.7.9:
+    resolution: {integrity: sha512-LhLcE7Hbiryz8oMDdDptSrWowmB4Bl6RCt6sIJKpRB4XtVf0iEgewX3au/pJqm+Py1kCASkb/FFKjxQaLtxJvw==}
+
   babel-loader@8.4.1:
     resolution: {integrity: sha512-nXzRChX+Z1GoE6yWavBQg6jDslyFF3SDjl2paADuoQtQW10JqShJt62R6eJQ5m/pjJFDT8xgKIWSP85OY8eXeA==}
     engines: {node: '>= 8.9'}
@@ -1912,6 +1933,20 @@ packages:
   chalk@4.1.2:
     resolution: {integrity: sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==}
     engines: {node: '>=10'}
+
+  chart.js@3.9.1:
+    resolution: {integrity: sha512-Ro2JbLmvg83gXF5F4sniaQ+lTbSv18E+TIf2cOeiH1Iqd2PGFOtem+DUufMZsCJwFE7ywPOpfXFBwRTGq7dh6w==}
+
+  chartjs-adapter-luxon@1.3.1:
+    resolution: {integrity: sha512-yxHov3X8y+reIibl1o+j18xzrcdddCLqsXhriV2+aQ4hCR66IYFchlRXUvrJVoxglJ380pgytU7YWtoqdIgqhg==}
+    peerDependencies:
+      chart.js: '>=3.0.0'
+      luxon: '>=1.0.0'
+
+  chartjs-plugin-streaming@2.0.0:
+    resolution: {integrity: sha512-oBwHRmovGbPDS1h8PhpttnlKjI6eiJO13v4h+xz+mfbHhIc+iNF9xuMobCIFMKFH7rlVWi5TJAOIxoXyGElYYg==}
+    peerDependencies:
+      chart.js: ^3.0.0
 
   check-error@2.1.1:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
@@ -3328,6 +3363,10 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
+  luxon@3.5.0:
+    resolution: {integrity: sha512-rh+Zjr6DNfUYR3bPwJEnuwDdqMbxZW7LOQfUN4B54+Cl+0o5zaU9RJ6bcidfDtC1cWCZXQ+nvX8bf6bAji37QQ==}
+    engines: {node: '>=12'}
+
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -3902,6 +3941,9 @@ packages:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
 
+  proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+
   prr@1.0.1:
     resolution: {integrity: sha512-yPw4Sng1gWghHQWj0B3ZggWUm4qVbPwPFcRG8KyxiU7J2OHFSoEHKS+EZ3fv5l1t9CyCiop6l/ZYeWbrgoQejw==}
 
@@ -3956,6 +3998,12 @@ packages:
   raw-body@2.5.2:
     resolution: {integrity: sha512-8zGqypfENjCIqGhgXToC8aB2r7YrBX+AQAfIPs/Mlk+BtPTztOvTS01NRW/3Eh60J+a48lt8qsCzirQ6loCVfA==}
     engines: {node: '>= 0.8'}
+
+  react-chartjs-2@4.3.1:
+    resolution: {integrity: sha512-5i3mjP6tU7QSn0jvb8I4hudTzHJqS8l00ORJnVwI2sYu0ihpj83Lv2YzfxunfxTZkscKvZu2F2w9LkwNBhj6xA==}
+    peerDependencies:
+      chart.js: ^3.5.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
   react-composer@5.0.3:
     resolution: {integrity: sha512-1uWd07EME6XZvMfapwZmc7NgCZqDemcvicRi3wMJzXsQLvZ3L7fTHVyPy1bZdnWXM4iPjYuNE+uJ41MLKeTtnA==}
@@ -6129,7 +6177,7 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
-  '@pmmmwh/react-refresh-webpack-plugin@0.4.3(@types/webpack@4.41.39)(react-refresh@0.8.3)(sockjs-client@1.6.1)(webpack-dev-server@3.11.3(webpack-cli@3.3.12)(webpack@4.47.0))(webpack@4.47.0)':
+  '@pmmmwh/react-refresh-webpack-plugin@0.4.3(@types/webpack@4.41.39)(react-refresh@0.8.3)(sockjs-client@1.6.1)(webpack-dev-server@3.11.3(webpack-cli@3.3.12(webpack@4.47.0))(webpack@4.47.0(webpack-cli@3.3.12)))(webpack@4.47.0(webpack-cli@3.3.12))':
     dependencies:
       ansi-html: 0.0.7
       error-stack-parser: 2.1.4
@@ -6142,7 +6190,7 @@ snapshots:
     optionalDependencies:
       '@types/webpack': 4.41.39
       sockjs-client: 1.6.1(supports-color@6.1.0)
-      webpack-dev-server: 3.11.3(webpack-cli@3.3.12)(webpack@4.47.0)
+      webpack-dev-server: 3.11.3(webpack-cli@3.3.12(webpack@4.47.0))(webpack@4.47.0(webpack-cli@3.3.12))
 
   '@polka/url@1.0.0-next.28': {}
 
@@ -6878,7 +6926,15 @@ snapshots:
     dependencies:
       possible-typed-array-names: 1.0.0
 
-  babel-loader@8.4.1(@babel/core@7.25.8)(webpack@4.47.0):
+  axios@1.7.9:
+    dependencies:
+      follow-redirects: 1.15.9(debug@4.3.7(supports-color@6.1.0))
+      form-data: 4.0.1
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
+  babel-loader@8.4.1(@babel/core@7.25.8)(webpack@4.47.0(webpack-cli@3.3.12)):
     dependencies:
       '@babel/core': 7.25.8
       find-cache-dir: 3.3.2
@@ -7159,6 +7215,17 @@ snapshots:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
+  chart.js@3.9.1: {}
+
+  chartjs-adapter-luxon@1.3.1(chart.js@3.9.1)(luxon@3.5.0):
+    dependencies:
+      chart.js: 3.9.1
+      luxon: 3.5.0
+
+  chartjs-plugin-streaming@2.0.0(chart.js@3.9.1):
+    dependencies:
+      chart.js: 3.9.1
+
   check-error@2.1.1: {}
 
   chokidar@2.1.8(supports-color@6.1.0):
@@ -7368,7 +7435,7 @@ snapshots:
       randombytes: 2.1.0
       randomfill: 1.0.4
 
-  css-loader@5.2.7(webpack@4.47.0):
+  css-loader@5.2.7(webpack@4.47.0(webpack-cli@3.3.12)):
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.47)
       loader-utils: 2.0.4
@@ -8366,7 +8433,7 @@ snapshots:
       relateurl: 0.2.7
       terser: 4.8.1
 
-  html-webpack-plugin@4.5.2(webpack@4.47.0):
+  html-webpack-plugin@4.5.2(webpack@4.47.0(webpack-cli@3.3.12)):
     dependencies:
       '@types/html-minifier-terser': 5.1.2
       '@types/tapable': 1.0.12
@@ -8838,6 +8905,8 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  luxon@3.5.0: {}
 
   lz-string@1.5.0: {}
 
@@ -9421,6 +9490,8 @@ snapshots:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
 
+  proxy-from-env@1.1.0: {}
+
   prr@1.0.1: {}
 
   public-encrypt@4.0.3:
@@ -9481,6 +9552,11 @@ snapshots:
       http-errors: 2.0.0
       iconv-lite: 0.4.24
       unpipe: 1.0.0
+
+  react-chartjs-2@4.3.1(chart.js@3.9.1)(react@18.3.1):
+    dependencies:
+      chart.js: 3.9.1
+      react: 18.3.1
 
   react-composer@5.0.3(react@18.3.1):
     dependencies:
@@ -10126,7 +10202,7 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  style-loader@1.3.0(webpack@4.47.0):
+  style-loader@1.3.0(webpack@4.47.0(webpack-cli@3.3.12)):
     dependencies:
       loader-utils: 2.0.4
       schema-utils: 2.7.1
@@ -10189,7 +10265,7 @@ snapshots:
 
   tapable@1.1.3: {}
 
-  terser-webpack-plugin@1.4.6(webpack@4.47.0):
+  terser-webpack-plugin@1.4.6(webpack@4.47.0(webpack-cli@3.3.12)):
     dependencies:
       cacache: 12.0.4
       find-cache-dir: 2.1.0
@@ -10581,7 +10657,7 @@ snapshots:
       webpack: 4.47.0(webpack-cli@3.3.12)
       yargs: 13.3.2
 
-  webpack-dev-middleware@3.7.3(webpack@4.47.0):
+  webpack-dev-middleware@3.7.3(webpack@4.47.0(webpack-cli@3.3.12)):
     dependencies:
       memory-fs: 0.4.1
       mime: 2.6.0
@@ -10590,7 +10666,7 @@ snapshots:
       webpack: 4.47.0(webpack-cli@3.3.12)
       webpack-log: 2.0.0
 
-  webpack-dev-server@3.11.3(webpack-cli@3.3.12)(webpack@4.47.0):
+  webpack-dev-server@3.11.3(webpack-cli@3.3.12(webpack@4.47.0))(webpack@4.47.0(webpack-cli@3.3.12)):
     dependencies:
       ansi-html-community: 0.0.8
       bonjour: 3.5.0
@@ -10622,7 +10698,7 @@ snapshots:
       supports-color: 6.1.0
       url: 0.11.4
       webpack: 4.47.0(webpack-cli@3.3.12)
-      webpack-dev-middleware: 3.7.3(webpack@4.47.0)
+      webpack-dev-middleware: 3.7.3(webpack@4.47.0(webpack-cli@3.3.12))
       webpack-log: 2.0.0
       ws: 6.2.3
       yargs: 13.3.2
@@ -10664,7 +10740,7 @@ snapshots:
       node-libs-browser: 2.2.1
       schema-utils: 1.0.0
       tapable: 1.1.3
-      terser-webpack-plugin: 1.4.6(webpack@4.47.0)
+      terser-webpack-plugin: 1.4.6(webpack@4.47.0(webpack-cli@3.3.12))
       watchpack: 1.7.5
       webpack-sources: 1.4.3
     optionalDependencies:
