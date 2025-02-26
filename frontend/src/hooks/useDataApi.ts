@@ -62,10 +62,10 @@ export const useDataApi = (pollingInterval = 200) => {
         const response = await ApiService.getAllChannelData();
         
         if (response && response.channels) {
-          console.log("API data received:", 
-            response.channels.length + " channels" + 
-            (response.channels.length > 0 ? ", " + response.channels[0].samples.length + " samples" : "")
-          );
+          // console.log("API data received:", 
+          //   response.channels.length + " channels" + 
+          //   (response.channels.length > 0 ? ", " + response.channels[0].samples.length + " samples" : "")
+          // );
           
           setChannels(response.channels);
           setIsLoading(false);

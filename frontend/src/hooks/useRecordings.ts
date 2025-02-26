@@ -1,47 +1,105 @@
-// useRecordings.ts
-import { useState, useEffect } from 'react';
+// src/hooks/useRecordings.ts
+import { useState, useEffect, useRef } from 'react';
+import { Channel, Recording, ChannelMetadata } from '../components/shared/types';
+import { DATA_CONFIG, debugLog, logSummary } from '../config/dataConfig';
 
-export interface Recording {
-  id: string;
-  name: string;
-  startTime: number;
-  endTime: number | null;
-  channelData: {
-    [channelName: string]: Array<{ timestamp: number; value: number }>;
-  };
-  stats: {
-    duration: number;
-    dataSize: number; // Approximate size in bytes
-    sampleCount: number;
-  };
-}
-
-export const useRecordings = (channels) => {
+export const useRecordings = (channels: Channel[]) => {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [currentRecording, setCurrentRecording] = useState<Recording | null>(null);
-
+  
+  // Track memory usage
+  const memoryUsageRef = useRef<number>(0);
+  // Track samples added per update (for logging)
+  const batchSamplesRef = useRef<number>(0);
+  // Track last log time to avoid excessive logging
+  const lastLogTimeRef = useRef<number>(0);
+  
+  // Try to load saved recordings from localStorage on first load
+  useEffect(() => {
+    try {
+      const savedRecordings = localStorage.getItem('recordings');
+      if (savedRecordings) {
+        const parsed = JSON.parse(savedRecordings);
+        if (Array.isArray(parsed)) {
+          logSummary('RECORDING', `Loaded ${parsed.length} recordings from localStorage`);
+          setRecordings(parsed);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading recordings from localStorage:', error);
+    }
+  }, []);
+  
+  // Save recordings to localStorage when they change
+  useEffect(() => {
+    try {
+      if (recordings.length > 0) {
+        localStorage.setItem('recordings', JSON.stringify(recordings));
+        logSummary('RECORDING', `Saved ${recordings.length} recordings to localStorage`);
+      }
+    } catch (error) {
+      console.error('Error saving recordings to localStorage:', error);
+    }
+  }, [recordings]);
+  
   // Start a new recording
-  const startRecording = () => {
+  const startRecording = (name?: string) => {
     if (isRecording) return;
     
+    const startTime = Date.now();
+    const channelMetadata: { [key: string]: ChannelMetadata } = {};
+    
+    // Extract metadata from channels
+    channels.forEach(channel => {
+      if (channel.metadata) {
+        channelMetadata[channel.name] = channel.metadata;
+      } else {
+        // Create basic metadata if not available
+        channelMetadata[channel.name] = {
+          name: channel.name,
+          type: channel.type,
+          sample_rate: 2000, // Default assumption
+          transmission_rate: 100, // Default assumption
+          location: "",
+          units: "",
+          description: `${channel.name} data channel`,
+          min_value: channel.min_value,
+          max_value: channel.max_value
+        };
+      }
+    });
+    
+    // Initialize new recording
     const newRecording: Recording = {
-      id: Date.now().toString(),
-      name: `Recording ${recordings.length + 1}`,
-      startTime: Date.now(),
+      id: `rec_${startTime}_${Math.floor(Math.random() * 10000)}`,
+      name: name || `Recording ${new Date().toLocaleString()}`,
+      startTime,
       endTime: null,
       channelData: Object.fromEntries(
         channels.map(channel => [channel.name, []])
       ),
+      channelMetadata,
       stats: {
         duration: 0,
         dataSize: 0,
-        sampleCount: 0
+        sampleCount: 0,
+        channelCount: channels.length,
+        maxSampleRate: Math.max(...channels.map(c => c.metadata?.sample_rate || 2000)),
+        averageSampleRate: channels.reduce((sum, c) => sum + (c.metadata?.sample_rate || 2000), 0) / 
+                           Math.max(1, channels.length)
       }
     };
     
+    memoryUsageRef.current = 0;
+    batchSamplesRef.current = 0;
+    lastLogTimeRef.current = Date.now();
+    
     setCurrentRecording(newRecording);
     setIsRecording(true);
+    
+    logSummary('RECORDING', 'Started recording:', newRecording.name);
+    return newRecording;
   };
 
   // Stop the current recording
@@ -49,72 +107,163 @@ export const useRecordings = (channels) => {
     if (!isRecording || !currentRecording) return;
     
     const endTime = Date.now();
+    const duration = endTime - currentRecording.startTime;
+    
+    // Calculate final stats
+    const sampleCount = Object.values(currentRecording.channelData)
+                              .reduce((sum, samples) => sum + samples.length, 0);
+    
     const completedRecording = {
       ...currentRecording,
       endTime,
       stats: {
-        duration: endTime - currentRecording.startTime,
-        dataSize: calculateDataSize(currentRecording.channelData),
-        sampleCount: calculateSampleCount(currentRecording.channelData)
+        ...currentRecording.stats,
+        duration,
+        sampleCount,
+        dataSize: memoryUsageRef.current
       }
     };
     
     setRecordings([...recordings, completedRecording]);
     setCurrentRecording(null);
     setIsRecording(false);
+    
+    logSummary('RECORDING', 'Stopped recording:', completedRecording.name, {
+      duration: formatDuration(duration),
+      samples: sampleCount,
+      size: formatFileSize(memoryUsageRef.current)
+    });
+    
+    return completedRecording;
+  };
+
+  // Delete a recording
+  const deleteRecording = (id: string) => {
+    setRecordings(recordings.filter(recording => recording.id !== id));
+    logSummary('RECORDING', `Deleted recording: ${id}`);
   };
 
   // Rename a recording
   const renameRecording = (id: string, newName: string) => {
     setRecordings(
       recordings.map(recording => 
-        recording.id === id 
-          ? { ...recording, name: newName } 
-          : recording
+        recording.id === id ? { ...recording, name: newName } : recording
       )
     );
+    debugLog('RECORDING', `Renamed recording ${id} to "${newName}"`);
   };
 
-  // Add new channel data to current recording
+  // Add new data to current recording
   useEffect(() => {
     if (!isRecording || !currentRecording || !channels.length) return;
     
+    // Check memory limits
+    const memoryLimitBytes = DATA_CONFIG.MAX_RECORDING_SIZE_MB * 1024 * 1024;
+    if (memoryUsageRef.current > memoryLimitBytes) {
+      logSummary('RECORDING', 'Memory limit reached, stopping recording');
+      stopRecording();
+      return;
+    }
+    
+    // Check time limits
+    const currentDuration = Date.now() - currentRecording.startTime;
+    if (currentDuration > DATA_CONFIG.MAX_RECORDING_DURATION_SEC * 1000) {
+      logSummary('RECORDING', 'Time limit reached, stopping recording');
+      stopRecording();
+      return;
+    }
+    
+    // Update recording stats even if no new data (to update duration)
+    const updatedRecording = {
+      ...currentRecording,
+      stats: {
+        ...currentRecording.stats,
+        duration: currentDuration
+      }
+    };
+    
+    // Update recording with new data
+    let newDataSize = 0;
     const updatedChannelData = { ...currentRecording.channelData };
+    let addedSamples = false;
+    let totalNewSamples = 0;
+    
+    // Only log channel details periodically to reduce logging
+    const shouldLogDetails = Date.now() - lastLogTimeRef.current > 5000; // Every 5 seconds
     
     channels.forEach(channel => {
+      if (!channel.samples.length) return;
+      
       const existingData = updatedChannelData[channel.name] || [];
-      const latestSamples = channel.samples.filter(sample => 
-        sample.timestamp > currentRecording.startTime &&
-        !existingData.some(existing => existing.timestamp === sample.timestamp)
+      
+      // Get existing timestamps for faster lookup
+      const existingTimestamps = new Set(existingData.map(sample => sample.timestamp));
+      
+      // Only add new samples that occurred after recording started
+      const newSamples = channel.samples.filter(sample => 
+        sample.timestamp > currentRecording.startTime && 
+        !existingTimestamps.has(sample.timestamp)
       );
       
-      if (latestSamples.length > 0) {
-        updatedChannelData[channel.name] = [...existingData, ...latestSamples];
+      if (newSamples.length > 0) {
+        // Only log detailed channel info if enabled and time threshold met
+        if (shouldLogDetails) {
+          debugLog('RECORDING', `Channel ${channel.name}: ${newSamples.length} new samples`);
+        }
+        
+        updatedChannelData[channel.name] = [...existingData, ...newSamples];
+        
+        // Estimate memory: 16 bytes per sample (8 for timestamp, 8 for value)
+        newDataSize += newSamples.length * 16;
+        totalNewSamples += newSamples.length;
+        addedSamples = true;
       }
     });
     
-    setCurrentRecording({
-      ...currentRecording,
-      channelData: updatedChannelData
-    });
+    if (shouldLogDetails) {
+      lastLogTimeRef.current = Date.now();
+    }
+    
+    // Update memory usage tracking
+    memoryUsageRef.current += newDataSize;
+    batchSamplesRef.current += totalNewSamples;
+    
+    // Always update duration, but only update data if there are new samples
+    if (addedSamples) {
+      updatedRecording.channelData = updatedChannelData;
+      updatedRecording.stats.dataSize = memoryUsageRef.current;
+      updatedRecording.stats.sampleCount = Object.values(updatedChannelData)
+        .reduce((sum, samples) => sum + samples.length, 0);
+      
+      // Only log summary periodically or for large batches
+      if (shouldLogDetails || totalNewSamples > 50) {
+        logSummary('RECORDING', `Recording update: +${batchSamplesRef.current} samples, total: ${updatedRecording.stats.sampleCount}`);
+        batchSamplesRef.current = 0;
+      }
+    }
+    
+    setCurrentRecording(updatedRecording);
   }, [channels, isRecording, currentRecording]);
 
-  // Helper functions
-  const calculateDataSize = (channelData) => {
-    // Estimate size in bytes (rough approximation)
-    let totalSize = 0;
-    Object.values(channelData).forEach((samples: any[]) => {
-      // Each sample has timestamp (8 bytes) and value (8 bytes)
-      totalSize += samples.length * 16;
-    });
-    return totalSize;
+  // Get recording by ID
+  const getRecordingById = (id: string): Recording | undefined => {
+    return recordings.find(rec => rec.id === id);
   };
 
-  const calculateSampleCount = (channelData) => {
-    return Object.values(channelData).reduce(
-      (total, samples: any[]) => total + samples.length, 
-      0
-    );
+  // Helper functions
+  const formatDuration = (ms: number): string => {
+    const seconds = Math.floor(ms / 1000);
+    if (seconds < 60) return `${seconds} seconds`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minutes, ${seconds % 60} seconds`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours} hours, ${minutes % 60} minutes`;
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return {
@@ -123,6 +272,8 @@ export const useRecordings = (channels) => {
     currentRecording,
     startRecording,
     stopRecording,
-    renameRecording
+    deleteRecording,
+    renameRecording,
+    getRecordingById
   };
 };

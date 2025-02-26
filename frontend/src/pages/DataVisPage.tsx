@@ -1,6 +1,5 @@
 // src/pages/DataVisPage.tsx
 import React from 'react';
-import { DataProvider } from '../components/shared/DataContext';
 import DataPage from '../components/data_view/DataPage';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
@@ -22,9 +21,7 @@ const theme = createTheme({
 const DataVisPage: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
-      <DataProvider>
-        <DataPage />
-      </DataProvider>
+      <DataPage />
     </ThemeProvider>
   );
 };

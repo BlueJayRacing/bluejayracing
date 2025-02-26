@@ -1,6 +1,6 @@
 // src/components/data_view/RecordingControls.tsx
 import React, { useState, useEffect } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Chip } from '@mui/material';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Chip, CircularProgress } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
 import { useDataContext } from '../../hooks/useDataContext';
@@ -23,20 +23,38 @@ const RecordingControls: React.FC = () => {
       return;
     }
     
-    const interval = setInterval(() => {
-      const newElapsedTime = Date.now() - currentRecording.startTime;
-      setElapsedTime(newElapsedTime);
+    // Initial update
+    setElapsedTime(Date.now() - currentRecording.startTime);
+    if (currentRecording.stats) {
+      setRecordingStats({
+        sampleCount: currentRecording.stats.sampleCount,
+        dataSize: currentRecording.stats.dataSize
+      });
+    }
+    
+    // Regular updates using Animation Frame for smoother UI
+    let animationId: number;
+    const updateTime = () => {
+      setElapsedTime(Date.now() - currentRecording.startTime);
       
-      // Update stats
-      if (currentRecording.stats) {
+      // Update stats (every ~500ms to avoid over-updating)
+      if (Date.now() % 500 < 50 && currentRecording.stats) {
         setRecordingStats({
           sampleCount: currentRecording.stats.sampleCount,
           dataSize: currentRecording.stats.dataSize
         });
       }
-    }, 1000);
+      
+      animationId = requestAnimationFrame(updateTime);
+    };
     
-    return () => clearInterval(interval);
+    animationId = requestAnimationFrame(updateTime);
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
   }, [isRecording, currentRecording]);
   
   const handleStartClick = () => {
@@ -60,9 +78,11 @@ const RecordingControls: React.FC = () => {
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     
-    const formattedHours = hours > 0 ? `${hours}h ` : '';
-    const formattedMinutes = minutes > 0 ? `${minutes % 60}m ` : '';
-    return `${formattedHours}${formattedMinutes}${seconds % 60}s`;
+    return [
+      hours > 0 ? String(hours).padStart(2, '0') : '',
+      String(minutes % 60).padStart(2, '0'),
+      String(seconds % 60).padStart(2, '0')
+    ].filter(Boolean).join(':');
   };
   
   // Format file size
@@ -76,11 +96,19 @@ const RecordingControls: React.FC = () => {
     <div>
       {isRecording ? (
         <Box display="flex" alignItems="center">
-          <Box mr={2}>
+          <Box mr={2} display="flex" alignItems="center">
             <Chip 
               color="error"
+              icon={<CircularProgress size={16} color="inherit" />}
               label={`Recording: ${formatElapsedTime(elapsedTime)}`}
-              className="animate-pulse"
+              sx={{
+                animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%': { opacity: 0.8 },
+                  '50%': { opacity: 1 },
+                  '100%': { opacity: 0.8 }
+                }
+              }}
             />
           </Box>
           <Box mr={2}>

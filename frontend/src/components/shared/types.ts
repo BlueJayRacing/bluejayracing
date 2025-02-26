@@ -13,12 +13,25 @@ export enum ChannelType {
   AXLE_TORQUE = 5
 }
 
+export interface ChannelMetadata {
+  name: string;
+  type: ChannelType;
+  sample_rate: number;  // Hz
+  transmission_rate: number;  // Hz
+  location: string;    // e.g., "FrontLeft", "RearRight"
+  units: string;       // e.g., "V", "RPM", "PSI"
+  description: string;
+  min_value: number;
+  max_value: number;
+}
+
 export interface Channel {
   name: string;
   type: ChannelType;
   min_value: number;
   max_value: number;
   samples: TimeValue[];
+  metadata?: ChannelMetadata;
 }
 
 export interface Recording {
@@ -29,10 +42,16 @@ export interface Recording {
   channelData: {
     [channelName: string]: TimeValue[];
   };
+  channelMetadata: {
+    [channelName: string]: ChannelMetadata;
+  };
   stats: {
-    duration: number;    // in milliseconds
-    dataSize: number;    // rough approximation in bytes
-    sampleCount: number; // total samples across all channels
+    duration: number;    // ms
+    dataSize: number;    // bytes
+    sampleCount: number; // total samples
+    channelCount: number;
+    maxSampleRate: number;
+    averageSampleRate: number;
   };
 }
 

@@ -6,8 +6,7 @@ import SimpleChartComponent from './SimpleChartComponent';
 import ChannelSelector from './ChannelSelector';
 import NumericDisplay from './NumericDisplay';
 import DataBufferManager from './DataBufferManager';
-import CarTerrainScene from '../car_terrain_scene/CarTerrainScene';
-import { DEFAULT_TERRAIN_CONFIG } from '../car_terrain_scene/ct_configs/terrainConfig';
+import RecordingControls from './RecordingControls';
 import { Button, CircularProgress, Box, Divider, IconButton, Paper, Typography, Switch, FormControlLabel } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -24,7 +23,6 @@ const DataPage: React.FC = () => {
   ]);
   const cameraConfigRef = useRef<any>({ current: {} });
   const [useSimpleCharts, setUseSimpleCharts] = useState(false); // Default to regular charts
-
 
   const addGraph = () => {
     const newId = Math.max(0, ...graphInstances.map(g => g.id)) + 1;
@@ -74,29 +72,6 @@ const DataPage: React.FC = () => {
     return channel.samples[channel.samples.length - 1].value;
   };
 
-  const getCarState = () => {
-    // Transform channel data into car state format
-    // This will map sensor data to car model parameters
-    return {
-      suspensionLengthsInInches: {
-        frontLeft: getChannelValue('linpot_front_left'),
-        frontRight: getChannelValue('linpot_front_right'),
-        rearLeft: getChannelValue('linpot_rear_left'),
-        rearRight: getChannelValue('linpot_rear_right')
-      },
-      wheelSpeedsInRPM: {
-        frontLeft: getChannelValue('wheel_speed_fl'),
-        frontRight: getChannelValue('wheel_speed_fr'),
-        lockedRear: (getChannelValue('wheel_speed_rl') + getChannelValue('wheel_speed_rr')) / 2
-      },
-      steeringAngleInDegrees: getChannelValue('steering_angle'),
-      framePose: {
-        position: [0, 0, 0],
-        rotation: [0, 0, 0, 1]
-      }
-    };
-  };
-
   if (isLoading) {
     return (
       <Box 
@@ -125,7 +100,7 @@ const DataPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Header with buffer manager and future recording controls */}
+      {/* Header with buffer manager and recording controls */}
       <div className="bg-gray-100 p-4 border-b">
         <DataBufferManager />
         <Box display="flex" justifyContent="space-between" mt={2}>
@@ -152,13 +127,8 @@ const DataPage: React.FC = () => {
             />
           </Box>
           
-          <Button 
-            variant="outlined"
-            color="error"
-            disabled={true} // Will be enabled with recording functionality
-          >
-            Start Recording
-          </Button>
+          {/* Recording Controls */}
+          <RecordingControls />
         </Box>
       </div>
       
@@ -223,24 +193,6 @@ const DataPage: React.FC = () => {
               </Paper>
             ))}
           </div>
-          
-          {/* Car visualization - commented out for now */}
-          {/* 
-          <Paper elevation={2} className="mt-6 p-2">
-            <Typography variant="h6" gutterBottom>Car Visualization</Typography>
-            <div className="h-96">
-              <CarTerrainScene
-                carState={getCarState()}
-                terrainConfig={DEFAULT_TERRAIN_CONFIG}
-                cameraConfigRef={cameraConfigRef}
-                modelPaths={{
-                  car: '/models/vehicle.glb',
-                  terrain: '/models/terrain.glb'
-                }}
-              />
-            </div>
-          </Paper>
-          */}
         </div>
         
         {/* Right sidebar with numeric values for selected channels only */}
@@ -259,6 +211,6 @@ const DataPage: React.FC = () => {
       </div>
     </div>
   );
-}
+};
 
 export default DataPage;
