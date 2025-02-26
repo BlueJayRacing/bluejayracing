@@ -35,7 +35,7 @@ export const ApiService = {
     try {
       const startTime = performance.now();
       const response = await axios.get(`${API_BASE_URL}/data/all`, {
-        params: { max_samples: 10 } // Small sample for quick response
+        params: { max_samples: 100 } // Small sample for quick response
       });
       const endTime = performance.now();
       const responseTime = endTime - startTime;

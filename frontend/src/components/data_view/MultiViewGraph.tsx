@@ -1,5 +1,5 @@
 // Force draw all points option for debugging
-const forceDrawAllPoints = true;// src/components/data_view/MultiViewGraph.tsx
+const forceDrawAllPoints = false;// src/components/data_view/MultiViewGraph.tsx
 import React, { useEffect, useRef } from 'react';
 import { Chart, ChartConfiguration, ChartDataset, registerables } from 'chart.js';
 import 'chartjs-plugin-streaming';
@@ -176,7 +176,7 @@ const MultiViewGraph: React.FC<MultiViewGraphProps> = ({
       } catch (error) {
         console.error("Error updating chart:", error);
       }
-    }, 100);
+    }, 10);
     
     // Cleanup on unmount
     return () => {

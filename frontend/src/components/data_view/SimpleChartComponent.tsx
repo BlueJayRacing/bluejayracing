@@ -140,17 +140,17 @@ useEffect(() => {
       
       const y = height - yRatio * height;
       
-      if (firstPoint) {
-        ctx.moveTo(x, y);
-        firstPoint = false;
-      } else {
-        ctx.lineTo(x, y);
-      }
+      // if (firstPoint) {
+      //   ctx.moveTo(x, y);
+      //   firstPoint = false;
+      // } else {
+      //   ctx.lineTo(x, y);
+      // }
       
       pointsDrawn++;
       
       // Draw dots for every 10th point to make sure something is visible
-      if (pointsDrawn % 10 === 0) {
+      if (pointsDrawn % 1 === 0) {
         // Save current state
         ctx.save();
         
