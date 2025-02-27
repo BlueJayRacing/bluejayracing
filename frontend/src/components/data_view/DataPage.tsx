@@ -43,7 +43,7 @@ const DataPage: React.FC = () => {
 
   // Debug: Force mock data mode for testing
   useEffect(() => {
-    console.log("Graph instances:", graphInstances);
+
     
     // After the component mounts, add some default channel selections for testing
     if (channels.length > 0 && graphInstances.length === 1 && graphInstances[0].selectedChannels.length === 0) {
@@ -165,13 +165,13 @@ const DataPage: React.FC = () => {
                 {graph.selectedChannels.length > 0 ? (
                   useSimpleCharts ? (
                     <SimpleChartComponent 
-                      key={`graph-${graph.id}-simple-${Date.now()}`}
+                      key={`graph-${graph.id}-simple`}
                       channelNames={graph.selectedChannels} 
                       height={250}
                     />
                   ) : (
                     <MultiViewGraph 
-                      key={`graph-${graph.id}-multi-${Date.now()}`}
+                      key={`graph-${graph.id}-multi`}
                       channelNames={graph.selectedChannels} 
                       height={250}
                     />

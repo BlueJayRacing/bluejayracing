@@ -1,157 +1,91 @@
 // src/components/data_view/RecordingControls.tsx
-import React, { useState, useEffect } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Chip } from '@mui/material';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import StopIcon from '@mui/icons-material/Stop';
+import React, { useState } from 'react';
+import { Button, CircularProgress, Tooltip } from '@mui/material';
 import { useDataContext } from '../../hooks/useDataContext';
-import { Link } from 'react-router-dom';
 
 const RecordingControls: React.FC = () => {
-  const { isRecording, currentRecording, startRecording, stopRecording, recordings } = useDataContext();
-  const [recordingName, setRecordingName] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [recordingStats, setRecordingStats] = useState({
-    sampleCount: 0,
-    dataSize: 0
-  });
+  const { channels } = useDataContext();
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   
-  // Update elapsed time during recording
-  useEffect(() => {
-    if (!isRecording || !currentRecording) {
-      setElapsedTime(0);
-      return;
-    }
+  // Start recording
+  const handleStartRecording = () => {
+    if (isRecording) return;
     
-    const interval = setInterval(() => {
-      const newElapsedTime = Date.now() - currentRecording.startTime;
-      setElapsedTime(newElapsedTime);
-      
-      // Update stats
-      if (currentRecording.stats) {
-        setRecordingStats({
-          sampleCount: currentRecording.stats.sampleCount,
-          dataSize: currentRecording.stats.dataSize
-        });
+    setIsRecording(true);
+    setRecordingStartTime(Date.now());
+    
+    // Start timer to update duration
+    const intervalId = setInterval(() => {
+      if (recordingStartTime) {
+        setRecordingDuration(Math.floor((Date.now() - recordingStartTime) / 1000));
       }
     }, 1000);
     
-    return () => clearInterval(interval);
-  }, [isRecording, currentRecording]);
-  
-  const handleStartClick = () => {
-    setDialogOpen(true);
+    // Store interval ID so we can clear it later
+    (window as any).recordingIntervalId = intervalId;
   };
   
-  const handleStartConfirm = () => {
-    startRecording(recordingName.trim() || undefined);
-    setDialogOpen(false);
-    setRecordingName('');
-  };
-  
-  const handleStopClick = () => {
-    stopRecording();
-    setElapsedTime(0);
-  };
-  
-  // Format time display
-  const formatElapsedTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
+  // Stop recording
+  const handleStopRecording = () => {
+    if (!isRecording) return;
     
-    const formattedHours = hours > 0 ? `${hours}h ` : '';
-    const formattedMinutes = minutes > 0 ? `${minutes % 60}m ` : '';
-    return `${formattedHours}${formattedMinutes}${seconds % 60}s`;
+    setIsRecording(false);
+    
+    // Clear interval
+    if ((window as any).recordingIntervalId) {
+      clearInterval((window as any).recordingIntervalId);
+      (window as any).recordingIntervalId = null;
+    }
+    
+    // Calculate final duration
+    if (recordingStartTime) {
+      const finalDuration = Math.floor((Date.now() - recordingStartTime) / 1000);
+      setRecordingDuration(finalDuration);
+      // TODO: Save recording data
+    }
+    
+    setRecordingStartTime(null);
   };
   
-  // Format file size
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
+  // Check if we have valid data to record
+  const hasValidData = channels && Array.isArray(channels) && channels.length > 0 && 
+                      channels.some(channel => channel.samples && channel.samples.length > 0);
   
   return (
-    <div>
-      {isRecording ? (
-        <Box display="flex" alignItems="center">
-          <Box mr={2}>
-            <Chip 
-              color="error"
-              label={`Recording: ${formatElapsedTime(elapsedTime)}`}
-              className="animate-pulse"
-            />
-          </Box>
-          <Box mr={2}>
-            <Chip 
-              variant="outlined"
-              label={`${recordingStats.sampleCount.toLocaleString()} samples`}
-              size="small"
-            />
-          </Box>
-          <Box mr={2}>
-            <Chip 
-              variant="outlined"
-              label={formatFileSize(recordingStats.dataSize)}
-              size="small"
-            />
-          </Box>
-          <Button
-            variant="contained"
-            color="error"
-            startIcon={<StopIcon />}
-            onClick={handleStopClick}
-          >
-            Stop Recording
-          </Button>
-        </Box>
-      ) : (
-        <Box display="flex" alignItems="center">
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<PlayArrowIcon />}
-            onClick={handleStartClick}
-            sx={{ mr: 2 }}
-          >
-            Start Recording
-          </Button>
-          
-          {recordings.length > 0 && (
-            <Button
-              variant="outlined"
-              component={Link}
-              to="/recordings"
-            >
-              View Recordings ({recordings.length})
-            </Button>
-          )}
-        </Box>
+    <div className="flex items-center space-x-4">
+      {isRecording && (
+        <div className="flex items-center mr-2">
+          <CircularProgress size={20} color="error" className="mr-2" />
+          <span className="text-red-600 font-medium">
+            Recording: {recordingDuration}s
+          </span>
+        </div>
       )}
       
-      {/* Dialog for recording name */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-        <DialogTitle>New Recording</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Recording Name"
-            fullWidth
-            variant="outlined"
-            value={recordingName}
-            onChange={(e) => setRecordingName(e.target.value)}
-            placeholder={`Recording ${new Date().toLocaleString()}`}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleStartConfirm} variant="contained" color="primary">
-            Start
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {isRecording ? (
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleStopRecording}
+        >
+          Stop Recording
+        </Button>
+      ) : (
+        <Tooltip title={!hasValidData ? "No data available to record" : ""}>
+          <span>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleStartRecording}
+              disabled={!hasValidData}
+            >
+              Start Recording
+            </Button>
+          </span>
+        </Tooltip>
+      )}
     </div>
   );
 };
