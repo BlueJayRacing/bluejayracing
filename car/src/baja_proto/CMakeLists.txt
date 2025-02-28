@@ -14,7 +14,8 @@ find_package(Protobuf REQUIRED)
 file(MAKE_DIRECTORY "bin")
 
 # Add library
-add_library(baja_proto_gen OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/proto)
+# add_library(baja_proto_gen OBJECT ${CMAKE_CURRENT_SOURCE_DIR}/proto)
+add_library(baja_proto_gen OBJECT )
 target_include_directories(baja_proto_gen PUBLIC 
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/bin>"
 )
