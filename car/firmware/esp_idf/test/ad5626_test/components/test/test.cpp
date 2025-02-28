@@ -1,9 +1,9 @@
+#include "freertos/FreeRTOS.h"
 #include <ad5626.hpp>
+#include <cstring>
 #include <esp_log.h>
 #include <esp_system.h>
 #include <test.hpp>
-#include "freertos/FreeRTOS.h"
-#include <cstring>
 
 static const char* TAG = "test";
 
@@ -44,24 +44,31 @@ void Test::testAD5626(void)
     }
 
     testAD5626Set();
+    testAD5626ParamErrors();
 }
 
-#define FULL_SCALE_RESOLUTION 4096
-#define NUM_SECONDS 16
+#define NUM_VALUES            16
 
 void Test::testAD5626Set(void)
 {
     ESP_LOGI(TAG, "Testing setting different values on DAC");
 
     int dac_value = 0;
-    int dac_incr = FULL_SCALE_RESOLUTION / NUM_SECONDS;
+    int dac_incr  = AD5626::MAX_LEVEL_VALUE / NUM_VALUES;
 
-    for (int i = 0; i <= NUM_SECONDS; i++)
-    {
+    for (int i = 0; i <= NUM_VALUES; i++) {
         dac_.setLevel(dac_value);
-        vTaskDelay(300);
+        vTaskDelay(50);
         dac_value += dac_incr;
     }
 
     ESP_LOGI(TAG, "Passed setting values on DAC");
+}
+
+void Test::testAD5626ParamErrors(void) {
+    ESP_LOGI(TAG, "Testing DAC driver error handling");
+
+    assert(dac_.setLevel(AD5626::MAX_LEVEL_VALUE + 1) == ESP_ERR_INVALID_ARG);
+
+    ESP_LOGI(TAG, "Finished testing DAC driver error handling");
 }

@@ -6,7 +6,6 @@
 #include <ads1120.hpp>
 #include <sensorSetup.hpp>
 
-
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
 #define SPI2_SCLK_PIN 19
@@ -18,6 +17,21 @@ static const char* TAG = "test";
 Test::Test(esp_log_level_t test_log_level) { esp_log_level_set(TAG, test_log_level); }
 
 void Test::testSensorSetup(void) {
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+        return;        
+    }
+
     gpio_config_t config;
     config.mode = GPIO_MODE_OUTPUT;
     config.intr_type = GPIO_INTR_DISABLE;
@@ -25,7 +39,7 @@ void Test::testSensorSetup(void) {
     config.pull_up_en = GPIO_PULLUP_DISABLE;
     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
-    esp_err_t ret = gpio_config(&config);
+    ret = gpio_config(&config);
     if (ret) {
         ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
         return;
@@ -67,7 +81,11 @@ void Test::testSensorSetupReadAnalogFrontEnd(void)
 
 void Test::testSensorSetupZero(void)
 {
-    setup_.zero();
-
-    ESP_LOGI(TAG, "Finished Zeroing");
+    esp_err_t ret = setup_.zero();
+    if (ret) {
+        ESP_LOGI(TAG, "Failed to Zero");
+        return;
+    } else {
+        ESP_LOGI(TAG, "Finished Zeroing");
+    }
 }

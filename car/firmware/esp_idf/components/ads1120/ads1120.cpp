@@ -16,9 +16,7 @@ ADS1120::ADS1120() { memset(&regs_, 0x00, sizeof(ads1120_regs_t)); }
 /*******************************************************************************
  * @brief Initializes the ADS1120.
  *
- * @param t_cs_pin   - The chip select pin.
- * @param t_drdy_pin - The data ready pin.
- * @param t_spi_host - The SPI host/bus that the device is on.
+ * @param t_init_param - The initialization parameters for the ADS1120.
  *
  * @return Returns ESP_OK for success or a non-zero value otherwise.
  *******************************************************************************/
@@ -46,8 +44,6 @@ esp_err_t ADS1120::init(ads1120_init_param_t t_init_param)
     if (ret != ESP_OK) {
         return ret;
     }
-
-    ESP_LOGI(TAG, "Added ADS1120 Device to Bus\n");
 
     vTaskDelay(5);
 
@@ -79,7 +75,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set analog channels w/: %d", t_nregs.channels);
+        ESP_LOGV(TAG, "Set analog channels w/: %d", t_nregs.channels);
         regs_.channels = t_nregs.channels;
     }
 
@@ -90,7 +86,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set voltage references w/: %d", t_nregs.volt_refs);
+        ESP_LOGV(TAG, "Set voltage references w/: %d", t_nregs.volt_refs);
         regs_.volt_refs = t_nregs.volt_refs;
     }
 
@@ -101,7 +97,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set gain w/: %d", t_nregs.gain);
+        ESP_LOGV(TAG, "Set gain w/: %d", t_nregs.gain);
         regs_.gain = t_nregs.gain;
     }
 
@@ -112,7 +108,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set PGA bypass w/: %d", t_nregs.pga_bypass);
+        ESP_LOGV(TAG, "Set PGA bypass w/: %d", t_nregs.pga_bypass);
         regs_.pga_bypass = t_nregs.pga_bypass;
     }
 
@@ -123,7 +119,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set data rate w/: %d", t_nregs.data_rate);
+        ESP_LOGV(TAG, "Set data rate w/: %d", t_nregs.data_rate);
         regs_.data_rate = t_nregs.data_rate;
     }
 
@@ -134,7 +130,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set op mode w/: %d", t_nregs.op_mode);
+        ESP_LOGV(TAG, "Set op mode w/: %d", t_nregs.op_mode);
         regs_.op_mode = t_nregs.op_mode;
     }
 
@@ -145,7 +141,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set conversion mode w/: %d", t_nregs.conv_mode);
+        ESP_LOGV(TAG, "Set conversion mode w/: %d", t_nregs.conv_mode);
         regs_.conv_mode = t_nregs.conv_mode;
     }
 
@@ -156,7 +152,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set temperature mode w/: %d", t_nregs.temp_mode);
+        ESP_LOGV(TAG, "Set temperature mode w/: %d", t_nregs.temp_mode);
         regs_.temp_mode = t_nregs.temp_mode;
     }
 
@@ -167,7 +163,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set burnout current sources w/: %d", t_nregs.burn_sources);
+        ESP_LOGV(TAG, "Set burnout current sources w/: %d", t_nregs.burn_sources);
         regs_.burn_sources = t_nregs.burn_sources;
     }
 
@@ -178,7 +174,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set fir w/: %d", t_nregs.fir);
+        ESP_LOGV(TAG, "Set fir w/: %d", t_nregs.fir);
         regs_.fir = t_nregs.fir;
     }
 
@@ -189,7 +185,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set power switch w/: %d", t_nregs.power_switch);
+        ESP_LOGV(TAG, "Set power switch w/: %d", t_nregs.power_switch);
         regs_.power_switch = t_nregs.power_switch;
     }
 
@@ -200,7 +196,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set IDAC current w/: %d", t_nregs.idac_current);
+        ESP_LOGV(TAG, "Set IDAC current w/: %d", t_nregs.idac_current);
         regs_.idac_current = t_nregs.idac_current;
     }
 
@@ -212,7 +208,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set IDAC1 routing w/: %d", t_nregs.idac1_routing);
+        ESP_LOGV(TAG, "Set IDAC1 routing w/: %d", t_nregs.idac1_routing);
         regs_.idac1_routing = t_nregs.idac1_routing;
     }
 
@@ -224,7 +220,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set IDAC2 routing w/: %d", t_nregs.idac2_routing);
+        ESP_LOGV(TAG, "Set IDAC2 routing w/: %d", t_nregs.idac2_routing);
         regs_.idac2_routing = t_nregs.idac2_routing;
     }
 
@@ -235,7 +231,7 @@ esp_err_t ADS1120::configure(ads1120_regs_t t_nregs)
             return ret;
         }
 
-        ESP_LOGI(TAG, "Set DRDY mode w/: %d", t_nregs.drdy_mode);
+        ESP_LOGV(TAG, "Set DRDY mode w/: %d", t_nregs.drdy_mode);
         regs_.drdy_mode = t_nregs.drdy_mode;
     }
 

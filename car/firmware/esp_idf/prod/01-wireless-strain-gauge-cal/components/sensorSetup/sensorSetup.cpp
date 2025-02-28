@@ -2,12 +2,24 @@
 #include <esp_log.h>
 
 #define NUM_MEASUREMENTS 100
-#define ERROR_THRESHOLD 0.005
+#define ERROR_THRESHOLD 0.003
 
 static const char* TAG = "sensorSetup";
 
+int min(int a, int b);
+
+int max(int a, int b);
+
 sensorSetup::sensorSetup() {};
 
+/*******************************************************************************
+ * @brief Initializes the sensorSetup.
+ *
+ * @param adc_params - The pin confiugration parameters for the ADC.
+ * @param dac_params - The pin configuration parameters for the DAC.
+ *
+ * @return Returns 0 for success or negative error code.
+ *******************************************************************************/
 esp_err_t sensorSetup::init(ads1120_init_param_t adc_params, ad5626_init_param_t dac_params)
 {
     esp_err_t ret = adc_.init(adc_params);
@@ -38,31 +50,51 @@ esp_err_t sensorSetup::init(ads1120_init_param_t adc_params, ad5626_init_param_t
     return ESP_OK;
 }
 
+/*******************************************************************************
+ * @brief Zeroes the sensorSetup a maximum of ZEROING_MAX_TRIES times before
+ *        failing.
+ *
+ * @return Returns 0 for success or negative error code.
+ *******************************************************************************/
 esp_err_t sensorSetup::zero(void) {
-    float average_volt_error;
+    esp_err_t err;
     sensor_measurement_t measurements[NUM_MEASUREMENTS];
 
-    do {
+    for (uint8_t i = 0; i < ZEROING_MAX_TRIES; i++) {
         // Calculate the average voltage error
         float sum_volt_errors = 0;
 
         for (int i = 0; i < NUM_MEASUREMENTS; i++) {
-            measure(&(measurements[i]));
+            err = measure(&(measurements[i]));
+            if (err) {
+                vTaskDelay(10);
+                continue;
+            }
+
             sum_volt_errors += (measurements[i].voltage - 2.5);
         }
 
-        average_volt_error = sum_volt_errors / NUM_MEASUREMENTS;
+        float average_volt_error = sum_volt_errors / NUM_MEASUREMENTS;
 
-        int16_t dac_shift = - average_volt_error / measurements[0].gain * 1000;
+        if (std::abs(average_volt_error) < ERROR_THRESHOLD) {
+            return ESP_OK;
+        }
 
-        ESP_LOGI(TAG, "\nAverage Volt Error: %f", average_volt_error);
-        ESP_LOGI(TAG, "Calculated DAC Shift: %d", dac_shift);
-        ESP_LOGI(TAG, "Setting DAC Bias: %d", measurements[0].dac_bias + dac_shift);
+        int16_t new_dac_bias = measurements[0].dac_bias - average_volt_error / measurements[0].gain * 1000;
 
-        dac_.setLevel(measurements[0].dac_bias + dac_shift);
-    } while (std::abs(average_volt_error) > ERROR_THRESHOLD);
+        ESP_LOGI(TAG, "Previous DAC Bias: %d", measurements[0].dac_bias);
+        ESP_LOGI(TAG, "Calculated Average Voltage Error: %f", average_volt_error);
+        ESP_LOGI(TAG, "Calculated New DAC Bias: %d", new_dac_bias);
 
-    return ESP_OK;
+        new_dac_bias = max(new_dac_bias, 0);
+        new_dac_bias = min(new_dac_bias, AD5626::MAX_LEVEL_VALUE);
+
+        ESP_LOGI(TAG, "New DAC Bias: %d", new_dac_bias);
+
+        dac_.setLevel(new_dac_bias);
+    }
+
+    return ESP_ERR_INVALID_RESPONSE;
 }
 
 esp_err_t sensorSetup::setGain(ads1120_gain_t gain)
@@ -126,4 +158,12 @@ esp_err_t sensorSetup::measure(sensor_measurement_t* t_meas)
     t_meas->voltage = t_meas->gain * 5.001 * t_meas->adc_value / ((1 << 15) - 1);
 
     return ESP_OK;
+}
+
+int min(int a, int b) {
+    return (a < b) ? a : b;
+}
+
+int max(int a, int b) {
+    return (a > b) ? a : b;
 }

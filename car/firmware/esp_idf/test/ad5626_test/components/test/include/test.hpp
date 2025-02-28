@@ -12,6 +12,7 @@ class Test {
 
   private:
     void testAD5626Set(void);
+    void testAD5626ParamErrors(void);
     // Add private test functions here
 
   private:

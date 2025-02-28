@@ -22,6 +22,9 @@ class sensorSetup {
     esp_err_t setGain(ads1120_gain_t gain);
     esp_err_t measure(sensor_measurement_t* measurement);
 
+  public:
+    const static uint8_t ZEROING_MAX_TRIES = 10;
+
   private:
     AD5626 dac_;
     ADS1120 adc_;
