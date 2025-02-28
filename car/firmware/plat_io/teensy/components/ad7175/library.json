@@ -1,0 +1,19 @@
+{
+    "name": "ad7175",
+    "version": "1.0.0",
+    "description": "device driver for ad7175",
+    "authors":
+    [
+      {
+        "name": "Travis Chen",
+        "email": "travis.yu.chen@gmail.com",
+        "maintainer": true
+      }
+    ],
+    "license": "MIT",
+    "dependencies": {
+      "SPI": "~1.0"
+    },
+    "frameworks": "*",
+    "platforms": "*"
+  }

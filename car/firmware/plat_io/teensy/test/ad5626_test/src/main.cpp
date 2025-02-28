@@ -1,7 +1,5 @@
 #include <Arduino.h>
 
-#include "component_template.hpp"
-
 #include "ad5626.hpp"
 
 AD5626 ad5626;
@@ -10,7 +8,6 @@ uint16_t level = 0xFFFF;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  comp_temp_func();
 
   SPI.begin();
 

@@ -5,16 +5,21 @@
 #include <memoryBlock.hpp>
 #include <memoryQueue.hpp>
 #include <mqttManager.hpp>
+#include <ad5626.hpp>
+#include <ads1120.hpp>
 
 class Test {
   public:
     Test(esp_log_level_t test_log_level);
     void testMemoryQueue(void);
     void testMQTTManager(void);
+    void testADCDACEndtoEnd(void);
+    void testADCDACReadAnalogFrontEnd(void);
 
   private:
     void testMemoryQueueBasic(void);
     void testMemoryQueueAcquireFull(void);
+
     void testMQTTManagerBasicParamErrors(void);
     void testMQTTManagerWiFiConnectDisconnect(void);
     void testMQTTManagerClientConnectDisconnect(void);
@@ -22,8 +27,15 @@ class Test {
     void testMQTTManagerMultipleClientsConDisCon(void);
     void testMQTTManagerClientPublishSubscribe(void);
 
+    void testADCDACCheckSPIBus(void);
+    void testADCDACReadDACBias(void);
+    void testADCDACTestADCGain2(void);
+    void testADCDACTestADCGain4(void);
+
   private:
     mqttManager* mqtt_manager_;
+    AD5626 dac_;
+    ADS1120 adc_;
 };
 
 #endif

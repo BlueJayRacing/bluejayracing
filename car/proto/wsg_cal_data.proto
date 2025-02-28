@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message cal_data_t {
+    repeated uint32 adc_value = 1;
+    repeated uint32 dac_bias = 2;
+};

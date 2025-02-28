@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-message simpleMessage_3 {
-    int32 lucky_number = 1;
-    int32 lucky_number_2 = 2;
-    int32 lucky_number_3 = 3;
-};
