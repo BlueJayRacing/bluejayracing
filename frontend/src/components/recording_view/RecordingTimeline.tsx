@@ -1,4 +1,3 @@
-// src/components/recording_view/RecordingTimeline.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Paper, Typography, Box, Tooltip } from '@mui/material';
@@ -17,8 +16,8 @@ const RecordingTimeline: React.FC<RecordingTimelineProps> = ({
   
   if (!recordings.length) {
     return (
-      <Paper className="p-4 text-center">
-        <Typography variant="body1" color="textSecondary">
+      <Paper sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="body1" color="text.secondary">
           No recordings available yet. Start a new recording from the Data page.
         </Typography>
       </Paper>
@@ -27,13 +26,20 @@ const RecordingTimeline: React.FC<RecordingTimelineProps> = ({
   
   // Sort recordings by start time and filter out any invalid recordings
   const sortedRecordings = [...recordings]
-    .filter(rec => rec && rec.id && rec.startTime) // Ensure valid recordings only
+    .filter(rec => rec && rec.id && rec.startTime)
     .sort((a, b) => a.startTime - b.startTime);
   
-  // Calculate timeline range
-  const startTime = Math.min(...recordings.map(r => r.startTime)) - 1000; // Add small buffer
-  const endTime = Math.max(...recordings.map(r => r.endTime || Date.now())) + 1000; // Add small buffer
-  const timeRange = endTime - startTime;
+  // Calculate timeline range with padding on both sides
+  const earliestTime = Math.min(...recordings.map(r => r.startTime));
+  const latestTime = Math.max(...recordings.map(r => r.endTime || Date.now()));
+  
+  // Add 5% padding on both sides
+  const timeRange = latestTime - earliestTime;
+  const padding = timeRange * 0.05;
+  
+  const startTime = earliestTime - padding;
+  const endTime = latestTime + padding;
+  const totalTimeRange = endTime - startTime;
   
   // Format date for display
   const formatDate = (timestamp: number) => {
@@ -64,46 +70,29 @@ const RecordingTimeline: React.FC<RecordingTimelineProps> = ({
   };
   
   return (
-    <Paper className="p-4">
-      <div className="mb-2 flex justify-between text-xs text-gray-500">
-        <div>{formatDate(startTime)}</div>
-        <div>{formatDate(endTime)}</div>
-      </div>
-      
-      <div className="h-32 border border-gray-300 rounded-md relative bg-gray-50">
-        {/* Time grid lines */}
-        {Array.from({ length: 5 }).map((_, index) => {
-          const position = `${(index + 1) * 20}%`;
-          const timestamp = startTime + (timeRange * (index + 1) / 5);
-          
-          return (
-            <div key={`gridline-${index}`}>
-              <div 
-                className="absolute h-full border-l border-gray-200" 
-                style={{ left: position }} 
-              />
-              <div 
-                className="absolute top-0 text-xs text-gray-400" 
-                style={{ left: position }}
-              >
-                {formatDate(timestamp)}
-              </div>
-            </div>
-          );
-        })}
-        
+    <Paper sx={{ p: 3 }}>
+      <Box sx={{ 
+        height: '8rem', 
+        border: '1px solid', 
+        borderColor: 'divider',
+        borderRadius: 1,
+        position: 'relative', 
+        bgcolor: 'grey.50',
+        mx: 3,
+        px: 2,
+        mb: 3 // Increased bottom margin for time labels
+      }}>
         {/* Recording blocks */}
         {sortedRecordings.map((recording, index) => {
-          const startOffset = ((recording.startTime - startTime) / timeRange) * 100;
+          const startOffset = ((recording.startTime - startTime) / totalTimeRange) * 100;
           const duration = recording.endTime ? 
             recording.endTime - recording.startTime : 
             Date.now() - recording.startTime;
-          const width = (duration / timeRange) * 100;
+          const width = (duration / totalTimeRange) * 100;
           
           // Calculate vertical position to avoid overlaps
-          // Use more space (5 rows) to reduce overlap likelihood 
           const row = index % 5;
-          const topPosition = row * 20 + 10; // 5 rows, each 20% of height
+          const topPosition = row * 16 + 15;
           
           return (
             <Tooltip
@@ -121,43 +110,139 @@ const RecordingTimeline: React.FC<RecordingTimelineProps> = ({
               placement="top"
             >
               <Box
-                className="absolute h-8 rounded-md cursor-pointer hover:opacity-90 flex items-center overflow-hidden"
+                onClick={() => handleRecordingClick(recording)}
                 sx={{
+                  position: 'absolute',
+                  height: '1.75rem',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  overflow: 'hidden',
                   left: `${Math.max(startOffset, 0)}%`,
                   width: `${Math.max(Math.min(width, 100), 2)}%`,
                   top: `${topPosition}%`,
-                  backgroundColor: recording.endTime ? '#3f51b5' : '#f50057',
+                  bgcolor: recording.endTime ? 'primary.main' : 'error.main',
                   opacity: 0.8,
                   border: '1px solid rgba(0,0,0,0.1)',
-                  zIndex: 10 - row, // Higher rows get lower z-index
+                  zIndex: 10 - row,
                   '&:hover': {
                     opacity: 1,
                     zIndex: 20,
                     boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
                   }
                 }}
-                onClick={() => handleRecordingClick(recording)}
               >
-                <Typography 
-                  variant="caption" 
-                  noWrap 
-                  sx={{ 
-                    color: 'white', 
-                    px: 1,
-                    textShadow: '0 0 2px rgba(0,0,0,0.5)',
-                    display: width > 10 ? 'block' : 'none',
-                    width: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                  }}
-                >
-                  {recording.name}
-                </Typography>
+                {width > 10 && (
+                  <Typography 
+                    variant="caption" 
+                    noWrap
+                    sx={{ 
+                      color: 'white', 
+                      px: 1,
+                      textShadow: '0 0 2px rgba(0,0,0,0.5)',
+                      width: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {recording.name}
+                  </Typography>
+                )}
               </Box>
             </Tooltip>
           );
         })}
-      </div>
+        
+        {/* Time grid lines */}
+        {Array.from({ length: 5 }).map((_, index) => {
+          const position = `${(index + 1) * 20}%`;
+          return (
+            <Box 
+              key={`gridline-${index}`}
+              sx={{ 
+                position: 'absolute', 
+                height: '100%', 
+                borderLeft: '1px solid', 
+                borderColor: 'grey.200',
+                left: position 
+              }} 
+            />
+          );
+        })}
+      </Box>
+      
+      {/* Time labels - moved to bottom with better spacing */}
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between',
+        mx: 3,
+        px: 0,
+        position: 'relative', 
+        height: '2rem',
+        mt: -1
+      }}>
+        {/* We'll use specific positions for each label with proper alignment */}
+        <Box sx={{ 
+          position: 'absolute', 
+          left: '0%',
+          fontSize: '0.75rem',
+          color: 'text.secondary'
+        }}>
+          {formatDate(startTime)}
+        </Box>
+        
+        <Box sx={{ 
+          position: 'absolute', 
+          left: '20%', 
+          transform: 'translateX(-50%)',
+          fontSize: '0.75rem',
+          color: 'text.secondary'
+        }}>
+          {formatDate(startTime + totalTimeRange * 0.2)}
+        </Box>
+        
+        <Box sx={{ 
+          position: 'absolute', 
+          left: '40%', 
+          transform: 'translateX(-50%)',
+          fontSize: '0.75rem',
+          color: 'text.secondary'
+        }}>
+          {formatDate(startTime + totalTimeRange * 0.4)}
+        </Box>
+        
+        <Box sx={{ 
+          position: 'absolute', 
+          left: '60%', 
+          transform: 'translateX(-50%)',
+          fontSize: '0.75rem',
+          color: 'text.secondary'
+        }}>
+          {formatDate(startTime + totalTimeRange * 0.6)}
+        </Box>
+        
+        <Box sx={{ 
+          position: 'absolute', 
+          left: '80%', 
+          transform: 'translateX(-50%)',
+          fontSize: '0.75rem',
+          color: 'text.secondary'
+        }}>
+          {formatDate(startTime + totalTimeRange * 0.8)}
+        </Box>
+        
+        {/* Special handling for the last label to prevent overflow */}
+        <Box sx={{ 
+          position: 'absolute', 
+          right: '0%',
+          fontSize: '0.75rem',
+          color: 'text.secondary',
+          textAlign: 'right'
+        }}>
+          {formatDate(endTime)}
+        </Box>
+      </Box>
     </Paper>
   );
 };

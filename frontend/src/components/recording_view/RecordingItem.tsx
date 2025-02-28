@@ -1,7 +1,24 @@
 // src/components/recording_view/RecordingItem.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, Typography, IconButton, Button, Menu, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Chip } from '@mui/material';
+import { 
+  Card, 
+  CardContent, 
+  Typography, 
+  IconButton, 
+  Button, 
+  Menu, 
+  MenuItem, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  TextField, 
+  Box, 
+  Chip,
+  Stack,
+  Divider
+} from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -61,7 +78,6 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
     if (onPlay) {
       onPlay(recording);
     } else {
-      // Navigate to playback page with recording ID
       navigate(`/playback/${recording.id}`);
     }
   };
@@ -81,22 +97,58 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
   };
   
   return (
-    <Card variant="outlined" className="hover:shadow-md transition-shadow">
-      <CardContent>
-        <div className="flex justify-between">
-          <div>
-            <Typography variant="h6">{recording.name}</Typography>
-            <Typography variant="body2" color="textSecondary">
-              {formatDate(recording.startTime)}
-              {recording.endTime ? ` - ${formatDate(recording.endTime)}` : ' (In progress)'}
-            </Typography>
-          </div>
-          <IconButton onClick={(e) => setMenuAnchor(e.currentTarget)}>
+    <Card 
+      variant="outlined" 
+      sx={{ 
+        transition: 'box-shadow 0.3s', 
+        '&:hover': { 
+          boxShadow: 3 
+        },
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%'
+      }}
+    >
+      <CardContent sx={{ p: 2, pb: 1, flexGrow: 0 }}>
+        {/* Header section with title and menu */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+          <Typography variant="h6" component="h3" sx={{ fontWeight: 'medium' }}>
+            {recording.name}
+          </Typography>
+          <IconButton 
+            onClick={(e: any) => setMenuAnchor(e.currentTarget)} 
+            size="small"
+            sx={{ mt: -0.5, mr: -0.5 }}
+          >
             <MoreVertIcon />
           </IconButton>
-        </div>
+        </Box>
         
-        <Box className="mt-3 flex flex-wrap gap-2">
+        {/* Date information */}
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {formatDate(recording.startTime)}
+          {recording.endTime ? ` - ${formatDate(recording.endTime)}` : ' (In progress)'}
+        </Typography>
+        
+        <Divider sx={{ my: 1.5 }} />
+        
+        {/* Metrics display */}
+        <Stack 
+          direction="row" 
+          spacing={1} 
+          sx={{ 
+            flexWrap: 'wrap', 
+            gap: 1, 
+            mb: 2,
+            '& > *': { 
+              flexGrow: 1,
+              minWidth: 'calc(50% - 4px)', // Two chips per row on smaller cards
+              '@media (min-width: 400px)': {
+                minWidth: 'auto' // Let them flow naturally on wider cards
+              }
+            }
+          }}
+        >
           <Chip 
             label={`Duration: ${formatDuration(recording.stats.duration)}`} 
             variant="outlined" 
@@ -117,19 +169,21 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
             variant="outlined"
             size="small"
           />
-        </Box>
-        
-        <div className="mt-4 flex justify-end">
-          <Button 
-            variant="contained" 
-            color="primary"
-            startIcon={<PlayArrowIcon />}
-            onClick={handlePlayClick}
-          >
-            View Recording
-          </Button>
-        </div>
+        </Stack>
       </CardContent>
+      
+      {/* Action button section */}
+      <Box sx={{ mt: 'auto', p: 2, pt: 0 }}>
+        <Button 
+          variant="contained" 
+          color="primary"
+          fullWidth
+          startIcon={<PlayArrowIcon />}
+          onClick={handlePlayClick}
+        >
+          View Recording
+        </Button>
+      </Box>
       
       {/* Menu */}
       <Menu
@@ -141,13 +195,16 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
           setMenuAnchor(null);
           setRenameDialogOpen(true);
         }}>
-          <EditIcon fontSize="small" className="mr-2" /> Rename
+          <EditIcon fontSize="small" sx={{ mr: 1 }} /> Rename
         </MenuItem>
-        <MenuItem onClick={() => {
-          setMenuAnchor(null);
-          setDeleteDialogOpen(true);
-        }} className="text-red-600">
-          <DeleteIcon fontSize="small" className="mr-2" /> Delete
+        <MenuItem 
+          onClick={() => {
+            setMenuAnchor(null);
+            setDeleteDialogOpen(true);
+          }} 
+          sx={{ color: 'error.main' }}
+        >
+          <DeleteIcon fontSize="small" sx={{ mr: 1 }} /> Delete
         </MenuItem>
       </Menu>
       
@@ -181,7 +238,7 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
         <DialogTitle>Delete Recording</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to delete "{recording.name}"?</Typography>
-          <Typography variant="caption" color="text.secondary" className="block mt-2">
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
             This action cannot be undone.
           </Typography>
         </DialogContent>

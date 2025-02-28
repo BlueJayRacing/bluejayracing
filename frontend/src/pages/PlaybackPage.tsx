@@ -77,7 +77,7 @@ useEffect(() => {
       setRecordingInitialized(true);
     } catch (err) {
       console.error('Error finding recording:', err);
-      setError(`Error loading recording: ${err.message}`);
+      setError(`Error loading recording: ${(err as any).message}`);
       setLoading(false);
       setRecordingInitialized(true);
     }
