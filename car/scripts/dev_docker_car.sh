@@ -8,7 +8,6 @@ if ! docker images | grep -q bjr_docker_ros; then
 fi
 
 if ! docker ps | grep -q bjr_docker_ros; then
-    id -u
     docker run \
         -id \
         --network=host \
@@ -26,7 +25,5 @@ if ! docker ps | grep -q bjr_docker_ros; then
         -it --device=/dev/i2c-1 \
         bjr_docker_ros > /dev/null
 fi
-        # --mount type=bind,source=$SCRIPTPATH/../src,target=/bjr_ws/src/bjr_packages \
-        # -u "$(id -u):$(id -g)" \
 
 docker container exec -it $(docker ps | grep bjr_docker_ros | awk '{print $NF}') /bin/bash

@@ -1,0 +1,4 @@
+<config>
+  <topic name="chatter" presetCode="hello_code" presetMsg="Hello from preset" />
+  <!-- Add more topics here -->
+</config>

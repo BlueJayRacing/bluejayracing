@@ -21,6 +21,9 @@ sudo usermod -aG docker $USER
 git submodule update --init --recursive
 newgrp docker
 
+sudo nmcli device wifi hotspot ssid bjr_wireless_axle_host password bluejayracing ifname wlan0
+sudo nmcli connection modify $(nmcli connection show | grep "^Hotspot" | awk '{print $2}') connection.autoconnect yes connection.autoconnect-priority 100
+
 popd
 
 
