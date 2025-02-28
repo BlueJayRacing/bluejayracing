@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Channel, Recording, ChannelMetadata } from '../components/shared/types';
 import { DATA_CONFIG, debugLog, logSummary } from '../config/dataConfig';
+import { safeLocalStorage } from '../utils/dataTypes';
 
 export const useRecordings = (channels: Channel[]) => {
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -17,29 +18,26 @@ export const useRecordings = (channels: Channel[]) => {
   
   // Try to load saved recordings from localStorage on first load
   useEffect(() => {
-    try {
-      const savedRecordings = localStorage.getItem('recordings');
-      if (savedRecordings) {
-        const parsed = JSON.parse(savedRecordings);
-        if (Array.isArray(parsed)) {
-          logSummary('RECORDING', `Loaded ${parsed.length} recordings from localStorage`);
-          setRecordings(parsed);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading recordings from localStorage:', error);
+    const loadedRecordings = safeLocalStorage.getObject<Recording[]>('recordings', []);
+    
+    // Filter out invalid recordings
+    const validRecordings = loadedRecordings.filter(rec => 
+      rec && rec.id && rec.startTime && rec.channelData
+    );
+    
+    if (validRecordings.length > 0) {
+      logSummary('RECORDING', `Loaded ${validRecordings.length} recordings from localStorage`);
+      setRecordings(validRecordings);
     }
   }, []);
   
   // Save recordings to localStorage when they change
   useEffect(() => {
-    try {
-      if (recordings.length > 0) {
-        localStorage.setItem('recordings', JSON.stringify(recordings));
+    if (recordings.length > 0) {
+      const success = safeLocalStorage.setObject('recordings', recordings);
+      if (success) {
         logSummary('RECORDING', `Saved ${recordings.length} recordings to localStorage`);
       }
-    } catch (error) {
-      console.error('Error saving recordings to localStorage:', error);
     }
   }, [recordings]);
   
@@ -49,6 +47,16 @@ export const useRecordings = (channels: Channel[]) => {
     
     const startTime = Date.now();
     const channelMetadata: { [key: string]: ChannelMetadata } = {};
+    
+    // If no name provided, create one with date and time
+    const autoName = name || `Recording ${new Date(startTime).toLocaleString([], {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })}`;
     
     // Extract metadata from channels
     channels.forEach(channel => {
@@ -73,7 +81,7 @@ export const useRecordings = (channels: Channel[]) => {
     // Initialize new recording
     const newRecording: Recording = {
       id: `rec_${startTime}_${Math.floor(Math.random() * 10000)}`,
-      name: name || `Recording ${new Date().toLocaleString()}`,
+      name: autoName,
       startTime,
       endTime: null,
       channelData: Object.fromEntries(
@@ -134,23 +142,56 @@ export const useRecordings = (channels: Channel[]) => {
       size: formatFileSize(memoryUsageRef.current)
     });
     
+    // Save to localStorage immediately
+    try {
+      const updatedRecordings = [...recordings, completedRecording];
+      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
+    } catch (error) {
+      console.error('Error saving recordings to localStorage:', error);
+    }
+    
     return completedRecording;
   };
 
   // Delete a recording
   const deleteRecording = (id: string) => {
-    setRecordings(recordings.filter(recording => recording.id !== id));
+    // Validate that the recording exists before attempting to delete
+    const recordingExists = recordings.some(rec => rec && rec.id === id);
+    if (!recordingExists) {
+      console.warn(`Attempted to delete non-existent recording with ID: ${id}`);
+      return;
+    }
+    
+    const updatedRecordings = recordings.filter(recording => 
+      recording && recording.id && recording.id !== id
+    );
+    
+    setRecordings(updatedRecordings);
     logSummary('RECORDING', `Deleted recording: ${id}`);
+    
+    // Update localStorage immediately
+    try {
+      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
+    } catch (error) {
+      console.error('Error saving recordings to localStorage after deletion:', error);
+    }
   };
 
   // Rename a recording
   const renameRecording = (id: string, newName: string) => {
-    setRecordings(
-      recordings.map(recording => 
-        recording.id === id ? { ...recording, name: newName } : recording
-      )
+    const updatedRecordings = recordings.map(recording => 
+      recording.id === id ? { ...recording, name: newName } : recording
     );
+    
+    setRecordings(updatedRecordings);
     debugLog('RECORDING', `Renamed recording ${id} to "${newName}"`);
+    
+    // Update localStorage immediately
+    try {
+      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
+    } catch (error) {
+      console.error('Error saving recordings to localStorage after rename:', error);
+    }
   };
 
   // Add new data to current recording
@@ -245,9 +286,16 @@ export const useRecordings = (channels: Channel[]) => {
     setCurrentRecording(updatedRecording);
   }, [channels, isRecording, currentRecording]);
 
-  // Get recording by ID
+  // Get recording by ID with validation
   const getRecordingById = (id: string): Recording | undefined => {
-    return recordings.find(rec => rec.id === id);
+    const recording = recordings.find(rec => rec && rec.id === id);
+    
+    // Validate the recording has required properties
+    if (recording && recording.id && recording.startTime && recording.channelData) {
+      return recording;
+    }
+    
+    return undefined;
   };
 
   // Helper functions

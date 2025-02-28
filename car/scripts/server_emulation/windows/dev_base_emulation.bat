@@ -22,6 +22,7 @@ if not defined CONTAINER_ID (
         --env "QT_X11_NO_MITSHM=1" ^
         -v "%USERPROFILE%\.ssh:/home/dock/.ssh" ^
         --volume "%USERPROFILE%\.Xauthority:/tmp/.X11-unix:rw" ^
+        --network=host ^
         -p 0.0.0.0:9365:9365	 ^
         -i ^
         bjr_base_ros') do (

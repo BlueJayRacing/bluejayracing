@@ -10,6 +10,20 @@ import RecordingTimeline from '../components/recording_view/RecordingTimeline';
 const RecordingsPage: React.FC = () => {
   const { recordings, startRecording } = useDataContext();
   
+  const handleStartNewRecording = () => {
+    // Generate automatic name with date and time
+    const nowDate = new Date();
+    const formattedDate = nowDate.toLocaleDateString();
+    const formattedTime = nowDate.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
+    const autoName = `Recording ${formattedDate} ${formattedTime}`;
+    startRecording(autoName);
+  };
+  
   return (
     <Container maxWidth="lg">
       <Box py={4}>
@@ -31,7 +45,7 @@ const RecordingsPage: React.FC = () => {
           <Button 
             variant="contained" 
             color="primary"
-            onClick={() => startRecording()}
+            onClick={handleStartNewRecording}
           >
             New Recording
           </Button>
@@ -39,7 +53,7 @@ const RecordingsPage: React.FC = () => {
         
         {recordings.length === 0 ? (
           <Alert severity="info" sx={{ mb: 4 }}>
-            No recordings yet. Start a new recording from the Data page.
+            No recordings yet. Start a new recording from the Data page or use the button above.
           </Alert>
         ) : (
           <>
@@ -52,12 +66,15 @@ const RecordingsPage: React.FC = () => {
             {/* Recordings list */}
             <Typography variant="h5" gutterBottom>All Recordings</Typography>
             <Box className="grid gap-4 md:grid-cols-2">
-              {recordings.map(recording => (
-                <RecordingItem 
-                  key={recording.id} 
-                  recording={recording}
-                />
-              ))}
+              {recordings
+                .filter(recording => recording && recording.id && recording.startTime)
+                .map(recording => (
+                  <RecordingItem 
+                    key={recording.id} 
+                    recording={recording}
+                  />
+                ))
+              }
             </Box>
           </>
         )}

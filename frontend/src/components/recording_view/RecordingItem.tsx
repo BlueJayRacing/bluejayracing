@@ -8,7 +8,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { useDataContext } from '../../hooks/useDataContext';
 import { Recording } from '../shared/types';
-import { DATA_CONFIG, debugLog } from '../../config/dataConfig';
 
 interface RecordingItemProps {
   recording: Recording;
@@ -25,7 +24,15 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
   
   // Format date for display
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
+    try {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        return "Invalid date";
+      }
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return "Date error";
+    }
   };
   
   // Format file size
@@ -56,6 +63,20 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
     } else {
       // Navigate to playback page with recording ID
       navigate(`/playback/${recording.id}`);
+    }
+  };
+
+  const handleDeleteRecording = () => {
+    if (deleteRecording) {
+      deleteRecording(recording.id);
+    }
+    setDeleteDialogOpen(false);
+  };
+
+  const handleRenameRecording = () => {
+    if (renameRecording && newName.trim()) {
+      renameRecording(recording.id, newName.trim());
+      setRenameDialogOpen(false);
     }
   };
   
@@ -105,7 +126,7 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
             startIcon={<PlayArrowIcon />}
             onClick={handlePlayClick}
           >
-            View
+            View Recording
           </Button>
         </div>
       </CardContent>
@@ -146,14 +167,9 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
         <DialogActions>
           <Button onClick={() => setRenameDialogOpen(false)}>Cancel</Button>
           <Button 
-            onClick={() => {
-              if (newName.trim()) {
-                renameRecording(recording.id, newName.trim());
-                debugLog('RECORDING', `Renamed recording ${recording.id} to "${newName.trim()}"`);
-              }
-              setRenameDialogOpen(false);
-            }} 
+            onClick={handleRenameRecording} 
             color="primary"
+            variant="contained"
           >
             Save
           </Button>
@@ -172,12 +188,9 @@ const RecordingItem: React.FC<RecordingItemProps> = ({ recording, onPlay }) => {
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
           <Button 
-            onClick={() => {
-              deleteRecording(recording.id);
-              debugLog('RECORDING', `Deleted recording ${recording.id}`);
-              setDeleteDialogOpen(false);
-            }} 
+            onClick={handleDeleteRecording} 
             color="error"
+            variant="contained"
           >
             Delete
           </Button>

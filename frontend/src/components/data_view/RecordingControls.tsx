@@ -1,90 +1,163 @@
 // src/components/data_view/RecordingControls.tsx
-import React, { useState } from 'react';
-import { Button, CircularProgress, Tooltip } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Chip, CircularProgress } from '@mui/material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
 import { useDataContext } from '../../hooks/useDataContext';
+import { Link } from 'react-router-dom';
 
 const RecordingControls: React.FC = () => {
-  const { channels } = useDataContext();
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
-  const [recordingDuration, setRecordingDuration] = useState(0);
+  const { isRecording, currentRecording, startRecording, stopRecording, recordings } = useDataContext();
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [recordingStats, setRecordingStats] = useState({
+    sampleCount: 0,
+    dataSize: 0
+  });
   
-  // Start recording
-  const handleStartRecording = () => {
-    if (isRecording) return;
+  // Update elapsed time during recording
+  useEffect(() => {
+    if (!isRecording || !currentRecording) {
+      setElapsedTime(0);
+      return;
+    }
     
-    setIsRecording(true);
-    setRecordingStartTime(Date.now());
+    // Initial update
+    setElapsedTime(Date.now() - currentRecording.startTime);
+    if (currentRecording.stats) {
+      setRecordingStats({
+        sampleCount: currentRecording.stats.sampleCount,
+        dataSize: currentRecording.stats.dataSize
+      });
+    }
     
-    // Start timer to update duration
-    const intervalId = setInterval(() => {
-      if (recordingStartTime) {
-        setRecordingDuration(Math.floor((Date.now() - recordingStartTime) / 1000));
+    // Regular updates using Animation Frame for smoother UI
+    let animationId: number;
+    const updateTime = () => {
+      setElapsedTime(Date.now() - currentRecording.startTime);
+      
+      // Update stats (every ~500ms to avoid over-updating)
+      if (Date.now() % 500 < 50 && currentRecording.stats) {
+        setRecordingStats({
+          sampleCount: currentRecording.stats.sampleCount,
+          dataSize: currentRecording.stats.dataSize
+        });
       }
-    }, 1000);
+      
+      animationId = requestAnimationFrame(updateTime);
+    };
     
-    // Store interval ID so we can clear it later
-    (window as any).recordingIntervalId = intervalId;
+    animationId = requestAnimationFrame(updateTime);
+    
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    };
+  }, [isRecording, currentRecording]);
+  
+  const handleStartClick = () => {
+    // Generate automatic name with date and time
+    const nowDate = new Date();
+    const formattedDate = nowDate.toLocaleDateString();
+    const formattedTime = nowDate.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
+    const autoName = `Recording ${formattedDate} ${formattedTime}`;
+    startRecording(autoName);
   };
   
-  // Stop recording
-  const handleStopRecording = () => {
-    if (!isRecording) return;
-    
-    setIsRecording(false);
-    
-    // Clear interval
-    if ((window as any).recordingIntervalId) {
-      clearInterval((window as any).recordingIntervalId);
-      (window as any).recordingIntervalId = null;
-    }
-    
-    // Calculate final duration
-    if (recordingStartTime) {
-      const finalDuration = Math.floor((Date.now() - recordingStartTime) / 1000);
-      setRecordingDuration(finalDuration);
-      // TODO: Save recording data
-    }
-    
-    setRecordingStartTime(null);
+  const handleStopClick = () => {
+    stopRecording();
+    setElapsedTime(0);
   };
   
-  // Check if we have valid data to record
-  const hasValidData = channels && Array.isArray(channels) && channels.length > 0 && 
-                      channels.some(channel => channel.samples && channel.samples.length > 0);
+  // Format time display
+  const formatElapsedTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    return [
+      hours > 0 ? String(hours).padStart(2, '0') : '',
+      String(minutes % 60).padStart(2, '0'),
+      String(seconds % 60).padStart(2, '0')
+    ].filter(Boolean).join(':');
+  };
+  
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
   
   return (
-    <div className="flex items-center space-x-4">
-      {isRecording && (
-        <div className="flex items-center mr-2">
-          <CircularProgress size={20} color="error" className="mr-2" />
-          <span className="text-red-600 font-medium">
-            Recording: {recordingDuration}s
-          </span>
-        </div>
-      )}
-      
+    <div>
       {isRecording ? (
-        <Button
-          variant="contained"
-          color="error"
-          onClick={handleStopRecording}
-        >
-          Stop Recording
-        </Button>
+        <Box display="flex" alignItems="center">
+          <Box mr={2} display="flex" alignItems="center">
+            <Chip 
+              color="error"
+              icon={<CircularProgress size={16} color="inherit" />}
+              label={`Recording: ${formatElapsedTime(elapsedTime)}`}
+              sx={{
+                animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%': { opacity: 0.8 },
+                  '50%': { opacity: 1 },
+                  '100%': { opacity: 0.8 }
+                }
+              }}
+            />
+          </Box>
+          <Box mr={2}>
+            <Chip 
+              variant="outlined"
+              label={`${recordingStats.sampleCount.toLocaleString()} samples`}
+              size="small"
+            />
+          </Box>
+          <Box mr={2}>
+            <Chip 
+              variant="outlined"
+              label={formatFileSize(recordingStats.dataSize)}
+              size="small"
+            />
+          </Box>
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<StopIcon />}
+            onClick={handleStopClick}
+          >
+            Stop Recording
+          </Button>
+        </Box>
       ) : (
-        <Tooltip title={!hasValidData ? "No data available to record" : ""}>
-          <span>
+        <Box display="flex" alignItems="center">
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<PlayArrowIcon />}
+            onClick={handleStartClick}
+            sx={{ mr: 2 }}
+          >
+            Start Recording
+          </Button>
+          
+          {recordings.length > 0 && (
             <Button
               variant="outlined"
-              color="primary"
-              onClick={handleStartRecording}
-              disabled={!hasValidData}
+              component={Link}
+              to="/recordings"
             >
-              Start Recording
+              View Recordings ({recordings.length})
             </Button>
-          </span>
-        </Tooltip>
+          )}
+        </Box>
       )}
     </div>
   );

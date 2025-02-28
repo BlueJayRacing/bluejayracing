@@ -19,23 +19,16 @@ const RecordingTimeline: React.FC<RecordingTimelineProps> = ({
     return (
       <Paper className="p-4 text-center">
         <Typography variant="body1" color="textSecondary">
-          No recordings available yet.
+          No recordings available yet. Start a new recording from the Data page.
         </Typography>
       </Paper>
     );
   }
   
-  // Log recordings for debugging
-  console.log("Timeline recordings:", recordings.map(r => ({
-    id: r.id,
-    name: r.name,
-    startTime: new Date(r.startTime).toLocaleString(),
-    endTime: r.endTime ? new Date(r.endTime).toLocaleString() : 'In progress',
-    duration: r.stats.duration
-  })));
-  
-  // Sort recordings by start time
-  const sortedRecordings = [...recordings].sort((a, b) => a.startTime - b.startTime);
+  // Sort recordings by start time and filter out any invalid recordings
+  const sortedRecordings = [...recordings]
+    .filter(rec => rec && rec.id && rec.startTime) // Ensure valid recordings only
+    .sort((a, b) => a.startTime - b.startTime);
   
   // Calculate timeline range
   const startTime = Math.min(...recordings.map(r => r.startTime)) - 1000; // Add small buffer
@@ -44,7 +37,12 @@ const RecordingTimeline: React.FC<RecordingTimelineProps> = ({
   
   // Format date for display
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
   
   // Format duration
@@ -54,7 +52,7 @@ const RecordingTimeline: React.FC<RecordingTimelineProps> = ({
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
     const hours = Math.floor(minutes / 60);
-    return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+    return `${hours}h ${minutes % 60}m`;
   };
   
   const handleRecordingClick = (recording: Recording) => {

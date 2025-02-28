@@ -2,13 +2,16 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useDataApi } from '../../hooks/useDataApi';
 import { useDataBuffer, NewDataResult } from '../../hooks/useDataBuffer';
-import { Channel, TimeValue } from './types';
+import { useRecordings } from '../../hooks/useRecordings';
+import { Channel, TimeValue, Recording } from './types';
 
 export interface DataContextType {
   channels: Channel[];
   selectedChannels: string[];
   isLoading: boolean;
   isRecording: boolean;
+  currentRecording: Recording | null;
+  recordings: Recording[];
   maxDataRate: number;
   useMockData: boolean;
   getNewData: (channelName: string) => NewDataResult;
@@ -19,19 +22,30 @@ export interface DataContextType {
   resetAllProcessing: () => void;
   clearBuffer: () => void;
   setSelectedChannels: (channels: string[]) => void;
+  startRecording: (name?: string) => void;
+  stopRecording: () => void;
+  deleteRecording: (id: string) => void;
+  renameRecording: (id: string, newName: string) => void;
+  getRecordingById: (id: string) => Recording | undefined;
 }
 
 export const DataContext = createContext<DataContextType | null>(null);
 
-export const DataProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+interface DataProviderProps {
+  children: React.ReactNode;
+  initialPlaybackRecordingId?: string | null;
+}
+
+export const DataProvider: React.FC<DataProviderProps> = ({ 
+  children, 
+  initialPlaybackRecordingId = null 
+}) => {
   // State for data management
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
   const [maxDataRate, setMaxDataRate] = useState(10); // 10 Hz default
-  const [useMockData, setUseMockData] = useState(true); // Default to mock data for testing
 
   // Custom hooks for data fetching and buffering
-  const { channels: apiChannels, isLoading, useMockData: apiUsingMock } = useDataApi();
+  const { channels: apiChannels, isLoading, useMockData } = useDataApi();
   const { 
     bufferedData, 
     getNewData, 
@@ -42,11 +56,18 @@ export const DataProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
     resetAllProcessing, 
     clearBuffer 
   } = useDataBuffer(apiChannels, maxDataRate);
-
-  // Update useMockData state when API changes
-  useEffect(() => {
-    setUseMockData(apiUsingMock);
-  }, [apiUsingMock]);
+  
+  // Hook for recording management
+  const {
+    recordings,
+    isRecording,
+    currentRecording,
+    startRecording,
+    stopRecording,
+    deleteRecording,
+    renameRecording,
+    getRecordingById
+  } = useRecordings(bufferedData);
 
   // Debug data context
   useEffect(() => {
@@ -73,6 +94,8 @@ export const DataProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
         selectedChannels,
         isLoading,
         isRecording,
+        currentRecording,
+        recordings,
         maxDataRate,
         useMockData,
         getNewData,
@@ -82,7 +105,12 @@ export const DataProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
         resetChannelProcessing,
         resetAllProcessing,
         clearBuffer,
-        setSelectedChannels
+        setSelectedChannels,
+        startRecording,
+        stopRecording,
+        deleteRecording,
+        renameRecording,
+        getRecordingById
       }}
     >
       {children}
