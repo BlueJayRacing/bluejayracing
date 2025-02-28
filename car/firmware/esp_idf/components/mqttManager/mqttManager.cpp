@@ -82,11 +82,6 @@ esp_err_t mqttManager::init(void)
         ESP_LOGE(TAG, "Failed to initialize WiFi (err: %d)\n", err);
         return err;
     }
-    err = esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11N);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to set WiFi Mode (err: %d)\n", err);
-        return err;
-    }
     err = esp_wifi_set_mode(WIFI_MODE_STA);
     if (err) {
         ESP_LOGE(TAG, "Failed to set WiFi Mode (err: %d)\n", err);
@@ -291,6 +286,7 @@ void mqttManager::mqttEventHandler(void* arg, esp_event_base_t base, int32_t eve
 
         memcpy(message.topic.data(), event->topic, std::min(event->topic_len, (int)message.topic.size()));
         memcpy(message.payload.data(), event->data, std::min(event->data_len, (int)message.payload.size()));
+        message.payload_len = event->data_len;
         xQueueSend(client->rec_queue, &message, 5);
         break;
     case MQTT_EVENT_ERROR:
@@ -373,7 +369,7 @@ esp_err_t mqttManager::clientWaitSubscribe(mqtt_client_t* client, TickType_t tim
     }
 }
 
-esp_err_t mqttManager::clientReceive(mqtt_client_t* client, mqtt_message_t& t_payload)
+esp_err_t mqttManager::clientReceive(mqtt_client_t* client, mqtt_message_t& t_payload, TickType_t timeout)
 {
     if (client == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -383,7 +379,7 @@ esp_err_t mqttManager::clientReceive(mqtt_client_t* client, mqtt_message_t& t_pa
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (xQueueReceive(client->rec_queue, &t_payload, 1) != pdTRUE) {
+    if (xQueueReceive(client->rec_queue, &t_payload, timeout) != pdTRUE) {
         return ESP_FAIL;
     }
 

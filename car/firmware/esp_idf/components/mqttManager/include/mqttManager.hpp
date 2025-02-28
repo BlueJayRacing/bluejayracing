@@ -21,6 +21,7 @@ typedef struct mqtt_client {
 typedef struct mqtt_message {
     std::array<char, 20> topic;
     std::array<uint8_t, 30> payload;
+    uint8_t payload_len;
 } mqtt_message_t;
 
 /*******************************************************************************
@@ -45,7 +46,7 @@ class mqttManager {
     esp_err_t clientWaitPublish(mqtt_client_t* client, TickType_t timeout);
     esp_err_t clientSubscribe(mqtt_client_t* client, const std::string& topic, uint8_t QoS);
     esp_err_t clientWaitSubscribe(mqtt_client_t* client, TickType_t timeout);
-    esp_err_t clientReceive(mqtt_client_t* client, mqtt_message_t& message);
+    esp_err_t clientReceive(mqtt_client_t* client, mqtt_message_t& message, TickType_t timeout);
     esp_err_t clientClearMessages(mqtt_client_t* client);
 
   private:
