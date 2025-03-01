@@ -18,6 +18,7 @@ REM If no container is running, start a new one and capture its container ID.
 if not defined CONTAINER_ID (
     for /f "delims=" %%i in ('docker run -d ^
         -v "%SCRIPT_DIR%\..\..\..\src:/bjr_ws/src/bjr_packages" ^
+        -v "%SCRIPT_DIR%\..\..\..\common:/bjr_ws/src/common" ^
         --env "DISPLAY=172.26.128.1:0" ^
         --env "QT_X11_NO_MITSHM=1" ^
         -v "%USERPROFILE%\.ssh:/home/dock/.ssh" ^

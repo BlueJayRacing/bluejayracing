@@ -57,7 +57,7 @@ RUN sudo apt-get update && apt-get install -y \
     
 RUN sudo apt-get update && sudo apt-get install -y \
     unzip mosquitto-clients libpistache-dev \
-    sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils
+    sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils libeigen3-dev libboost-all-dev
 
 RUN sudo updatedb
 
@@ -90,14 +90,24 @@ RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
     rosdep install -i --from-path src --rosdistro jazzy -y && \
     colcon build
 
+RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd /bjr_ws && \
+    mkdir -p src/common && \
+    git clone https://github.com/ethz-asl/kindr.git src/common/kindr && \
+    git clone https://github.com/BlueJayRacing/control-toolbox.git src/common/control_toolbox
+
+RUN sudo chmod -R +rwx bjr_ws/src/common
+RUN sudo chown -R dock bjr_ws/src/common
+    
+
 ADD src bjr_ws/src/bjr_packages
 
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
 RUN sudo chown -R dock bjr_ws/src/bjr_packages
 
-RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
-    cd /bjr_ws && \
-    colcon build'
+# RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+#     cd /bjr_ws && \
+#     colcon build'
 
 
 

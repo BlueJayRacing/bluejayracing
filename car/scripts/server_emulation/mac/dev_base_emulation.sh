@@ -13,6 +13,7 @@ CONTAINER_ID=$(docker ps --filter "ancestor=bjr_base_ros" --format '{{.ID}}' | h
 if [ -z "$CONTAINER_ID" ]; then
     CONTAINER_ID=$(docker run -d \
         -v "$SCRIPT_DIR/../../../src:/bjr_ws/src/bjr_packages" \
+        -v "$SCRIPT_DIR/../../../common:/bjr_ws/src/common" \
         --env "DISPLAY=172.26.128.1:0" \
         --env "QT_X11_NO_MITSHM=1" \
         -v "$HOME/.ssh:/home/dock/.ssh" \
