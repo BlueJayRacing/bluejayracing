@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Channel, Recording, ChannelMetadata } from '../components/shared/types';
 import { DATA_CONFIG, debugLog, logSummary } from '../config/dataConfig';
-import { safeLocalStorage } from '../utils/dataTypes';
+import { IndexedStorage } from '../utils/indexedDbStorage';
 
 export const useRecordings = (channels: Channel[]) => {
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -16,29 +16,39 @@ export const useRecordings = (channels: Channel[]) => {
   // Track last log time to avoid excessive logging
   const lastLogTimeRef = useRef<number>(0);
   
-  // Try to load saved recordings from localStorage on first load
+  // Try to load saved recordings from IndexedDB on first load
   useEffect(() => {
-    const loadedRecordings = safeLocalStorage.getObject<Recording[]>('recordings', []);
+    const loadRecordings = async () => {
+      try {
+        const savedRecordings = await IndexedStorage.getRecordings();
+        if (savedRecordings.length > 0) {
+          logSummary('RECORDING', `Loaded ${savedRecordings.length} recordings from IndexedDB`);
+          setRecordings(savedRecordings);
+        }
+      } catch (error) {
+        console.error('Error loading recordings from IndexedDB:', error);
+      }
+    };
     
-    // Filter out invalid recordings
-    const validRecordings = loadedRecordings.filter(rec => 
-      rec && rec.id && rec.startTime && rec.channelData
-    );
-    
-    if (validRecordings.length > 0) {
-      logSummary('RECORDING', `Loaded ${validRecordings.length} recordings from localStorage`);
-      setRecordings(validRecordings);
-    }
+    loadRecordings();
   }, []);
   
-  // Save recordings to localStorage when they change
+  // Save recordings to IndexedDB when they change
   useEffect(() => {
-    if (recordings.length > 0) {
-      const success = safeLocalStorage.setObject('recordings', recordings);
-      if (success) {
-        logSummary('RECORDING', `Saved ${recordings.length} recordings to localStorage`);
+    const saveRecordings = async () => {
+      try {
+        if (recordings.length > 0) {
+          const success = await IndexedStorage.saveRecordings(recordings);
+          if (success) {
+            logSummary('RECORDING', `Saved ${recordings.length} recordings to IndexedDB`);
+          }
+        }
+      } catch (error) {
+        console.error('Error saving recordings to IndexedDB:', error);
       }
-    }
+    };
+    
+    saveRecordings();
   }, [recordings]);
   
   // Start a new recording
@@ -47,16 +57,6 @@ export const useRecordings = (channels: Channel[]) => {
     
     const startTime = Date.now();
     const channelMetadata: { [key: string]: ChannelMetadata } = {};
-    
-    // If no name provided, create one with date and time
-    const autoName = name || `Recording ${new Date(startTime).toLocaleString([], {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    })}`;
     
     // Extract metadata from channels
     channels.forEach(channel => {
@@ -81,7 +81,7 @@ export const useRecordings = (channels: Channel[]) => {
     // Initialize new recording
     const newRecording: Recording = {
       id: `rec_${startTime}_${Math.floor(Math.random() * 10000)}`,
-      name: autoName,
+      name: name || `Recording ${new Date().toLocaleString()}`,
       startTime,
       endTime: null,
       channelData: Object.fromEntries(
@@ -142,39 +142,18 @@ export const useRecordings = (channels: Channel[]) => {
       size: formatFileSize(memoryUsageRef.current)
     });
     
-    // Save to localStorage immediately
-    try {
-      const updatedRecordings = [...recordings, completedRecording];
-      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
-    } catch (error) {
-      console.error('Error saving recordings to localStorage:', error);
-    }
-    
     return completedRecording;
   };
 
   // Delete a recording
-  const deleteRecording = (id: string) => {
-    // Validate that the recording exists before attempting to delete
-    const recordingExists = recordings.some(rec => rec && rec.id === id);
-    if (!recordingExists) {
-      console.warn(`Attempted to delete non-existent recording with ID: ${id}`);
-      return;
-    }
-    
-    const updatedRecordings = recordings.filter(recording => 
-      recording && recording.id && recording.id !== id
-    );
-    
+  const deleteRecording = async (id: string) => {
+    const updatedRecordings = recordings.filter(recording => recording.id !== id);
     setRecordings(updatedRecordings);
-    logSummary('RECORDING', `Deleted recording: ${id}`);
     
-    // Update localStorage immediately
-    try {
-      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
-    } catch (error) {
-      console.error('Error saving recordings to localStorage after deletion:', error);
-    }
+    // Try to remove from IndexedDB
+    await IndexedStorage.removeItem('recordings', id);
+    
+    logSummary('RECORDING', `Deleted recording: ${id}`);
   };
 
   // Rename a recording
@@ -185,13 +164,6 @@ export const useRecordings = (channels: Channel[]) => {
     
     setRecordings(updatedRecordings);
     debugLog('RECORDING', `Renamed recording ${id} to "${newName}"`);
-    
-    // Update localStorage immediately
-    try {
-      localStorage.setItem('recordings', JSON.stringify(updatedRecordings));
-    } catch (error) {
-      console.error('Error saving recordings to localStorage after rename:', error);
-    }
   };
 
   // Add new data to current recording
@@ -286,16 +258,9 @@ export const useRecordings = (channels: Channel[]) => {
     setCurrentRecording(updatedRecording);
   }, [channels, isRecording, currentRecording]);
 
-  // Get recording by ID with validation
+  // Get recording by ID
   const getRecordingById = (id: string): Recording | undefined => {
-    const recording = recordings.find(rec => rec && rec.id === id);
-    
-    // Validate the recording has required properties
-    if (recording && recording.id && recording.startTime && recording.channelData) {
-      return recording;
-    }
-    
-    return undefined;
+    return recordings.find(rec => rec.id === id);
   };
 
   // Helper functions
