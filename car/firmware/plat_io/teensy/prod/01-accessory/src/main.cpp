@@ -1,11 +1,12 @@
 #include <Arduino.h>
 
 #include "ad717x.hpp"
-#include <config.hpp>
+#include <test.hpp>
 
 void setup()
 {
-    Serial.begin(115200);
+    Test test;
+    test.readAnalogChannels();
 }
 
 void loop()

@@ -7,7 +7,7 @@
 
 #define CENTER 0x800000
 
-#define NUMBER_OF_CHANNELS 11
+#define NUMBER_OF_CHANNELS 6
 
 AD717X ad7175;
 int32_t data_val;
