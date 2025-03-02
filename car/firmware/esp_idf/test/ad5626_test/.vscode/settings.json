@@ -1,0 +1,9 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32c6"
+  },
+  "idf.openOcdConfigs": [
+    "board/esp32c6-ftdi.cfg"
+  ]
+}
