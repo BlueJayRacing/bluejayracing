@@ -59,7 +59,7 @@ RUN sudo apt-get update && apt-get install -y \
     
 RUN sudo apt-get update && sudo apt-get install -y \
     unzip mosquitto-clients libpistache-dev \
-    sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools
+    sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils libeigen3-dev libboost-all-dev
 
 RUN sudo updatedb
 
@@ -111,6 +111,11 @@ RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
     ros2 run micro_ros_setup build_agent.sh && \
     source /bjr_ws/install/local_setup.bash '
 
+ADD common bjr_ws/src/common
+
+RUN sudo chmod -R +rwx bjr_ws/src/common
+RUN sudo chown -R dock bjr_ws/src/common
+    
 ADD src bjr_ws/src/bjr_packages
 
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
@@ -119,8 +124,6 @@ RUN sudo chown -R dock bjr_ws/src/bjr_packages
 RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
     cd /bjr_ws && \
     colcon build'
-
-
 
 # Set ROS_DOMAIN_ID from hostname
 RUN echo 'export ROS_DOMAIN_ID=$(hostname | grep -o '[0-9]*$')' >> /home/$USER/.bashrc

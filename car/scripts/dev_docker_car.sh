@@ -17,6 +17,7 @@ if ! docker ps | grep -q bjr_docker_ros; then
 	    --device-cgroup-rule='c 81:* rmw' \
 	    --device-cgroup-rule='c 189:* rmw' \
         -v $SCRIPTPATH/../src:/bjr_ws/src/bjr_packages \
+        -v $SCRIPTPATH/../common:/bjr_ws/src/common \
         -it --device=/dev/ttyAMA0 \
         -it --device=/dev/ttyACM0 \
 	    -it --device=/dev/ttyACM1 \
