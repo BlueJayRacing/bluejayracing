@@ -125,6 +125,10 @@ int32_t AD717X::init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, in
     ret = setADCMode(t_init_param.mode);
     if (ret < 0)
         return ret;
+    
+    ret = readStatusRegOnData(t_init_param.stat_on_read_en);
+    if (ret < 0)
+        return ret;
 
     // Connect Analog Inputs, Assign Setup, Disable all channels
     for (ch_index = 0; ch_index < t_init_param.chan_map.size(); ch_index++) {
@@ -347,23 +351,43 @@ int32_t AD717X::waitForReady(uint32_t t_timeout)
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-int32_t AD717X::readData(int32_t* t_p_data)
+int32_t AD717X::contConvReadData(ad717x_data_t* t_p_data)
 {
     ad717x_st_reg_t* data_reg;
+    ad717x_st_reg_t* if_mode_reg;
     int32_t ret;
 
     data_reg = getReg(AD717X_DATA_REG);
     if (!data_reg)
         return INVALID_VAL;
 
+    if_mode_reg = getReg(AD717X_IFMODE_REG);
+    if (!if_mode_reg)
+        return INVALID_VAL;
+
     // Update the data register length with respect to device and options
     ret = computeDataregSize();
 
-    // Read the value of the Status Register
+    // Read the value of the Data Register
     ret |= readRegister(AD717X_DATA_REG);
 
     // Get the read result
-    *t_p_data = data_reg->value;
+    if ((if_mode_reg->value & (1 << 6)) != 0) {
+        ad717x_st_reg_t* status_reg;
+
+        status_reg = getReg(AD717X_STATUS_REG);
+        if (!status_reg)
+            return INVALID_VAL;
+
+        // Status register is included in data
+        status_reg->value = data_reg->value & 0xFF;  
+
+        t_p_data->value = (data_reg->value) >> 8;
+        parseStatusReg(&(t_p_data->status));
+    } else {
+        // Status register is not included
+        t_p_data->value = data_reg->value;
+    }
 
     return ret;
 }
@@ -769,7 +793,7 @@ int32_t AD717X::configureDeviceODR(uint8_t t_setup_id, uint8_t t_odr_sel)
  *
  * @return Returns 0 for success or negative error code in case of failure.
  ******************************************************************************/
-int32_t AD717X::singleRead(uint8_t t_id, int32_t* t_adc_raw_data)
+int32_t AD717X::singleReadData(uint8_t t_id, ad717x_data_t* t_p_data)
 {
     int ret;
 
@@ -789,7 +813,7 @@ int32_t AD717X::singleRead(uint8_t t_id, int32_t* t_adc_raw_data)
         return ret;
 
     /* Read the data register */
-    ret = readData(t_adc_raw_data);
+    ret = contConvReadData(t_p_data);
     if (ret < 0)
         return ret;
 
@@ -840,10 +864,39 @@ int32_t AD717X::setGain(double gain, uint8_t t_setup_id)
     }
 
     // Clear the ODR bits, configure the requested ODR
-    gain_reg->value = (uint32_t)(gain * 0x555550);
+    gain_reg->value = (uint32_t)(gain * 0x555555);
 
     if (writeRegister(AD717X_GAIN0_REG + t_setup_id) < 0)
         return -EINVAL;
+
+    return 0;
+}
+
+/*******************************************************************************
+ * @brief Enables also reading the status register when reading the data.
+ *
+ * @param enable        - True to enable; false to disable.
+ *
+ * @return Returns 0 for success or negative error code in case of failure.
+ ******************************************************************************/
+int32_t AD717X::readStatusRegOnData(bool enable)
+{
+    ad717x_st_reg_t* if_mode_reg;
+
+    if_mode_reg = getReg(AD717X_IFMODE_REG);
+    if (!if_mode_reg) {
+        return -EINVAL;
+    }
+
+    if (enable) {
+        if_mode_reg->value = if_mode_reg->value | (AD717X_IFMODE_REG_DATA_STAT);
+    } else {
+        if_mode_reg->value = if_mode_reg->value & 0xDF;
+    }
+
+    if (writeRegister(AD717X_IFMODE_REG) < 0) {
+        return -EINVAL;
+    }
 
     return 0;
 }

@@ -13,6 +13,9 @@
 [submodule "car/firmware/plat_io/teensy/components/nanopb"]
 	path = car/firmware/plat_io/teensy/components/nanopb
 	url = git@github.com:BlueJayRacing/nanopb.git
+[submodule "car/common/nanopb"]
+	path = car/common/nanopb
+	url = git@github.com:BlueJayRacing/nanopb.git
 [submodule "car/common/kindr"]
 	path = car/common/kindr
 	url = https://github.com/ANYbotics/kindr.git

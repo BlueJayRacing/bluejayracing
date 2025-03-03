@@ -3,7 +3,7 @@
 
 #define XBEE_DRIVER_MAX_SEND_RETRIES 2
 
-#define RF_RATE 0 // 0: 10 kb/s, 1: 110 kb/s, 2: 250 kb/s
+#define RF_RATE 2 // 0: 10 kb/s, 1: 110 kb/s, 2: 250 kb/s
 
 #ifndef RF_RATE
     #error "RF_RATE must be defined and be 0, 1, or 2"
@@ -15,7 +15,7 @@
   #define POLLING_INTERVAL 12000 // useconds
   #define FULL_QUEUE_WAIT_TIME 48000 // useconds
 #elif RF_RATE == 2
-  #define POLLING_INTERVAL 6000 // useconds
+  #define POLLING_INTERVAL 1000 // useconds
   #define FULL_QUEUE_WAIT_TIME 24000 // useconds
 #else
   #error "RF_RATE must be defined and be 0, 1, or 2"

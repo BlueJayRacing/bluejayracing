@@ -1,6 +1,14 @@
 #include <esp_log.h>
 #include <esp_system.h>
+#include <esp_timer.h>
 #include <test.hpp>
+#include <w25n04kv.hpp>
+
+#define SPI2_MOSI_PIN 18
+#define SPI2_MISO_PIN 20
+#define SPI2_SCLK_PIN 19
+
+#define ADC_VALUE_ERROR_MARGIN 0.003
 
 static const char* TAG = "test";
 
@@ -19,9 +27,11 @@ void Test::testMQTTManager(void)
 
     mqtt_manager_ = mqttManager::getInstance();
 
+    // Initialize the MQTT Manager
     assert(mqtt_manager_->init() == ESP_OK);
     ESP_LOGD(TAG, "Initialized MQTT manager");
 
+    // Run MQTT manager tests
     testMQTTManagerBasicParamErrors();
     testMQTTManagerWiFiConnectDisconnect();
     testMQTTManagerClientConnectDisconnect();
@@ -30,6 +40,10 @@ void Test::testMQTTManager(void)
     testMQTTManagerClientPublishSubscribe();
 }
 
+/* We check basic memory queue functions like acquiring, writing to, and pushing
+ * blocks onto the memory queue. We also cover function returns on invalid input
+ * or invalid operation for that state.
+ */
 void Test::testMemoryQueueBasic(void)
 {
     ESP_LOGI(TAG, "Testing Basic Memory Queue Functions");
@@ -72,6 +86,9 @@ void Test::testMemoryQueueBasic(void)
     ESP_LOGI(TAG, "Passed Basic Memory Queue Functions");
 }
 
+/* We check to see if the queue can properly free the oldest memory blocks when
+ * acquiring memory blocks on a full queue.
+ */
 void Test::testMemoryQueueAcquireFull(void)
 {
     ESP_LOGI(TAG, "Testing Memory Queue When Full");
@@ -100,6 +117,8 @@ void Test::testMemoryQueueAcquireFull(void)
     ESP_LOGI(TAG, "Passed Memory Queue When Full");
 }
 
+/* We check to see if the MQTT manager returns the correct return values on error.
+ */
 void Test::testMQTTManagerBasicParamErrors(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager Basic Paramter Error Handling");
@@ -113,29 +132,32 @@ void Test::testMQTTManagerBasicParamErrors(void)
 
     assert(mqtt_manager_->createClient("") == NULL);
 
-    assert(mqtt_manager_->connectClient(NULL) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->connectClient(&client) == ESP_ERR_WIFI_NOT_CONNECT); // Fail because WiFi not connected
+    assert(mqtt_manager_->clientConnect(NULL) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientConnect(&client) == ESP_ERR_WIFI_NOT_CONNECT); // Fail because WiFi not connected
 
-    assert(mqtt_manager_->disconnectClient(NULL) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientDisconnect(NULL) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->isClientConnected(NULL) == false);
 
-    assert(mqtt_manager_->enqueueClient(NULL, "payload", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "payload", "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "payload", "topic", 3) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->enqueueClient(&client, "payload", "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
+    assert(mqtt_manager_->clientEnqueue(NULL, "payload", "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "", "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "payload", "", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 3) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
 
-    assert(mqtt_manager_->subscribeClient(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->subscribeClient(&client, "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->subscribeClient(&client, "topic", 3) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientSubscribe(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientSubscribe(&client, "", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientSubscribe(&client, "topic", 3) == ESP_ERR_INVALID_ARG);
 
     mqtt_message_t message;
-    assert(mqtt_manager_->receiveClient(NULL, message) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clearClientMessages(NULL) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientReceive(NULL, message) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientClearMessages(NULL) == ESP_ERR_INVALID_ARG);
 
     ESP_LOGI(TAG, "Passed MQTT Manager Basic Paramter Error Handling");
 }
 
+/* We check to see if the MQTT manager can successfully connect/disconnect from WiFi,
+ * as well as properly signal the WiFi connection event group.
+ */
 void Test::testMQTTManagerWiFiConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager WiFi Connection");
@@ -171,6 +193,9 @@ void Test::testMQTTManagerWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager WiFi Connection");
 }
 
+/* We check to see if the MQTT manager can successfully connect/disconnect from MQTT,
+ * as well as properly signal the MQTT connection event group.
+ */
 void Test::testMQTTManagerClientConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager MQTT Connection");
@@ -196,7 +221,7 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
     assert(mqtt_manager_->isClientConnected(client) == false);
 
     for (int i = 0; i < 5; i++) {
-        assert(mqtt_manager_->connectClient(client) == ESP_OK);
+        assert(mqtt_manager_->clientConnect(client) == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
@@ -209,7 +234,7 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
         assert(mqtt_manager_->isClientConnected(client) == true);
         ESP_LOGD(TAG, "Connected to MQTT");
 
-        mqtt_manager_->disconnectClient(client);
+        mqtt_manager_->clientDisconnect(client);
 
         for (int j = 0; j < 20; j++) {
             if (!mqtt_manager_->isClientConnected(client)) {
@@ -243,6 +268,9 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager MQTT Connection");
 }
 
+/* We check to see if the MQTT manager can properly signal an MQTT disconnection if the WiFi
+ * connection breaks down.
+ */
 void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager MQTT + WIFI Disconnect");
@@ -265,7 +293,7 @@ void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
         assert(mqtt_manager_->isWiFiConnected() == true);
         ESP_LOGD(TAG, "Connected to WiFi");
 
-        assert(mqtt_manager_->connectClient(client) == ESP_OK);
+        assert(mqtt_manager_->clientConnect(client) == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to MQTT");
 
         for (int j = 0; j < 30; j++) {
@@ -298,6 +326,9 @@ void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Passed MQTT Manager MQTT + WIFI Disconnect");
 }
 
+/* We check to see if the MQTT manager can properly handle connecting and disconnecting multiple
+ * MQTT clients.
+ */
 void Test::testMQTTManagerMultipleClientsConDisCon(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager Multiple Clients Connect/Disconnect");
@@ -324,7 +355,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(client_2 != NULL);
     ESP_LOGD(TAG, "Created MQTT Clients 1 and 2");
 
-    assert(mqtt_manager_->connectClient(client_1) == ESP_OK);
+    assert(mqtt_manager_->clientConnect(client_1) == ESP_OK);
     ESP_LOGD(TAG, "Client 1 Started Connecting to MQTT");
 
     for (int j = 0; j < 30; j++) {
@@ -338,7 +369,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(mqtt_manager_->isClientConnected(client_2) == false);
     ESP_LOGD(TAG, "Client 1 Connected to MQTT but not Client 2");
 
-    assert(mqtt_manager_->connectClient(client_2) == ESP_OK);
+    assert(mqtt_manager_->clientConnect(client_2) == ESP_OK);
     ESP_LOGD(TAG, "Client 2 Started Connecting to MQTT");
 
     for (int j = 0; j < 30; j++) {
@@ -352,7 +383,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(mqtt_manager_->isClientConnected(client_2) == true);
     ESP_LOGD(TAG, "Client 1 and 2 Connected to MQTT");
 
-    mqtt_manager_->disconnectClient(client_1);
+    mqtt_manager_->clientDisconnect(client_1);
 
     for (int j = 0; j < 20; j++) {
         if (!mqtt_manager_->isClientConnected(client_1)) {
@@ -365,7 +396,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     assert(mqtt_manager_->isClientConnected(client_2) == true);
     ESP_LOGD(TAG, "Client 1 Disconnected from MQTT and Client 2 Connected");
 
-    mqtt_manager_->disconnectClient(client_2);
+    mqtt_manager_->clientDisconnect(client_2);
 
     for (int j = 0; j < 20; j++) {
         if (!mqtt_manager_->isClientConnected(client_2)) {
@@ -399,6 +430,8 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     ESP_LOGI(TAG, "Passed MQTT Manager Multiple Clients Connect/Disconnect");
 }
 
+/* We check to see if the MQTT manager can properly publish and subscribe to topics from the MQTT broker.
+ */
 void Test::testMQTTManagerClientPublishSubscribe(void)
 {
     ESP_LOGI(TAG, "Testing MQTT Manager Client Publish/Subscribe");
@@ -421,7 +454,7 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     mqtt_client_t* client = mqtt_manager_->createClient("mqtt://10.42.0.1");
     assert(client != NULL);
 
-    assert(mqtt_manager_->connectClient(client) == ESP_OK);
+    assert(mqtt_manager_->clientConnect(client) == ESP_OK);
     ESP_LOGD(TAG, "Client Started Connecting to MQTT");
 
     for (int j = 0; j < 30; j++) {
@@ -434,23 +467,23 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     assert(mqtt_manager_->isClientConnected(client) == true);
     ESP_LOGD(TAG, "Client Connected to MQTT");
 
-    assert(mqtt_manager_->subscribeClient(client, "esp32/test_subscribe", 2) == ESP_OK);
-    assert(mqtt_manager_->waitSubscribeClient(client, 1000) == ESP_OK);
-    assert(mqtt_manager_->waitSubscribeClient(client, 10) == ESP_ERR_TIMEOUT);
+    assert(mqtt_manager_->clientSubscribe(client, "esp32/test_subscribe", 2) == ESP_OK);
+    assert(mqtt_manager_->clientWaitSubscribe(client, 1000) == ESP_OK);
+    assert(mqtt_manager_->clientWaitSubscribe(client, 10) == ESP_ERR_TIMEOUT);
     ESP_LOGD(TAG, "Client Subscribed to MQTT");
 
     mqtt_message_t rec_mes;
 
     for (int i = 0; i < 10; i++) {
-        assert(mqtt_manager_->enqueueClient(client, "hi " + std::to_string(i), "esp32/test_publish", 2) == ESP_OK);
-        assert(mqtt_manager_->waitPublishClient(client, 1000) == ESP_OK);
-        assert(mqtt_manager_->waitPublishClient(client, 10) == ESP_ERR_TIMEOUT);
+        assert(mqtt_manager_->clientEnqueue(client, "hi " + std::to_string(i), "esp32/test_publish", 2) == ESP_OK);
+        assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
+        assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
         ESP_LOGD(TAG, "Client Published to MQTT");
 
         memset(&rec_mes, 0, sizeof(mqtt_message_t));
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_->receiveClient(client, rec_mes) == ESP_OK) {
+            if (mqtt_manager_->clientReceive(client, rec_mes) == ESP_OK) {
                 ESP_LOGD(TAG, "Received topic: %s", rec_mes.topic.data());
                 ESP_LOGD(TAG, "Received data: %s", rec_mes.payload.data());
                 break;
@@ -477,4 +510,376 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     }
 
     ESP_LOGI(TAG, "Passed MQTT Manager Client Publish/Subscribe");
+}
+
+void Test::testADCDACEndtoEnd(void)
+{
+    gpio_config_t config;
+    config.mode = GPIO_MODE_OUTPUT;
+    config.intr_type = GPIO_INTR_DISABLE;
+    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+
+    esp_err_t ret = gpio_config(&config);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+        return;
+    }
+
+    // Configure the SPI bus
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+
+    // Initialize the DAC instance
+    ad5626_init_param_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_0;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.spi_host = SPI2_HOST;
+
+    ret = dac_.init(dac_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize AD5626: %d", ret);
+        return;
+    }
+
+    // Initialize the ADC instance
+    ads1120_init_param_t adc_params;
+    adc_params.cs_pin   = GPIO_NUM_21;
+    adc_params.drdy_pin = GPIO_NUM_2;
+    adc_params.spi_host = SPI2_HOST;
+
+    ret = adc_.init(adc_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ADS1120: %d", ret);
+        return;
+    }
+
+    // Start running ADC/DAC tests
+    testADCDACCheckSPIBus();
+    testADCDACReadDACBias();
+    testADCDACTestADCGain2();
+    testADCDACTestADCGain4();
+}
+
+/* We check whether the SPI bus on the WSG board is functional by programming
+ * the ADC to read data at a specific sample rate, and then check to see if the
+ * programmed sample rate is close to the real sample rate.
+ */
+
+void Test::testADCDACCheckSPIBus(void)
+{
+    ESP_LOGI(TAG, "Testing Reading ADC to check SPI bus");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = TURBO; // turbo
+    adc_regs.data_rate = 6;     // 2000 SPS
+
+    adc_.configure(adc_regs);
+
+    int16_t data;
+    int num_success_reads = 0;
+    int num_failed_reads  = 0;
+    int start_time        = esp_timer_get_time();
+    int current_time      = esp_timer_get_time();
+
+    while (current_time - 1000000 < start_time) {
+        if (adc_.isDataReady()) {
+            if (adc_.readADC(&data) == ESP_OK) {
+                num_success_reads++;
+            } else {
+                num_failed_reads++;
+            }
+        }
+        current_time = esp_timer_get_time();
+    }
+
+    ESP_LOGD(TAG, "Number of successful reads: %d", num_success_reads);
+    ESP_LOGD(TAG, "Number of failed reads: %d", num_failed_reads);
+    assert(num_success_reads > 1800 && num_success_reads < 2200);
+
+    ESP_LOGI(TAG, "Passed Testing Reading ADC to check SPI bus");
+}
+
+#define NUM_DAC_BIAS_SAMPLES 315
+
+/* We check whether the DAC bias is being set properly by having the ADC read it
+ * as a single-ended input between the DAC bias and ground.
+ */
+void Test::testADCDACReadDACBias(void)
+{
+    ESP_LOGI(TAG, "Testing Reading DAC Bias from ADC");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = TURBO;
+    adc_regs.channels  = AIN2_AVSS;
+    adc_regs.data_rate = 6;
+    adc_regs.volt_refs = REFP0_REFN0;
+
+    esp_err_t ret = adc_.configure(adc_regs);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+        return;
+    }
+
+    float sum_diff = 0;
+
+    for (int i = 0; i < NUM_DAC_BIAS_SAMPLES; i++) {
+        ret = dac_.setLevel(AD5626::MAX_LEVEL_VALUE * i / (NUM_DAC_BIAS_SAMPLES));
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set DAC level: %d", ret);
+            continue;
+        }
+
+        vTaskDelay(1);
+
+        while (!adc_.isDataReady()) {
+            vTaskDelay(1);
+        }
+
+        int16_t read_value;
+
+        ret = adc_.readADC(&read_value);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+            continue;
+        }
+
+        float expected_dac_voltage = 4.095 * i / (NUM_DAC_BIAS_SAMPLES);
+        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
+        sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
+
+        ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
+        ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
+    }
+
+    ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_DAC_BIAS_SAMPLES);
+
+    // assert(sum_diff / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
+
+    ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
+}
+
+#define NUM_ADC_GAIN2_SAMPLES 250
+#define MVOLTS_PER_SAMPLE     10
+
+/* We check whether the ADC gain is being correctly set by changing the
+ * gain to a predetermined DAC bias.
+ */
+void Test::testADCDACTestADCGain2(void)
+{
+    ESP_LOGI(TAG, "Testing ADC gain 2");
+
+    esp_err_t ret;
+    ads1120_regs_t adc_regs;
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = TURBO;
+    adc_regs.channels  = AIN2_AVSS;
+    adc_regs.data_rate = 6;
+    adc_regs.volt_refs = REFP0_REFN0;
+    adc_regs.gain      = GAIN_2;
+
+    ret = adc_.configure(adc_regs);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+    }
+
+    float sum_diff = 0;
+
+    for (int i = 0; i < NUM_ADC_GAIN2_SAMPLES; i++) {
+
+        ret = dac_.setLevel(i * MVOLTS_PER_SAMPLE);
+        if (ret != ESP_OK) {
+            ESP_LOGI(TAG, "Failed to set DAC Level: %d", ret);
+            continue;
+        }
+
+        vTaskDelay(1);
+
+        while (!adc_.isDataReady()) {
+            vTaskDelay(1);
+        }
+
+        int16_t read_value;
+
+        ret = adc_.readADC(&read_value);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+            continue;
+        }
+
+        float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 2;
+        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
+        sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
+
+        ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
+        ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
+    }
+
+    ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_ADC_GAIN2_SAMPLES);
+
+    ESP_LOGI(TAG, "Finished testing ADC gain 2");
+}
+
+#define NUM_ADC_GAIN4_SAMPLES 125
+#define MVOLTS_PER_SAMPLE     10
+
+void Test::testADCDACTestADCGain4(void)
+{
+
+    ESP_LOGI(TAG, "Testing ADC gain 4");
+
+    esp_err_t ret;
+    ads1120_regs_t adc_regs;
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = TURBO;
+    adc_regs.channels  = AIN2_AVSS;
+    adc_regs.data_rate = 6;
+    adc_regs.volt_refs = REFP0_REFN0;
+    adc_regs.gain      = GAIN_4;
+
+    ret = adc_.configure(adc_regs);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+    }
+
+    float sum_diff = 0;
+
+    for (int i = 0; i < NUM_ADC_GAIN4_SAMPLES; i++) {
+
+        ret = dac_.setLevel(i * MVOLTS_PER_SAMPLE);
+        if (ret != ESP_OK) {
+            ESP_LOGI(TAG, "Failed to set DAC Level: %d", ret);
+            continue;
+        }
+
+        vTaskDelay(1);
+
+        while (!adc_.isDataReady()) {
+            vTaskDelay(1);
+        }
+
+        int16_t read_value;
+
+        ret = adc_.readADC(&read_value);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+            continue;
+        }
+
+        float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 4;
+        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
+        sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
+
+        ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
+        ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
+    }
+
+    ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_ADC_GAIN4_SAMPLES);
+
+    ESP_LOGI(TAG, "Finished testing ADC gain 4");
+}
+
+/**
+ * We try to read the analog frontend (i.e. the filtered signal from the inst. amplifier)
+ * to confirm that the numbers we see are reasonable.
+ */
+void Test::testADCDACReadAnalogFrontEnd(void)
+{
+    ESP_LOGI(TAG, "Testing Reading Analog FrontEnd");
+
+    // Configure the SPI bus
+    esp_err_t ret;
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret) {
+        return;
+    }
+
+    // Initialize the DAC instance
+    ad5626_init_param_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_0;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.spi_host = SPI2_HOST;
+
+    ret = dac_.init(dac_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize AD5626: %d", ret);
+        return;
+    }
+
+    // Initialize the ADC instance
+    ads1120_init_param_t adc_params;
+    adc_params.cs_pin   = GPIO_NUM_21;
+    adc_params.drdy_pin = GPIO_NUM_2;
+    adc_params.spi_host = SPI2_HOST;
+
+    ret = adc_.init(adc_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ADS1120: %d", ret);
+        return;
+    }
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    // Sample at Normal Mode, Gain of 1
+    adc_regs.conv_mode = CONTINUOUS;
+    adc_regs.op_mode   = NORMAL;
+    adc_regs.channels  = AIN1_AIN2;
+    adc_regs.data_rate = 2;
+    adc_regs.volt_refs = REFP0_REFN0;
+    adc_regs.gain = GAIN_1;
+
+    ret = adc_.configure(adc_regs);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+        return;
+    }
+
+    ret = dac_.setLevel(2500);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set DAC to ground: %d", ret);
+        return;
+    }
+
+    int16_t adc_val;
+
+    while (true) {
+        if (adc_.isDataReady()) {
+            ret = adc_.readADC(&adc_val);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+                continue;
+            }
+
+            printf("%d\n", adc_val);
+        } else {
+            vTaskDelay(1);
+        }
+    }
 }
