@@ -18,6 +18,7 @@ find_package(paho_mqtt REQUIRED)
 find_package(ads1115 REQUIRED)
 find_package(inertial_sense_ros_humble REQUIRED)
 find_package(inertial_sense_ros_humble_msgs REQUIRED)
+find_package(nanopb_pkg REQUIRED)
 
 # Include directories
 include_directories(
@@ -138,6 +139,26 @@ ament_target_dependencies(xbee_node
   baja_proto
   xbee_baja
   std_msgs
+)
+
+# WSG Calibration Driver
+add_library(wsg_calibration_driver SHARED src/wsg_calibration_driver.cpp)
+target_compile_definitions(wsg_calibration_driver PUBLIC "POSIX")
+ament_target_dependencies(wsg_calibration_driver
+  rclcpp
+  baja_msgs
+  baja_proto
+  std_msgs
+  paho_mqtt
+)
+add_executable(wsg_calibration_node src/wsg_calibration_node.cpp)
+target_link_libraries(wsg_calibration_node wsg_calibration_driver)
+ament_target_dependencies(wsg_calibration_node
+  rclcpp
+  baja_msgs
+  baja_proto
+  std_msgs
+  paho_mqtt
 )
 
 # Calibration Printer

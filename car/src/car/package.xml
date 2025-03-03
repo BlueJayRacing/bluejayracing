@@ -18,6 +18,7 @@
   <depend>paho_mqtt</depend>
   <depend>ads1115</depend>
   <depend>comms</depend>
+  <depend>nanopb_pkg</depend>
   <depend>inertial_sense_ros_humble</depend>
   <depend>inertial_sense_ros_humble_msgs</depend>
 
