@@ -21,10 +21,17 @@ typedef enum ad5676_command
     AD5676_COM_DAISY_CHAIN             = 0x0F // Not supported right now
 } ad5676_command_t;
 
+typedef struct {
+    int8_t t_cs_pin; // The chip select pin for the AD5676 device.
+    int8_t t_ldac_pin; // The LDAC pin for the AD5676 device.
+    int8_t t_rst_pin; // The RST pin for the AD5676 device.
+    SPIClass* t_spi_host; // The Arduino SPI Host instance/bus that the AD5676 device is on.
+} ad5676_init_params_t;
+
 class AD5676 {
   public:
     AD5676() : spi_host_(&SPI), spi_settings_(20000000, MSBFIRST, SPI_MODE1) {};
-    void init(const int8_t t_cs_pin, const int8_t t_ldac_pin, const int8_t t_rst_pin, SPIClass* t_spi_host = &SPI);
+    void init(const ad5676_init_params_t);
     void transfer(const ad5676_command_t t_command, const int8_t t_chan_addr_id, const std::array<uint8_t, 2>& t_data);
     void setLevel(const int8_t t_chan_addr_id, const uint16_t t_new_dac_level);
 

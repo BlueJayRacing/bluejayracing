@@ -5,10 +5,16 @@
 #include <Arduino.h>
 #include <SPI.h>
 
+typedef struct {
+    int8_t t_cs_pin;
+    int8_t t_ldac_pin;
+    SPIClass* t_spi_host;
+} max5719_init_params_t;
+
 class MAX5719 {
   public:
     MAX5719() : spi_host_(&SPI), spi_settings_(10000000, MSBFIRST, SPI_MODE0) {};
-    void init(const int8_t t_cs_pin, const int8_t t_ldac_pin, SPIClass* t_spi_host = &SPI);
+    void init(const max5719_init_params_t);
     void setLevel(const uint32_t t_new_dac_level);
 
   private:

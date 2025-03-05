@@ -3,17 +3,14 @@
 /*******************************************************************************
  * @brief Initializes the AD5676.
  *
- * @param t_cs_pin   - The chip select pin for the AD5676 device.
- * @param t_ldac_pin - The LDAC pin for the AD5676 device.
- * @param t_rst_pin  - The RST pin for the AD5676 device.
- * @param t_spi_host - The Arduino SPI Host instance/bus that the AD5676 device is on.
+ * @param init_params - pin numbers and spi host
  *******************************************************************************/
-void AD5676::init(const int8_t t_cs_pin, const int8_t t_ldac_pin, const int8_t t_rst_pin, SPIClass* t_spi_host)
+void AD5676::init(const ad5676_init_params_t init_params)
 {
-    cs_pin_   = t_cs_pin;
-    ldac_pin_ = t_ldac_pin;
-    rst_pin_  = t_rst_pin;
-    spi_host_ = t_spi_host;
+    cs_pin_   = init_params.t_cs_pin;
+    ldac_pin_ = init_params.t_ldac_pin;
+    rst_pin_  = init_params.t_rst_pin;
+    spi_host_ = init_params.t_spi_host;
 
     pinMode(cs_pin_, OUTPUT);
     digitalWrite(cs_pin_, HIGH);
@@ -49,6 +46,9 @@ void AD5676::transfer(const ad5676_command_t t_command, const int8_t t_chan_addr
     spi_host_->endTransaction();
 
     digitalWrite(cs_pin_, HIGH);
+
+    digitalWrite(ldac_pin_, LOW);
+    digitalWrite(ldac_pin_, HIGH);
 }
 
 /*******************************************************************************
