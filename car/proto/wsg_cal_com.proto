@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+message cal_command_t {
+    uint32 command = 1;
+};

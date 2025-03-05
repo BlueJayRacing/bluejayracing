@@ -15,8 +15,6 @@
   <depend>std_msgs</depend>
   <depend>paho_mqtt</depend>
   <depend>comms</depend>
-  <depend>inertial_sense_ros_humble</depend>
-  <depend>inertial_sense_ros_humble_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

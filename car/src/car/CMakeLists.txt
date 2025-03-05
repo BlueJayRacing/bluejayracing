@@ -16,8 +16,6 @@ find_package(baja_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(paho_mqtt REQUIRED)
 find_package(ads1115 REQUIRED)
-find_package(inertial_sense_ros_humble REQUIRED)
-find_package(inertial_sense_ros_humble_msgs REQUIRED)
 
 # Include directories
 include_directories(
@@ -89,8 +87,6 @@ ament_target_dependencies(writer_driver
   rclcpp
   baja_msgs
   baja_proto
-  inertial_sense_ros_humble
-  inertial_sense_ros_humble_msgs
 )
 add_executable(writer_node src/writer_node.cpp)
 target_link_libraries(writer_node writer_driver)
@@ -140,18 +136,38 @@ ament_target_dependencies(xbee_node
   std_msgs
 )
 
-# Calibration Printer
-add_library(calibration_printer SHARED src/calibration_printer.cpp)
-ament_target_dependencies(calibration_printer
-  rclcpp
-  baja_msgs
-)
-add_executable(calibration_printer_node src/calibration_printer_node.cpp)
-target_link_libraries(calibration_printer_node calibration_printer)
-ament_target_dependencies(calibration_printer_node
-  rclcpp
-  baja_msgs
-)
+# # WSG Calibration Driver
+# add_library(wsg_calibration_driver SHARED src/wsg_calibration_driver.cpp)
+# target_compile_definitions(wsg_calibration_driver PUBLIC "POSIX")
+# ament_target_dependencies(wsg_calibration_driver
+#   rclcpp
+#   baja_msgs
+#   baja_proto
+#   std_msgs
+#   paho_mqtt
+# )
+# add_executable(wsg_calibration_node src/wsg_calibration_node.cpp)
+# target_link_libraries(wsg_calibration_node wsg_calibration_driver)
+# ament_target_dependencies(wsg_calibration_node
+#   rclcpp
+#   baja_msgs
+#   baja_proto
+#   std_msgs
+#   paho_mqtt
+# )
+
+# # Calibration Printer
+# add_library(calibration_printer SHARED src/calibration_printer.cpp)
+# ament_target_dependencies(calibration_printer
+#   rclcpp
+#   baja_msgs
+# )
+# add_executable(calibration_printer_node src/calibration_printer_node.cpp)
+# target_link_libraries(calibration_printer_node calibration_printer)
+# ament_target_dependencies(calibration_printer_node
+#   rclcpp
+#   baja_msgs
+# )
 
 
 # Install headers
@@ -173,7 +189,7 @@ install(TARGETS
   mqtt_client_publish_driver
   transmit_prioritizer_driver
   xbee_driver
-  calibration_printer
+  # calibration_printer
   LIBRARY DESTINATION lib
 )
 
@@ -185,7 +201,7 @@ install(TARGETS
   writer_node
   transmit_prioritizer_node
   xbee_node
-  calibration_printer_node
+  # calibration_printer_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

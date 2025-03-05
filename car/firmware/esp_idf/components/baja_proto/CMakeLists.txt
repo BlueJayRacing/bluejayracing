@@ -1,4 +1,4 @@
-set(PROTOC_PATH "${COMPONENT_DIR}/../nanopb/generator-bin/protoc")
+set(PROTOC_PATH "${COMPONENT_DIR}/../../../../common/nanopb/generator-bin/protoc")
 set(PROTO_PATH "${COMPONENT_DIR}/../../../../proto/")
 set(PROTO_OUT_PATH "${COMPONENT_DIR}/src")
 
@@ -27,7 +27,7 @@ write_files("${C_PROTO_FILES}" "${C_PROTO_FILES}" "${COMPONENT_DIR}/")
 
 idf_component_register(SRCS ${C_PROTO_FILES}
                         INCLUDE_DIRS "src"
-                        REQUIRES esp_system nanopb
+                        REQUIRES esp_system baja_nanopb
                         )
 
 add_custom_command(OUTPUT ${C_PROTO_FILES}

@@ -8,7 +8,7 @@ Import("env")
 mylib_root = os.getcwd()
 generated_src_dir = os.path.join(mylib_root, 'src')
 generated_include_dir = os.path.join(mylib_root, 'include')
-protoc_generator = os.path.join(mylib_root, '..', 'nanopb', 'generator-bin', 'protoc')
+protoc_generator = os.path.join(mylib_root, '..', '..', '..', '..', '..', 'common', 'nanopb', 'generator-bin', 'protoc')
 
 if not os.path.exists(generated_src_dir):
     os.makedirs(generated_src_dir)

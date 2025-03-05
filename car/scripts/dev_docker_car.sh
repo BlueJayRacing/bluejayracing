@@ -11,15 +11,18 @@ if ! docker ps | grep -q bjr_docker_ros; then
     docker run \
         -id \
         --network=host \
-	--privileged \
-	-v /dev/bus/usb:/dev/bus/usb \
-	-v /dev/:/dev/ \
-	--device-cgroup-rule='c 81:* rmw' \
-	--device-cgroup-rule='c 189:* rmw' \
-        --mount type=bind,source=$SCRIPTPATH/../src,target=/bjr_ws/src/bjr_packages \
+	    --privileged \
+	    -v /dev/bus/usb:/dev/bus/usb \
+	    -v /dev/:/dev/ \
+	    --device-cgroup-rule='c 81:* rmw' \
+	    --device-cgroup-rule='c 189:* rmw' \
+        -v $SCRIPTPATH/../src:/bjr_ws/src/bjr_packages \
+        -v $SCRIPTPATH/../common:/bjr_ws/src/common \
         -it --device=/dev/ttyAMA0 \
         -it --device=/dev/ttyACM0 \
-	-it --device=/dev/ttyACM1 \
+	    -it --device=/dev/ttyACM1 \
+        -it --device=/dev/ttyAMA10 \
+        -it --device=/dev/serial/by-id/usb-STMicroelectronics_STM32_Virtual_ComPort_2073376B5450-if00 \
         -it --device=/dev/i2c-1 \
         bjr_docker_ros > /dev/null
 fi
