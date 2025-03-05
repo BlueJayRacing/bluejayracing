@@ -14,8 +14,6 @@ find_package(baja_proto REQUIRED)
 find_package(baja_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(paho_mqtt REQUIRED)
-find_package(inertial_sense_ros_humble REQUIRED)
-find_package(inertial_sense_ros_humble_msgs REQUIRED)
 
 # Include directories
 include_directories(

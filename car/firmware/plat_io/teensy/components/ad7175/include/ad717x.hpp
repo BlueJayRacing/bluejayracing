@@ -171,12 +171,12 @@ typedef enum ad717x_order
  **/
 typedef enum ad717x_odr
 {
-    SPS_31250_A = 0x0,
-    SPS_31250_B = 0x1,
-    SPS_31250_C = 0x2,
-    SPS_31250_D = 0x3,
-    SPS_31250_E = 0x4,
-    SPS_31250_F = 0x5,
+    SPS_250000  = 0x0,
+    SPS_125000  = 0x1,
+    SPS_62500   = 0x2,
+    SPS_50000   = 0x3,
+    SPS_31250   = 0x4,
+    SPS_25000   = 0x5,
     SPS_15625   = 0x6,
     SPS_10000   = 0x7,
     SPS_5000    = 0x8,
@@ -206,7 +206,7 @@ typedef enum ad717x_crc_mode
 /*! AD717X register info */
 typedef struct ad717x_st_reg {
     int32_t addr;
-    int32_t value;
+    uint32_t value;
     int32_t size;
 } ad717x_st_reg_t;
 
@@ -269,6 +269,7 @@ typedef struct ad717x_dev {
 
 typedef struct {
     bool ref_en;
+    bool stat_on_read_en;
     ad717x_mode_t mode;
     ad717x_device_type_t active_device;
     std::vector<ad717x_setup_t> setups;
@@ -282,6 +283,11 @@ typedef struct ad717x_dev_status {
     bool reg_error;
     uint8_t active_channel;
 } ad717x_dev_status_t;
+
+typedef struct ad717x_data {
+    ad717x_dev_status_t status;
+    uint32_t value;
+} ad717x_data_t;
 
 /* AD717X Register Map */
 #define AD717X_COMM_REG      0x00
@@ -510,7 +516,7 @@ typedef struct ad717x_dev_status {
 
 class AD717X {
   public:
-    AD717X() : spi_host_(&SPI), settings_(10000000, MSBFIRST, SPI_MODE3) {};
+    AD717X() : spi_host_(&SPI), settings_(8000000, MSBFIRST, SPI_MODE3) {};
     ~AD717X();
 
     int32_t init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
@@ -518,7 +524,7 @@ class AD717X {
     int32_t writeRegister(uint8_t t_addr);
     int32_t reset(void);
     int32_t waitForReady(uint32_t t_timeout);
-    int32_t readData(int32_t* t_p_data);
+    int32_t contConvReadData(ad717x_data_t* t_p_data);
     int32_t setChannelStatus(uint8_t t_channel_id, bool t_channel_status);
     int32_t setADCMode(ad717x_mode_t t_mode);
     int32_t connectAnalogInput(uint8_t t_channel_id, ad717x_analog_inputs_t t_analog_input);
@@ -526,10 +532,11 @@ class AD717X {
     int32_t setPolarity(bool t_bipolar, uint8_t t_setup_id);
     int32_t setReferenceSource(ad717x_ref_source_t t_ref_source, uint8_t t_setup_id);
     int32_t enableBuffers(bool t_inbuf_en, bool t_refbuf_en, uint8_t t_setup_id);
-    int32_t singleRead(uint8_t t_channel_id, int32_t* t_adc_raw_data);
+    int32_t singleReadData(uint8_t t_channel_id, ad717x_data_t* t_p_data);
     int32_t configureDeviceODR(uint8_t t_filtcon_id, uint8_t t_odr_sel);
     int32_t setGain(double gain, uint8_t t_setup_id);
     int32_t configureFilter(ad717x_filter_config_t t_filt_config, uint8_t t_setup_id);
+    int32_t readStatusRegOnData(bool enable);
     void parseStatusReg(ad717x_dev_status_t* dev_status);
 
   private:

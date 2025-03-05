@@ -16,11 +16,11 @@ def generate_launch_description():
         PythonLaunchDescriptionSource([bts_control_launch_path])
     )
 
-    inertial_sense_ros_humble_pkg_path = get_package_share_directory('inertial_sense_ros_humble')
-    node_with_param_launch_path = os.path.join(inertial_sense_ros_humble_pkg_path, 'launch', 'node_with_param.launch.py')
-    node_with_param_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([node_with_param_launch_path])
-    )
+    # inertial_sense_ros_humble_pkg_path = get_package_share_directory('inertial_sense_ros_humble')
+    # node_with_param_launch_path = os.path.join(inertial_sense_ros_humble_pkg_path, 'launch', 'node_with_param.launch.py')
+    # node_with_param_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource([node_with_param_launch_path])
+    # )
 
     car_pkg_path = get_package_share_directory('car')
     car_nodes_launch_path = os.path.join(car_pkg_path, 'launch', 'car_nodes.launch.py')
@@ -31,7 +31,7 @@ def generate_launch_description():
     return LaunchDescription(
         [
             bts_control_launch,
-            node_with_param_launch,
+            # node_with_param_launch,
             car_nodes_launch
         ]
     )

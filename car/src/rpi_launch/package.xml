@@ -8,7 +8,6 @@
   <license>MIT License</license>
 
   <depend>car_description</depend>
-  <depend>inertial_sense_ros_humble</depend>
   <depend>car</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

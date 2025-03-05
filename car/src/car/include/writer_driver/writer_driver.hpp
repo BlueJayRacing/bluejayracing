@@ -3,7 +3,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <baja_msgs/msg/observation.hpp>
-#include <inertial_sense_ros_humble_msgs/msg/didins4.hpp>
+// #include <inertial_sense_ros_humble_msgs/msg/didins4.hpp>
 
 namespace writer_driver {
 

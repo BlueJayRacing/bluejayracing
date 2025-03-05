@@ -1,3 +1,5 @@
 **/sdkconfig
 **/sdkconfig.ci
 **/sdkconfig.old
+**/pb*.h
+**/pb*.c

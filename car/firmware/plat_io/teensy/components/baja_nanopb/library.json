@@ -1,0 +1,32 @@
+{
+  "name": "baja_nanopb",
+  "version": "1.0.0",
+  "keywords": "protocol buffers, protobuf, google",
+  "description": "place where all the proto files are stored",
+  "authors":
+  [
+    {
+      "name": "Travis Chen",
+      "email": "travis.yu.chen@gmail.com",
+      "maintainer": true
+    }
+  ],
+  "export": {
+    "include": [
+      "*.c",
+      "*.cpp",
+      "*.h"
+    ]
+  },
+  "build": {
+    "extraScript": "copy_proto.py",
+    "includeDir": "include",
+    "srcDir": "src",
+    "srcFilter": [
+      "+<*.c>"
+    ]
+  },
+  "license": "MIT",
+  "frameworks": "*",
+  "platforms": "*"
+}
