@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>bnpb_test</name>
+  <version>0.0.1</version>
+  <description>Package that imports my_wsg_cal_package and uses its nanopb messages.</description>
+  <maintainer email="your-email@example.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Depend on the old package that provides .pb.h and the library. -->
+  <build_depend>baja_nanopb</build_depend>
+  <exec_depend>baja_nanopb</exec_depend>
+
+  <!-- Also depend on nanopb if we directly use its API. -->
+  <build_depend>nanopb</build_depend>
+  <exec_depend>nanopb</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

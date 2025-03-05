@@ -115,7 +115,10 @@ ADD common bjr_ws/src/common
 
 RUN sudo chmod -R +rwx bjr_ws/src/common
 RUN sudo chown -R dock bjr_ws/src/common
-    
+
+RUN cd /bjr_ws/src && \
+    sudo ln -s common/inertial-sense-sdk/ROS/ros2    
+
 ADD src bjr_ws/src/bjr_packages
 
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
