@@ -15,7 +15,9 @@ public:
 
   void onRequest(const Pistache::Http::Request&, Pistache::Http::ResponseWriter response) override
   {
-    response.send(Pistache::Http::Code::Ok, "Hello, World\n");
+    std::string jsonStr = R"({"message": "Hello, World"})";
+    response.headers().add<Pistache::Http::Header::ContentType>("application/json");
+    response.send(Pistache::Http::Code::Ok, jsonStr);
   }
 };
 
