@@ -11,9 +11,8 @@ namespace buffer {
 /**
  * @brief Thread-safe ring buffer implementation optimized for Teensy 4.1
  * 
- * This buffer is designed to be fast enough for high-speed ADC data acquisition
- * while providing thread-safety for concurrent access from different threads.
- * The buffer is allocated in DTCM memory for fastest access.
+ * This lightweight ring buffer uses an externally allocated array in DMAMEM,
+ * keeping only control variables in RAM1 to save memory.
  * 
  * @tparam T Type of items stored in the buffer
  * @tparam SIZE Size of the buffer in number of elements
@@ -22,15 +21,18 @@ template<typename T, size_t SIZE>
 class RingBuffer {
 public:
     /**
-     * @brief Construct a new Ring Buffer object
+     * @brief Construct a new Ring Buffer object with external storage
+     * 
+     * @param externalBuffer Pointer to externally allocated buffer in DMAMEM
      */
-    RingBuffer() : readIndex_(0), writeIndex_(0), count_(0) {}
+    RingBuffer(T* externalBuffer) : 
+        buffer_(externalBuffer),
+        readIndex_(0), 
+        writeIndex_(0), 
+        count_(0) {}
 
     /**
      * @brief Write an item to the buffer (for ISR usage)
-     * 
-     * This method is designed to be called from an ISR, so it uses atomic operations
-     * and disables interrupts briefly to ensure thread safety.
      * 
      * @param item Item to write to the buffer
      * @return true if write was successful, false if buffer is full
@@ -55,8 +57,6 @@ public:
     /**
      * @brief Write an item to the buffer (for thread usage)
      * 
-     * This method uses a mutex to ensure thread safety when called from a regular thread.
-     * 
      * @param item Item to write to the buffer
      * @return true if write was successful, false if buffer is full
      */
@@ -75,8 +75,6 @@ public:
 
     /**
      * @brief Read an item from the buffer (removing it)
-     * 
-     * This method is used by the consumer thread to read and remove items.
      * 
      * @param item Output parameter where read item will be stored
      * @return true if read was successful, false if buffer is empty
@@ -97,9 +95,6 @@ public:
     /**
      * @brief Peek at an item in the buffer without removing it
      * 
-     * This method allows reading items from the buffer without changing the buffer state.
-     * Useful for the MQTT thread that needs to read data without removing it.
-     * 
      * @param item Output parameter where peeked item will be stored
      * @param offset How many items ahead to peek (0 = next item to be read)
      * @return true if peek was successful, false if offset is beyond available items
@@ -118,8 +113,6 @@ public:
 
     /**
      * @brief Read multiple items into a buffer
-     * 
-     * Reads up to maxItems from the ring buffer into the provided array.
      * 
      * @param items Array to store read items
      * @param maxItems Maximum number of items to read
@@ -177,8 +170,8 @@ public:
     }
 
 private:
-    // Buffer array for sample storage
-    T buffer_[SIZE];
+    // External buffer pointer (stored in DMAMEM)
+    T* buffer_;
     
     // Buffer state variables
     volatile size_t readIndex_;

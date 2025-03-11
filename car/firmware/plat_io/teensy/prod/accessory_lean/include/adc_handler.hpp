@@ -150,7 +150,7 @@ private:
     AD717X adcDriver_;
     
     // Channel configurations stored in RAM2
-    std::vector<ChannelConfig> channelConfigs_;
+    ChannelConfig* channelConfigs_;
     
     // Pins and interface
     uint8_t csPin_;

@@ -539,8 +539,9 @@ class AD717X {
     int32_t readStatusRegOnData(bool enable);
     void parseStatusReg(ad717x_dev_status_t* dev_status);
 
-  private:
     ad717x_st_reg* getReg(uint8_t t_reg_address);
+  private:
+    
     int32_t initRegs(ad717x_device_type_t t_dev_type);
     int32_t updateCRCSetting(void);
     int32_t computeDataregSize(void);

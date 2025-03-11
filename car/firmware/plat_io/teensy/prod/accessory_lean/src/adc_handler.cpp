@@ -14,6 +14,8 @@ ADC7175Handler::ADC7175Handler(buffer::RingBuffer<data::ChannelSample, RING_BUFF
       activeChannel_(0),
       sampleCount_(0),
       samplingActive_(false) {
+    // Initialize channel configs to nullptr
+    channelConfigs_ = nullptr;
 }
 
 ADC7175Handler::~ADC7175Handler() {
@@ -28,13 +30,19 @@ ADC7175Handler::~ADC7175Handler() {
 
 bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterface, 
                           const ADCSettings& settings) {
+    Serial.println("  ADC Begin: Setting up pins and SPI");
     csPin_ = csPin;
     drdyPin_ = drdyPin;
     spiInterface_ = &spiInterface;
     
+    // Configure the CS pin as output
+    pinMode(csPin_, OUTPUT);
+    digitalWrite(csPin_, HIGH); // Deselect ADC
+    
     // Configure the DRDY pin as input
     pinMode(drdyPin_, INPUT_PULLUP);
     
+    Serial.println("  ADC Begin: Creating initialization parameters");
     // Create the initialization parameters
     ad717x_init_param_t initParam;
     initParam.active_device = settings.deviceType;
@@ -43,6 +51,7 @@ bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterfac
     initParam.ref_en = (settings.referenceSource == INTERNAL_REF);
     
     // Set up the channel map initially with all channels disabled
+    Serial.println("  ADC Begin: Setting up channel map");
     initParam.chan_map.resize(ADC_CHANNEL_COUNT);
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
         initParam.chan_map[i].channel_enable = false;
@@ -54,67 +63,113 @@ bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterfac
     }
     
     // Set up one default setup (we'll configure more when channels are added)
+    Serial.println("  ADC Begin: Setting up default configuration");
     ad717x_setup_t setup;
     setup.setup.bi_polar = true;
     setup.setup.input_buff = true;
     setup.setup.ref_buff = true;
     setup.setup.ref_source = settings.referenceSource;
-    setup.filter_config.odr = static_cast<ad717x_odr_t>(settings.odrSetting);
+    setup.filter_config.odr = settings.odrSetting;
     setup.gain = 1.0;
     
+    // Add the setup to the parameters
     initParam.setups.push_back(setup);
     
-    // Initialize the ADC
+    // Ensure SPI is properly initialized before using it
+    Serial.println("  ADC Begin: Initializing SPI");
+    spiInterface_->begin();
+    
+    // Initialize the ADC with debugging
+    Serial.println("  ADC Begin: Calling AD717X init function");
     int result = adcDriver_.init(initParam, spiInterface_, csPin_);
+    Serial.print("  ADC init result: ");
+    Serial.println(result);
+    
     if (result < 0) {
+        Serial.println("  ADC initialization failed with error code: " + String(result));
         return false;
     }
     
     // Set up the interrupt handler
+    Serial.println("  ADC Begin: Setting up interrupt handler");
     setInterruptHandler(this);
     
+    Serial.println("  ADC Begin: Initialization complete");
     return true;
 }
 
 bool ADC7175Handler::configureChannels(const ChannelConfig* configs, size_t numChannels) {
-    // Store the configurations
-    channelConfigs_.clear();
-    for (size_t i = 0; i < numChannels; i++) {
-        channelConfigs_.push_back(configs[i]);
-    }
+    Serial.print("Configuring ");
+    Serial.print(numChannels);
+    Serial.println(" ADC channels");
+    
+    // Store pointer to configurations
+    channelConfigs_ = const_cast<ChannelConfig*>(configs);
     
     // Configure each channel
-    for (const auto& config : channelConfigs_) {
-        if (!configureChannel(config)) {
+    for (size_t i = 0; i < numChannels; i++) {
+        Serial.print("  Configuring channel ");
+        Serial.print(i);
+        Serial.print(" (index ");
+        Serial.print(configs[i].channelIndex);
+        Serial.println(")");
+        
+        if (!configureChannel(configs[i])) {
+            Serial.print("  Failed to configure channel ");
+            Serial.println(i);
             return false;
         }
     }
     
+    Serial.println("All channels configured successfully");
     return true;
 }
 
 bool ADC7175Handler::configureChannel(const ChannelConfig& config) {
     // Set the channel status (enabled/disabled)
+    Serial.print("  Setting channel ");
+    Serial.print(config.channelIndex);
+    Serial.print(" status: ");
+    Serial.println(config.enabled ? "enabled" : "disabled");
+    
     int result = adcDriver_.setChannelStatus(config.channelIndex, config.enabled);
     if (result < 0) {
+        Serial.print("  setChannelStatus failed with code: ");
+        Serial.println(result);
         return false;
     }
     
     // Connect the analog inputs
+    Serial.print("  Connecting analog inputs for channel ");
+    Serial.println(config.channelIndex);
     result = adcDriver_.connectAnalogInput(config.channelIndex, config.analogInputs);
     if (result < 0) {
+        Serial.print("  connectAnalogInput failed with code: ");
+        Serial.println(result);
         return false;
     }
     
     // Assign the setup
+    Serial.print("  Assigning setup ");
+    Serial.print(config.setupIndex);
+    Serial.print(" to channel ");
+    Serial.println(config.channelIndex);
     result = adcDriver_.assignSetup(config.channelIndex, config.setupIndex);
     if (result < 0) {
+        Serial.print("  assignSetup failed with code: ");
+        Serial.println(result);
         return false;
     }
     
     // Set the gain
+    Serial.print("  Setting gain ");
+    Serial.print(config.gain);
+    Serial.print(" for setup ");
+    Serial.println(config.setupIndex);
     result = adcDriver_.setGain(config.gain, config.setupIndex);
     if (result < 0) {
+        Serial.print("  setGain failed with code: ");
+        Serial.println(result);
         return false;
     }
     
@@ -123,7 +178,9 @@ bool ADC7175Handler::configureChannel(const ChannelConfig& config) {
 
 bool ADC7175Handler::startSampling() {
     // Check if we're already sampling
+    Serial.println("Starting ADC sampling");
     if (samplingActive_) {
+        Serial.println("Sampling already active");
         return true;
     }
     
@@ -131,8 +188,11 @@ bool ADC7175Handler::startSampling() {
     sampleCount_ = 0;
     
     // Set the ADC to continuous conversion mode
+    Serial.println("  Setting ADC to CONTINUOUS mode");
     int result = adcDriver_.setADCMode(CONTINUOUS);
     if (result < 0) {
+        Serial.print("  setADCMode failed with code: ");
+        Serial.println(result);
         return false;
     }
     
@@ -140,8 +200,11 @@ bool ADC7175Handler::startSampling() {
     samplingActive_ = true;
     
     // Attach the interrupt to the DRDY pin
+    Serial.print("  Attaching interrupt to pin ");
+    Serial.println(drdyPin_);
     attachInterrupt(digitalPinToInterrupt(drdyPin_), isr, FALLING);
     
+    Serial.println("Sampling started successfully");
     return true;
 }
 
@@ -182,13 +245,32 @@ uint8_t ADC7175Handler::getActiveChannel() const {
 
 void ADC7175Handler::setInterruptPriority(uint8_t priority) {
     // Set the priority of the DRDY interrupt
-    // Note: Priority 0 is highest, 255 is lowest
     int irq = digitalPinToInterrupt(drdyPin_);
     NVIC_SET_PRIORITY(irq, priority);
+    Serial.print("Set interrupt priority to ");
+    Serial.print(priority);
+    Serial.print(" for IRQ ");
+    Serial.println(irq);
 }
 
 std::vector<ChannelConfig> ADC7175Handler::getChannelConfigs() const {
-    return channelConfigs_;
+    // Create a temporary vector for the result
+    std::vector<ChannelConfig> configs;
+    
+    // Check if channelConfigs_ is initialized
+    if (channelConfigs_ == nullptr) {
+        Serial.println("WARNING: channelConfigs_ is NULL in getChannelConfigs()");
+        return configs;
+    }
+    
+    // Copy channel configurations from the external array
+    for (size_t i = 0; i < ADC_CHANNEL_COUNT; i++) {
+        if (channelConfigs_[i].enabled) {
+            configs.push_back(channelConfigs_[i]);
+        }
+    }
+    
+    return configs;
 }
 
 uint64_t ADC7175Handler::getSampleCount() const {

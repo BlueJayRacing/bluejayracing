@@ -120,7 +120,7 @@ private:
     size_t lastReadPosition_;
     
     // Channel configurations
-    std::vector<adc::ChannelConfig> channelConfigs_;
+    baja::adc::ChannelConfig* channelConfigs_;
     
     // Temporary buffer for MQTT message
     char messageBuffer_[data::MQTT_OPTIMAL_MESSAGE_SIZE];

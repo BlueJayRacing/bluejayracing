@@ -42,24 +42,43 @@ bool MQTTPublisher::begin(uint8_t* macAddress, const char* clientId,
         memcpy(macAddress_, teensyMac, 6);
     }
     
-    // Initialize Ethernet
+    // Initialize Ethernet with timeout
     Ethernet.begin(macAddress_);
     
-    // Wait for Ethernet to come up
+    // Wait for Ethernet with a short timeout
     uint32_t startTime = millis();
-    while (!Ethernet.linkStatus() && millis() - startTime < 5000) {
-        delay(100);
+    uint32_t timeout = 1000; // 1 second timeout for Ethernet link
+    
+    while (!Ethernet.linkStatus() && millis() - startTime < timeout) {
+        delay(10);
     }
     
     if (!Ethernet.linkStatus()) {
+        Serial.println("Ethernet link not established");
         return false;
     }
     
     // Set up MQTT client
     mqttClient_.setServer(brokerIP_, port_);
+    mqttClient_.setKeepAlive(15); // 15 seconds keepalive
     
-    // Try to connect
-    return reconnect();
+    // Try to connect with timeout
+    startTime = millis();
+    timeout = 1000; // 1 second timeout for MQTT connection
+    
+    while (!mqttClient_.connected() && millis() - startTime < timeout) {
+        // Attempt to connect
+        if (mqttClient_.connect(clientId_)) {
+            // Subscribe to command topic
+            char subscribeTopic[64];
+            snprintf(subscribeTopic, sizeof(subscribeTopic), "%s/command", baseTopic_);
+            mqttClient_.subscribe(subscribeTopic);
+            return true;
+        }
+        delay(100);
+    }
+    
+    return false;
 }
 
 void MQTTPublisher::setDownsampleRatio(uint8_t ratio) {
@@ -69,7 +88,8 @@ void MQTTPublisher::setDownsampleRatio(uint8_t ratio) {
 }
 
 void MQTTPublisher::setChannelConfigs(const std::vector<adc::ChannelConfig>& channelConfigs) {
-    channelConfigs_ = channelConfigs;
+    // Store pointer to the array of configs
+    channelConfigs_ = channelConfigsArray;
 }
 
 void MQTTPublisher::setBaseTopic(const std::string& baseTopic) {
@@ -136,21 +156,38 @@ size_t MQTTPublisher::process() {
 }
 
 bool MQTTPublisher::isConnected() const {
-    // Need to cast away const since PubSubClient::connected() is not const
+    // Check Ethernet link first
+    if (!Ethernet.linkStatus()) {
+        return false;
+    }
+    
+    // Check MQTT connection
     return const_cast<PubSubClient&>(mqttClient_).connected();
 }
 
 bool MQTTPublisher::reconnect() {
+    // Check Ethernet link first
+    if (!Ethernet.linkStatus()) {
+        return false;
+    }
+    
     // Try to connect to MQTT broker
     char publishTopic[64];
     snprintf(publishTopic, sizeof(publishTopic), "%s/status", baseTopic_);
     
-    if (mqttClient_.connect(clientId_)) {
-        // Subscribe to command topic
-        char subscribeTopic[64];
-        snprintf(subscribeTopic, sizeof(subscribeTopic), "%s/command", baseTopic_);
-        mqttClient_.subscribe(subscribeTopic);
-        return true;
+    // Use non-blocking connection with timeout
+    uint32_t startTime = millis();
+    uint32_t timeout = 1000; // 1 second timeout
+    
+    while (!mqttClient_.connected() && millis() - startTime < timeout) {
+        if (mqttClient_.connect(clientId_)) {
+            // Subscribe to command topic
+            char subscribeTopic[64];
+            snprintf(subscribeTopic, sizeof(subscribeTopic), "%s/command", baseTopic_);
+            mqttClient_.subscribe(subscribeTopic);
+            return true;
+        }
+        delay(100);
     }
     
     return false;
@@ -188,28 +225,17 @@ bool MQTTPublisher::buildJsonBatch(const data::ChannelSample* samples, size_t co
 }
 
 std::string MQTTPublisher::getChannelName(uint8_t channelIndex) const {
-    for (const auto& config : channelConfigs_) {
-        if (config.channelIndex == channelIndex) {
-            return config.name;
-        }
+    // Look up channel name in the array
+    if (channelIndex < adc::ADC_CHANNEL_COUNT) {
+        return channelConfigs_[channelIndex].name;
     }
     
     return "";
 }
 
 bool MQTTPublisher::checkConnection() {
-    // Check Ethernet link
-    if (!Ethernet.linkStatus()) {
-        return false;
-    }
-    
-    // Check MQTT connection
-    if (!mqttClient_.connected()) {
-        // Try to reconnect
-        return reconnect();
-    }
-    
-    return true;
+    // Don't attempt reconnection here, just check status
+    return mqttClient_.connected();
 }
 
 } // namespace network

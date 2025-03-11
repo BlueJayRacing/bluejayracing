@@ -74,13 +74,15 @@ constexpr uint8_t ADC_CHANNEL_COUNT = 16;
 constexpr size_t SAMPLE_SIZE_BYTES = sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint32_t);
 
 // Define number of samples to fit in 160KB buffer (reduced from 320KB to save RAM)
-constexpr size_t RING_BUFFER_SIZE = (160 * 1024) / SAMPLE_SIZE_BYTES;
+constexpr size_t RING_BUFFER_SIZE = 24000; // Hard-coded to save calculation space
 
 // Define SD card block size (4KB)
 constexpr size_t SD_BLOCK_SIZE = 4 * 1024;
 
 // Calculate how many samples fit in each SD block
-constexpr size_t SAMPLES_PER_SD_BLOCK = SD_BLOCK_SIZE / SAMPLE_SIZE_BYTES;
+constexpr size_t SAMPLES_PER_SD_BLOCK = 300; // Hard-coded to save calculation space
 
 } // namespace adc
 } // namespace baja
+
+extern baja::adc::ChannelConfig channelConfigsArray[];
