@@ -19,15 +19,14 @@ void setup()
     delay(2000);
     Serial.begin(115200);
     SPI.begin();
-    Serial.println("Hello");
 
     pinMode(1, OUTPUT);
 
     ad717x_init_param_t ad7175_params;
 
     ad717x_analog_inputs_t chan_0_inputs; 
-    chan_0_inputs.ainp.pos_input = AIN15; // Change while testing
-    chan_0_inputs.ainp.neg_input = AIN6;
+    chan_0_inputs.ainp.pos_input = AIN6; // Change while testing
+    chan_0_inputs.ainp.neg_input = AIN0; // GND Pin Set
 
     // Change while testing
     ad717x_channel_map_t chan_0_map       = {true, 0, chan_0_inputs}; // enable, setup_index, input selection
@@ -54,7 +53,7 @@ void loop()
     ad7175.waitForReady(0xFFFFFFFF);
     ad7175.readData(&data_val);
 
-    voltage_val = ((double)(data_val) * 5) / (std::pow(2, 24));
+    voltage_val = ((double)(data_val) * 5.0072) / (std::pow(2, 24));
     // voltage_val = ((double)(data_val)-CENTER) / CENTER * 5;
     num++;
 
