@@ -3,7 +3,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c6-ftdi.cfg"
   ],
-  "idf.portWin": "COM11",
+  "idf.portWin": "COM8",
   "idf.flashType": "UART",
   "files.associations": {
     "array": "cpp",

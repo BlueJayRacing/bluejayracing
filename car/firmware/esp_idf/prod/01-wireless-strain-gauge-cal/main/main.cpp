@@ -182,9 +182,9 @@ void vTaskMainControl(void*)
 
 extern "C" void app_main(void)
 {
-    // xTaskCreate(vTaskMainControl, "Main Control Loop", (1 << 14), NULL, 3, NULL);
-    Test test(ESP_LOG_DEBUG);
-    test.testSensorSetup();
+    xTaskCreate(vTaskMainControl, "Main Control Loop", (1 << 14), NULL, 3, NULL);
+    // Test test(ESP_LOG_DEBUG);
+    // test.testSensorSetup();
 }
 
 esp_err_t setUpSensor(void)
