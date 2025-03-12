@@ -520,6 +520,7 @@ class AD717X {
     ~AD717X();
 
     int32_t init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
+    int32_t init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin, SPISettings t_settings);
     int32_t readRegister(uint8_t t_addr);
     int32_t writeRegister(uint8_t t_addr);
     int32_t reset(void);

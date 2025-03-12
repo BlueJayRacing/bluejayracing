@@ -13,7 +13,8 @@ ADC7175Handler::ADC7175Handler(buffer::RingBuffer<data::ChannelSample, RING_BUFF
       spiInterface_(nullptr),
       activeChannel_(0),
       sampleCount_(0),
-      samplingActive_(false) {
+      samplingActive_(false),
+      dataReady_(false) {
     // Initialize channel configs to nullptr
     channelConfigs_ = nullptr;
 }
@@ -54,18 +55,21 @@ bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterfac
     Serial.println("  ADC Begin: Setting up channel map");
     initParam.chan_map.resize(ADC_CHANNEL_COUNT);
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        initParam.chan_map[i].channel_enable = false;
+        initParam.chan_map[i].channel_enable = (i == 0); // Only enable channel 0 for initial testing
         initParam.chan_map[i].setup_sel = 0;
         
-        // Default to AIN0 for positive input and AIN1 for negative
-        initParam.chan_map[i].inputs.ainp.pos_input = static_cast<ad717x_analog_input_t>(i % 16);
-        initParam.chan_map[i].inputs.ainp.neg_input = AIN1;
+        // Default to AINx for positive input and AIN1 for negative
+        initParam.chan_map[i].inputs.ainp.pos_input = static_cast<ad717x_analog_input_t>(i);
+        initParam.chan_map[i].inputs.ainp.neg_input = REF_M;
     }
     
     // Set up one default setup (we'll configure more when channels are added)
     Serial.println("  ADC Begin: Setting up default configuration");
+    //print the odr we are using
+    Serial.print("ODR: ");
+    Serial.println(settings.odrSetting);
     ad717x_setup_t setup;
-    setup.setup.bi_polar = true;
+    setup.setup.bi_polar = false;
     setup.setup.input_buff = true;
     setup.setup.ref_buff = true;
     setup.setup.ref_source = settings.referenceSource;
@@ -75,13 +79,9 @@ bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterfac
     // Add the setup to the parameters
     initParam.setups.push_back(setup);
     
-    // Ensure SPI is properly initialized before using it
-    Serial.println("  ADC Begin: Initializing SPI");
-    spiInterface_->begin();
-    
     // Initialize the ADC with debugging
     Serial.println("  ADC Begin: Calling AD717X init function");
-    int result = adcDriver_.init(initParam, spiInterface_, csPin_);
+    int result = adcDriver_.init(initParam, spiInterface_, csPin_, SPISettings(5000000, MSBFIRST, SPI_MODE3));
     Serial.print("  ADC init result: ");
     Serial.println(result);
     
@@ -93,6 +93,25 @@ bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterfac
     // Set up the interrupt handler
     Serial.println("  ADC Begin: Setting up interrupt handler");
     setInterruptHandler(this);
+    
+    // Read the ID register to verify
+    result = adcDriver_.readRegister(AD717X_ID_REG);
+    if (result >= 0) {
+        ad717x_st_reg_t* idReg = adcDriver_.getReg(AD717X_ID_REG);
+        if (idReg) {
+            Serial.print("  ADC ID register value: 0x");
+            Serial.println(idReg->value, HEX);
+            
+            // Verify it's AD7175-8
+            uint16_t chipId = idReg->value & AD717X_ID_REG_MASK;
+            if (chipId == AD7175_8_ID_REG_VALUE) {
+                Serial.println("  Confirmed: Device is AD7175-8");
+            } else {
+                Serial.print("  WARNING: Unexpected chip ID: 0x");
+                Serial.println(chipId, HEX);
+            }
+        }
+    }
     
     Serial.println("  ADC Begin: Initialization complete");
     return true;
@@ -184,7 +203,8 @@ bool ADC7175Handler::startSampling() {
         return true;
     }
     
-    // Reset the sample count
+    // Reset the data ready flag and sample count
+    dataReady_ = false;
     sampleCount_ = 0;
     
     // Set the ADC to continuous conversion mode
@@ -229,14 +249,63 @@ bool ADC7175Handler::stopSampling() {
     return true;
 }
 
+bool ADC7175Handler::processData() {
+    // Check if data is ready
+    if (!dataReady_) {
+        return false;
+    }
+    
+    // Clear the flag immediately
+    noInterrupts();
+    dataReady_ = false;
+    interrupts();
+    
+    // Read the sample from the ADC
+    ad717x_data_t sample;
+    if (readSample(sample)) {
+        // Create a new channel sample
+        data::ChannelSample channelSample(
+            micros(),                // Microsecond timestamp
+            sample.status.active_channel,  // Channel index
+            sample.value             // Raw ADC value
+        );
+        
+        // Add to the ring buffer
+        ringBuffer_.write(channelSample);
+        
+        // Increment the sample count
+        sampleCount_++;
+        
+        // Update active channel
+        activeChannel_ = sample.status.active_channel;
+        
+        // Debug every 1,000,000 samples
+        if (sampleCount_ % 1000000 == 0) {
+            Serial.print("Sample #");
+            Serial.print(sampleCount_);
+            Serial.print(": Channel=");
+            Serial.print(sample.status.active_channel);
+            Serial.print(", Value=");
+            Serial.println(sample.value);
+        }
+        
+        return true;
+    }
+    
+    return false;
+}
+
 bool ADC7175Handler::readSample(ad717x_data_t& sample) {
     // Read a sample from the ADC
     int result = adcDriver_.contConvReadData(&sample);
     
-    // Update the active channel
-    activeChannel_ = sample.status.active_channel;
+    if (result < 0) {
+        Serial.print("Error reading ADC data: ");
+        Serial.println(result);
+        return false;
+    }
     
-    return (result >= 0);
+    return true;
 }
 
 uint8_t ADC7175Handler::getActiveChannel() const {
@@ -281,33 +350,39 @@ void ADC7175Handler::resetSampleCount() {
     sampleCount_ = 0;
 }
 
-void ADC7175Handler::handleInterrupt() {
-    // Read the sample from the ADC
-    ad717x_data_t sample;
-    if (readSample(sample)) {
-        // Create a new channel sample
-        data::ChannelSample channelSample(
-            micros(),                // Microsecond timestamp
-            sample.status.active_channel,  // Channel index
-            sample.value             // Raw ADC value
-        );
-        
-        // Add to the ring buffer
-        ringBuffer_.writeFromISR(channelSample);
-        
-        // Increment the sample count
-        sampleCount_++;
+bool ADC7175Handler::isDataReady() const {
+    return dataReady_;
+}
+
+void ADC7175Handler::signalDataReady() {
+    dataReady_ = true;
+}
+
+void ADC7175Handler::resetADC() {
+    // Manually reset the ADC by toggling CS and sending 0xFF bytes
+    digitalWrite(csPin_, LOW);
+    
+    // Send 8 bytes of 0xFF for reset
+    for (int i = 0; i < 8; i++) {
+        spiInterface_->transfer(0xFF);
     }
+    
+    digitalWrite(csPin_, HIGH);
+    
+    // Wait for ADC to reset
+    delay(10);
+    
+    Serial.println("Manual ADC reset performed");
 }
 
 void ADC7175Handler::setInterruptHandler(ADC7175Handler* instance) {
     instance_ = instance;
 }
 
-// Static ISR that calls the instance method
+// Static ISR that only sets the flag
 void FASTRUN ADC7175Handler::isr() {
     if (instance_) {
-        instance_->handleInterrupt();
+        instance_->signalDataReady();
     }
 }
 

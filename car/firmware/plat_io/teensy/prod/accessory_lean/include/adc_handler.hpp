@@ -15,7 +15,7 @@ namespace adc {
  * @brief Handler for the AD7175-8 ADC
  * 
  * Manages the AD7175-8 ADC, handling initialization, configuration,
- * and interrupt-driven sampling.
+ * and flag-based sampling (for main loop processing).
  */
 class ADC7175Handler {
 public:
@@ -81,10 +81,19 @@ public:
     bool stopSampling();
     
     /**
+     * @brief Process ADC data when available
+     * 
+     * This function should be called regularly from the main loop.
+     * It checks if new data is available and processes it if so.
+     * 
+     * @return true if a sample was processed
+     */
+    bool processData();
+    
+    /**
      * @brief Read a single sample from the ADC
      * 
-     * This function is typically called from the interrupt handler.
-     * It reads the current sample and returns the data.
+     * Reads the current sample and returns the data.
      * 
      * @param sample Output parameter for the sample data
      * @return true if read was successful
@@ -125,12 +134,25 @@ public:
     void resetSampleCount();
     
     /**
-     * @brief Interrupt handler for the ADC data ready pin
+     * @brief Get data ready flag status
      * 
-     * This function is called by the ISR. It reads a sample from the ADC
-     * and puts it in the ring buffer.
+     * @return true if data is ready to be read
      */
-    void handleInterrupt();
+    bool isDataReady() const;
+    
+    /**
+     * @brief Signal that data is ready (called by ISR)
+     * 
+     * This is called by the ISR to set the dataReady flag.
+     */
+    void signalDataReady();
+    
+    /**
+     * @brief Reset ADC with manual SPI sequence
+     * 
+     * Performs a manual reset sequence by sending 0xFF bytes
+     */
+    void resetADC();
     
     /**
      * @brief Set up static interrupt handler
@@ -166,10 +188,13 @@ private:
     // Sampling state
     volatile bool samplingActive_;
     
+    // Data ready flag (set by ISR, checked by main loop)
+    volatile bool dataReady_;
+    
     // Static pointer to the handler instance for ISR
     static ADC7175Handler* instance_;
     
-    // Static ISR
+    // Static ISR that only sets the flag
     static void isr();
 };
 

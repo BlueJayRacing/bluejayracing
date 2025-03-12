@@ -49,7 +49,7 @@ constexpr size_t MQTT_OPTIMAL_MESSAGE_SIZE = 1024; // 1KB chunks
 constexpr uint8_t MAX_DOWNSAMPLE_RATIO = 100;
 
 // Define file rotation interval in milliseconds (2 minutes)
-constexpr uint32_t FILE_ROTATION_INTERVAL_MS = 2 * 60 * 1000;
+constexpr uint32_t FILE_ROTATION_INTERVAL_MS =  30 * 1000;
 
 } // namespace data
 } // namespace baja

@@ -29,7 +29,12 @@ public:
         buffer_(externalBuffer),
         readIndex_(0), 
         writeIndex_(0), 
-        count_(0) {}
+        count_(0),
+        totalWriteCount_(0),
+        totalReadCount_(0),
+        overrunCount_(0) {
+        Serial.println("RingBuffer initialized with capacity " + String(SIZE));
+    }
 
     /**
      * @brief Write an item to the buffer (for ISR usage)
@@ -41,16 +46,37 @@ public:
         bool success = false;
         
         // Critical section - no other thread can modify buffer during this time
-        noInterrupts();
+        // noInterrupts();
         
         if (count_ < SIZE) {
             buffer_[writeIndex_] = item;
             writeIndex_ = (writeIndex_ + 1) % SIZE;
             count_++;
+            totalWriteCount_++;
+            
+            // Print debug info every 1000 writes
+            // if (totalWriteCount_ % 100000 == 0) {
+            //     Serial.print("RingBuffer: 1000 samples written, total=");
+            //     Serial.print(totalWriteCount_);
+            //     Serial.print(", count=");
+            //     Serial.print(count_);
+            //     Serial.print("/");
+            //     Serial.println(SIZE);
+            // }
+            
             success = true;
+        } else {
+            // Buffer is full
+            overrunCount_++;
+            
+            // Print overrun warning
+            // if (overrunCount_ % 1000000 == 1) {
+            //     Serial.print("RingBuffer OVERRUN: Buffer full, sample dropped. Count=");
+            //     Serial.println(overrunCount_);
+            // }
         }
         
-        interrupts();
+        // interrupts();
         return success;
     }
 
@@ -64,12 +90,14 @@ public:
         Threads::Scope lock(mutex_);
         
         if (count_ >= SIZE) {
+            overrunCount_++;
             return false;
         }
         
         buffer_[writeIndex_] = item;
         writeIndex_ = (writeIndex_ + 1) % SIZE;
         count_++;
+        totalWriteCount_++;
         return true;
     }
 
@@ -89,6 +117,7 @@ public:
         item = buffer_[readIndex_];
         readIndex_ = (readIndex_ + 1) % SIZE;
         count_--;
+        totalReadCount_++;
         return true;
     }
 
@@ -129,6 +158,18 @@ public:
         }
         
         count_ -= itemsToRead;
+        totalReadCount_ += itemsToRead;
+        
+        // Print debug info for large reads
+        if (itemsToRead > 100) {
+            Serial.print("RingBuffer: Read ");
+            Serial.print(itemsToRead);
+            Serial.print(" samples. Total reads=");
+            Serial.print(totalReadCount_);
+            Serial.print(", remaining=");
+            Serial.println(count_);
+        }
+        
         return itemsToRead;
     }
 
@@ -168,6 +209,57 @@ public:
         writeIndex_ = 0;
         count_ = 0;
     }
+    
+    /**
+     * @brief Get total number of items written to the buffer since creation
+     * 
+     * @return Total write count
+     */
+    uint64_t getTotalWriteCount() const {
+        return totalWriteCount_;
+    }
+    
+    /**
+     * @brief Get total number of items read from the buffer since creation
+     * 
+     * @return Total read count
+     */
+    uint64_t getTotalReadCount() const {
+        return totalReadCount_;
+    }
+    
+    /**
+     * @brief Get number of buffer overruns (writes when buffer was full)
+     * 
+     * @return Overrun count
+     */
+    uint64_t getOverrunCount() const {
+        return overrunCount_;
+    }
+    
+    /**
+     * @brief Print buffer statistics
+     */
+    void printStats() const {
+        Threads::Scope lock(mutex_);
+        
+        Serial.println("RingBuffer Statistics:");
+        Serial.print("  Capacity: ");
+        Serial.println(SIZE);
+        Serial.print("  Current usage: ");
+        Serial.print(count_);
+        Serial.print("/");
+        Serial.print(SIZE);
+        Serial.print(" (");
+        Serial.print((float)count_ / SIZE * 100.0f);
+        Serial.println("%)");
+        Serial.print("  Total writes: ");
+        Serial.println(totalWriteCount_);
+        Serial.print("  Total reads: ");
+        Serial.println(totalReadCount_);
+        Serial.print("  Overruns: ");
+        Serial.println(overrunCount_);
+    }
 
 private:
     // External buffer pointer (stored in DMAMEM)
@@ -177,6 +269,11 @@ private:
     volatile size_t readIndex_;
     volatile size_t writeIndex_;
     volatile size_t count_;
+    
+    // Statistics
+    volatile uint64_t totalWriteCount_;
+    volatile uint64_t totalReadCount_;
+    volatile uint64_t overrunCount_;
     
     // Mutex for thread synchronization
     mutable Threads::Mutex mutex_;

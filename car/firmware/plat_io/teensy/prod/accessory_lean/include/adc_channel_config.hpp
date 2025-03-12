@@ -56,7 +56,7 @@ struct ADCSettings {
     ad717x_ref_source_t referenceSource;  // Internal or external reference
     ad717x_mode_t operatingMode;          // Continuous or single conversion
     bool readStatusWithData;              // Whether to read status with each sample
-    uint8_t odrSetting;                   // Output data rate setting
+    ad717x_odr_t odrSetting;                   // Output data rate setting
     
     // Default constructor with sensible defaults
     ADCSettings() : 
@@ -64,7 +64,7 @@ struct ADCSettings {
         referenceSource(INTERNAL_REF),
         operatingMode(CONTINUOUS),
         readStatusWithData(true),
-        odrSetting(SPS_50000) {}  // Set for 50kHz total sampling rate across all channels
+        odrSetting(SPS_10) {}  // Set for 50kHz total sampling rate across all channels
 };
 
 // Number of ADC channels available on AD7175-8
@@ -80,7 +80,7 @@ constexpr size_t RING_BUFFER_SIZE = 24000; // Hard-coded to save calculation spa
 constexpr size_t SD_BLOCK_SIZE = 4 * 1024;
 
 // Calculate how many samples fit in each SD block
-constexpr size_t SAMPLES_PER_SD_BLOCK = 300; // Hard-coded to save calculation space
+constexpr size_t SAMPLES_PER_SD_BLOCK = 3000; // Hard-coded to save calculation space
 
 } // namespace adc
 } // namespace baja

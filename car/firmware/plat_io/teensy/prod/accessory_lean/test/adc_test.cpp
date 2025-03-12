@@ -96,7 +96,7 @@ void setup() {
   setup.setup.input_buff = true;
   setup.setup.ref_buff = true;
   setup.setup.ref_source = INTERNAL_REF;
-  setup.filter_config.odr = SPS_1000;  // Lower data rate for testing
+  setup.filter_config.odr = SPS_10;  // Lower data rate for testing
   setup.gain = 1.0;
   
   initParam.setups.push_back(setup);
@@ -130,7 +130,7 @@ void setup() {
   
   // Set up interrupt for data ready
   Serial.println("\n9. Setting up DRDY interrupt");
-  attachInterrupt(digitalPinToInterrupt(ADC_DRDY_PIN), adcInterrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ADC_DRDY_PIN), adcInterrupt, FALLING);
   
   // Start continuous conversion
   Serial.println("10. Starting continuous conversion");
