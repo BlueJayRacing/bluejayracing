@@ -16,7 +16,7 @@ namespace storage {
 
 // Define buffer size constants in bytes
 constexpr size_t MIN_WRITE_SIZE = 4 * 1024;      // 4KB minimum write for efficiency
-constexpr size_t MAX_BUFFER_SIZE = 64 * 1024;    // 64KB maximum buffer size
+constexpr size_t MAX_BUFFER_SIZE = 256 * 1024;    // 64KB maximum buffer size
 constexpr size_t BUFFER_FLUSH_THRESHOLD = 32 * 1024;  // 32KB flush threshold
 
 /**

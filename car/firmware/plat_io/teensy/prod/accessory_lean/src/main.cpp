@@ -16,8 +16,8 @@ const uint8_t SD_CS_PIN = 254;     // SD card CS pin (for SPI fallback)
 
 // Create global buffers in RAM2 to reduce RAM1 usage - Making them globally accessible
 DMAMEM baja::data::ChannelSample ringBufferStorage[baja::adc::RING_BUFFER_SIZE];
-DMAMEM uint8_t sdWriterBuffer[baja::storage::MAX_BUFFER_SIZE]; // Global scope for linker visibility
-DMAMEM baja::data::ChannelSample sdSampleBuffer[baja::adc::SAMPLES_PER_SD_BLOCK];
+EXTMEM uint8_t sdWriterBuffer[baja::storage::MAX_BUFFER_SIZE]; // Global scope for linker visibility
+// DMAMEM baja::data::ChannelSample sdSampleBuffer[baja::adc::SAMPLES_PER_SD_BLOCK];
 DMAMEM uint8_t mqttMessageBuffer[baja::data::MQTT_OPTIMAL_MESSAGE_SIZE];
 DMAMEM baja::adc::ChannelConfig channelConfigsArray[baja::adc::ADC_CHANNEL_COUNT];
 
@@ -368,7 +368,7 @@ void setup() {
         Serial.println("Starting SD writer thread...");
         
         // Use a larger stack and longer time slice for SD writer thread
-        sdWriterThreadId = threads.addThread(sdWriterThreadFunc, 0, 8192);
+        sdWriterThreadId = threads.addThread(sdWriterThreadFunc, 0, 4096);
         
         if (sdWriterThreadId < 0) {
             Serial.println("Failed to create SD writer thread!");

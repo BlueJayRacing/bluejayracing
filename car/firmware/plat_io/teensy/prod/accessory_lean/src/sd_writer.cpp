@@ -66,7 +66,7 @@ bool SDWriter::begin(uint8_t chipSelect) {
     memset(testBuffer, 0xAA, sizeof(testBuffer));
     
     FsFile testFile;
-    if (testFile.open("sdtest.bin", O_RDWR | O_CREAT | O_TRUNC)) {
+    if (testFile.open("sdtest.bin", O_RDWR | O_CREAT )) {
         uint32_t start = micros();
         for (int i = 0; i < 25; i++) {
             testFile.write(testBuffer, sizeof(testBuffer));

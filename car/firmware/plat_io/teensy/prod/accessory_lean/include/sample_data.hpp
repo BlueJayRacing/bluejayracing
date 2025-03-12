@@ -57,5 +57,5 @@ constexpr uint32_t FILE_ROTATION_INTERVAL_MS =  30 * 1000;
 // External buffer declarations
 extern uint8_t mqttMessageBuffer[];
 extern uint8_t sdWriterBuffer[];
-extern baja::data::ChannelSample sdSampleBuffer[];
+// extern baja::data::ChannelSample sdSampleBuffer[];
 extern baja::data::ChannelSample ringBufferStorage[];

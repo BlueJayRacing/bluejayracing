@@ -74,7 +74,7 @@ constexpr uint8_t ADC_CHANNEL_COUNT = 16;
 constexpr size_t SAMPLE_SIZE_BYTES = sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint32_t);
 
 // Memory allocation constants
-constexpr size_t RING_BUFFER_SIZE = 20000;  // Size in number of samples
+constexpr size_t RING_BUFFER_SIZE = 24000;  // Size in number of samples
 constexpr size_t SD_BUFFER_SIZE = 64 * 1024; // SD write buffer size (64KB)
 constexpr size_t SAMPLES_PER_SD_BLOCK = 1500; // How many samples to process at once
 
