@@ -55,7 +55,7 @@ bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterfac
     Serial.println("  ADC Begin: Setting up channel map");
     initParam.chan_map.resize(ADC_CHANNEL_COUNT);
     for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
-        initParam.chan_map[i].channel_enable = (i == 0); // Only enable channel 0 for initial testing
+        initParam.chan_map[i].channel_enable = (i == 0 || i == 1); // Only enable channel 0 for initial testing
         initParam.chan_map[i].setup_sel = 0;
         
         // Default to AINx for positive input and AIN1 for negative
@@ -81,7 +81,7 @@ bool ADC7175Handler::begin(uint8_t csPin, uint8_t drdyPin, SPIClass& spiInterfac
     
     // Initialize the ADC with debugging
     Serial.println("  ADC Begin: Calling AD717X init function");
-    int result = adcDriver_.init(initParam, spiInterface_, csPin_, SPISettings(5000000, MSBFIRST, SPI_MODE3));
+    int result = adcDriver_.init(initParam, spiInterface_, csPin_, SPISettings(20000000, MSBFIRST, SPI_MODE3));
     Serial.print("  ADC init result: ");
     Serial.println(result);
     

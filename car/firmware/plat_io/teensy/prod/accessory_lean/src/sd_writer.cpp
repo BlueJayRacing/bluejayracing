@@ -1,6 +1,9 @@
 #include "sd_writer.hpp"
 #include <TimeLib.h>
 
+// External buffer declared in main.cpp
+extern uint8_t sdWriterBuffer[];
+
 namespace baja {
 namespace storage {
 
@@ -8,8 +11,16 @@ SDWriter::SDWriter(buffer::RingBuffer<data::ChannelSample, adc::RING_BUFFER_SIZE
     : ringBuffer_(ringBuffer),
       writeBufferPos_(0),
       fileCreationTime_(0),
-      bytesWritten_(0) {
-    // We'll use the global buffers when needed, no need to copy them here
+      bytesWritten_(0),
+      lastError_(0),
+      healthy_(true),
+      lastErrorTime_(0),
+      consecutiveErrors_(0),
+      totalErrors_(0),
+      lastSuccessfulWrite_(0),
+      lastFlushTime_(0),
+      totalFlushes_(0),
+      maxFlushTime_(0) {
 }
 
 SDWriter::~SDWriter() {
@@ -18,80 +29,67 @@ SDWriter::~SDWriter() {
 }
 
 bool SDWriter::begin(uint8_t chipSelect) {
-    Serial.println("  SD: Initializing with chipSelect=" + String(chipSelect));
+    Serial.println("SD: Initializing");
     
     // Initialize SD card in SDIO mode
     if (!sd_.begin(SdioConfig(FIFO_SDIO))) {
-        Serial.println("  SD: SDIO mode failed, trying SPI mode");
         // If SDIO fails, try SPI mode as fallback
         if (!sd_.begin(SdSpiConfig(chipSelect, SHARED_SPI, SD_SCK_MHZ(50)))) {
-            Serial.println("  SD: SPI mode failed too");
+            recordError(-1, "SD: Both SDIO and SPI initialization failed");
             return false;
         }
-        Serial.println("  SD: SPI mode succeeded");
+        Serial.println("SD: SPI mode initialized");
     } else {
-        Serial.println("  SD: SDIO mode succeeded");
+        Serial.println("SD: SDIO mode initialized");
     }
     
-    // Print SD card info for debugging
-    Serial.println("  SD: Card successfully mounted");
-    
-    cid_t cid;
-    if (sd_.card()->readCID(&cid)) {
-        Serial.print("  SD: Manufacturer ID: ");
-        Serial.println(int(cid.mid), HEX);
-        Serial.print("  SD: Product name: ");
-        for (uint8_t i = 0; i < 5; i++) {
-            Serial.print(char(cid.pnm[i]));
-        }
-        Serial.println();
-    }
-    
+    // Print SD card info (only essential info, reduce verbosity)
     uint32_t cardSize = sd_.card()->sectorCount();
     if (cardSize) {
         float cardSizeGB = 0.000512 * cardSize;
-        Serial.print("  SD: Card size: ");
+        Serial.print("SD: Card size: ");
         Serial.print(cardSizeGB);
         Serial.println(" GB");
     }
     
-    Serial.print("  SD: Volume is FAT");
+    Serial.print("SD: Volume is FAT");
     Serial.println(int(sd_.fatType()));
     
     uint32_t freeKB = sd_.vol()->freeClusterCount();
     freeKB *= sd_.vol()->sectorsPerCluster() / 2;
-    Serial.print("  SD: Free space: ");
+    Serial.print("SD: Free space: ");
     Serial.print(freeKB / 1024.0);
     Serial.println(" GB");
     
-    // Check write speed
-    Serial.println("  SD: Testing write speed...");
+    // Test write speed with a smaller test (less verbose)
     uint8_t testBuffer[4096];
     memset(testBuffer, 0xAA, sizeof(testBuffer));
     
     FsFile testFile;
     if (testFile.open("sdtest.bin", O_RDWR | O_CREAT | O_TRUNC)) {
         uint32_t start = micros();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 25; i++) {
             testFile.write(testBuffer, sizeof(testBuffer));
         }
         testFile.flush();
         uint32_t end = micros();
         testFile.close();
         
-        // Calculate write speed in KB/s
         float writeTime = (end - start) / 1000000.0;
-        float writeSpeed = (100 * 512) / 1024.0 / writeTime;
+        float writeSpeed = (25 * 4) / writeTime;
         
-        Serial.print("  SD: Write speed: ");
+        Serial.print("SD: Write speed: ");
         Serial.print(writeSpeed);
         Serial.println(" KB/s");
         
         // Delete test file
         sd_.remove("sdtest.bin");
     } else {
-        Serial.println("  SD: Could not create test file!");
+        recordError(-2, "SD: Could not create test file");
     }
+    
+    healthy_ = true;
+    lastSuccessfulWrite_ = millis();
     
     return true;
 }
@@ -104,24 +102,43 @@ void SDWriter::setChannelNames(const std::vector<adc::ChannelConfig>& channelCon
         }
     }
     
-    Serial.print("  SD: Set ");
+    Serial.print("SD: Set ");
     Serial.print(channelNames_.size());
     Serial.println(" channel names");
 }
 
 size_t SDWriter::process() {
+    // Check for file health
+    if (!healthy_) {
+        // Try to recover if unhealthy for more than 10 seconds
+        if (millis() - lastErrorTime_ > 10000) {
+            Serial.println("SD: Attempting recovery after errors");
+            closeFile();
+            if (!createNewFile()) {
+                // Still failing, but don't keep printing errors
+                return 0;
+            } else {
+                // Recovered successfully
+                healthy_ = true;
+                Serial.println("SD: Recovery successful");
+            }
+        } else {
+            // Still in cooldown period, don't retry yet
+            return 0;
+        }
+    }
+    
     // Check if we need to rotate the file
     if (shouldRotateFile()) {
-        Serial.println("  SD: Rotating file");
         closeFile();
-        createNewFile();
+        if (!createNewFile()) {
+            return 0;
+        }
     }
     
     // Check if file is open
     if (!dataFile_.isOpen()) {
-        Serial.println("  SD: File not open, creating new file");
         if (!createNewFile()) {
-            Serial.println("  SD: Failed to create new file");
             return 0;
         }
     }
@@ -129,35 +146,45 @@ size_t SDWriter::process() {
     // Read samples from the ring buffer
     size_t availableSamples = ringBuffer_.available();
     
-    if (availableSamples > 0 && availableSamples % 100 == 0) {
-        Serial.print("  SD: Available samples in ring buffer: ");
-        Serial.println(availableSamples);
-    }
-    
     if (availableSamples == 0) {
-        // No samples available to process
+        // No samples available, but still flush if buffer has been waiting too long
+        if (writeBufferPos_ > 0 && millis() - lastFlushTime_ > 5000) {
+            flushBuffer();
+        }
         return 0;
     }
     
-    // Limit to how many we can read at once
-    size_t samplesToRead = min(availableSamples, adc::SAMPLES_PER_SD_BLOCK);
-    size_t samplesRead = ringBuffer_.readMultiple(sdSampleBuffer, samplesToRead);
+    // Determine batch size based on available samples and buffer capacity
+    size_t remainingBufferSpace = MAX_BUFFER_SIZE - writeBufferPos_;
+    size_t estimatedSampleSize = 40; // Average CSV line length estimate
+    size_t maxSamplesForBuffer = remainingBufferSpace / estimatedSampleSize;
     
-    if (samplesRead > 0) {
-        Serial.print("  SD: Read ");
+    // Limit batch size to what's available
+    size_t samplesInBatch = min(availableSamples, maxSamplesForBuffer);
+    
+    // Read only 1000 samples at a time at most, to avoid long blocking
+    samplesInBatch = min(samplesInBatch, 1000UL);
+    
+    // Read the batch of samples
+    data::ChannelSample* sampleBatch = new data::ChannelSample[samplesInBatch];
+    size_t samplesRead = ringBuffer_.readMultiple(sampleBatch, samplesInBatch);
+    
+    // Only log large batches to reduce noise
+    if (samplesRead > 1000) {
+        Serial.print("SD: Processing ");
         Serial.print(samplesRead);
-        Serial.println(" samples from ring buffer");
+        Serial.println(" samples");
     }
     
     // Process each sample
     size_t samplesWritten = 0;
     for (size_t i = 0; i < samplesRead; i++) {
         // Format as CSV
-        std::string line = sdSampleBuffer[i].toCSV();
+        std::string line = sampleBatch[i].toCSV();
         
         // Add channel name if available
-        if (sdSampleBuffer[i].channelIndex < channelNames_.size()) {
-            line += "," + channelNames_[sdSampleBuffer[i].channelIndex];
+        if (sampleBatch[i].channelIndex < channelNames_.size()) {
+            line += "," + channelNames_[sampleBatch[i].channelIndex];
         }
         
         // Add newline
@@ -167,22 +194,19 @@ size_t SDWriter::process() {
         if (addLineToBuffer(line)) {
             samplesWritten++;
         } else {
-            Serial.println("  SD: Failed to add line to buffer");
+            // If buffer is full at this point, that's a problem
+            recordError(-3, "SD: Buffer overflow while adding line");
+            break;
         }
     }
     
-    // Check if buffer is near full and should be flushed
-    if (writeBufferPos_ >= adc::SD_BLOCK_SIZE * 0.5) {
-        Serial.print("  SD: Buffer half full (");
-        Serial.print(writeBufferPos_);
-        Serial.println(" bytes), flushing");
-        flushBuffer();
-    }
+    // Clean up
+    delete[] sampleBatch;
     
-    if (samplesWritten > 0) {
-        Serial.print("  SD: Wrote ");
-        Serial.print(samplesWritten);
-        Serial.println(" samples to buffer");
+    // Check if buffer should be flushed
+    if (writeBufferPos_ >= BUFFER_FLUSH_THRESHOLD || 
+        (writeBufferPos_ >= MIN_WRITE_SIZE && millis() - lastFlushTime_ > 1000)) {
+        flushBuffer();
     }
     
     return samplesWritten;
@@ -195,39 +219,12 @@ bool SDWriter::createNewFile(bool addHeader) {
     // Generate a filename
     currentFilename_ = generateFilename();
     
-    Serial.print("  SD: Creating new file: ");
+    Serial.print("SD: Creating new file: ");
     Serial.println(currentFilename_.c_str());
     
     // Create the file
     if (!dataFile_.open(currentFilename_.c_str(), O_WRONLY | O_CREAT | O_TRUNC)) {
-        Serial.print("  SD: Failed to create file: ");
-        Serial.println(currentFilename_.c_str());
-        
-        // Try to diagnose the issue
-        if (!sd_.exists("/")) {
-            Serial.println("  SD: Root directory not accessible!");
-        }
-        
-        // List root directory contents
-        Serial.println("  SD: Root directory contents:");
-        FsFile root;
-        if (root.open("/")) {
-            FsFile file;
-            while (file.openNext(&root, O_RDONLY)) {
-                char fileName[64];
-                file.getName(fileName, sizeof(fileName));
-                Serial.print("    ");
-                Serial.print(fileName);
-                Serial.print(" (");
-                Serial.print(file.size());
-                Serial.println(" bytes)");
-                file.close();
-            }
-            root.close();
-        } else {
-            Serial.println("  SD: Could not open root directory!");
-        }
-        
+        recordError(-4, "SD: Failed to create file");
         return false;
     }
     
@@ -235,31 +232,32 @@ bool SDWriter::createNewFile(bool addHeader) {
     fileCreationTime_ = millis();
     bytesWritten_ = 0;
     writeBufferPos_ = 0;
+    lastFlushTime_ = millis();
     
     // Write header if requested
     if (addHeader) {
-        Serial.println("  SD: Writing header");
         if (!writeHeader()) {
-            Serial.println("  SD: Failed to write header");
+            recordError(-5, "SD: Failed to write header");
             closeFile();
             return false;
         }
     }
     
-    Serial.println("  SD: File created successfully");
+    // Update status
+    lastSuccessfulWrite_ = millis();
+    consecutiveErrors_ = 0;
+    
     return true;
 }
 
 bool SDWriter::closeFile() {
     // Flush any remaining data
     if (writeBufferPos_ > 0) {
-        Serial.println("  SD: Flushing remaining data before closing");
         flushBuffer();
     }
     
     // Close the file
     if (dataFile_.isOpen()) {
-        Serial.println("  SD: Closing file");
         dataFile_.close();
         return true;
     }
@@ -281,11 +279,30 @@ bool SDWriter::shouldRotateFile() const {
         return true;
     }
     
+    // Also rotate file if it gets too large (100MB)
+    if (bytesWritten_ >= 100 * 1024 * 1024) {
+        return true;
+    }
+    
     return false;
 }
 
 bool SDWriter::flush() {
     return flushBuffer();
+}
+
+int SDWriter::getLastError() const {
+    return lastError_;
+}
+
+bool SDWriter::isHealthy() const {
+    return healthy_;
+}
+
+void SDWriter::resetHealth() {
+    healthy_ = true;
+    consecutiveErrors_ = 0;
+    lastErrorTime_ = 0;
 }
 
 std::string SDWriter::generateFilename() const {
@@ -314,9 +331,6 @@ bool SDWriter::writeHeader() {
     // Add newline
     header += "\n";
     
-    Serial.print("  SD: Writing header: ");
-    Serial.println(header.c_str());
-    
     // Write to buffer
     return addLineToBuffer(header);
 }
@@ -327,55 +341,85 @@ bool SDWriter::flushBuffer() {
         return true;
     }
     
-    Serial.print("  SD: Flushing ");
-    Serial.print(writeBufferPos_);
-    Serial.println(" bytes to SD card");
+    // Don't log every flush to reduce noise
+    if (writeBufferPos_ > 60000) {
+        Serial.print("SD: Flushing ");
+        Serial.print(writeBufferPos_);
+        Serial.println(" bytes");
+    }
+    
+    uint32_t startTime = micros();
     
     // Disable interrupts during SD write to prevent corruption
     noInterrupts();
     
-    // Write the buffer to the file
-    size_t bytesWritten = dataFile_.write(sdWriterBuffer, writeBufferPos_);
+    // Write the buffer to the file - Access the globally defined buffer
+    size_t bytesWritten = dataFile_.write(::sdWriterBuffer, writeBufferPos_);
     
     // Re-enable interrupts
     interrupts();
     
+    uint32_t flushTime = micros() - startTime;
+    
     if (bytesWritten != writeBufferPos_) {
-        Serial.print("  SD: Write error! Expected to write ");
-        Serial.print(writeBufferPos_);
-        Serial.print(" bytes but wrote ");
-        Serial.println(bytesWritten);
+        recordError(-6, "SD: Write error during flush");
+        return false;
     }
     
     // Update counters
     bytesWritten_ += bytesWritten;
     writeBufferPos_ = 0;
+    lastFlushTime_ = millis();
+    totalFlushes_++;
+    maxFlushTime_ = max(maxFlushTime_, flushTime);
+    lastSuccessfulWrite_ = millis();
     
     // Sync file occasionally to prevent data loss on power failure
-    if (bytesWritten_ % (adc::SD_BLOCK_SIZE * 10) == 0) {
-        Serial.println("  SD: Syncing file to prevent data loss");
+    // Only sync every 10 flushes to reduce wear on the card
+    if (totalFlushes_ % 10 == 0) {
         dataFile_.sync();
     }
     
-    return (bytesWritten == writeBufferPos_);
+    return true;
 }
 
 bool SDWriter::addLineToBuffer(const std::string& line) {
     // Check if line will fit in the buffer
-    if (writeBufferPos_ + line.length() > adc::SD_BLOCK_SIZE*10) {
+    if (writeBufferPos_ + line.length() > MAX_BUFFER_SIZE) {
         // Buffer is full, flush it first
-        Serial.println("  SD: Buffer full, flushing before adding line");
         if (!flushBuffer()) {
-            Serial.println("  SD: Failed to flush buffer");
             return false;
         }
     }
     
-    // Add line to buffer
-    memcpy((char*)sdWriterBuffer + writeBufferPos_, line.c_str(), line.length());
+    // Add line to buffer - Access the globally defined buffer
+    memcpy((char*)::sdWriterBuffer + writeBufferPos_, line.c_str(), line.length());
     writeBufferPos_ += line.length();
     
     return true;
+}
+
+void SDWriter::recordError(int errorCode, const char* errorMessage) {
+    lastError_ = errorCode;
+    lastErrorTime_ = millis();
+    consecutiveErrors_++;
+    totalErrors_++;
+    
+    // Only log every few errors to prevent log spam
+    if (consecutiveErrors_ == 1 || consecutiveErrors_ % 10 == 0) {
+        Serial.print("SD ERROR #");
+        Serial.print(totalErrors_);
+        Serial.print(": ");
+        Serial.print(errorMessage);
+        Serial.print(" (code ");
+        Serial.print(errorCode);
+        Serial.println(")");
+    }
+    
+    // Mark as unhealthy if too many consecutive errors
+    if (consecutiveErrors_ >= 3) {
+        healthy_ = false;
+    }
 }
 
 } // namespace storage

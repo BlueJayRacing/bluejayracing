@@ -64,7 +64,7 @@ struct ADCSettings {
         referenceSource(INTERNAL_REF),
         operatingMode(CONTINUOUS),
         readStatusWithData(true),
-        odrSetting(SPS_10) {}  // Set for 50kHz total sampling rate across all channels
+        odrSetting(SPS_50000) {}  // Set for 50kHz total sampling rate across all channels
 };
 
 // Number of ADC channels available on AD7175-8
@@ -73,16 +73,14 @@ constexpr uint8_t ADC_CHANNEL_COUNT = 16;
 // Define the size of each sample in bytes (timestamp + channel + value)
 constexpr size_t SAMPLE_SIZE_BYTES = sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint32_t);
 
-// Define number of samples to fit in 160KB buffer (reduced from 320KB to save RAM)
-constexpr size_t RING_BUFFER_SIZE = 24000; // Hard-coded to save calculation space
-
-// Define SD card block size (4KB)
-constexpr size_t SD_BLOCK_SIZE = 4 * 1024;
-
-// Calculate how many samples fit in each SD block
-constexpr size_t SAMPLES_PER_SD_BLOCK = 3000; // Hard-coded to save calculation space
+// Memory allocation constants
+constexpr size_t RING_BUFFER_SIZE = 20000;  // Size in number of samples
+constexpr size_t SD_BUFFER_SIZE = 64 * 1024; // SD write buffer size (64KB)
+constexpr size_t SAMPLES_PER_SD_BLOCK = 1500; // How many samples to process at once
 
 } // namespace adc
 } // namespace baja
 
+// Declare external buffer arrays to be defined in main.cpp
+extern uint8_t sdWriterBuffer[];
 extern baja::adc::ChannelConfig channelConfigsArray[];

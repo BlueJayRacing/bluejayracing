@@ -8,8 +8,16 @@
 #include "sample_data.hpp"
 #include "adc_channel_config.hpp"
 
+// Forward declaration of global buffer to fix linkage issues
+extern uint8_t sdWriterBuffer[];
+
 namespace baja {
 namespace storage {
+
+// Define buffer size constants in bytes
+constexpr size_t MIN_WRITE_SIZE = 4 * 1024;      // 4KB minimum write for efficiency
+constexpr size_t MAX_BUFFER_SIZE = 64 * 1024;    // 64KB maximum buffer size
+constexpr size_t BUFFER_FLUSH_THRESHOLD = 32 * 1024;  // 32KB flush threshold
 
 /**
  * @brief SD card writer for data logging
@@ -49,7 +57,7 @@ public:
     /**
      * @brief Process data from the ring buffer
      * 
-     * This function should be called regularly from the main loop.
+     * This function should be called regularly from the SD writer thread.
      * It reads data from the ring buffer and writes it to the SD card.
      * 
      * @return Number of samples written
@@ -100,6 +108,25 @@ public:
      * @return true if successful
      */
     bool flush();
+    
+    /**
+     * @brief Get the last error code
+     * 
+     * @return Last error code (0 = no error)
+     */
+    int getLastError() const;
+    
+    /**
+     * @brief Check if the SD writer is healthy
+     * 
+     * @return true if no critical errors have occurred
+     */
+    bool isHealthy() const;
+    
+    /**
+     * @brief Reset the health status
+     */
+    void resetHealth();
 
 private:
     // Reference to the ring buffer
@@ -121,6 +148,19 @@ private:
     // Tracking for file rotation
     uint32_t fileCreationTime_;
     size_t bytesWritten_;
+    
+    // Error tracking
+    int lastError_;
+    bool healthy_;
+    uint32_t lastErrorTime_;
+    uint32_t consecutiveErrors_;
+    uint32_t totalErrors_;
+    uint32_t lastSuccessfulWrite_;
+    
+    // Performance tracking
+    uint32_t lastFlushTime_;
+    uint32_t totalFlushes_;
+    uint32_t maxFlushTime_;
     
     /**
      * @brief Generate a filename with timestamp
@@ -150,6 +190,14 @@ private:
      * @return true if successful
      */
     bool addLineToBuffer(const std::string& line);
+    
+    /**
+     * @brief Record an error
+     * 
+     * @param errorCode Error code
+     * @param errorMessage Error message
+     */
+    void recordError(int errorCode, const char* errorMessage);
 };
 
 } // namespace storage

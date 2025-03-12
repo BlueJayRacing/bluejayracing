@@ -46,37 +46,17 @@ public:
         bool success = false;
         
         // Critical section - no other thread can modify buffer during this time
-        // noInterrupts();
-        
         if (count_ < SIZE) {
             buffer_[writeIndex_] = item;
             writeIndex_ = (writeIndex_ + 1) % SIZE;
             count_++;
             totalWriteCount_++;
-            
-            // Print debug info every 1000 writes
-            // if (totalWriteCount_ % 100000 == 0) {
-            //     Serial.print("RingBuffer: 1000 samples written, total=");
-            //     Serial.print(totalWriteCount_);
-            //     Serial.print(", count=");
-            //     Serial.print(count_);
-            //     Serial.print("/");
-            //     Serial.println(SIZE);
-            // }
-            
             success = true;
         } else {
             // Buffer is full
             overrunCount_++;
-            
-            // Print overrun warning
-            // if (overrunCount_ % 1000000 == 1) {
-            //     Serial.print("RingBuffer OVERRUN: Buffer full, sample dropped. Count=");
-            //     Serial.println(overrunCount_);
-            // }
         }
         
-        // interrupts();
         return success;
     }
 
@@ -160,8 +140,8 @@ public:
         count_ -= itemsToRead;
         totalReadCount_ += itemsToRead;
         
-        // Print debug info for large reads
-        if (itemsToRead > 100) {
+        // Only log larger reads to reduce log spam
+        if (itemsToRead > 1000) {
             Serial.print("RingBuffer: Read ");
             Serial.print(itemsToRead);
             Serial.print(" samples. Total reads=");

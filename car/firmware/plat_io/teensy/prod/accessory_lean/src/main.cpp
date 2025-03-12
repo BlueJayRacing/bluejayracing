@@ -14,14 +14,14 @@ const uint8_t ADC_CS_PIN = 10;     // ADC chip select pin
 const uint8_t ADC_DRDY_PIN = 24;   // ADC data ready pin (MISO2)
 const uint8_t SD_CS_PIN = 254;     // SD card CS pin (for SPI fallback)
 
-// Create global buffers in RAM2 to reduce RAM1 usage
+// Create global buffers in RAM2 to reduce RAM1 usage - Making them globally accessible
 DMAMEM baja::data::ChannelSample ringBufferStorage[baja::adc::RING_BUFFER_SIZE];
-DMAMEM uint8_t sdWriterBuffer[baja::adc::SD_BLOCK_SIZE];
+DMAMEM uint8_t sdWriterBuffer[baja::storage::MAX_BUFFER_SIZE]; // Global scope for linker visibility
 DMAMEM baja::data::ChannelSample sdSampleBuffer[baja::adc::SAMPLES_PER_SD_BLOCK];
 DMAMEM uint8_t mqttMessageBuffer[baja::data::MQTT_OPTIMAL_MESSAGE_SIZE];
 DMAMEM baja::adc::ChannelConfig channelConfigsArray[baja::adc::ADC_CHANNEL_COUNT];
 
-// Create the global ring buffer (160KB) with external buffer
+// Create the global ring buffer with external buffer
 baja::buffer::RingBuffer<baja::data::ChannelSample, baja::adc::RING_BUFFER_SIZE> sampleBuffer(ringBufferStorage);
 
 // Create the ADC handler
@@ -49,13 +49,27 @@ uint32_t lastSampleCount = 0;
 // Flag for SD writer thread
 volatile bool sdWriterRunning = false;
 
+// Thread handle for SD writer thread
+int sdWriterThreadId = -1;
+
 // Function to get time from Teensy RTC
 time_t getTeensyTime() {
     return Teensy3Clock.get();
 }
 
+void dateTime(uint16_t *date, uint16_t *time) {
+    *date = FAT_DATE(year(), month(), day());
+    *time = FAT_TIME(hour(), minute(), second());
+}
+
 // Function to set up the correct time for the Teensy
 void setupTime() {
+
+    // Sync with RTC
+    setSyncProvider(getTeensyTime);  
+    SdFile::dateTimeCallback(dateTime);
+
+
     // Set a default time if no time is set (2024-01-01 00:00:00)
     if (year() < 2023) {
         setTime(0, 0, 0, 1, 1, 2024);
@@ -69,8 +83,7 @@ void setupTime() {
     Serial.print("Current time: ");
     Serial.println(timeStr);
     
-    // Sync with RTC
-    setSyncProvider(getTeensyTime);
+    
     
     // Check if RTC was set
     if (timeStatus() != timeSet) {
@@ -94,7 +107,7 @@ void mqttThreadFunc() {
         // Check if MQTT is enabled
         if (mqttEnabled) {
             // Process MQTT messages
-            size_t publishedCount = mqttPublisher.process();
+            mqttPublisher.process(); // Removed unused variable warning
             
             // Check if we lost connection
             if (!mqttPublisher.isConnected()) {
@@ -131,6 +144,9 @@ void sdWriterThreadFunc() {
     Serial.println("SD Writer thread started");
     sdWriterRunning = true;
     
+    // Set a longer time slice for this thread
+    threads.setTimeSlice(threads.id(), 100); // 100ms time slice
+    
     // Create a new data file
     if (!sdWriter.createNewFile()) {
         Serial.println("SD Writer thread: Failed to create initial data file!");
@@ -141,41 +157,56 @@ void sdWriterThreadFunc() {
     
     // Main SD writer loop
     uint32_t totalWritten = 0;
+    uint32_t lastStatusTime = 0;
+    uint32_t lastAliveMessage = 0;
+    
     while (sdWriterRunning) {
         // Process samples and write to SD card
         size_t samplesWritten = sdWriter.process();
         totalWritten += samplesWritten;
         
-        // Print status occasionally
-        static uint32_t lastStatusTime = 0;
-        if (millis() - lastStatusTime > 5000) {
+        // Print status occasionally (every 30 seconds)
+        uint32_t now = millis();
+        if (now - lastStatusTime > 30000) {
             Serial.print("SD Writer thread: Total samples written: ");
             Serial.print(totalWritten);
             Serial.print(", Current file: ");
             Serial.print(sdWriter.getCurrentFilename().c_str());
             Serial.print(", Bytes written: ");
             Serial.println(sdWriter.getBytesWritten());
-            lastStatusTime = millis();
+            lastStatusTime = now;
         }
         
-        // Check if we need to rotate the file
-        if (sdWriter.shouldRotateFile()) {
-            Serial.println("SD Writer thread: Rotating file");
+        // Always print an alive message every minute
+        if (now - lastAliveMessage > 60000) {
+            Serial.println("SD Writer thread: Still alive and running");
+            lastAliveMessage = now;
+        }
+        
+        // Check if writer is still healthy
+        if (!sdWriter.isHealthy()) {
+            Serial.println("SD Writer thread: Detected unhealthy state, attempting recovery");
+            
+            // Try to close and recreate the file
             sdWriter.closeFile();
-            if (!sdWriter.createNewFile()) {
-                Serial.println("SD Writer thread: Failed to create new file during rotation!");
+            delay(100); // Brief delay for recovery
+            
+            if (sdWriter.createNewFile()) {
+                Serial.println("SD Writer thread: Recovery successful");
+                sdWriter.resetHealth();
             } else {
-                Serial.print("SD Writer thread: Created new file: ");
-                Serial.println(sdWriter.getCurrentFilename().c_str());
+                Serial.println("SD Writer thread: Recovery failed, will retry later");
+                delay(5000); // Longer delay before next retry
             }
         }
         
         // Small delay to prevent CPU hogging, but only if no samples were written
         if (samplesWritten == 0) {
+            // Use shorter delays to stay responsive
             delay(1);
         }
         
-        // Yield to other threads
+        // Explicitly yield to other threads
         threads.yield();
     }
     
@@ -204,7 +235,7 @@ void initializeChannelConfigs() {
         channelConfigsArray[i].setupIndex = 0;
         
         // Only enable channel 0 for initial testing
-        channelConfigsArray[i].enabled = (i == 0);
+        channelConfigsArray[i].enabled = (i == 0 | i == 1);
         
         // Set channel name
         char name[16];
@@ -242,6 +273,9 @@ void setup() {
     
     // Initialize channel configurations
     initializeChannelConfigs();
+
+    // Set up microslices for faster thread switching (100 microseconds)
+    threads.setSliceMicros(20);  // Set global time slice to 100 microseconds
     
     // Initialize the SD card
     Serial.println("Initializing SD card...");
@@ -272,19 +306,13 @@ void setup() {
     // Check DRDY pin state before reset
     checkDrdyPin();
     
-    // Perform manual reset
-    // adcHandler.resetADC();
-    
-    // Check DRDY pin state after reset
-    // checkDrdyPin();
-    
     // Configure ADC settings
     baja::adc::ADCSettings adcSettings;
     adcSettings.deviceType = ID_AD7175_8;
     adcSettings.referenceSource = INTERNAL_REF;
     adcSettings.operatingMode = CONTINUOUS;
     adcSettings.readStatusWithData = true;
-    adcSettings.odrSetting = SPS_10; // Start with slower rate for testing
+    adcSettings.odrSetting = SPS_250000; // Start with slower rate for testing
     
     // Initialize ADC
     adcInitialized = adcHandler.begin(ADC_CS_PIN, ADC_DRDY_PIN, SPI, adcSettings);
@@ -335,10 +363,23 @@ void setup() {
         adcHandler.setInterruptPriority(64); // Lower number = higher priority
     }
     
-    // // Start SD writer thread if SD card is initialized
+    // Start SD writer thread if SD card is initialized
     if (sdCardInitialized) {
         Serial.println("Starting SD writer thread...");
-        threads.addThread(sdWriterThreadFunc);
+        
+        // Use a larger stack and longer time slice for SD writer thread
+        sdWriterThreadId = threads.addThread(sdWriterThreadFunc, 0, 8192);
+        
+        if (sdWriterThreadId < 0) {
+            Serial.println("Failed to create SD writer thread!");
+            sdWriterRunning = false;
+        } else {
+            Serial.print("SD writer thread created with ID: ");
+            Serial.println(sdWriterThreadId);
+            
+            // Increase thread priority by setting a longer time slice
+            // threads.setTimeSlice(sdWriterThreadId, 1); // 10* 100us = 1 ms
+        }
     } else {
         Serial.println("SD card not initialized, skipping SD writer thread");
     }
@@ -376,12 +417,70 @@ void loop() {
         if (adcHandler.processData()) {
             samplesProcessedTotal++;
             
-            // Print a dot every 1000 samples for visual feedback
-            if (samplesProcessedTotal % 1000 == 0) {
+            // Print a dot every 10000 samples for visual feedback (reduced from 1000)
+            if (samplesProcessedTotal % 10000 == 0) {
                 Serial.print(".");
                 
-                if (samplesProcessedTotal % 50000 == 0) {
+                if (samplesProcessedTotal % 500000 == 0) {
                     Serial.println();
+                }
+            }
+        }
+    }
+    
+    // Monitor thread health periodically
+    static uint32_t lastThreadCheckTime = 0;
+    uint32_t currentTime = millis();
+    
+    // Check threads every 10 seconds
+    if (currentTime - lastThreadCheckTime > 10000) {
+        lastThreadCheckTime = currentTime;
+        
+        // Check SD writer thread health if it should be running
+        if (sdWriterRunning && sdWriterThreadId > 0) {
+            int threadState = threads.getState(sdWriterThreadId);
+            
+            // Print thread state for debugging
+            Serial.print("SD Writer thread state: ");
+            switch (threadState) {
+                case Threads::EMPTY:
+                    Serial.println("EMPTY (thread doesn't exist)");
+                    break;
+                case Threads::RUNNING:
+                    Serial.println("RUNNING (healthy)");
+                    break;
+                case Threads::ENDED:
+                    Serial.println("ENDED (thread has terminated)");
+                    break;
+                case Threads::ENDING:
+                    Serial.println("ENDING (thread is terminating)");
+                    break;
+                case Threads::SUSPENDED:
+                    Serial.println("SUSPENDED (thread is paused)");
+                    break;
+                default:
+                    Serial.print("UNKNOWN (");
+                    Serial.print(threadState);
+                    Serial.println(")");
+            }
+            
+            // If thread has ended unexpectedly, restart it
+            if (threadState != Threads::RUNNING) {
+                Serial.println("SD Writer thread is not running! Attempting to restart...");
+                
+                // Reset the flag first
+                sdWriterRunning = false;
+                delay(100);
+                
+                // Create a new thread
+                sdWriterThreadId = threads.addThread(sdWriterThreadFunc, 0, 8192);
+                
+                if (sdWriterThreadId > 0) {
+                    Serial.print("SD Writer thread restarted with ID: ");
+                    Serial.println(sdWriterThreadId);
+                    threads.setTimeSlice(sdWriterThreadId, 100);
+                } else {
+                    Serial.println("Failed to restart SD Writer thread!");
                 }
             }
         }
@@ -391,32 +490,31 @@ void loop() {
     static uint32_t lastStatusTime = 0;
     static uint32_t lastDrdyCheckTime = 0;
     static uint32_t lastBufferPrintTime = 0;
-    uint32_t currentTime = millis();
     
-    // Check DRDY pin state every 10 seconds
-    if (currentTime - lastDrdyCheckTime > 10000) {
+    // Check DRDY pin state every 30 seconds (reduced frequency)
+    if (currentTime - lastDrdyCheckTime > 30000) {
         checkDrdyPin();
         lastDrdyCheckTime = currentTime;
         
         // Also check for new samples
         uint32_t currentSampleCount = adcHandler.getSampleCount();
         uint32_t sampleDelta = currentSampleCount - lastSampleCount;
-        Serial.print("New samples in last 10 seconds: ");
+        Serial.print("New samples in last 30 seconds: ");
         Serial.print(sampleDelta);
         Serial.print(" (");
-        Serial.print(sampleDelta / 10.0f);
+        Serial.print(sampleDelta / 30.0f);
         Serial.println(" Hz)");
         lastSampleCount = currentSampleCount;
     }
     
-    // Print buffer stats every 5 seconds
-    if (currentTime - lastBufferPrintTime > 5000) {
+    // Print buffer stats every 15 seconds (reduced frequency)
+    if (currentTime - lastBufferPrintTime > 15000) {
         sampleBuffer.printStats();
         lastBufferPrintTime = currentTime;
     }
     
-    // Print detailed status every 10 seconds
-    if (currentTime - lastStatusTime > 10000) {
+    // Print detailed status every 30 seconds (reduced frequency)
+    if (currentTime - lastStatusTime > 30000) {
         Serial.println("\n========== SYSTEM STATUS ==========");
         Serial.print("Uptime: ");
         Serial.print((currentTime - startTime) / 1000);
@@ -465,6 +563,12 @@ void loop() {
             Serial.println(sdWriter.getCurrentFilename().c_str());
             Serial.print("  Bytes written: ");
             Serial.println(sdWriter.getBytesWritten());
+            Serial.print("  SD writer healthy: ");
+            Serial.println(sdWriter.isHealthy() ? "Yes" : "No");
+            if (!sdWriter.isHealthy()) {
+                Serial.print("  Last error code: ");
+                Serial.println(sdWriter.getLastError());
+            }
         }
         
         Serial.println("----- MQTT Status -----");
@@ -476,6 +580,9 @@ void loop() {
             Serial.print(timeToReconnect > 0 ? timeToReconnect / 1000 : 0);
             Serial.println(" seconds");
         }
+        
+        Serial.println("----- Thread Status -----");
+        Serial.println(threads.threadsInfo());
         
         Serial.println("===================================\n");
         lastStatusTime = currentTime;
