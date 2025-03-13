@@ -29,7 +29,7 @@ constexpr size_t SD_MAX_FILENAME_LENGTH = 32;
 
 // Thread Configuration
 constexpr int THREAD_SLICE_MICROS = 100;   // Time slice in microseconds for TeensyThreads
-constexpr int SD_WRITER_THREAD_PRIORITY = 20; // Higher number = higher priority (for TeensyThreads)
+constexpr int SD_WRITER_THREAD_PRIORITY = 5; // Higher number = higher priority (for TeensyThreads)
 constexpr int SD_WRITER_THREAD_STACK_SIZE = 8192; // Stack size for SD writer thread
 
 // MQTT Configuration

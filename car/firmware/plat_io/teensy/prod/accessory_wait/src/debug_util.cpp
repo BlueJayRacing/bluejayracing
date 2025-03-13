@@ -6,7 +6,7 @@ namespace baja {
 namespace util {
 
 // Initialize static members
-DebugOutput::VerbosityLevel DebugOutput::currentLevel = DebugOutput::DETAIL;
+DebugOutput::VerbosityLevel DebugOutput::currentLevel = DebugOutput::DEBUG;
 Stream* DebugOutput::serial = &Serial;
 
 void DebugOutput::init(VerbosityLevel level, Stream* serialPtr) {

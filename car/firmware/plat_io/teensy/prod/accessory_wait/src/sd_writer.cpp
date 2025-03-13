@@ -67,11 +67,7 @@ bool SDWriter::begin(uint8_t chipSelect) {
         return false;
     }
     
-    // Test direct write first
-    testFile.println("Direct write test");
-    testFile.flush();
-    
-    // Now test through RingBuf
+    // Initialize the RingBuf with the file
     RingBuf<FsFile, 4096> testBuf;
     testBuf.begin(&testFile);
     
@@ -133,6 +129,7 @@ size_t SDWriter::process() {
         if (!createNewFile()) {
             return 0;
         }
+        return 0;
     }
     
     // Check if we need to rotate the file
@@ -141,6 +138,7 @@ size_t SDWriter::process() {
         if (!createNewFile()) {
             return 0;
         }
+        return 0;
     }
     
     // Get available samples from the data buffer
@@ -152,7 +150,10 @@ size_t SDWriter::process() {
             if (isFirstFile_ || (millis() - lastWriteTime_ > 5000)) {
                 syncRingBuf(true); // Force full sync
             } else if (!dataFile_.isBusy()) {
+                baja::util::Debug::info("SD: Syncing RingBuf, no samples");
                 syncRingBuf(false); // Normal sync of complete sectors
+            } else { // ring buffer is busy
+                baja::util::Debug::info("no sample available, ring buffer is busy");
             }
         }
         return 0;
@@ -178,11 +179,11 @@ size_t SDWriter::process() {
     }
     
     // Determine batch size based on available samples
-    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(1000));
+    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(25)); ///////////////////////////////////////////////////////////// set samples smaler
     
     // For first file, process smaller batches to ensure quicker writes
     if (isFirstFile_) {
-        samplesInBatch = min(samplesInBatch, static_cast<size_t>(100));
+        samplesInBatch = min(samplesInBatch, static_cast<size_t>(25));
     }
     
     // Ensure RingBuf has enough space (approx. 50 bytes per sample in CSV)
@@ -228,7 +229,7 @@ size_t SDWriter::process() {
     if (samplesProcessed > 0) {
         totalSamplesWritten_ += samplesProcessed;
         
-        if (samplesProcessed > 100) {
+        if (samplesProcessed > 50) {
             util::Debug::detail("SD: Processed " + String(samplesProcessed) + 
                              " samples in " + String(processingTime) + " µs");
         }
@@ -272,11 +273,8 @@ bool SDWriter::createNewFile(bool addHeader) {
         return false;
     }
     
-    // Write a direct marker to the file first to ensure it's valid
-    dataFile_.println("# Baja Data Acquisition System");
-    dataFile_.println("# File created: " + String(year()) + "-" + String(month()) + "-" + String(day()) + 
-                      " " + String(hour()) + ":" + String(minute()) + ":" + String(second()));
-    dataFile_.flush();
+    // CRITICAL: Initialize RingBuf with the file BEFORE preallocation
+    ringBuf_->begin(&dataFile_);
     
     // Pre-allocate file space to reduce fragmentation
     util::Debug::detail("SD: Pre-allocating " + String(config::SD_PREALLOC_SIZE / 1024 / 1024) + " MB");
@@ -284,17 +282,16 @@ bool SDWriter::createNewFile(bool addHeader) {
     bool preAllocSuccess = dataFile_.preAllocate(config::SD_PREALLOC_SIZE);
     if (!preAllocSuccess) {
         util::Debug::warning("SD: File preallocation failed - continuing without preallocation");
+    } else {
+        util::Debug::info("SD: Preallocation successful");
     }
-    
-    // Initialize RingBuf with the file - must happen before writing
-    ringBuf_->begin(&dataFile_);
     
     // Reset counters
     fileCreationTime_ = millis();
     bytesWritten_ = 0;
     lastWriteTime_ = millis();
     
-    // Write header if requested
+    // Write header if requested (through the RingBuf)
     if (addHeader) {
         if (!writeHeader()) {
             recordError(-7, "SD: Failed to write header");
@@ -302,20 +299,19 @@ bool SDWriter::createNewFile(bool addHeader) {
             return false;
         }
         
-        // Force a complete sync to ensure header is written
+        // Force a sync to make sure header is written
         if (!ringBuf_->sync()) {
             recordError(-9, "SD: Failed to sync header");
             closeFile();
             return false;
+        } else {
+            // Update bytes written
+            bytesWritten_ = dataFile_.position();
         }
     }
     
     // Mark as first file for special handling
-    isFirstFile_ = true;
-    
-    // Update status
-    lastSuccessfulWrite_ = millis();
-    consecutiveErrors_ = 0;
+    // isFirstFile_ = true;
     
     // Verify the file is open and valid
     if (!dataFile_.isOpen()) {
@@ -323,9 +319,9 @@ bool SDWriter::createNewFile(bool addHeader) {
         return false;
     }
     
-    // Log the current file position
-    bytesWritten_ = dataFile_.position();
-    util::Debug::detail("SD: Initial file position: " + String(bytesWritten_));
+    // Update status
+    lastSuccessfulWrite_ = millis();
+    consecutiveErrors_ = 0;
     
     return true;
 }
@@ -340,6 +336,9 @@ bool SDWriter::closeFile() {
         
         // Flush any remaining file buffers
         dataFile_.flush();
+        
+        // Get final position for byte count
+        bytesWritten_ = dataFile_.position();
         
         // Truncate file to actual data size and close
         dataFile_.truncate();
@@ -477,9 +476,11 @@ bool SDWriter::syncRingBuf(bool forceFullSync) {
     uint32_t startTime = micros();
     bool success = false;
     size_t bytesWritten = 0;
+    bool syncType = false;
     
     // Force a full sync if requested, otherwise only write complete sectors
-    if (true) {
+    if (forceFullSync) {
+        syncType = true;
         // Use full sync for guaranteed writes (slightly slower)
         success = ringBuf_->sync();
         bytesWritten = bytesUsed; // All bytes should be written
@@ -500,17 +501,20 @@ bool SDWriter::syncRingBuf(bool forceFullSync) {
     uint32_t syncTime = micros() - startTime;
     
     if (success) {
-        bytesWritten_ += bytesWritten;
+        // Update bytes written based on file position - more accurate
+        bytesWritten_ = dataFile_.position();
         lastSuccessfulWrite_ = millis();
         lastWriteTime_ = millis();
         
         if (syncTime > maxWriteTime_) {
             maxWriteTime_ = syncTime;
+            util::Debug::info("SD: Max write time: " + String(maxWriteTime_) + " µs");
         }
-        
-        if (bytesWritten > 10000) {
-            util::Debug::detail("SD: Synced " + String(bytesWritten) + 
-                             " bytes in " + String(syncTime) + " µs");
+        String a = (syncType? "Force":"write");
+        // Only print the log if either bytesWritten > 500 or syncTime > 100 AND the calculated speed is below 20 MB/s
+        if ((bytesWritten > 1000 || syncTime > 50) && (static_cast<float>(bytesWritten) / syncTime < 20.0)) {
+            util::Debug::info("SD: " + a + "-Synced " + String(bytesWritten) + 
+                            " bytes in " + String(syncTime) + " µs");
         }
         
         return true;
