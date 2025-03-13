@@ -6,7 +6,7 @@ idf_component_register( SRCS "test.cpp"
                             esp_event
                             esp_timer 
                             freertos
-                            sensorSetup
+                            sensor_setup
                             ads1120
                             ad5626
                             log

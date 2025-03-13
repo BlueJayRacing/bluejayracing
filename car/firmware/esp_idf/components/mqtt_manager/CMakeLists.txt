@@ -3,7 +3,7 @@ idf_component_register( SRCS "mqttManager.cpp"
                         REQUIRES 
                             driver
                             mqtt
-                            lockGuard
+                            lock_guard
                             esp_wifi
                             esp_system
                             esp_netif
