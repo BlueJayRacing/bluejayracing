@@ -20,22 +20,21 @@ SDWriter::SDWriter(buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_B
       totalWrites_(0),
       maxWriteTime_(0),
       totalSamplesWritten_(0),
-      wasBufferFull_(false) {
+      wasBufferFull_(false),
+      isFirstFile_(true) {
 }
 
 SDWriter::~SDWriter() {
-    // Close any open file
     closeFile();
 }
 
 bool SDWriter::begin(uint8_t chipSelect) {
     util::Debug::info("SD: Initializing");
     
-    // Initialize SD card in SDIO mode
+    // Try SDIO mode first, then fall back to SPI if needed
     if (!sd_.begin(SdioConfig(FIFO_SDIO))) {
-        // If SDIO fails, try SPI mode as fallback
         if (!sd_.begin(SdSpiConfig(chipSelect, SHARED_SPI, SD_SCK_MHZ(50)))) {
-            recordError(-1, "SD: Both SDIO and SPI initialization failed");
+            util::Debug::error("SD: Both SDIO and SPI initialization failed");
             return false;
         }
         util::Debug::info("SD: SPI mode initialized");
@@ -47,22 +46,19 @@ bool SDWriter::begin(uint8_t chipSelect) {
     uint32_t cardSize = sd_.card()->sectorCount();
     if (cardSize) {
         float cardSizeGB = 0.000512 * cardSize;
-        String infoStr = "SD: Card size: " + String(cardSizeGB) + " GB";
-        util::Debug::info(infoStr.c_str());
+        util::Debug::info("SD: Card size: " + String(cardSizeGB) + " GB");
     }
     
     // Print FAT type
-    String fatStr = "SD: Volume is FAT" + String(int(sd_.fatType()));
-    util::Debug::info(fatStr.c_str());
+    util::Debug::info("SD: Volume is FAT" + String(int(sd_.fatType())));
     
     // Print free space
     uint32_t freeKB = sd_.vol()->freeClusterCount();
     freeKB *= sd_.vol()->sectorsPerCluster() / 2;
-    String spaceStr = "SD: Free space: " + String(freeKB / 1024.0) + " GB";
-    util::Debug::info(spaceStr.c_str());
+    util::Debug::info("SD: Free space: " + String(freeKB / 1024.0) + " GB");
     
-    // Run quick write test to verify SD card is working properly using the RingBuf exactly as in the example
-    util::Debug::info("SD: Testing RingBuf with SD card...");
+    // Run quick write test to verify SD card is working properly
+    util::Debug::info("SD: Testing write capability...");
     
     // Create a test file
     FsFile testFile;
@@ -71,7 +67,11 @@ bool SDWriter::begin(uint8_t chipSelect) {
         return false;
     }
     
-    // Initialize a temporary RingBuf
+    // Test direct write first
+    testFile.println("Direct write test");
+    testFile.flush();
+    
+    // Now test through RingBuf
     RingBuf<FsFile, 4096> testBuf;
     testBuf.begin(&testFile);
     
@@ -88,14 +88,14 @@ bool SDWriter::begin(uint8_t chipSelect) {
     testFile.close();
     
     float writeTime = (end - start) / 1000000.0;
-    String timeStr = "SD: Test write time: " + String(writeTime) + " s";
-    util::Debug::info(timeStr.c_str());
+    util::Debug::info("SD: Test write time: " + String(writeTime) + " s");
     
     // Delete the test file
     sd_.remove("sdtest.txt");
     
     healthy_ = true;
     lastSuccessfulWrite_ = millis();
+    isFirstFile_ = true;
     
     return true;
 }
@@ -108,32 +108,27 @@ void SDWriter::setChannelNames(const std::vector<adc::ChannelConfig>& channelCon
         }
     }
     
-    String infoStr = "SD: Set " + String(channelNames_.size()) + " channel names";
-    util::Debug::info(infoStr.c_str());
+    util::Debug::info("SD: Set " + String(channelNames_.size()) + " channel names");
 }
 
 size_t SDWriter::process() {
-    // Check for file health
+    // Handle health recovery if needed
     if (!healthy_) {
-        // Try to recover if unhealthy for more than 10 seconds
         if (millis() - lastErrorTime_ > 10000) {
             util::Debug::warning("SD: Attempting recovery after errors");
             closeFile();
             if (!createNewFile()) {
-                // Still failing, but don't keep printing errors
                 return 0;
             } else {
-                // Recovered successfully
                 healthy_ = true;
                 util::Debug::info("SD: Recovery successful");
             }
         } else {
-            // Still in cooldown period, don't retry yet
             return 0;
         }
     }
     
-    // Check if file is open and RingBuf is initialized
+    // Check if file is open
     if (!dataFile_.isOpen()) {
         if (!createNewFile()) {
             return 0;
@@ -152,18 +147,28 @@ size_t SDWriter::process() {
     size_t availableSamples = dataBuffer_.available();
     if (availableSamples == 0) {
         // No samples available - check if we need to flush the RingBuf
-        if (!dataFile_.isBusy() && ringBuf_->bytesUsed() > 0) {
-            syncRingBuf();
+        if (ringBuf_->bytesUsed() > 0) {
+            // For the first file, or if we haven't written in a while, do a full sync
+            if (isFirstFile_ || (millis() - lastWriteTime_ > 5000)) {
+                syncRingBuf(true); // Force full sync
+            } else if (!dataFile_.isBusy()) {
+                syncRingBuf(false); // Normal sync of complete sectors
+            }
         }
         return 0;
     }
     
-    // Check if we should start writing (10% threshold or if we were previously full)
+    // Check if we should start writing (based on threshold)
     float bufferUtilization = static_cast<float>(availableSamples) / dataBuffer_.capacity();
     bool shouldWrite = bufferUtilization >= config::DATA_BUFFER_WRITE_THRESHOLD || wasBufferFull_;
     
+    // For first file, be more aggressive with writing to ensure data gets stored
+    if (isFirstFile_ && availableSamples > 0) {
+        shouldWrite = true;
+    }
+    
     // Stop writing if buffer nearly empty (hysteresis)
-    if (availableSamples * sizeof(data::ChannelSample) < config::MIN_BYTES_FOR_WRITE) {
+    if (availableSamples * sizeof(data::ChannelSample) < config::MIN_BYTES_FOR_WRITE && !isFirstFile_) {
         shouldWrite = false;
         wasBufferFull_ = false;
     }
@@ -173,33 +178,29 @@ size_t SDWriter::process() {
     }
     
     // Determine batch size based on available samples
-    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(1000)); // Process up to 1000 at a time
+    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(1000));
     
-    // Check if RingBuf has enough space (approx. 50 bytes per sample in CSV)
+    // For first file, process smaller batches to ensure quicker writes
+    if (isFirstFile_) {
+        samplesInBatch = min(samplesInBatch, static_cast<size_t>(100));
+    }
+    
+    // Ensure RingBuf has enough space (approx. 50 bytes per sample in CSV)
     size_t ringBufFree = ringBuf_->bytesFree();
-    size_t estimatedBatchSize = samplesInBatch * 50; // Estimated CSV size
+    size_t estimatedBatchSize = samplesInBatch * 50;
     
     if (ringBufFree < estimatedBatchSize) {
-        // Not enough space in RingBuf - try to write to SD card if not busy
-        if (!dataFile_.isBusy() && ringBuf_->bytesUsed() >= config::SD_SECTOR_SIZE) {
-            // Write one sector from RingBuf to SD
-            if (ringBuf_->writeOut(config::SD_SECTOR_SIZE) != config::SD_SECTOR_SIZE) {
-                recordError(-3, "SD: Failed to write sector to SD");
-            } else {
-                bytesWritten_ += 512;
-                lastSuccessfulWrite_ = millis();
-            }
-        }
+        // Not enough space - force a sync
+        syncRingBuf(true);
         
         // Recalculate available space
         ringBufFree = ringBuf_->bytesFree();
-        if (ringBufFree < config::SD_SECTOR_SIZE) {
-            // Still not enough space, wait for next cycle
+        if (ringBufFree < 1024) { // Minimum required space
             wasBufferFull_ = true;
             return 0;
         }
         
-        // Adjust samplesInBatch based on available RingBuf space
+        // Adjust batch size based on available space
         samplesInBatch = min(samplesInBatch, ringBufFree / 50);
     }
     
@@ -214,42 +215,41 @@ size_t SDWriter::process() {
             if (writeSampleToRingBuf(sample)) {
                 samplesProcessed++;
             } else {
-                // RingBuf is full, stop processing
                 break;
             }
         } else {
-            // No more samples available
             break;
         }
     }
     
     uint32_t processingTime = micros() - startTime;
     
-    // If we processed samples, update statistics
+    // Update statistics if samples were processed
     if (samplesProcessed > 0) {
         totalSamplesWritten_ += samplesProcessed;
         
-        // Only log large batches to reduce noise
         if (samplesProcessed > 100) {
-            String procStr = "SD: Processed " + String(samplesProcessed) + 
-                             " samples in " + String(processingTime) + " µs";
-            util::Debug::detail(procStr.c_str());
+            util::Debug::detail("SD: Processed " + String(samplesProcessed) + 
+                             " samples in " + String(processingTime) + " µs");
         }
     }
     
-    // Try to write to SD if not busy and we have at least one sector
-    if (!dataFile_.isBusy() && ringBuf_->bytesUsed() >= config::SD_SECTOR_SIZE) {
-        // Write one sector from RingBuf to SD
-        if (ringBuf_->writeOut(config::SD_SECTOR_SIZE) != config::SD_SECTOR_SIZE) {
-            recordError(-4, "SD: Failed to write sector to SD");
-        } else {
-            bytesWritten_ += 512;
-            lastSuccessfulWrite_ = millis();
-            totalWrites_++;
+    // For first file, sync after every batch to ensure data is written
+    if (isFirstFile_ && samplesProcessed > 0) {
+        syncRingBuf(true);
+        
+        // After a successful first write with sync, it's no longer the "first file"
+        if (bytesWritten_ > 1024) {
+            isFirstFile_ = false;
+            util::Debug::info("SD: First file successfully initialized");
         }
+    } 
+    // For normal operation, write to SD if we have a complete sector
+    else if (!dataFile_.isBusy() && ringBuf_->bytesUsed() >= config::SD_SECTOR_SIZE) {
+        syncRingBuf(false);
     }
     
-    // Mark as not full if we processed all available samples
+    // Update buffer state
     if (samplesProcessed == availableSamples) {
         wasBufferFull_ = false;
     }
@@ -264,41 +264,35 @@ bool SDWriter::createNewFile(bool addHeader) {
     // Generate a filename
     currentFilename_ = generateFilename();
     
-    String fileStr = "SD: Creating new file: " + String(currentFilename_.c_str());
-    util::Debug::info(fileStr.c_str());
+    util::Debug::info("SD: Creating new file: " + String(currentFilename_.c_str()));
     
-    // Create the file with appropriate flags
+    // Create the file
     if (!dataFile_.open(currentFilename_.c_str(), O_RDWR | O_CREAT | O_TRUNC)) {
         recordError(-5, "SD: Failed to create file");
         return false;
     }
     
-    // Pre-allocate file space to avoid latency during writes
-    String allocStr = "SD: Pre-allocating " + String(config::SD_PREALLOC_SIZE / 1024 / 1024) + " MB";
-    util::Debug::detail(allocStr.c_str());
+    // Write a direct marker to the file first to ensure it's valid
+    dataFile_.println("# Baja Data Acquisition System");
+    dataFile_.println("# File created: " + String(year()) + "-" + String(month()) + "-" + String(day()) + 
+                      " " + String(hour()) + ":" + String(minute()) + ":" + String(second()));
+    dataFile_.flush();
+    
+    // Pre-allocate file space to reduce fragmentation
+    util::Debug::detail("SD: Pre-allocating " + String(config::SD_PREALLOC_SIZE / 1024 / 1024) + " MB");
     
     bool preAllocSuccess = dataFile_.preAllocate(config::SD_PREALLOC_SIZE);
     if (!preAllocSuccess) {
-        // Log the error but continue - preallocation is optional for functionality
         util::Debug::warning("SD: File preallocation failed - continuing without preallocation");
-        // Don't return false here - we'll continue without preallocation
     }
     
-    // Initialize RingBuf with the file - THIS MUST HAPPEN BEFORE WRITING!
+    // Initialize RingBuf with the file - must happen before writing
     ringBuf_->begin(&dataFile_);
     
     // Reset counters
     fileCreationTime_ = millis();
     bytesWritten_ = 0;
     lastWriteTime_ = millis();
-    
-    // Test the ringbuf with a simple write
-    const char* testStr = "# File created with RingBuf\r\n";
-    if (ringBuf_->write(testStr, strlen(testStr)) != strlen(testStr)) {
-        recordError(-9, "SD: Failed initial RingBuf write test");
-        closeFile();
-        return false;
-    }
     
     // Write header if requested
     if (addHeader) {
@@ -308,43 +302,51 @@ bool SDWriter::createNewFile(bool addHeader) {
             return false;
         }
         
-        // Force a sync to make sure header is written
-        if (!dataFile_.isBusy()) {
-            size_t bytesToWrite = ringBuf_->bytesUsed();
-            if (bytesToWrite > 0) {
-                size_t written = ringBuf_->writeOut(bytesToWrite);
-                util::Debug::detail("SD: Initial header sync wrote " + String(written) + " bytes");
-                bytesWritten_ += written;
-            }
+        // Force a complete sync to ensure header is written
+        if (!ringBuf_->sync()) {
+            recordError(-9, "SD: Failed to sync header");
+            closeFile();
+            return false;
         }
     }
+    
+    // Mark as first file for special handling
+    isFirstFile_ = true;
     
     // Update status
     lastSuccessfulWrite_ = millis();
     consecutiveErrors_ = 0;
     
-    // Return success even if preallocation failed
+    // Verify the file is open and valid
+    if (!dataFile_.isOpen()) {
+        recordError(-10, "SD: File not open after creation");
+        return false;
+    }
+    
+    // Log the current file position
+    bytesWritten_ = dataFile_.position();
+    util::Debug::detail("SD: Initial file position: " + String(bytesWritten_));
+    
     return true;
 }
 
 bool SDWriter::closeFile() {
     // Sync any remaining data in the RingBuf
     if (dataFile_.isOpen()) {
-        // First try to flush only the complete sectors
-        syncRingBuf();
-        
-        // Then do a full sync to get any remaining partial data
+        // Ensure all data is synced
         if (ringBuf_->bytesUsed() > 0) {
             ringBuf_->sync();
         }
+        
+        // Flush any remaining file buffers
+        dataFile_.flush();
         
         // Truncate file to actual data size and close
         dataFile_.truncate();
         dataFile_.close();
         
-        String closeStr = "SD: Closed file: " + String(currentFilename_.c_str()) + 
-                        ", bytes written: " + String(bytesWritten_);
-        util::Debug::info(closeStr.c_str());
+        util::Debug::info("SD: Closed file: " + String(currentFilename_.c_str()) + 
+                      ", bytes written: " + String(bytesWritten_));
         return true;
     }
     
@@ -360,12 +362,12 @@ size_t SDWriter::getBytesWritten() const {
 }
 
 bool SDWriter::shouldRotateFile() const {
-    // Check if the file has been open too long
+    // Check file age
     if (millis() - fileCreationTime_ >= config::SD_FILE_ROTATION_INTERVAL_MS) {
         return true;
     }
     
-    // Also rotate file if it gets too large (90% of preallocation)
+    // Check file size
     if (bytesWritten_ >= config::SD_PREALLOC_SIZE * 0.9) {
         return true;
     }
@@ -374,7 +376,7 @@ bool SDWriter::shouldRotateFile() const {
 }
 
 bool SDWriter::flush() {
-    return syncRingBuf();
+    return syncRingBuf(true);
 }
 
 int SDWriter::getLastError() const {
@@ -406,24 +408,24 @@ std::string SDWriter::generateFilename() const {
 }
 
 bool SDWriter::writeHeader() {
-    // Create a simple, clear CSV header
+    // Create CSV header
     std::string header = "timestamp_us,channel_index,raw_value";
     
-    // Add channel name header if we have channel names
+    // Add channel name header if available
     if (!channelNames_.empty()) {
         header += ",channel_name";
     }
     
-    // Add newline (CRLF for compatibility with various tools)
+    // Add newline (CRLF for compatibility)
     header += "\r\n";
     
-    // Write to RingBuf - use direct write to ensure proper handling
+    // Write to RingBuf
     size_t headerLen = header.length();
     size_t bytesWritten = ringBuf_->write(header.c_str(), headerLen);
     
     if (bytesWritten != headerLen) {
         util::Debug::error("SD: Failed to write header, only wrote " + 
-                          String(bytesWritten) + " of " + String(headerLen) + " bytes");
+                        String(bytesWritten) + " of " + String(headerLen) + " bytes");
         return false;
     }
     
@@ -431,14 +433,27 @@ bool SDWriter::writeHeader() {
 }
 
 bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
-    // Format the sample as CSV
-    std::string line = formatSampleAsCsv(sample);
+    // Format CSV line efficiently using a buffer
+    char buffer[128];
+    
+    // Format timestamp, channel, and value
+    int len = snprintf(buffer, sizeof(buffer), "%llu,%u,%lu", 
+             sample.timestamp, sample.channelIndex, sample.rawValue);
+    
+    // Add channel name if available
+    if (sample.channelIndex < channelNames_.size()) {
+        len += snprintf(buffer + len, sizeof(buffer) - len, ",%s", 
+                      channelNames_[sample.channelIndex].c_str());
+    }
+    
+    // Add CRLF
+    len += snprintf(buffer + len, sizeof(buffer) - len, "\r\n");
     
     // Write to RingBuf
-    size_t bytesWritten = ringBuf_->write(line.c_str(), line.length());
+    size_t bytesWritten = ringBuf_->write(buffer, len);
     
-    // Check for write errors
-    if (bytesWritten != line.length()) {
+    // Check for errors
+    if (bytesWritten != len) {
         if (ringBuf_->getWriteError()) {
             util::Debug::warning("SD: RingBuf write error");
             ringBuf_->clearWriteError();
@@ -449,29 +464,7 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
     return true;
 }
 
-std::string SDWriter::formatSampleAsCsv(const data::ChannelSample& sample) {
-    // Format basic sample data with fixed field width for better alignment
-    char buffer[128];
-    
-    // Use fixed precision formatting for timestamp, channel, and value
-    // Make sure all values are properly converted to strings
-    snprintf(buffer, sizeof(buffer), "%llu,%u,%lu", 
-             sample.timestamp, sample.channelIndex, sample.rawValue);
-    std::string line = buffer;
-    
-    // Add channel name if available
-    if (sample.channelIndex < channelNames_.size()) {
-        line += ",";
-        line += channelNames_[sample.channelIndex];
-    }
-    
-    // Add CRLF for compatibility with more tools
-    line += "\r\n";
-    
-    return line;
-}
-
-bool SDWriter::syncRingBuf() {
+bool SDWriter::syncRingBuf(bool forceFullSync) {
     if (!dataFile_.isOpen()) {
         return false;
     }
@@ -482,28 +475,42 @@ bool SDWriter::syncRingBuf() {
     }
     
     uint32_t startTime = micros();
+    bool success = false;
+    size_t bytesWritten = 0;
     
-    // Follow the same approach as the example - just call sync()
-    bool success = ringBuf_->sync();
+    // Force a full sync if requested, otherwise only write complete sectors
+    if (true) {
+        // Use full sync for guaranteed writes (slightly slower)
+        success = ringBuf_->sync();
+        bytesWritten = bytesUsed; // All bytes should be written
+    } else {
+        // Only write complete sectors for efficiency
+        size_t alignedBytes = (bytesUsed / config::SD_SECTOR_SIZE) * config::SD_SECTOR_SIZE;
+        
+        // Write aligned bytes if we have at least one sector
+        if (alignedBytes >= config::SD_SECTOR_SIZE) {
+            bytesWritten = ringBuf_->writeOut(alignedBytes);
+            success = (bytesWritten == alignedBytes);
+        } else {
+            // Not enough for a full sector, but return true anyway
+            return true;
+        }
+    }
     
     uint32_t syncTime = micros() - startTime;
     
     if (success) {
-        bytesWritten_ += bytesUsed;
+        bytesWritten_ += bytesWritten;
         lastSuccessfulWrite_ = millis();
         lastWriteTime_ = millis();
         
         if (syncTime > maxWriteTime_) {
             maxWriteTime_ = syncTime;
-            String timeStr = "SD: New max sync time: " + String(maxWriteTime_) + " µs";
-            util::Debug::detail(timeStr.c_str());
         }
         
-        // Only log larger syncs
-        if (bytesUsed > 10000) {
-            String syncStr = "SD: Synced " + String(bytesUsed) + 
-                             " bytes in " + String(syncTime) + " µs";
-            util::Debug::detail(syncStr.c_str());
+        if (bytesWritten > 10000) {
+            util::Debug::detail("SD: Synced " + String(bytesWritten) + 
+                             " bytes in " + String(syncTime) + " µs");
         }
         
         return true;
@@ -519,16 +526,15 @@ void SDWriter::recordError(int errorCode, const char* errorMessage) {
     consecutiveErrors_++;
     totalErrors_++;
     
-    // Only log every few errors to prevent log spam
+    // Limit error logging to prevent spam
     if (consecutiveErrors_ == 1 || consecutiveErrors_ % 10 == 0) {
-        // Convert Arduino String to std::string for logging
         String errorMsg = String("SD ERROR #") + String(totalErrors_) + 
-                          ": " + String(errorMessage) + 
-                          " (code " + String(errorCode) + ")";
+                        ": " + String(errorMessage) + 
+                        " (code " + String(errorCode) + ")";
         util::Debug::error(errorMsg.c_str());
     }
     
-    // Mark as unhealthy if too many consecutive errors
+    // Mark as unhealthy after multiple errors
     if (consecutiveErrors_ >= 3) {
         healthy_ = false;
     }

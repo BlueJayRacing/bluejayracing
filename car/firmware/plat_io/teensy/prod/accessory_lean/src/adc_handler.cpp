@@ -1,4 +1,5 @@
 #include "adc_handler.hpp"
+#include "config.hpp"
 
 namespace baja {
 namespace adc {
@@ -6,7 +7,7 @@ namespace adc {
 // Initialize static member
 ADC7175Handler* ADC7175Handler::instance_ = nullptr;
 
-ADC7175Handler::ADC7175Handler(buffer::RingBuffer<data::ChannelSample, RING_BUFFER_SIZE>& ringBuffer)
+ADC7175Handler::ADC7175Handler(buffer::RingBuffer<data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer)
     : ringBuffer_(ringBuffer),
       csPin_(0),
       drdyPin_(0),
