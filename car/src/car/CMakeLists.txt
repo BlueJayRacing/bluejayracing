@@ -16,6 +16,7 @@ find_package(baja_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(paho_mqtt REQUIRED)
 find_package(ads1115 REQUIRED)
+find_package(nanopb REQUIRED)
 
 # Include directories
 include_directories(
@@ -136,25 +137,34 @@ ament_target_dependencies(xbee_node
   std_msgs
 )
 
-# # WSG Calibration Driver
-# add_library(wsg_calibration_driver SHARED src/wsg_calibration_driver.cpp)
-# target_compile_definitions(wsg_calibration_driver PUBLIC "POSIX")
-# ament_target_dependencies(wsg_calibration_driver
-#   rclcpp
-#   baja_msgs
-#   baja_proto
-#   std_msgs
-#   paho_mqtt
-# )
-# add_executable(wsg_calibration_node src/wsg_calibration_node.cpp)
-# target_link_libraries(wsg_calibration_node wsg_calibration_driver)
-# ament_target_dependencies(wsg_calibration_node
-#   rclcpp
-#   baja_msgs
-#   baja_proto
-#   std_msgs
-#   paho_mqtt
-# )
+# WSG Calibration Driver
+add_library(wsg_calibration_driver SHARED src/wsg_calibration_driver.cpp)
+target_compile_definitions(wsg_calibration_driver PUBLIC "POSIX")
+target_include_directories(wsg_calibration_driver PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+  "${CMAKE_INSTALL_PREFIX}/include/nanopb"
+)
+ament_target_dependencies(wsg_calibration_driver
+  rclcpp
+  baja_msgs
+  baja_proto
+  std_msgs
+  paho_mqtt
+  nanopb
+)
+add_executable(wsg_calibration_node src/wsg_calibration_node.cpp)
+target_link_libraries(wsg_calibration_node wsg_calibration_driver)
+target_include_directories(wsg_calibration_node PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+)
+ament_target_dependencies(wsg_calibration_node
+  rclcpp
+  baja_msgs
+  baja_proto
+  std_msgs
+  paho_mqtt
+  nanopb
+)
 
 # # Calibration Printer
 # add_library(calibration_printer SHARED src/calibration_printer.cpp)

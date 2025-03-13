@@ -38,7 +38,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
    
-RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps
+RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps nanopb
 
 #jazzy packages
 RUN apt-get update && apt-get install -y \
@@ -102,9 +102,9 @@ ADD src bjr_ws/src/bjr_packages
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
 RUN sudo chown -R dock bjr_ws/src/bjr_packages
 
-RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
-    cd /bjr_ws && \
-    colcon build'
+# RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+#     cd /bjr_ws && \
+#     colcon build'
 
 
 

@@ -95,21 +95,33 @@ void MockDataGenerator::initialize()
 {
     // Add default channels with reasonable configurations
     addChannel({ChannelType::LINEAR_POTENTIOMETER, "linpot_front_left", 0.0, 5.0, 0.005, 2.5});
+    samples_per_channel_["linpot_front_left"] = default_samples;
     addChannel({ChannelType::LINEAR_POTENTIOMETER, "linpot_front_right", 0.0, 5.0, 0.005, 2.5});
+    samples_per_channel_["linpot_front_right"] = default_samples;
     addChannel({ChannelType::LINEAR_POTENTIOMETER, "linpot_rear_left", 0.0, 5.0, 0.005, 2.5});
+    samples_per_channel_["linpot_rear_left"] = default_samples;
     addChannel({ChannelType::LINEAR_POTENTIOMETER, "linpot_rear_right", 0.0, 5.0, 0.005, 2.5});
+    samples_per_channel_["linpot_rear_right"] = default_samples;
     
     addChannel({ChannelType::HALL_EFFECT_SPEED, "wheel_speed_fl", 0.0, 10000.0, 10.0, 0.0});
+    samples_per_channel_["wheel_speed_fl"] = default_samples;
     addChannel({ChannelType::HALL_EFFECT_SPEED, "wheel_speed_fr", 0.0, 10000.0, 10.0, 0.0});
+    samples_per_channel_["wheel_speed_fr"] = default_samples;
     addChannel({ChannelType::HALL_EFFECT_SPEED, "wheel_speed_rl", 0.0, 10000.0, 10.0, 0.0});
+    samples_per_channel_["wheel_speed_rl"] = default_samples;
     addChannel({ChannelType::HALL_EFFECT_SPEED, "wheel_speed_rr", 0.0, 10000.0, 10.0, 0.0});
+    samples_per_channel_["wheel_speed_rr"] = default_samples;
     
     addChannel({ChannelType::BRAKE_PRESSURE, "brake_pressure_front", 0.0, 2000.0, 5.0, 0.0});
+    samples_per_channel_["brake_pressure_front"] = default_samples;
     addChannel({ChannelType::BRAKE_PRESSURE, "brake_pressure_rear", 0.0, 2000.0, 5.0, 0.0});
+    samples_per_channel_["brake_pressure_rear"] = default_samples;
     
     addChannel({ChannelType::STEERING_ENCODER, "steering_angle", -180.0, 180.0, 0.5, 0.0});
+    samples_per_channel_["steering_angle"] = default_samples;
     
     addChannel({ChannelType::AXLE_TORQUE, "axle_torque", 0.0, 500.0, 1.0, 0.0});
+    samples_per_channel_["axle_torque"] = default_samples;
 }
 
 void MockDataGenerator::addChannel(const ChannelConfig& config)
@@ -124,7 +136,11 @@ void MockDataGenerator::startGeneration(double rate_hz)
     }
     
     generation_rate_hz_ = rate_hz;
-    samples_per_generation_ = static_cast<size_t>(2000.0 / rate_hz);  // To get 2000Hz effective rate
+    // samples_per_generation_ = static_cast<size_t>(2000.0 / rate_hz);  // To get 2000Hz effective rate
+
+    for (auto& [name, channel] : channels_) {
+        samples_per_channel_[name] = static_cast<size_t>(2000.0 / rate_hz);
+    }
     
     should_stop_ = false;
     generation_thread_ = std::thread(&MockDataGenerator::generationThreadFunc, this);
@@ -156,11 +172,13 @@ void MockDataGenerator::generateDataBatch(size_t samples_per_batch)
         
         // Get the latest value as starting point
         double current_value = channel->getLatestValue().value;
+
+        size_t samples_to_generate = samples_per_channel_[name];
         
         // Generate samples_per_batch new samples using a random walk
         std::normal_distribution<double> noise(0.0, config.variance);
         
-        for (size_t i = 0; i < samples_per_batch; ++i) {
+        for (size_t i = 0; i < samples_to_generate; ++i) {
             // Add random noise, constrained by min/max
             current_value += noise(rng_);
             current_value = std::min(config.max_value, std::max(config.min_value, current_value));
@@ -169,6 +187,10 @@ void MockDataGenerator::generateDataBatch(size_t samples_per_batch)
             channel->addSample(current_value);
         }
     }
+}
+
+void MockDataGenerator::updateSamplesPerGeneration(const std::string& channel_name, size_t samples) {
+    samples_per_channel_[channel_name] = samples;
 }
 
 nlohmann::json MockDataGenerator::getAllChannelsData(size_t max_samples_per_channel) const
@@ -337,6 +359,36 @@ void MockDataAPIHandler::onRequest(const Pistache::Http::Request& request, Pista
         };
         response.send(Pistache::Http::Code::Not_Found, error.dump(2));
         return;
+    }
+    
+    if (request.method() == Pistache::Http::Method::Post) {
+        auto uri = request.resource();
+
+        // Route: /data/{channel_name} - Get specific channel data
+        static const std::string data_prefix = "/samples/";
+
+        if (uri.rfind(data_prefix, 0) == 0) {
+            std::string channel_name = uri.substr(data_prefix.length());
+
+            try {
+                auto json = nlohmann::json::parse(request.body(), nullptr, false);
+
+                if (!json.contains("samples") || !json["samples"].is_number_unsigned()) {
+                    response.send(Pistache::Http::Code::Bad_Request, R"({"error": "Invalid or missing 'samples' field"})");
+                    return;
+                }
+    
+                size_t samples = json["samples"];
+            
+                generator_->updateSamplesPerGeneration(channel_name, samples);
+                
+                response.send(Pistache::Http::Code::Ok, R"({"message": "Updated samples per generation successfully"})");
+
+            } catch (const std::exception& e) {
+                response.send(Pistache::Http::Code::Bad_Request, R"({"error": "Invalid JSON format"})");
+                return;
+            }
+        }
     }
     
     // Method not allowed

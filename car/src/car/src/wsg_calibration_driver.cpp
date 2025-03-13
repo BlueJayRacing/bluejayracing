@@ -3,7 +3,8 @@
 #include <chrono>
 #include <cstring>
 #include <unistd.h>
-#include <baja_proto/pb_encode.c>
+#include "nanopb/pb_encode.h"
+#include "nanopb/pb_decode.h"
 
 #define LOCALHOST_ADDRESS       "localhost:1883"
 #define CLIENTID                "wsg_calibration_node"
