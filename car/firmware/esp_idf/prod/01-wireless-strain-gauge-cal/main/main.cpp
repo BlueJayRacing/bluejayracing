@@ -28,7 +28,6 @@ static const char* TAG = "main";
 
 sensorSetup setup;
 bool proto_status;
-uint8_t proto_o_buf[300];
 mqttManager* mqtt_manager;
 mqtt_client_t* mqtt_client;
 
@@ -37,8 +36,6 @@ esp_err_t setUpSensor(void);
 // Main Control Loop (For Production Firmware)
 void vTaskMainControl(void*)
 {
-    pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
-
     esp_err_t ret = setUpSensor();
     if (ret) {
         ESP_LOGE(TAG, "Failed to Set Up Sensor");
@@ -46,6 +43,14 @@ void vTaskMainControl(void*)
     }
 
     ESP_LOGI(TAG, "Configured Sensor Setup");
+
+    // Zeroing WSG
+    ret = setup.zero();
+    if (ret) { // ZEROING FAILED
+        ESP_LOGE(TAG, "Zeroing Failed");
+    } else { // ZEROING SUCCEEDED
+        ESP_LOGI(TAG, "Zeroing Succeeded");
+    }
 
     mqtt_manager = mqttManager::getInstance();
 
@@ -85,54 +90,45 @@ void vTaskMainControl(void*)
 
     mqtt_manager->clientSubscribe(mqtt_client, WSG_PI_ESP_TOPIC, 2);
 
-    for (;;) {
-        cal_command_t poll_command;
-        poll_command.command = 0;
+    cal_command_t poll_command;
+    poll_command.command = 1;
 
-        proto_status = pb_encode(&o_stream, cal_command_t_fields, &poll_command);
-        if (!proto_status) {
-            ESP_LOGE(TAG, "Failed to encode data message");
-            vTaskDelay(100);
-            continue;
-        }
+    for (;;) {
+        uint8_t proto_o_buf[30];
+        pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
+        pb_encode(&o_stream, cal_command_t_fields, &poll_command);
 
         ret = mqtt_manager->clientEnqueue(mqtt_client, proto_o_buf, o_stream.bytes_written, WSG_ESP_PI_TOPIC, 2);
-        
-        mqtt_message zero_message;
-        esp_err_t ret = mqtt_manager->clientReceive(mqtt_client, zero_message, 100);
         if (ret) {
-            ESP_LOGE(TAG, "Did not recieve Zero message");
+            ESP_LOGE(TAG, "Failed to enqueue MQTT message: %d", ret);
             vTaskDelay(100);
             continue;
         }
 
-        // TODO: Finish Recieving Command
-    }
-
-    // Zeroing WSG
-    ret = setup.zero();
-    if (ret) { // ZEROING FAILED
-        ESP_LOGE(TAG, "Zeroing Failed");
-        cal_command_t failed_zero_command;
-        failed_zero_command.command = 1;
-
-        proto_status = pb_encode(&o_stream, cal_command_t_fields, &failed_zero_command);
-        if (!proto_status) {
-            ESP_LOGE(TAG, "Failed to encode data message");
+        mqtt_message start_message;
+        ret = mqtt_manager->clientReceive(mqtt_client, start_message, 100);
+        if (ret) {
+            ESP_LOGE(TAG, "Did not recieve Start message");
+            vTaskDelay(100);
+            continue;
         }
 
-        mqtt_manager->clientEnqueue(mqtt_client, proto_o_buf, o_stream.bytes_written, WSG_ESP_PI_TOPIC, 2);
-    } else {   // ZEROING SUCCEEDED
-        ESP_LOGI(TAG, "Zeroing Succeeded");
-        cal_command_t success_zero_command;
-        success_zero_command.command = 2;
-
-        proto_status = pb_encode(&o_stream, cal_command_t_fields, &success_zero_command);
+        pb_istream_t i_stream = pb_istream_from_buffer(start_message.payload.data(), start_message.payload_len);
+        cal_command_t start_command;
+        proto_status = pb_decode(&i_stream, cal_command_t_fields, &start_command);
         if (!proto_status) {
-            ESP_LOGE(TAG, "Failed to encode data message");
+            ESP_LOGE(TAG, "Failed to decode Start message");
+            vTaskDelay(100);
+            continue;
         }
 
-        mqtt_manager->clientEnqueue(mqtt_client, proto_o_buf, o_stream.bytes_written, WSG_ESP_PI_TOPIC, 2);
+        if (start_command.command != 1) {
+            ESP_LOGE(TAG, "Failed to find Start Command");
+            vTaskDelay(100);
+            continue;
+        }
+
+        break;
     }
 
     ESP_LOGI(TAG, "Measuring and sending data");
@@ -159,7 +155,6 @@ void vTaskMainControl(void*)
             vTaskDelay(200);
         }
 
-        mqtt_message_t mqtt_message;
         cal_data_t measurements = cal_data_t_init_zero;
         sensor_measurement_t meas;
 
@@ -171,20 +166,25 @@ void vTaskMainControl(void*)
             measurements.voltage[i]   = meas.voltage;
         }
 
+        uint8_t proto_o_buf[800];
+        pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
+
         proto_status = pb_encode(&o_stream, cal_data_t_fields, &measurements);
         if (!proto_status) {
-            ESP_LOGE(TAG, "Failed to encode data message");
+            ESP_LOGE(TAG, "Failed to encode data message: %s\n", PB_GET_ERROR(&o_stream));
         }
 
         mqtt_manager->clientEnqueue(mqtt_client, proto_o_buf, o_stream.bytes_written, WSG_CAL_DATA_TOPIC, 2);
+
+        vTaskDelay(1); // 10 milliseconds, remove me please
     }
 }
 
 extern "C" void app_main(void)
 {
-    // xTaskCreate(vTaskMainControl, "Main Control Loop", (1 << 14), NULL, 3, NULL);
-    Test test(ESP_LOG_DEBUG);
-    test.testSensorSetup();
+    xTaskCreate(vTaskMainControl, "Main Control Loop", (1 << 14), NULL, 3, NULL);
+    // Test test(ESP_LOG_DEBUG);
+    // test.testSensorSetup();
 }
 
 esp_err_t setUpSensor(void)
