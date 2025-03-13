@@ -17,6 +17,7 @@ find_package(std_msgs REQUIRED)
 find_package(paho_mqtt REQUIRED)
 find_package(ads1115 REQUIRED)
 find_package(nanopb REQUIRED)
+find_package(baja_nanopb REQUIRED)
 
 # Include directories
 include_directories(
@@ -147,10 +148,10 @@ target_include_directories(wsg_calibration_driver PUBLIC
 ament_target_dependencies(wsg_calibration_driver
   rclcpp
   baja_msgs
-  baja_proto
   std_msgs
   paho_mqtt
   nanopb
+  baja_nanopb
 )
 add_executable(wsg_calibration_node src/wsg_calibration_node.cpp)
 target_link_libraries(wsg_calibration_node wsg_calibration_driver)
@@ -160,10 +161,10 @@ target_include_directories(wsg_calibration_node PUBLIC
 ament_target_dependencies(wsg_calibration_node
   rclcpp
   baja_msgs
-  baja_proto
   std_msgs
   paho_mqtt
   nanopb
+  baja_nanopb
 )
 
 # # Calibration Printer
@@ -200,6 +201,7 @@ install(TARGETS
   transmit_prioritizer_driver
   xbee_driver
   # calibration_printer
+  wsg_calibration_driver
   LIBRARY DESTINATION lib
 )
 
@@ -212,6 +214,7 @@ install(TARGETS
   transmit_prioritizer_node
   xbee_node
   # calibration_printer_node
+  wsg_calibration_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

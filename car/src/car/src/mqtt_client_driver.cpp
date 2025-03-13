@@ -287,7 +287,7 @@ int MQTTClientDriver::message_arrived(void *context, char *topicName, int topicL
     // RCLCPP_INFO(driver->get_logger(), "  Publishing loop: %ld", publishing_loop_duration);
     // RCLCPP_INFO(driver->get_logger(), "  Total processing time: %ld", total_duration);
 
-    return 0;
+    return 1;
 }
 
 void MQTTClientDriver::delivery_complete(void *context, MQTTClient_deliveryToken dt) {

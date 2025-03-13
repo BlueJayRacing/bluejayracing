@@ -3,16 +3,19 @@
 #include <chrono>
 #include <cstring>
 #include <unistd.h>
-#include "nanopb/pb_encode.h"
-#include "nanopb/pb_decode.h"
+#include <limits>
+#include "pb_encode.h"
+#include "pb_decode.h"
+#include "wsg_cal_com.pb.h"
+#include "wsg_cal_data.pb.h"
 
 #define LOCALHOST_ADDRESS       "localhost:1883"
 #define CLIENTID                "wsg_calibration_node"
 #define WSG_ESP_PI_TOPIC        "esp/wsg_cal_esp"
 #define WSG_PI_ESP_TOPIC        "esp/wsg_cal_pi"
 #define WSG_CAL_DATA_TOPIC      "esp/wsg_cal_data"
-#define QOS         0
-#define TIMEOUT     10000L
+#define QOS                 2
+#define TIMEOUT             10000L
 #define MQTT_MESSAGE_LENGTH 200
 
 namespace wsg_calibration_driver {
@@ -93,26 +96,118 @@ void WSGCalibrationDriver::disconnect_from_broker() {
 }
 
 int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int topicLen, MQTTClient_message *message) {
+    static uint32_t label_counter = 0;
+    static std::deque<float> sample_volt_avgs_;
+    static std::deque<float> sample_volt_min_;
+    static std::deque<float> sample_volt_max_;
+
     WSGCalibrationDriver* driver = static_cast<WSGCalibrationDriver*>(context);
     
     MQTTClient_deliveryToken token;
     MQTTClient_message echo_message = MQTTClient_message_initializer;
 
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received MQTT message (topic: %s, topicLen: %d) (message: %s)", topicName, topicLen, (char*) message->payload);
+    std::string topic_str(topicName);
 
-    if (strcmp(WSG_ESP_PI_TOPIC, topicName) == 0) {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received Message from ESP32 in Calibration");
- 
-    } else if (strcmp(WSG_CAL_DATA_TOPIC, topicName) == 0) {
-        
-    } else {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Message from unknown topic recieved");
-    }
+    do {
+        if (topic_str == WSG_ESP_PI_TOPIC) {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received Message from ESP32 in Calibration");
+            // Decode Polling Message
+            {
+                cal_command_t decoded_cmd = cal_command_t_init_zero;
+                pb_istream_t istream = pb_istream_from_buffer((const pb_byte_t*) message->payload, message->payloadlen);
+
+                if (!pb_decode(&istream, cal_command_t_fields, &decoded_cmd)) {
+                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error decoding ESP Command: %s", PB_GET_ERROR(&istream));
+                    break;
+                }
+
+                if (decoded_cmd.command != 1) {
+                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Did not received polling signal");
+                    break;
+                }
+
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received polling signal");
+            }
+            
+            // Send Start Message
+            {
+                cal_command_t cmd = cal_command_t_init_zero;
+                cmd.command = 1;
+
+                uint8_t buffer[128] = {0};
+                pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+
+                if (!pb_encode(&ostream, cal_command_t_fields, &cmd)) {
+                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error encoding cal_command_t: %s", PB_GET_ERROR(&ostream));
+                    break;
+                }
+
+                MQTTClient_deliveryToken token;
+                MQTTClient_message start_message = MQTTClient_message_initializer;
+                    
+                start_message.payload = buffer;
+                start_message.payloadlen = (int) ostream.bytes_written;
+                start_message.qos = 0;
+                start_message.retained = 0;
+            
+                MQTTClient_publishMessage(driver->client_, WSG_PI_ESP_TOPIC, &start_message, &token);
+
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "published start command");
+            }
+        } else if (topic_str == WSG_CAL_DATA_TOPIC) {   
+            cal_data_t cal_data = cal_data_t_init_zero;
+            pb_istream_t istream = pb_istream_from_buffer((const pb_byte_t*) message->payload, message->payloadlen);
+
+            if (!pb_decode(&istream, cal_data_t_fields, &cal_data)) {
+                RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error decoding ESP Data: %s", PB_GET_ERROR(&istream));
+                break;
+            }
+
+            float sample_average = 0;
+            float sample_min = std::numeric_limits<float>::max();
+            float sample_max = std::numeric_limits<float>::min();
+
+            for (int i = 0; i < 40; i++) {
+                sample_average += cal_data.voltage[i] / 40;
+                sample_min = (cal_data.voltage[i] < sample_min) ? cal_data.voltage[i] : sample_min;
+                sample_max = (cal_data.voltage[i] > sample_max) ? cal_data.voltage[i] : sample_max;
+            }
+            
+            if (sample_volt_avgs_.size() == 10) {
+                sample_volt_avgs_.pop_back();
+                sample_volt_min_.pop_back();
+                sample_volt_max_.pop_back();
+            }
+
+            sample_volt_avgs_.push_front(sample_average);
+            sample_volt_min_.push_front(sample_min);
+            sample_volt_max_.push_front(sample_max);
+
+            float sample_10_average = 0;
+            float sample_10_min = std::numeric_limits<float>::max();
+            float sample_10_max = std::numeric_limits<float>::min();
+
+            for (int i = 0; i < sample_volt_avgs_.size(); i++) {
+                sample_10_average += sample_volt_avgs_[i] / sample_volt_avgs_.size();
+                sample_10_min = (sample_volt_min_[i] < sample_10_min) ? sample_volt_min_[i] : sample_10_min;
+                sample_10_max = (sample_volt_max_[i] > sample_10_max) ? sample_volt_max_[i] : sample_10_max;
+            }
+
+            if (label_counter % 10 == 0) {
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sample Avg\tSample Min\tSample Max\tSamples-10 Avg\tSamples-10 Min\tSamples-10 Max\t");
+            }
+            label_counter++;
+
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%f\t%f\t%f\t%f\t%f\t%f\t", sample_average, sample_min, sample_max, sample_10_average, sample_10_min, sample_10_max);
+        } else {
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Message from unknown topic recieved");
+        }
+    } while (false);
 
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
 
-    return 0;
+    return 1;
 }
 
 void WSGCalibrationDriver::delivery_complete(void *context, MQTTClient_deliveryToken dt) {
