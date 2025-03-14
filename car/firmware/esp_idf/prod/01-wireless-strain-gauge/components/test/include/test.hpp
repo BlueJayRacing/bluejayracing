@@ -2,11 +2,14 @@
 #ifndef _TEST_HPP_
 #define _TEST_HPP_
 
+#include <config.hpp>
 #include <mqttManager.hpp>
 #include <ad5626.hpp>
 #include <ads1120.hpp>
 #include <calSensorSetup.hpp>
 #include <driveSensorSetup.hpp>
+
+#if ENABLE_TESTS == 1
 
 class Test {
   public:
@@ -44,5 +47,7 @@ class Test {
     calSensorSetup cal_setup_;
     driveSensorSetup drive_setup_;
 };
+
+#endif
 
 #endif

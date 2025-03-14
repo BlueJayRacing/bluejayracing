@@ -1,13 +1,11 @@
 #include "driver/gpio.h"
-#include <assert.h>
 #include <calSensorSetup.hpp>
 #include <esp_log.h>
-#include <freertos/FreeRTOS.h>
-#include <mqttManager.hpp>
-#include <stdio.h>
-#include <test.hpp>
-#include <esp_timer.h>
 #include <esp_mac.h>
+#include <esp_timer.h>
+#include <mqttManager.hpp>
+#include <test.hpp>
+#include <config.hpp>
 
 #include <pb_decode.h>
 #include <pb_encode.h>
@@ -26,23 +24,25 @@
 #define DEC_ESP_PI_TOPIC "esp/wsg_dec_esp"
 #define DEC_PI_ESP_TOPIC "esp/wsg_dec_pi"
 #define CAL_DATA_TOPIC   "esp/wsg_cal_data"
-#define DRIVE_DATA_TOPIC   "esp/wsg_drive_data"
+#define DRIVE_DATA_TOPIC "esp/wsg_drive_data"
 
 static const char* TAG = "main";
 
 mqttManager* mqtt_manager;
+QueueHandle_t drive_data_queue;
 
 esp_err_t setUpCalSensor(calSensorSetup& setup);
 esp_err_t setUpDriveSensor(driveSensorSetup& setup);
 void DecisionTask(void);
 void vTaskCalTask(void*);
-void vTaskDriveTask(void*);
+void vTaskDriveRecordADCTask(void*);
+void vTaskDriveSendDataTask(void*);
 
 extern "C" void app_main(void)
 {
-    // Test test(ESP_LOG_DEBUG);
-    // test.testDriveSensorSetup();
-    // esp_log_level_set("*", ESP_LOG_NONE);
+#if ENABLE_TESTS == 1
+    Test test(ESP_LOG_DEBUG);
+#endif
     DecisionTask();
 }
 
@@ -95,7 +95,7 @@ void DecisionTask(void)
         pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
         pb_encode(&o_stream, cal_command_t_fields, &poll_command);
 
-        ret = mqtt_manager->clientEnqueue(main_mqtt_client, proto_o_buf, o_stream.bytes_written, DEC_ESP_PI_TOPIC, 2);
+        ret = mqtt_manager->clientPublish(main_mqtt_client, proto_o_buf, o_stream.bytes_written, DEC_ESP_PI_TOPIC, 2);
         if (ret) {
             ESP_LOGE(TAG, "Failed to enqueue MQTT message: %d", ret);
             vTaskDelay(1000);
@@ -120,12 +120,15 @@ void DecisionTask(void)
         }
 
         if (start_command.command == 1) {
-            ESP_LOGI(TAG, "Executing Calibration Main Task");
-            xTaskCreate(vTaskCalTask, "Calibration Main Control Loop", (1 << 14), NULL, 3, NULL);
+            ESP_LOGI(TAG, "Executing Calibration Task");
+            xTaskCreate(vTaskCalTask, "Calibration Main Control Loop", (1 << 12), NULL, 3, NULL);
             break;
         } else if (start_command.command == 2) {
-            ESP_LOGI(TAG, "Executing Drive Main Task");
-            xTaskCreate(vTaskDriveTask, "Drive Main Control Loop", (1 << 15), NULL, 3, NULL);
+            ESP_LOGI(TAG, "Executing Drive Task");
+            drive_data_queue = xQueueCreate(5, sizeof(drive_data_t));
+
+            xTaskCreate(vTaskDriveRecordADCTask, "Drive Record ADC Task", (1 << 12), NULL, 3, NULL);
+            xTaskCreate(vTaskDriveSendDataTask, "Drive Send Data Task", (1 << 12), NULL, 3, NULL);
             break;
         }
     }
@@ -205,23 +208,15 @@ void vTaskCalTask(void*)
             ESP_LOGE(TAG, "Failed to encode data message: %s\n", PB_GET_ERROR(&o_stream));
         }
 
-        mqtt_manager->clientEnqueue(cal_mqtt_client, proto_o_buf, o_stream.bytes_written, CAL_DATA_TOPIC, 2);
+        mqtt_manager->clientPublish(cal_mqtt_client, proto_o_buf, o_stream.bytes_written, CAL_DATA_TOPIC, 2);
 
         vTaskDelay(1); // 1 millisecond
     }
 }
 
-void vTaskDriveTask(void*)
+void vTaskDriveRecordADCTask(void*)
 {
     driveSensorSetup drive_setup;
-    bool proto_status;
-    mqtt_client_t* drive_mqtt_client;
-
-    drive_mqtt_client = mqtt_manager->createClient(BROKER_URI);
-    if (drive_mqtt_client == NULL) {
-        ESP_LOGE(TAG, "Failed to create MQTT client");
-        return;
-    }
 
     esp_err_t ret = setUpDriveSensor(drive_setup);
     if (ret) {
@@ -241,12 +236,39 @@ void vTaskDriveTask(void*)
 
     ESP_LOGI(TAG, "Measuring and sending data");
     drive_data_t measurements = drive_data_t_init_zero;
-    uint8_t proto_o_buf[16000];
 
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
-    sprintf(measurements.mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", 
-        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    sprintf(measurements.mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    while (true) {
+        drive_measurement_t meas;
+
+        for (int i = 0; i < sizeof(measurements.time) / sizeof(uint64_t); i++) {
+            ret = drive_setup.measure(&meas, true);
+
+            measurements.time[i]    = esp_timer_get_time();
+            measurements.voltage[i] = meas.voltage;
+        }
+
+        if (uxQueueSpacesAvailable(drive_data_queue) != 0) {
+            xQueueSend(drive_data_queue, &measurements, 0);
+        }
+    }
+}
+
+void vTaskDriveSendDataTask(void*)
+{
+    bool proto_status;
+    esp_err_t ret;
+    mqtt_client_t* drive_mqtt_client;
+    uint8_t proto_o_buf[16000];
+
+    drive_mqtt_client = mqtt_manager->createClient(BROKER_URI);
+    if (drive_mqtt_client == NULL) {
+        ESP_LOGE(TAG, "Failed to create MQTT client");
+        return;
+    }
 
     while (true) {
         // Connect to WiFi if not connected
@@ -271,26 +293,19 @@ void vTaskDriveTask(void*)
             vTaskDelay(200);
         }
 
-        drive_measurement_t meas;
-
-        for (int i = 0; i < 200; i++) {
-            ret = drive_setup.measure(&meas, true);
-
-            measurements.time[i] = esp_timer_get_time();
-            measurements.voltage[i]   = meas.voltage;
-        }
-
-        uint32_t bench_start = esp_timer_get_time();
+        // uint32_t bench_start = esp_timer_get_time();
         pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
+        drive_data_t measurements = drive_data_t_init_zero;
+        xQueueReceive(drive_data_queue, &measurements, portMAX_DELAY);
 
         proto_status = pb_encode(&o_stream, drive_data_t_fields, &measurements);
         if (!proto_status) {
             ESP_LOGE(TAG, "Failed to encode data message: %s\n", PB_GET_ERROR(&o_stream));
         }
-        uint32_t bench_end = esp_timer_get_time();
-        ESP_LOGI(TAG, "Bench Time: %d", (int) (bench_end - bench_start));
+        // uint32_t bench_end = esp_timer_get_time();
+        // ESP_LOGI(TAG, "Bench Time: %d", (int) (bench_end - bench_start));
 
-        mqtt_manager->clientEnqueue(drive_mqtt_client, proto_o_buf, o_stream.bytes_written, DRIVE_DATA_TOPIC, 2);
+        mqtt_manager->clientPublish(drive_mqtt_client, proto_o_buf, o_stream.bytes_written, DRIVE_DATA_TOPIC, 2);
     }
 }
 

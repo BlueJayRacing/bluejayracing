@@ -5,6 +5,7 @@ idf_component_register( SRCS "test.cpp"
                             esp_system 
                             log
                             mqtt_manager
+                            config
                             cal_sensor_setup
                             drive_sensor_setup
                             external_flash

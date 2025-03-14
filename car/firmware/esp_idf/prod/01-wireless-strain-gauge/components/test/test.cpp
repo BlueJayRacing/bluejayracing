@@ -1,7 +1,10 @@
+#include <config.hpp>
 #include <esp_log.h>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <test.hpp>
+
+#if ENABLE_TESTS == 1
 
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
@@ -56,11 +59,11 @@ void Test::testMQTTManagerBasicParamErrors(void)
 
     std::string test_mes("hi");
 
-    assert(mqtt_manager_->clientEnqueue(NULL, NULL, 5, "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), 0, "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), test_mes.length(), "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 3) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
+    assert(mqtt_manager_->clientPublish(NULL, NULL, 5, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), 0, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), test_mes.length(), "", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 3) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
 
     assert(mqtt_manager_->clientSubscribe(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientSubscribe(&client, "", 2) == ESP_ERR_INVALID_ARG);
@@ -394,9 +397,9 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
 
     for (int i = 0; i < 10; i++) {
         std::string hi_mes("hi " + std::to_string(i));
-        assert(mqtt_manager_->clientEnqueue(client, (uint8_t*) hi_mes.data(), hi_mes.length(), "esp32/test_publish", 2) == ESP_OK);
-        assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
-        assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
+        assert(mqtt_manager_->clientPublish(client, (uint8_t*) hi_mes.data(), hi_mes.length(), "esp32/test_publish", 2) == ESP_OK);
+        // assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
+        // assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
         ESP_LOGD(TAG, "Client Published to MQTT");
 
         memset(&rec_mes, 0, sizeof(mqtt_message_t));
@@ -982,3 +985,5 @@ void Test::testDriveSensorSetupZero(void)
 
     ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
 }
+
+#endif
