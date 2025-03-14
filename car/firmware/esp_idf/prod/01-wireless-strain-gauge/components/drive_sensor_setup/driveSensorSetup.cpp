@@ -149,6 +149,7 @@ esp_err_t driveSensorSetup::zero(void)
         ESP_LOGI(TAG, "New DAC Bias: %d", new_dac_bias);
 
         dac_.setLevel(new_dac_bias);
+        vTaskDelay(1);
     }
 
     drive_measurement_t last_measurement;

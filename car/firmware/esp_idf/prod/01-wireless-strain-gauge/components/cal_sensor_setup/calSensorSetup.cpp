@@ -93,6 +93,7 @@ esp_err_t calSensorSetup::zero(void) {
         ESP_LOGI(TAG, "New DAC Bias: %d", new_dac_bias);
 
         dac_.setLevel(new_dac_bias);
+        vTaskDelay(1);
     }
 
     return ESP_ERR_INVALID_RESPONSE;

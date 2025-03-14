@@ -3,6 +3,7 @@ syntax = "proto3";
 import "nanopb.proto";
 
 message drive_data_t {
-    repeated uint64 time = 2 [(nanopb).max_count = 1000, (nanopb).fixed_count = true];
-    repeated float voltage = 3 [(nanopb).max_count = 1000, (nanopb).fixed_count = true];
+    string mac_address = 1 [(nanopb).max_length = 17];
+    repeated uint64 time = 2 [(nanopb).max_count = 200, (nanopb).fixed_count = true];
+    repeated float voltage = 3 [(nanopb).max_count = 200, (nanopb).fixed_count = true];
 };

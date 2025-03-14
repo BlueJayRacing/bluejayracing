@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <test.hpp>
 #include <esp_timer.h>
+#include <esp_mac.h>
 
 #include <pb_decode.h>
 #include <pb_encode.h>
@@ -41,6 +42,7 @@ extern "C" void app_main(void)
 {
     // Test test(ESP_LOG_DEBUG);
     // test.testDriveSensorSetup();
+    // esp_log_level_set("*", ESP_LOG_NONE);
     DecisionTask();
 }
 
@@ -73,7 +75,7 @@ void DecisionTask(void)
                 ESP_LOGE(TAG, "Failed to Start WiFi Connection");
             }
 
-            vTaskDelay(400);
+            vTaskDelay(4000);
         }
 
         // Connect to MQTT and Subscribe to Command Topic if not Connected
@@ -81,11 +83,11 @@ void DecisionTask(void)
             ret = mqtt_manager->clientConnect(main_mqtt_client);
             if (ret) {
                 ESP_LOGE(TAG, "Failed to connect MQTT Client");
-                vTaskDelay(400);
+                vTaskDelay(4000);
                 continue;
             }
 
-            vTaskDelay(200);
+            vTaskDelay(2000);
             mqtt_manager->clientSubscribe(main_mqtt_client, DEC_PI_ESP_TOPIC, 2);
         }
 
@@ -96,7 +98,7 @@ void DecisionTask(void)
         ret = mqtt_manager->clientEnqueue(main_mqtt_client, proto_o_buf, o_stream.bytes_written, DEC_ESP_PI_TOPIC, 2);
         if (ret) {
             ESP_LOGE(TAG, "Failed to enqueue MQTT message: %d", ret);
-            vTaskDelay(100);
+            vTaskDelay(1000);
             continue;
         }
 
@@ -104,7 +106,7 @@ void DecisionTask(void)
         ret = mqtt_manager->clientReceive(main_mqtt_client, start_message, 100);
         if (ret) {
             ESP_LOGE(TAG, "Did not recieve Start message");
-            vTaskDelay(100);
+            vTaskDelay(1000);
             continue;
         }
 
@@ -113,7 +115,7 @@ void DecisionTask(void)
         proto_status = pb_decode(&i_stream, cal_command_t_fields, &start_command);
         if (!proto_status) {
             ESP_LOGE(TAG, "Failed to decode Start message");
-            vTaskDelay(100);
+            vTaskDelay(1000);
             continue;
         }
 
@@ -238,8 +240,13 @@ void vTaskDriveTask(void*)
     }
 
     ESP_LOGI(TAG, "Measuring and sending data");
-    drive_data_t measurements;
+    drive_data_t measurements = drive_data_t_init_zero;
     uint8_t proto_o_buf[16000];
+
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    sprintf(measurements.mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", 
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     while (true) {
         // Connect to WiFi if not connected
@@ -266,23 +273,24 @@ void vTaskDriveTask(void*)
 
         drive_measurement_t meas;
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             ret = drive_setup.measure(&meas, true);
 
             measurements.time[i] = esp_timer_get_time();
             measurements.voltage[i]   = meas.voltage;
         }
 
+        uint32_t bench_start = esp_timer_get_time();
         pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
 
         proto_status = pb_encode(&o_stream, drive_data_t_fields, &measurements);
         if (!proto_status) {
             ESP_LOGE(TAG, "Failed to encode data message: %s\n", PB_GET_ERROR(&o_stream));
         }
+        uint32_t bench_end = esp_timer_get_time();
+        ESP_LOGI(TAG, "Bench Time: %d", (int) (bench_end - bench_start));
 
         mqtt_manager->clientEnqueue(drive_mqtt_client, proto_o_buf, o_stream.bytes_written, DRIVE_DATA_TOPIC, 2);
-
-        vTaskDelay(1); // 1 millisecond
     }
 }
 
