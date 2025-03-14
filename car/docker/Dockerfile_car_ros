@@ -124,9 +124,9 @@ ADD src bjr_ws/src/bjr_packages
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
 RUN sudo chown -R dock bjr_ws/src/bjr_packages
 
-RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
-    cd /bjr_ws && \
-    colcon build'
+#RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+#    cd /bjr_ws && \
+#    colcon build'
 
 # Set ROS_DOMAIN_ID from hostname
 RUN echo 'export ROS_DOMAIN_ID=$(hostname | grep -o '[0-9]*$')' >> /home/$USER/.bashrc

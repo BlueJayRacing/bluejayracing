@@ -1,40 +1,44 @@
 
-#include <wsg_calibration_driver/wsg_calibration_driver.hpp>
+#include <wsg_drive_data_driver/wsg_drive_data_driver.hpp>
 #include <chrono>
 #include <cstring>
 #include <unistd.h>
 #include <limits>
+#include <fstream>
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "wsg_cal_com.pb.h"
-#include "wsg_cal_data.pb.h"
+#include "wsg_drive_data.pb.h"
 
 #define LOCALHOST_ADDRESS       "localhost:1883"
-#define CLIENTID                "wsg_calibration_node"
+#define CLIENTID                "wsg_drive_data_node"
 #define WSG_ESP_PI_TOPIC        "esp/wsg_dec_esp"
 #define WSG_PI_ESP_TOPIC        "esp/wsg_dec_pi"
-#define WSG_CAL_DATA_TOPIC      "esp/wsg_cal_data"
+#define WSG_DRIVE_DATA_TOPIC      "esp/wsg_drive_data"
 #define QOS                 2
 #define TIMEOUT             10000L
 
-namespace wsg_calibration_driver {
+namespace wsg_drive_data_driver {
 
-WSGCalibrationDriver::WSGCalibrationDriver() : Node("wsg_calibration_driver") {
+WSGDriveDataDriver::WSGDriveDataDriver() : Node("wsg_drive_data_driver") {
     rclcpp::PublisherOptions pub_options;
     pub_options.callback_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
     publisher_ = create_publisher<baja_msgs::msg::Observation>("mqtt_data", rclcpp::QoS(1000).best_effort().durability_volatile(), pub_options);
     connect_to_broker();
     subscribe_to_topics();
+
+    std::ofstream csvFile("src/bjr_packages/car/data.txt");
+    csvFile.close();
 }
 
-WSGCalibrationDriver::~WSGCalibrationDriver() {
+WSGDriveDataDriver::~WSGDriveDataDriver() {
     unsubscribe_from_topics();
     disconnect_from_broker();
     MQTTClient_destroy(&client_);
 }
 
 
-void WSGCalibrationDriver::connect_to_broker() {
+void WSGDriveDataDriver::connect_to_broker() {
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     int rc;
 
@@ -63,9 +67,9 @@ void WSGCalibrationDriver::connect_to_broker() {
     }
 }
 
-void WSGCalibrationDriver::subscribe_to_topics() {
+void WSGDriveDataDriver::subscribe_to_topics() {
     int rc;
-    if ((rc = MQTTClient_subscribe(client_, WSG_CAL_DATA_TOPIC, QOS)) != MQTTCLIENT_SUCCESS)
+    if ((rc = MQTTClient_subscribe(client_, WSG_DRIVE_DATA_TOPIC, QOS)) != MQTTCLIENT_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to subscribe to calibration data topic, return code %d", rc);
         rclcpp::shutdown();
@@ -78,9 +82,9 @@ void WSGCalibrationDriver::subscribe_to_topics() {
     }
 }
 
-void WSGCalibrationDriver::unsubscribe_from_topics() {
+void WSGDriveDataDriver::unsubscribe_from_topics() {
     int rc;
-    if ((rc = MQTTClient_unsubscribe(client_, WSG_CAL_DATA_TOPIC)) != MQTTCLIENT_SUCCESS)
+    if ((rc = MQTTClient_unsubscribe(client_, WSG_DRIVE_DATA_TOPIC)) != MQTTCLIENT_SUCCESS)
     {
         RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to unsubscribe, return code %d", rc);
     }
@@ -91,7 +95,7 @@ void WSGCalibrationDriver::unsubscribe_from_topics() {
     }
 }
 
-void WSGCalibrationDriver::disconnect_from_broker() {
+void WSGDriveDataDriver::disconnect_from_broker() {
     int rc;
     if ((rc = MQTTClient_disconnect(client_, 10000)) != MQTTCLIENT_SUCCESS)
     {
@@ -99,13 +103,8 @@ void WSGCalibrationDriver::disconnect_from_broker() {
     }
 }
 
-int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int topicLen, MQTTClient_message *message) {
-    static uint32_t label_counter = 0;
-    static std::deque<float> sample_volt_avgs_;
-    static std::deque<float> sample_volt_min_;
-    static std::deque<float> sample_volt_max_;
-
-    WSGCalibrationDriver* driver = static_cast<WSGCalibrationDriver*>(context);
+int WSGDriveDataDriver::message_arrived(void *context, char *topicName, int topicLen, MQTTClient_message *message) {
+    WSGDriveDataDriver* driver = static_cast<WSGDriveDataDriver*>(context);
     
     MQTTClient_deliveryToken token;
     MQTTClient_message echo_message = MQTTClient_message_initializer;
@@ -114,7 +113,7 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
 
     do {
         if (topic_str == WSG_ESP_PI_TOPIC) {
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received Message from ESP32");
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received Message from ESP32 Waiting");
             // Decode Polling Message
             {
                 cal_command_t decoded_cmd = cal_command_t_init_zero;
@@ -136,7 +135,7 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
             // Send Start Message
             {
                 cal_command_t cmd = cal_command_t_init_zero;
-                cmd.command = 1;
+                cmd.command = 2;
 
                 uint8_t buffer[128] = {0};
                 pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
@@ -156,55 +155,57 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
             
                 MQTTClient_publishMessage(driver->client_, WSG_PI_ESP_TOPIC, &start_message, &token);
 
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "published calibration start command");
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "published drive start command");
             }
-        } else if (topic_str == WSG_CAL_DATA_TOPIC) {   
-            cal_data_t cal_data = cal_data_t_init_zero;
+        } else if (topic_str == WSG_DRIVE_DATA_TOPIC) { 
+            drive_data_t drive_data = drive_data_t_init_zero;
             pb_istream_t istream = pb_istream_from_buffer((const pb_byte_t*) message->payload, message->payloadlen);
 
-            if (!pb_decode(&istream, cal_data_t_fields, &cal_data)) {
+            if (!pb_decode(&istream, drive_data_t_fields, &drive_data)) {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error decoding ESP Data: %s", PB_GET_ERROR(&istream));
                 break;
             }
 
-            float sample_average = 0;
-            float sample_min = std::numeric_limits<float>::max();
-            float sample_max = std::numeric_limits<float>::min();
+            std::string mac_str(drive_data.mac_address);
 
-            for (int i = 0; i < 40; i++) {
-                sample_average += cal_data.voltage[i] / 40;
-                sample_min = (cal_data.voltage[i] < sample_min) ? cal_data.voltage[i] : sample_min;
-                sample_max = (cal_data.voltage[i] > sample_max) ? cal_data.voltage[i] : sample_max;
-            }
-            
-            if (sample_volt_avgs_.size() == 10) {
-                sample_volt_avgs_.pop_back();
-                sample_volt_min_.pop_back();
-                sample_volt_max_.pop_back();
-            }
-
-            sample_volt_avgs_.push_front(sample_average);
-            sample_volt_min_.push_front(sample_min);
-            sample_volt_max_.push_front(sample_max);
-
-            float sample_10_average = 0;
-            float sample_10_min = std::numeric_limits<float>::max();
-            float sample_10_max = std::numeric_limits<float>::min();
-
-            for (int i = 0; i < sample_volt_avgs_.size(); i++) {
-                sample_10_average += sample_volt_avgs_[i] / sample_volt_avgs_.size();
-                sample_10_min = (sample_volt_min_[i] < sample_10_min) ? sample_volt_min_[i] : sample_10_min;
-                sample_10_max = (sample_volt_max_[i] > sample_10_max) ? sample_volt_max_[i] : sample_10_max;
+            uint8_t channel_type;
+            if (mac_str == "84:FC:E6:00:99:98") {
+                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_REAR_LEFT", mac_str.data());
+                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_REAR_LEFT; //after swap
+            } else if (mac_str == "8C:BF:EA:CB:AD:F4") {
+                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_REAR_RIGHT\n", mac_str.data());
+                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_REAR_RIGHT;
+            } else if (mac_str == "54:32:04:22:5A:40") {
+                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_FRONT_LEFT");
+                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_FRONT_LEFT; //after swap
+            } else if (mac_str == "EC:DA:3B:BE:75:68") {
+                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_FRONT_RIGHT", mac_str.data());
+                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_FRONT_RIGHT;
+            } else {
+                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as MISCELLANEOUS", mac_str.data());
+                channel_type = baja_msgs::msg::AnalogChannel::MISCELLANEOUS;
             }
 
-            if (label_counter % 10 == 0) {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sample Avg\tSample Min\tSample Max\tSamples-10 Avg\tSamples-10 Min\tSamples-10 Max\t");
-            }
-            label_counter++;
+            std::ofstream csvFile("src/bjr_packages/car/data.txt", std::ios::app);
 
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%f\t%f\t%f\t%f\t%f\t%f\t", sample_average, sample_min, sample_max, sample_10_average, sample_10_min, sample_10_max);
-        } else {
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Message from unknown topic recieved");
+            // Reuse AnalogChannel object
+            baja_msgs::msg::AnalogChannel analog_ch;
+            analog_ch.channel_type = channel_type;
+
+            // Needs to put time one to one
+            baja_msgs::msg::Observation observation;
+            for (int i = 0; i < 200; i++) {
+                observation.timestamp.ts = drive_data.time[i];
+                analog_ch.encoded_analog_points = static_cast<double>(drive_data.voltage[i]);
+                observation.analog_ch.push_back(analog_ch);
+
+                if (csvFile.is_open()) {
+                    csvFile << int(channel_type) << "," << drive_data.time[i] <<"," << drive_data.voltage[i] << ",\n";
+                }
+            }
+            driver->publisher_->publish(observation);
+
+            csvFile.close();  // Close the file after writing
         }
     } while (false);
 
@@ -214,15 +215,15 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
     return 1;
 }
 
-void WSGCalibrationDriver::delivery_complete(void *context, MQTTClient_deliveryToken dt) {
+void WSGDriveDataDriver::delivery_complete(void *context, MQTTClient_deliveryToken dt) {
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Message with token value %d delivery confirmed", dt);
 }
 
-void WSGCalibrationDriver::connection_lost(void *context, char *cause) {
+void WSGDriveDataDriver::connection_lost(void *context, char *cause) {
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Connection lost");
     if (cause)
     	RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "     cause: %s", cause);
 }
 
 
-} // namespace mqtt_calibration_driver
+} // namespace wsg_drive_data_driver

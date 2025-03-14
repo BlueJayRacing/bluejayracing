@@ -24,6 +24,12 @@ newgrp docker
 sudo nmcli device wifi hotspot ssid bjr_wireless_axle_host password bluejayracing ifname wlan0
 sudo nmcli connection modify $(nmcli connection show | grep "^Hotspot" | awk '{print $2}') connection.autoconnect yes connection.autoconnect-priority 100
 
+sudo tee -a /etc/mosquitto/mosquitto.conf <<EOF
+
+allow_anonymous true
+listener 1883
+EOF
+
 popd
 
 

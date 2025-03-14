@@ -41,6 +41,8 @@ ament_target_dependencies(mqtt_client_driver
   baja_msgs
   baja_proto
   paho_mqtt
+  nanopb
+  baja_nanopb
 )
 add_executable(mqtt_client_node src/mqtt_client_node.cpp)
 target_link_libraries(mqtt_client_node mqtt_client_driver)
@@ -49,6 +51,8 @@ ament_target_dependencies(mqtt_client_node
   baja_msgs
   baja_proto
   paho_mqtt
+  nanopb
+  baja_nanopb
 )
 
 # MQTT CLIENT PUBLISH
@@ -138,6 +142,37 @@ ament_target_dependencies(xbee_node
   std_msgs
 )
 
+# WSG Drive Data Driver
+add_library(wsg_drive_data_driver SHARED src/wsg_drive_data_driver.cpp)
+target_compile_definitions(wsg_drive_data_driver PUBLIC "POSIX")
+target_include_directories(wsg_drive_data_driver PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+  "${CMAKE_INSTALL_PREFIX}/include/nanopb"
+)
+ament_target_dependencies(wsg_drive_data_driver
+  rclcpp
+  baja_msgs
+  std_msgs
+  paho_mqtt
+  nanopb
+  baja_nanopb
+  baja_proto
+)
+add_executable(wsg_drive_data_node src/wsg_drive_data_node.cpp)
+target_link_libraries(wsg_drive_data_node wsg_drive_data_driver)
+target_include_directories(wsg_drive_data_node PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+)
+ament_target_dependencies(wsg_drive_data_node
+  rclcpp
+  baja_msgs
+  std_msgs
+  paho_mqtt
+  nanopb
+  baja_nanopb
+  baja_proto
+)
+
 # WSG Calibration Driver
 add_library(wsg_calibration_driver SHARED src/wsg_calibration_driver.cpp)
 target_compile_definitions(wsg_calibration_driver PUBLIC "POSIX")
@@ -202,6 +237,7 @@ install(TARGETS
   xbee_driver
   # calibration_printer
   wsg_calibration_driver
+  wsg_drive_data_driver
   LIBRARY DESTINATION lib
 )
 
@@ -215,6 +251,7 @@ install(TARGETS
   xbee_node
   # calibration_printer_node
   wsg_calibration_node
+  wsg_drive_data_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
