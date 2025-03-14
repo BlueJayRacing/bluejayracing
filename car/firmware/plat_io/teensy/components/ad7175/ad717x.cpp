@@ -10,7 +10,7 @@
  *			  acozma (andrei.cozma@analog.com)
  *            dnechita (dan.nechita@analog.com)
  *******************************************************************************/
-#include <iostream>
+// #include <iostream>
 #include <stdlib.h>
 
 #include "ad7175_2_regs.hpp"

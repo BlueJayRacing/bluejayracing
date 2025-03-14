@@ -220,7 +220,7 @@ bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     
     // Add to the ring buffer
     if (!ringBuffer_.write(channelSample)) {
-        util::Debug::warning("ADC: Ring buffer full, sample dropped");
+        // util::Debug::warning("ADC: Ring buffer full, sample dropped");
         return false;
     }
     

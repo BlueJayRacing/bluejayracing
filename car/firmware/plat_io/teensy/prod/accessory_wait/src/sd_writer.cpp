@@ -29,41 +29,41 @@ SDWriter::~SDWriter() {
 }
 
 bool SDWriter::begin(uint8_t chipSelect) {
-    util::Debug::info("SD: Initializing");
+    util::Debug::info(F("SD: Initializing"));
     
     // Try SDIO mode first, then fall back to SPI if needed
     if (!sd_.begin(SdioConfig(FIFO_SDIO))) {
         if (!sd_.begin(SdSpiConfig(chipSelect, SHARED_SPI, SD_SCK_MHZ(50)))) {
-            util::Debug::error("SD: Both SDIO and SPI initialization failed");
+            util::Debug::error(F("SD: Both SDIO and SPI initialization failed"));
             return false;
         }
-        util::Debug::info("SD: SPI mode initialized");
+        util::Debug::info(F("SD: SPI mode initialized"));
     } else {
-        util::Debug::info("SD: SDIO mode initialized");
+        util::Debug::info(F("SD: SDIO mode initialized"));
     }
     
     // Print SD card info
     uint32_t cardSize = sd_.card()->sectorCount();
     if (cardSize) {
         float cardSizeGB = 0.000512 * cardSize;
-        util::Debug::info("SD: Card size: " + String(cardSizeGB) + " GB");
+        util::Debug::info(F("SD: Card size: ") + String(cardSizeGB) + F(" GB"));
     }
     
     // Print FAT type
-    util::Debug::info("SD: Volume is FAT" + String(int(sd_.fatType())));
+    util::Debug::info(F("SD: Volume is FAT") + String(int(sd_.fatType())));
     
     // Print free space
     uint32_t freeKB = sd_.vol()->freeClusterCount();
     freeKB *= sd_.vol()->sectorsPerCluster() / 2;
-    util::Debug::info("SD: Free space: " + String(freeKB / 1024.0) + " GB");
+    util::Debug::info(F("SD: Free space: ") + String(freeKB / 1024.0) + F(" GB"));
     
     // Run quick write test to verify SD card is working properly
-    util::Debug::info("SD: Testing write capability...");
+    util::Debug::info(F("SD: Testing write capability..."));
     
     // Create a test file
     FsFile testFile;
     if (!testFile.open("sdtest.txt", O_RDWR | O_CREAT | O_TRUNC)) {
-        util::Debug::error("SD: Could not create test file");
+        util::Debug::error(F("SD: Could not create test file"));
         return false;
     }
     
@@ -74,7 +74,7 @@ bool SDWriter::begin(uint8_t chipSelect) {
     // Write test data
     uint32_t start = micros();
     for (int i = 0; i < 10; i++) {
-        testBuf.print("Test data line ");
+        testBuf.print(F("Test data line "));
         testBuf.println(i);
     }
     
@@ -84,7 +84,7 @@ bool SDWriter::begin(uint8_t chipSelect) {
     testFile.close();
     
     float writeTime = (end - start) / 1000000.0;
-    util::Debug::info("SD: Test write time: " + String(writeTime) + " s");
+    util::Debug::info(F("SD: Test write time: ") + String(writeTime) + " s");
     
     // Delete the test file
     sd_.remove("sdtest.txt");
@@ -104,7 +104,7 @@ void SDWriter::setChannelNames(const std::vector<adc::ChannelConfig>& channelCon
         }
     }
     
-    util::Debug::info("SD: Set " + String(channelNames_.size()) + " channel names");
+    util::Debug::info(F("SD: Set ") + String(channelNames_.size()) + F(" channel names"));
 }
 
 size_t SDWriter::process() {
