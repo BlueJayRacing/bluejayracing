@@ -2,7 +2,6 @@
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <test.hpp>
-#include <w25n04kv.hpp>
 
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
@@ -13,12 +12,6 @@
 static const char* TAG = "test";
 
 Test::Test(esp_log_level_t test_log_level) { esp_log_level_set(TAG, test_log_level); }
-
-void Test::testMemoryQueue(void)
-{
-    testMemoryQueueBasic();
-    testMemoryQueueAcquireFull();
-}
 
 void Test::testMQTTManager(void)
 {
@@ -38,83 +31,6 @@ void Test::testMQTTManager(void)
     testMQTTManagerClientWiFiConnectDisconnect();
     testMQTTManagerMultipleClientsConDisCon();
     testMQTTManagerClientPublishSubscribe();
-}
-
-/* We check basic memory queue functions like acquiring, writing to, and pushing
- * blocks onto the memory queue. We also cover function returns on invalid input
- * or invalid operation for that state.
- */
-void Test::testMemoryQueueBasic(void)
-{
-    ESP_LOGI(TAG, "Testing Basic Memory Queue Functions");
-    memoryQueue queue(10, 20);
-    ESP_LOGD(TAG, "Initialized memory queue");
-
-    // Try to correctly acquire a block to write on
-    memoryBlock* acquired_block = queue.acquire();
-    assert(acquired_block != nullptr);
-    ESP_LOGD(TAG, "successfully acquired block");
-
-    std::vector<uint8_t> data_vec;
-    data_vec.reserve(20);
-    for (int i = 0; i < 20; i++) {
-        data_vec.push_back(i);
-    }
-
-    assert(acquired_block->write(data_vec) == 20);
-    assert(acquired_block->write(data_vec) == 0);
-    ESP_LOGD(TAG, "successfully written to block");
-
-    // Try to acquire a block to write on while acquire_lock is on
-    assert(queue.acquire() == nullptr);
-    ESP_LOGD(TAG, "successfully prevented acquiring two blocks at once");
-
-    // Try to correctly push a block that you have finished writing to
-    assert(queue.push(acquired_block) == 0);
-    assert(queue.getNumPushed() == 1);
-    ESP_LOGD(TAG, "successfully pushed acquired block");
-
-    // Try to correctly pop a block to read from
-    memoryBlock popped_block(20);
-    assert(queue.pop(popped_block) == 0);
-    ESP_LOGD(TAG, "successfully popped block from queue");
-
-    uint8_t* data = popped_block.data();
-    for (int i = 0; i < 20; i++) {
-        assert(*(data + i) == i);
-    }
-    ESP_LOGI(TAG, "Passed Basic Memory Queue Functions");
-}
-
-/* We check to see if the queue can properly free the oldest memory blocks when
- * acquiring memory blocks on a full queue.
- */
-void Test::testMemoryQueueAcquireFull(void)
-{
-    ESP_LOGI(TAG, "Testing Memory Queue When Full");
-    memoryQueue queue(10, 20);
-
-    for (int i = 0; i < 20; i++) {
-        std::vector<uint8_t> data_vec(20, i);
-
-        memoryBlock* acquired_block = queue.acquire();
-        assert(acquired_block != nullptr);
-        assert(acquired_block->write(data_vec) == 20);
-        queue.push(acquired_block);
-        ESP_LOGD(TAG, "Pushed Block %d", i);
-    }
-
-    memoryBlock mem_block(20);
-    uint8_t* data = mem_block.data();
-
-    for (int i = 0; i < queue.size(); i++) {
-        assert(queue.pop(mem_block) == 0);
-        for (int j = 0; j < mem_block.size(); j++) {
-            ESP_LOGD(TAG, "Data val: %d, Index: %d", *(data + j), i);
-            assert(*(data + j) == (i + 10));
-        }
-    }
-    ESP_LOGI(TAG, "Passed Memory Queue When Full");
 }
 
 /* We check to see if the MQTT manager returns the correct return values on error.
@@ -138,18 +54,20 @@ void Test::testMQTTManagerBasicParamErrors(void)
     assert(mqtt_manager_->clientDisconnect(NULL) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->isClientConnected(NULL) == false);
 
-    assert(mqtt_manager_->clientEnqueue(NULL, "payload", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "payload", "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 3) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
+    std::string test_mes("hi");
+
+    assert(mqtt_manager_->clientEnqueue(NULL, NULL, 5, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), 0, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), test_mes.length(), "", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 3) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientEnqueue(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
 
     assert(mqtt_manager_->clientSubscribe(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientSubscribe(&client, "", 2) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientSubscribe(&client, "topic", 3) == ESP_ERR_INVALID_ARG);
 
     mqtt_message_t message;
-    assert(mqtt_manager_->clientReceive(NULL, message) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientReceive(NULL, message, 100) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientClearMessages(NULL) == ESP_ERR_INVALID_ARG);
 
     ESP_LOGI(TAG, "Passed MQTT Manager Basic Paramter Error Handling");
@@ -475,7 +393,8 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     mqtt_message_t rec_mes;
 
     for (int i = 0; i < 10; i++) {
-        assert(mqtt_manager_->clientEnqueue(client, "hi " + std::to_string(i), "esp32/test_publish", 2) == ESP_OK);
+        std::string hi_mes("hi " + std::to_string(i));
+        assert(mqtt_manager_->clientEnqueue(client, (uint8_t*) hi_mes.data(), hi_mes.length(), "esp32/test_publish", 2) == ESP_OK);
         assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
         assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
         ESP_LOGD(TAG, "Client Published to MQTT");
@@ -483,7 +402,7 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
         memset(&rec_mes, 0, sizeof(mqtt_message_t));
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_->clientReceive(client, rec_mes) == ESP_OK) {
+            if (mqtt_manager_->clientReceive(client, rec_mes, 100) == ESP_OK) {
                 ESP_LOGD(TAG, "Received topic: %s", rec_mes.topic.data());
                 ESP_LOGD(TAG, "Received data: %s", rec_mes.payload.data());
                 break;
@@ -670,7 +589,7 @@ void Test::testADCDACReadDACBias(void)
 
     ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_DAC_BIAS_SAMPLES);
 
-    // assert(sum_diff / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
+    assert(sum_diff / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
 
     ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
 }
@@ -882,4 +801,184 @@ void Test::testADCDACReadAnalogFrontEnd(void)
             vTaskDelay(1);
         }
     }
+}
+
+
+void Test::testCalSensorSetup(void) {
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+        return;        
+    }
+
+    gpio_config_t config;
+    config.mode = GPIO_MODE_OUTPUT;
+    config.intr_type = GPIO_INTR_DISABLE;
+    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+
+    ret = gpio_config(&config);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+        return;
+    }
+
+    ad5626_init_param_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_0;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.spi_host = SPI2_HOST;
+
+    // Initialize the ADC instance
+    ads1120_init_param_t adc_params;
+    adc_params.cs_pin   = GPIO_NUM_21;
+    adc_params.drdy_pin = GPIO_NUM_2;
+    adc_params.spi_host = SPI2_HOST;
+
+    cal_setup_.init(adc_params, dac_params);
+
+    testCalSensorSetupZero();
+    testCalSensorSetupReadAnalogFrontEnd();
+}
+
+void Test::testCalSensorSetupReadAnalogFrontEnd(void)
+{
+    ESP_LOGI(TAG, "Testing Reading Calibration Analog FrontEnd");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    cal_measurement_t measurement;
+
+    while (true) {
+        cal_setup_.measure(&measurement);
+        ESP_LOGI(TAG, "Measurement: %f V, %d", measurement.voltage, measurement.adc_value);
+        vTaskDelay(10);
+    }
+}
+
+void Test::testCalSensorSetupZero(void)
+{
+    ESP_LOGI(TAG, "Testing Zeroing Calibration Sensor Setup");
+
+    esp_err_t ret = cal_setup_.zero();
+    if (ret) {
+        ESP_LOGI(TAG, "Failed to Zero");
+        return;
+    } else {
+        ESP_LOGI(TAG, "Finished Zeroing");
+    }
+
+    ESP_LOGI(TAG, "Finished Testing Zeroing Calibration Sensor Setup");
+}
+
+void Test::testDriveSensorSetup(void)
+{
+    ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
+    
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+        return;        
+    }
+
+    gpio_config_t config;
+    config.mode = GPIO_MODE_OUTPUT;
+    config.intr_type = GPIO_INTR_DISABLE;
+    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+
+    ret = gpio_config(&config);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+        return;
+    }
+
+    ad5626_init_param_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_0;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.spi_host = SPI2_HOST;
+
+    // Initialize the ADC instance
+    ads1120_init_param_t adc_params;
+    adc_params.cs_pin   = GPIO_NUM_21;
+    adc_params.drdy_pin = GPIO_NUM_2;
+    adc_params.spi_host = SPI2_HOST;
+
+    drive_setup_.init(adc_params, dac_params);
+
+    testDriveSensorSetupSPS();
+    testDriveSensorSetupZero();
+    testDriveSensorSetupReadAnalogFrontEnd();
+
+    ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
+}
+
+void Test::testDriveSensorSetupSPS(void) {
+    ESP_LOGI(TAG, "Testing Drive Sensor Setup SPS");
+
+    uint32_t start_time = esp_timer_get_time();
+    drive_measurement_t measurement;
+    int num_success_reads = 0;
+
+    while (esp_timer_get_time() - start_time < 1000000) {
+        drive_setup_.measure(&measurement, true);
+        num_success_reads++;
+    }
+
+    assert(num_success_reads > 1800 && num_success_reads < 2200);
+
+    ESP_LOGI(TAG, "Passed Testing Drive Sensor Setup SPS");
+}
+
+void Test::testDriveSensorSetupReadAnalogFrontEnd(void)
+{
+    ESP_LOGI(TAG, "Testing Reading Drive Analog FrontEnd");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    drive_measurement_t measurement;
+
+    while (true) {
+        drive_setup_.measure(&measurement, true);
+        ESP_LOGI(TAG, "Measurement: %f V, %d", measurement.voltage, measurement.adc_value);
+        vTaskDelay(10);
+    }
+}
+
+void Test::testDriveSensorSetupZero(void)
+{
+    ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
+
+    esp_err_t ret = drive_setup_.zero();
+    if (ret) {
+        ESP_LOGI(TAG, "Failed to Zero");
+        return;
+    } else {
+        ESP_LOGI(TAG, "Finished Zeroing");
+    }
+
+    ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
 }

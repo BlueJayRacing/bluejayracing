@@ -310,7 +310,7 @@ bool mqttManager::isClientConnected(mqtt_client_t* client) const
 esp_err_t mqttManager::clientEnqueue(mqtt_client_t* client, uint8_t* buf, uint16_t buf_length, const std::string& t_topic,
                                      uint8_t t_QoS)
 {
-    if (client == NULL || t_topic.size() == 0 || buf_length == 0 || t_QoS >= 3) {
+    if (client == NULL || t_topic.size() == 0 || buf == NULL || buf_length == 0 || t_QoS >= 3) {
         return ESP_ERR_INVALID_ARG;
     }
 

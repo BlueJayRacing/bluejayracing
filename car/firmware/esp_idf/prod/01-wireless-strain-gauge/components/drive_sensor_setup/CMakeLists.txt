@@ -1,4 +1,4 @@
-idf_component_register( SRCS "sensorSetup.cpp"
+idf_component_register( SRCS "driveSensorSetup.cpp"
                         INCLUDE_DIRS "include"
                         REQUIRES 
                             driver

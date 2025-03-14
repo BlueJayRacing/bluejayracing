@@ -1,16 +1,17 @@
-#include <sensorSetup.hpp>
+#include <calSensorSetup.hpp>
 #include <esp_log.h>
 
+#define ZEROING_MAX_TRIES 10
 #define NUM_MEASUREMENTS 100
 #define ERROR_THRESHOLD 0.003
 
-static const char* TAG = "sensorSetup";
+static const char* TAG = "calSensorSetup";
 
 int min(int a, int b);
 
 int max(int a, int b);
 
-sensorSetup::sensorSetup() {};
+calSensorSetup::calSensorSetup() {};
 
 /*******************************************************************************
  * @brief Initializes the sensorSetup.
@@ -20,7 +21,7 @@ sensorSetup::sensorSetup() {};
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-esp_err_t sensorSetup::init(ads1120_init_param_t adc_params, ad5626_init_param_t dac_params)
+esp_err_t calSensorSetup::init(ads1120_init_param_t adc_params, ad5626_init_param_t dac_params)
 {
     esp_err_t ret = adc_.init(adc_params);
     if (ret) {
@@ -56,9 +57,9 @@ esp_err_t sensorSetup::init(ads1120_init_param_t adc_params, ad5626_init_param_t
  *
  * @return Returns 0 for success or negative error code.
  *******************************************************************************/
-esp_err_t sensorSetup::zero(void) {
+esp_err_t calSensorSetup::zero(void) {
     esp_err_t err;
-    sensor_measurement_t measurements[NUM_MEASUREMENTS];
+    cal_measurement_t measurements[NUM_MEASUREMENTS];
 
     for (uint8_t i = 0; i < ZEROING_MAX_TRIES; i++) {
         // Calculate the average voltage error
@@ -97,7 +98,7 @@ esp_err_t sensorSetup::zero(void) {
     return ESP_ERR_INVALID_RESPONSE;
 }
 
-esp_err_t sensorSetup::setGain(ads1120_gain_t gain)
+esp_err_t calSensorSetup::setGain(ads1120_gain_t gain)
 {
     ads1120_regs_t adc_regs;
     adc_.getRegs(&adc_regs);
@@ -112,7 +113,7 @@ esp_err_t sensorSetup::setGain(ads1120_gain_t gain)
     return ESP_OK;
 }
 
-esp_err_t sensorSetup::measure(sensor_measurement_t* t_meas)
+esp_err_t calSensorSetup::measure(cal_measurement_t* t_meas)
 {
     // Spin until the ADC has data ready
     while (!adc_.isDataReady()) {

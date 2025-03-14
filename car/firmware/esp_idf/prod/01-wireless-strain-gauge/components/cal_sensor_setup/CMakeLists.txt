@@ -1,4 +1,4 @@
-idf_component_register( SRCS "test.cpp"
+idf_component_register( SRCS "calSensorSetup.cpp"
                         INCLUDE_DIRS "include"
                         REQUIRES 
                             driver
@@ -6,8 +6,7 @@ idf_component_register( SRCS "test.cpp"
                             esp_event
                             esp_timer 
                             freertos
-                            sensor_setup
-                            ads1120
                             ad5626
+                            ads1120
                             log
                             )
