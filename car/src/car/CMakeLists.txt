@@ -55,21 +55,25 @@ ament_target_dependencies(mqtt_client_node
   baja_nanopb
 )
 
-# MQTT CLIENT PUBLISH
-add_library(mqtt_client_publish_driver SHARED src/mqtt_client_publish_driver.cpp)
-ament_target_dependencies(mqtt_client_publish_driver
+# WSG UPDATE TIME
+add_library(wsg_update_time_driver SHARED src/wsg_update_time_driver.cpp)
+ament_target_dependencies(wsg_update_time_driver
   rclcpp
   baja_msgs
-  baja_proto
   paho_mqtt
+  nanopb
+  baja_nanopb
+  baja_proto
 )
-add_executable(mqtt_client_publish_node src/mqtt_client_publish_node.cpp ${HELPER_SOURCES})
-target_link_libraries(mqtt_client_publish_node mqtt_client_publish_driver)
-ament_target_dependencies(mqtt_client_publish_node
+add_executable(wsg_update_time_node src/wsg_update_time_node.cpp ${HELPER_SOURCES})
+target_link_libraries(wsg_update_time_node wsg_update_time_driver)
+ament_target_dependencies(wsg_update_time_node
   paho_mqtt
   baja_msgs
-  baja_proto
   rclcpp
+  nanopb
+  baja_nanopb
+  baja_proto
 )
 
 # BROKER
@@ -232,10 +236,10 @@ install(TARGETS
   broker_driver
   writer_driver
   mqtt_client_driver
-  mqtt_client_publish_driver
   transmit_prioritizer_driver
   xbee_driver
   # calibration_printer
+  wsg_update_time_driver
   wsg_calibration_driver
   wsg_drive_data_driver
   LIBRARY DESTINATION lib
@@ -244,12 +248,12 @@ install(TARGETS
 # Install targets
 install(TARGETS
   mqtt_client_node
-  mqtt_client_publish_node
   broker_node
   writer_node
   transmit_prioritizer_node
   xbee_node
   # calibration_printer_node
+  wsg_update_time_node
   wsg_calibration_node
   wsg_drive_data_node
   DESTINATION lib/${PROJECT_NAME}

@@ -194,13 +194,13 @@ int WSGDriveDataDriver::message_arrived(void *context, char *topicName, int topi
 
             // Needs to put time one to one
             baja_msgs::msg::Observation observation;
-            for (int i = 0; i < 200; i++) {
-                observation.timestamp.ts = drive_data.time[i];
+            for (int i = 0; i < 1000; i++) {
+                observation.timestamp.ts = drive_data.base_time + drive_data.time_offset[i];
                 analog_ch.encoded_analog_points = static_cast<double>(drive_data.voltage[i]);
                 observation.analog_ch.push_back(analog_ch);
 
                 if (csvFile.is_open()) {
-                    csvFile << int(channel_type) << "," << drive_data.time[i] <<"," << drive_data.voltage[i] << ",\n";
+                    csvFile << int(channel_type) << "," << drive_data.base_time + drive_data.time_offset[i] <<"," << drive_data.voltage[i] << ",\n";
                 }
             }
             driver->publisher_->publish(observation);
