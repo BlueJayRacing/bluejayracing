@@ -22,6 +22,7 @@ typedef struct mqtt_message {
     std::array<char, 20> topic;
     std::array<uint8_t, 30> payload;
     uint8_t payload_len;
+    uint32_t esp_time;
 } mqtt_message_t;
 
 /*******************************************************************************

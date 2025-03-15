@@ -3,6 +3,7 @@
 #include <esp_err.h>
 #include <esp_event.h>
 #include <esp_log.h>
+#include <esp_timer.h>
 #include <esp_netif.h>
 #include <esp_system.h>
 #include <esp_task_wdt.h>
@@ -130,6 +131,12 @@ esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string&
     err = esp_wifi_start();
     if (err) {
         ESP_LOGE(TAG, "Failed to start WiFi (err: %d)\n", err);
+        return err;
+    }
+
+    err = esp_wifi_set_max_tx_power(40);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to set WiFi TX Power (err: %d)\n", err);
         return err;
     }
 
@@ -274,6 +281,7 @@ void mqttManager::mqttEventHandler(void* arg, esp_event_base_t base, int32_t eve
 
         mqtt_message_t message;
         memset(&message, 0, sizeof(mqtt_message_t));
+        message.esp_time = esp_timer_get_time();
 
         if (uxQueueSpacesAvailable(client->rec_queue) == 0) {
             err = xQueueReceive(client->rec_queue, &message, 5);

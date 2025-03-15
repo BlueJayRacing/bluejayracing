@@ -4,6 +4,7 @@ import "nanopb.proto";
 
 message drive_data_t {
     string mac_address = 1 [(nanopb).max_length = 17];
-    repeated uint64 time = 2 [(nanopb).max_count = 200, (nanopb).fixed_count = true];
-    repeated float voltage = 3 [(nanopb).max_count = 200, (nanopb).fixed_count = true];
+    fixed64 base_time = 2;
+    repeated fixed32 time_offset = 3 [(nanopb).max_count = 1000, (nanopb).fixed_count = true];
+    repeated float voltage = 4 [(nanopb).max_count = 1000, (nanopb).fixed_count = true];
 };

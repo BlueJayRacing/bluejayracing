@@ -1,17 +1,18 @@
 #include "driver/gpio.h"
 #include <calSensorSetup.hpp>
+#include <config.hpp>
 #include <esp_log.h>
 #include <esp_mac.h>
 #include <esp_timer.h>
 #include <mqttManager.hpp>
 #include <test.hpp>
-#include <config.hpp>
 
 #include <pb_decode.h>
 #include <pb_encode.h>
 #include <wsg_cal_com.pb.h>
 #include <wsg_cal_data.pb.h>
 #include <wsg_drive_data.pb.h>
+#include <wsg_pi_time.pb.h>
 
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
@@ -21,15 +22,22 @@
 #define WIFI_SSID  "bjr_wireless_axle_host"
 #define WIFI_PSWD  "bluejayracing"
 
-#define DEC_ESP_PI_TOPIC "esp/wsg_dec_esp"
-#define DEC_PI_ESP_TOPIC "esp/wsg_dec_pi"
-#define CAL_DATA_TOPIC   "esp/wsg_cal_data"
-#define DRIVE_DATA_TOPIC "esp/wsg_drive_data"
+#define DEC_ESP_PI_TOPIC    "esp/wsg_dec_esp"
+#define DEC_PI_ESP_TOPIC    "esp/wsg_dec_pi"
+#define CAL_DATA_TOPIC      "esp/wsg_cal_data"
+#define DRIVE_DATA_TOPIC    "esp/wsg_drive_data"
+#define WSG_PI_TIME_TOPIC   "esp/pi_time"
 
 static const char* TAG = "main";
 
 mqttManager* mqtt_manager;
 QueueHandle_t drive_data_queue;
+QueueHandle_t time_queue;
+
+typedef struct ts_translation {
+    uint64_t pi_time_us;
+    uint32_t esp_time_us;
+} ts_translation_t;
 
 esp_err_t setUpCalSensor(calSensorSetup& setup);
 esp_err_t setUpDriveSensor(driveSensorSetup& setup);
@@ -43,6 +51,7 @@ extern "C" void app_main(void)
 #if ENABLE_TESTS == 1
     Test test(ESP_LOG_DEBUG);
 #endif
+    esp_log_level_set("mqttManager", ESP_LOG_NONE);
     DecisionTask();
 }
 
@@ -126,9 +135,10 @@ void DecisionTask(void)
         } else if (start_command.command == 2) {
             ESP_LOGI(TAG, "Executing Drive Task");
             drive_data_queue = xQueueCreate(5, sizeof(drive_data_t));
+            time_queue       = xQueueCreate(5, sizeof(ts_translation_t));
 
-            xTaskCreate(vTaskDriveRecordADCTask, "Drive Record ADC Task", (1 << 12), NULL, 3, NULL);
-            xTaskCreate(vTaskDriveSendDataTask, "Drive Send Data Task", (1 << 12), NULL, 3, NULL);
+            xTaskCreate(vTaskDriveRecordADCTask, "Drive Record ADC Task", (1 << 15), NULL, 3, NULL);
+            xTaskCreate(vTaskDriveSendDataTask, "Drive Send Data Task", (1 << 15), NULL, 3, NULL);
             break;
         }
     }
@@ -235,23 +245,36 @@ void vTaskDriveRecordADCTask(void*)
     }
 
     ESP_LOGI(TAG, "Measuring and sending data");
-    drive_data_t measurements = drive_data_t_init_zero;
+    drive_data_t measurements     = drive_data_t_init_zero;
 
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
     sprintf(measurements.mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
+    ts_translation_t time_trans = {0, 0};
+    uint32_t time_diff = 0;
+    xQueueReceive(time_queue, &time_trans, portMAX_DELAY);
+    ESP_LOGI(TAG, "Received Time Translation: pi_time_us: %lld, esp_time_us: %ld", time_trans.pi_time_us, time_trans.esp_time_us);
+
     while (true) {
         drive_measurement_t meas;
 
-        for (int i = 0; i < sizeof(measurements.time) / sizeof(uint64_t); i++) {
-            ret = drive_setup.measure(&meas, true);
-
-            measurements.time[i]    = esp_timer_get_time();
-            measurements.voltage[i] = meas.voltage;
+        if (uxQueueMessagesWaiting(time_queue) > 0) {
+            xQueueReceive(time_queue, &time_trans, 0);
+            ESP_LOGI(TAG, "Received Time Translation: pi_time_us: %lld, esp_time_us: %ld", time_trans.pi_time_us, time_trans.esp_time_us);
         }
 
-        if (uxQueueSpacesAvailable(drive_data_queue) != 0) {
+        uint32_t packet_start_time_us = esp_timer_get_time();
+        measurements.base_time        = time_trans.pi_time_us + packet_start_time_us - time_trans.esp_time_us;
+
+        for (int i = 0; i < 1000; i++) {
+            ret = drive_setup.measure(&meas, true);
+
+            measurements.time_offset[i] = esp_timer_get_time() - packet_start_time_us;
+            measurements.voltage[i]     = meas.voltage;
+        }
+
+        if (uxQueueSpacesAvailable(drive_data_queue) > 0) {
             xQueueSend(drive_data_queue, &measurements, 0);
         }
     }
@@ -270,6 +293,8 @@ void vTaskDriveSendDataTask(void*)
         return;
     }
 
+    mqtt_manager->clientSubscribe(drive_mqtt_client, WSG_PI_TIME_TOPIC, 2);
+    
     while (true) {
         // Connect to WiFi if not connected
         while (!mqtt_manager->isWiFiConnected()) {
@@ -291,19 +316,37 @@ void vTaskDriveSendDataTask(void*)
             }
 
             vTaskDelay(200);
+            mqtt_manager->clientSubscribe(drive_mqtt_client, WSG_PI_TIME_TOPIC, 2);
         }
 
-        // uint32_t bench_start = esp_timer_get_time();
-        pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
+        mqtt_message time_message;
+
+        if (mqtt_manager->clientReceive(drive_mqtt_client, time_message, 2) == ESP_OK) {
+            pb_istream_t i_stream = pb_istream_from_buffer(time_message.payload.data(), time_message.payload_len);
+            pi_time_t updated_time;
+            proto_status = pb_decode(&i_stream, pi_time_t_fields, &updated_time);
+            if (!proto_status) {
+                ESP_LOGE(TAG, "Failed to decode Start message");
+                vTaskDelay(1000);
+                continue;
+            }
+
+            ts_translation_t new_translation = {updated_time.time_us, time_message.esp_time};
+            xQueueSend(time_queue, &new_translation, 0);
+        }
+
+        pb_ostream_t o_stream     = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
         drive_data_t measurements = drive_data_t_init_zero;
-        xQueueReceive(drive_data_queue, &measurements, portMAX_DELAY);
+
+        if (xQueueReceive(drive_data_queue, &measurements, 1000) != pdTRUE) {
+            continue;
+        }
+
 
         proto_status = pb_encode(&o_stream, drive_data_t_fields, &measurements);
         if (!proto_status) {
             ESP_LOGE(TAG, "Failed to encode data message: %s\n", PB_GET_ERROR(&o_stream));
         }
-        // uint32_t bench_end = esp_timer_get_time();
-        // ESP_LOGI(TAG, "Bench Time: %d", (int) (bench_end - bench_start));
 
         mqtt_manager->clientPublish(drive_mqtt_client, proto_o_buf, o_stream.bytes_written, DRIVE_DATA_TOPIC, 2);
     }
