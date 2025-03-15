@@ -208,7 +208,6 @@ void RealtimeDataAPIServerNode::initServer()
   // Listen on 0.0.0.0:8080, for instance
   Pistache::Address addr(Pistache::Ipv4::any(), Pistache::Port(8080));
 
-
   auto opts = Pistache::Http::Endpoint::options()
       .threads(1);
 

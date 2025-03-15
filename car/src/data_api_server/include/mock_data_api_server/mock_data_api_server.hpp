@@ -81,8 +81,6 @@ public:
     
     // Stop data generation
     void stopGeneration();
-
-    void updateSamplesPerGeneration(std::string channel_name, size_t samples);
     
     // Get data for all channels
     nlohmann::json getAllChannelsData(size_t max_samples_per_channel = 1000) const;
@@ -116,7 +114,6 @@ private:
     // Rate control
     double generation_rate_hz_;
     size_t samples_per_generation_; // How many samples to generate per tick at the generation rate
-    std::map<std::string, size_t> samples_per_channel_;
 };
 
 // HTTP handler for the Pistache server
@@ -140,6 +137,7 @@ public:
     
 private:
     void initServer();
+    
     // Pistache server
     Pistache::Http::Endpoint* server_;
     

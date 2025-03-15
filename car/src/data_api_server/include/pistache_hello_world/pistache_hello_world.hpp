@@ -7,25 +7,25 @@
 namespace pistache_hello_world
 {
 
-// Handler class for responding to incoming requests
-class HelloHandler : public Pistache::Http::Handler
+// Handler class for handling data requests
+class DataHandler : public Pistache::Http::Handler 
 {
 public:
-  HTTP_PROTOTYPE(HelloHandler)
+  HTTP_PROTOTYPE(DataHandler)
 
-  void onRequest(const Pistache::Http::Request&, Pistache::Http::ResponseWriter response) override
-  {
-    std::string jsonStr = R"({"message": "Hello, World"})";
-    response.headers().add<Pistache::Http::Header::ContentType>("application/json");
-    response.send(Pistache::Http::Code::Ok, jsonStr);
-  }
+  explicit DataHandler(rclcpp::Logger logger);
+
+  void onRequest(const Pistache::Http::Request& request, Pistache::Http::ResponseWriter response) override;
+
+private:
+  rclcpp::Logger logger_;
 };
 
 // Node class that wraps the Pistache server
 class ServerNode : public rclcpp::Node
 {
 public:
-  ServerNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit ServerNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   ~ServerNode();
 
 private:
@@ -33,5 +33,4 @@ private:
   Pistache::Http::Endpoint* server_;
 };
 
-}  // namespace my_pistache_lib
-
+}  // namespace pistache_hello_world
