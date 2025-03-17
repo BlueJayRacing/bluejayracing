@@ -97,158 +97,69 @@ AsyncHTTPRequest httpRequest;
 const int HTTP_REQUEST_INTERVAL = 3000; // 3 seconds between requests
 
 // Your server URL
-const char* HTTP_SERVER_URL = "http://192.168.137.84:9365/";
+const char* HTTP_SERVER_URL = "http://192.168.20.3:9365/";
 
 
 
-// HTTP client thread function
 void httpClientThreadFunc() {
     baja::util::Debug::info("HTTP client thread started");
     
-    // Configure request
-    httpRequest.setTimeout(10); // 10 seconds timeout
-    httpRequest.setDebug(true); // Enable debugging
+    // Wait for things to stabilize before sending first request
+    delay(3000);
     
-    // Set up callback for response handling
-    httpRequest.onReadyStateChange([](void* optParm, AsyncHTTPRequest* request, int readyState) {
-        if (readyState == readyStateDone) {
-            baja::util::Debug::info("HTTP response received");
-            baja::util::Debug::info("Response code: " + String(request->responseHTTPcode()));
-            
-            if (request->responseHTTPcode() == 200) {
-                String responseText = request->responseText();
-                if (responseText.length() > 0) {
-                    // Log a snippet of the response if it's long
-                    if (responseText.length() > 100) {
-                        baja::util::Debug::info("Response: " + responseText.substring(0, 100) + "...");
-                    } else {
-                        baja::util::Debug::info("Response: " + responseText);
-                    }
-                }
-            }
-        }
-    }, nullptr);
+    uint32_t lastProcessTime = 0;
+    uint32_t lastStatsTime = 0;
+    uint32_t successCount = 0;
+    uint32_t errorCount = 0;
     
-    // Variables for timing and statistics
-    uint32_t lastRequestTime = 0;
-    uint32_t totalSamplesSent = 0;
-    uint32_t batchesSent = 0;
+    // Set channel configurations for the HTTP client
+    httpClient.setChannelConfigs(channelConfigsArray);
     
-    // Main loop
+    // Set downsample ratio (send fewer samples)
+    httpClient.setDownsampleRatio(5);  // Only send 1 in every 5 samples
+    
     while (true) {
         uint32_t currentTime = millis();
         
-        // Check if it's time to send a new request
-        if (currentTime - lastRequestTime >= HTTP_REQUEST_INTERVAL) {
-            // Only proceed if the previous request is done
-            if (httpRequest.readyState() == readyStateUnsent || httpRequest.readyState() == readyStateDone) {
-                // Get data from the ring buffer
-                size_t availableSamples = sampleBuffer.available();
-                
-                if (availableSamples > 0) {
-                    // Limit batch size to keep requests manageable
-                    size_t samplesToSend = min(availableSamples, (size_t)10);
-                    
-                    // Build JSON data string directly
-                    String jsonData = "{\"device\":\"Teensy41\",";
-                    jsonData += "\"timestamp\":" + String(currentTime) + ",";
-                    jsonData += "\"samples\":[";
-                    
-                    // Add each sample to the JSON string
-                    size_t samplesAdded = 0;
-                    for (size_t i = 0; i < samplesToSend; i++) {
-                        baja::data::ChannelSample sample;
-                        if (sampleBuffer.peek(sample, i)) {
-                            // Add comma if not the first sample
-                            if (samplesAdded > 0) {
-                                jsonData += ",";
-                            }
-                            
-                            // Add sample data
-                            jsonData += "{\"ts\":" + String(sample.timestamp) + ",";
-                            jsonData += "\"ch\":" + String(sample.channelIndex) + ",";
-                            jsonData += "\"val\":" + String(sample.rawValue);
-                            
-                            // Add channel name if valid and available
-                            if (channelConfigsArray && sample.channelIndex < baja::adc::ADC_CHANNEL_COUNT) {
-                                const std::string& name = channelConfigsArray[sample.channelIndex].name;
-                                if (!name.empty()) {
-                                    jsonData += ",\"name\":\"" + String(name.c_str()) + "\"";
-                                }
-                            }
-                            
-                            jsonData += "}";
-                            samplesAdded++;
-                        }
-                    }
-                    
-                    // Close JSON array and object
-                    jsonData += "]}";
-                    
-                    baja::util::Debug::detail("Sending HTTP request with " + String(samplesAdded) + " samples");
-                    baja::util::Debug::detail("JSON data: " + jsonData);
-                    
-                    // Send the HTTP request exactly like the working example
-                    bool requestOpenResult = httpRequest.open("POST", HTTP_SERVER_URL);
-                    
-                    if (requestOpenResult) {
-                        bool sendResult = httpRequest.send(jsonData);
-                        
-                        if (sendResult) {
-                            baja::util::Debug::info("HTTP request sent successfully");
-                            
-                            // Update statistics
-                            lastRequestTime = currentTime;
-                            totalSamplesSent += samplesAdded;
-                            batchesSent++;
-                            
-                            // Log periodic status
-                            if (batchesSent % 10 == 0) {
-                                baja::util::Debug::info("Stats: " + String(batchesSent) + 
-                                                     " batches, " + String(totalSamplesSent) + 
-                                                     " samples sent");
-                            }
-                        } else {
-                            baja::util::Debug::error("Failed to send HTTP request");
-                        }
-                    } else {
-                        baja::util::Debug::error("Failed to open HTTP request");
-                    }
-                } else {
-                    baja::util::Debug::detail("No samples available to send");
-                }
-            } else {
-                baja::util::Debug::detail("Previous request still in progress");
-            }
-        }
-        
-        // Check network status periodically
-        static uint32_t lastNetworkCheckTime = 0;
-        if (currentTime - lastNetworkCheckTime >= 30000) { // Check every 30 seconds
-            lastNetworkCheckTime = currentTime;
+        // Process data every 100ms
+        if (currentTime - lastProcessTime >= 100) {
+            lastProcessTime = currentTime;
             
-            if (Ethernet.linkStatus() != LinkStatus_kLinkStatusUp) {
-                baja::util::Debug::warning("Network link down, attempting to reconnect...");
+            // Try to process samples from the buffer
+            size_t processed = httpClient.process();
+            
+            if (processed > 0) {
+                successCount++;
+            }
+        }
+        
+        // Print stats every 30 seconds
+        if (currentTime - lastStatsTime >= 30000) {
+            lastStatsTime = currentTime;
+            
+            baja::util::Debug::info("HTTP client stats - Successful batches: " + 
+                String(successCount) + ", Errors: " + String(errorCount));
                 
-                // Reinitialize Ethernet
-                Ethernet.begin();
-                
-                // Wait briefly for reconnection
-                delay(1000);
-                
-                // Log new status
-                if (Ethernet.linkStatus() == LinkStatus_kLinkStatusUp) {
-                    baja::util::Debug::info("Network link restored");
+            // Check network status
+            bool connected = httpClient.isConnected();
+            baja::util::Debug::info("Network status: " + String(connected ? "Connected" : "Disconnected"));
+            
+            // If not connected, try to reconnect
+            if (!connected) {
+                baja::util::Debug::info("Attempting to reconnect...");
+                if (httpClient.reconnect()) {
+                    baja::util::Debug::info("Reconnection successful");
                 } else {
-                    baja::util::Debug::warning("Network reconnection failed, will retry later");
+                    baja::util::Debug::error("Reconnection failed");
+                    errorCount++;
                 }
             }
         }
         
-        // Yield to other threads
+        // Small yield to allow other threads to run
         threads.yield();
         
-        // Small delay to prevent CPU hogging
+        // Add a small delay to prevent tight loop
         delay(10);
     }
 }
@@ -451,50 +362,42 @@ void setup() {
         }
     }
 
-    // if (adcInitialized) {
-    //     baja::util::Debug::info("Starting HTTP client thread...");
-        
-    //     // Initialize QNEthernet first
-    //     #if USING_DHCP
-    //         // Start the Ethernet connection using DHCP
-    //         baja::util::Debug::info("Initializing Ethernet using DHCP...");
-    //         Ethernet.begin();
-    //     #else
-    //         // Start the Ethernet connection using static IP
-    //         baja::util::Debug::info("Initializing Ethernet using static IP...");
-    //         Ethernet.begin(myIP, myNetmask, myGW);
-    //         Ethernet.setDNSServerIP(mydnsServer);
-    //     #endif
-        
-    //     // Wait for Ethernet initialization (with timeout)
-    //     uint32_t ethStartTime = millis();
-    //     bool ethInitSuccess = false;
-        
-    //     while (millis() - ethStartTime < 5000) {
-    //         if (Ethernet.linkStatus() == LinkStatus_kLinkStatusUp) {
-    //             ethInitSuccess = true;
-    //             break;
-    //         }
-    //         delay(100);
-    //     }
-        
-    //     if (ethInitSuccess) {
-    //         baja::util::Debug::info("Ethernet initialized successfully");
-    //         baja::util::Debug::info("IP Address: ");
-    //         Serial.println(Ethernet.localIP());
-            
-    //         // Create HTTP client thread
-    //         int httpClientThreadId = threads.addThread(httpClientThreadFunc, 0, 8192);
-            
-    //         if (httpClientThreadId < 0) {
-    //             baja::util::Debug::error("Failed to create HTTP client thread!");
-    //         } else {
-    //             baja::util::Debug::info("HTTP client thread created with ID: " + String(httpClientThreadId));
-    //         }
-    //     } else {
-    //         baja::util::Debug::warning("Ethernet initialization timed out");
-    //     }
-    // }
+    // Network initialization for HTTP
+    if (adcInitialized) {
+        // Simple network initialization with static IP only
+        baja::util::Debug::info("Initializing network with static IP...");
+
+        // End any existing connections first to ensure clean state
+        Ethernet.end();
+        delay(100);
+
+        // Initialize with static IP (no DHCP)
+        IPAddress staticIP(192, 168, 20, 13);    // Use the IP that worked for you
+        IPAddress gateway(192, 168, 20, 1);      // Your router's IP
+        IPAddress subnet(255, 255, 255, 0);      // Standard subnet mask
+
+        // Begin with static IP
+        Ethernet.begin(staticIP, subnet, gateway);
+        delay(100);
+
+        // Log network status
+        IPAddress ip = Ethernet.localIP();
+        baja::util::Debug::info("Network initialized with IP: " + 
+            String(ip[0]) + "." + String(ip[1]) + "." + String(ip[2]) + "." + String(ip[3]));
+
+        // Initialize HTTP client with same server settings
+        baja::util::Debug::info("Initializing HTTP client...");
+        httpClient.begin("192.168.20.3", 9365, "/");
+
+        // Start HTTP client thread
+        baja::util::Debug::info("Starting HTTP client thread...");
+        int httpClientThreadId = threads.addThread(httpClientThreadFunc, 0, 8192);
+        if (httpClientThreadId < 0) {
+            baja::util::Debug::error("Failed to create HTTP client thread!");
+        } else {
+            baja::util::Debug::info("HTTP client thread created with ID: " + String(httpClientThreadId));
+        }
+    }
     
     baja::util::Debug::info(F("Initialization complete. System running."));
 }

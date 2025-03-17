@@ -6,8 +6,8 @@
 #endif
 
 // Debug Level from 0 to 4
-#define _TEENSY41_ASYNC_TCP_LOGLEVEL_       1
-#define _AWS_TEENSY41_LOGLEVEL_             1
+#define _TEENSY41_ASYNC_TCP_LOGLEVEL_       4
+#define _AWS_TEENSY41_LOGLEVEL_             4
 
 #define SHIELD_TYPE     "Teensy4.1 QNEthernet"
 
@@ -37,5 +37,23 @@ const int LinkStatus_kLinkStatusUp = 1;
 // HTTP Configuration
 #define HTTP_REQUEST_INTERVAL_MS     10000  // 10 seconds interval between requests
 #define DEFAULT_RX_TIMEOUT           10     // 10 seconds timeout for HTTP requests
+
+
+// QNEthernet settings for better reliability
+#define QNETHERNET_MEMORY_POOL_SIZE 4096
+#define QNETHERNET_MAX_TXNS 16
+
+// Connection parameters
+#define HTTP_SERVER_ADDRESS "192.168.20.3"
+#define HTTP_SERVER_PORT 9365
+#define HTTP_SERVER_ENDPOINT "/"
+
+// HTTP Configuration
+#define HTTP_REQUEST_INTERVAL_MS 5000   // 5 seconds interval between requests
+#define DEFAULT_RX_TIMEOUT 15           // 15 seconds timeout for HTTP requests
+#define HTTP_MAX_RETRIES 5              // Maximum number of reconnection attempts
+
+// Error reporting
+#define ERROR_REPORT_INTERVAL_MS 10000  // Only report errors every 10 seconds
 
 #endif    //defines_h

@@ -49,6 +49,21 @@ public:
     bool begin(const char* serverAddress, uint16_t port = 80, const char* endpoint = "/api/data");
     
     /**
+     * @brief Initialize network connection with proper error handling
+     * 
+     * @return true if network initialized successfully
+     */
+    bool initializeNetwork();
+    
+    /**
+     * @brief Convert IP address to string for logging
+     * 
+     * @param ip IP address to convert
+     * @return String representation of the IP address
+     */
+    static String ipToString(IPAddress ip);
+    
+    /**
      * @brief Set the downsample ratio
      * 
      * Only 1 in every downsampleRatio samples will be published.
@@ -124,7 +139,14 @@ private:
     volatile bool requestInProgress_;
     uint32_t lastRequestTime_;
     int lastResponseCode_;
+    uint32_t lastErrorReportTime_;  // Track time of last error report to reduce spam
     int lastReadyState_;
+    bool networkInitialized_;      // Track if network was successfully initialized
+    uint32_t retryCount_;          // Network reconnection attempt counter
+    
+    // Statistics
+    uint32_t successCount_ = 0;
+    uint32_t errorCount_ = 0;
     
     // Channel configurations
     baja::adc::ChannelConfig* channelConfigs_;
@@ -150,11 +172,32 @@ private:
     std::string getChannelName(uint8_t channelIndex) const;
     
     /**
-     * @brief Send HTTP request
+     * @brief Send HTTP request using AsyncHTTPRequest library
      * 
      * @return true if request was initiated successfully
      */
     bool sendRequest();
+    
+    /**
+     * @brief Send HTTP request using direct EthernetClient
+     * 
+     * @return true if request was initiated or is in progress
+     */
+    bool sendDirectRequest();
+    
+    /**
+     * @brief Start a new direct HTTP request using the state machine
+     * 
+     * @return true if request was initiated successfully
+     */
+    bool startDirectRequest();
+    
+    /**
+     * @brief Continue processing an ongoing HTTP request
+     * 
+     * @return true if request is in progress or completed successfully
+     */
+    bool continueDirectRequest();
     
     /**
      * @brief Static callback for HTTP request completion
