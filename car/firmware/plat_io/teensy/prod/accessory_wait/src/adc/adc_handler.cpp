@@ -1,4 +1,4 @@
-#include "adc_handler.hpp"
+#include "adc/adc_handler.hpp"
 
 namespace baja {
 namespace adc {

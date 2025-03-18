@@ -34,11 +34,6 @@ using namespace qindesign::network;
 const int LinkStatus_kLinkStatusDown = 0;
 const int LinkStatus_kLinkStatusUp = 1;
 
-// HTTP Configuration
-#define HTTP_REQUEST_INTERVAL_MS     10000  // 10 seconds interval between requests
-#define DEFAULT_RX_TIMEOUT           10     // 10 seconds timeout for HTTP requests
-
-
 // QNEthernet settings for better reliability
 #define QNETHERNET_MEMORY_POOL_SIZE 4096
 #define QNETHERNET_MAX_TXNS 16

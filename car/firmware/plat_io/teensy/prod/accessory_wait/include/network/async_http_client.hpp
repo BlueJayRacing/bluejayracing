@@ -4,14 +4,13 @@
 #include <QNEthernet.h>
 #include <vector>
 #include <string>
-#include "ring_buffer.hpp"
-#include "sample_data.hpp"
-#include "adc_channel_config.hpp"
-#include "config.hpp"
-#include "defines.h"
-// Can be included as many times as necessary, without `Multiple Definitions` Linker Error
-#include "AsyncHTTPRequest_Teensy41.hpp"
-
+#include "util/ring_buffer.hpp"
+#include "util/sample_data.hpp"
+#include "adc/adc_channel_config.hpp"
+#include "config/config.hpp"
+#include "config/defines.h"
+// Required for AsyncHTTPRequest class
+#include <AsyncHTTPRequest_Teensy41.hpp>
 
 namespace baja {
 namespace network {
@@ -145,8 +144,8 @@ private:
     uint32_t retryCount_;          // Network reconnection attempt counter
     
     // Statistics
-    uint32_t successCount_ = 0;
-    uint32_t errorCount_ = 0;
+    uint32_t successCount_;
+    uint32_t errorCount_;
     
     // Channel configurations
     baja::adc::ChannelConfig* channelConfigs_;

@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <QNEthernet.h>
-#include "defines.h"
+#include "config/defines.h"
 
 using namespace qindesign::network;
 

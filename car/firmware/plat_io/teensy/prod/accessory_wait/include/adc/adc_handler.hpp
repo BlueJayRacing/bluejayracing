@@ -4,11 +4,11 @@
 #include <SPI.h>
 #include <vector>
 #include "ad717x.hpp"
-#include "ring_buffer.hpp"
+#include "util/ring_buffer.hpp"
 #include "adc_channel_config.hpp"
-#include "sample_data.hpp"
-#include "config.hpp"
-#include "debug_util.hpp"
+#include "util/sample_data.hpp"
+#include "config/config.hpp"
+#include "util/debug_util.hpp"
 
 namespace baja {
 namespace adc {

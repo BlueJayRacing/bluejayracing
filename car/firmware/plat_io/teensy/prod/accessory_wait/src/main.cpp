@@ -3,18 +3,19 @@
 #include <SPI.h>
 #include <TimeLib.h>
 
-#include "ring_buffer.hpp"
-#include "sample_data.hpp"
-#include "adc_handler.hpp"
-#include "sd_writer.hpp"
-#include "config.hpp"
-#include "debug_util.hpp"
+// Configuration
+#include "config/config.hpp"
+#include "config/defines.h"
 
+// Utilities
+#include "util/ring_buffer.hpp"
+#include "util/sample_data.hpp"
+#include "util/debug_util.hpp"
 
-
-#include "async_http_client.hpp"
-#include "defines.h"
-#include "AsyncHTTPRequest_Teensy41.h"
+// Thread modules
+#include "adc/adc_thread.hpp"
+#include "network/http_thread.hpp"
+#include "storage/sd_thread.hpp"
 
 // Pin definitions
 const uint8_t ADC_CS_PIN = 10;     // ADC chip select pin
@@ -30,16 +31,6 @@ DMAMEM RingBuf<FsFile, baja::config::SD_RING_BUF_CAPACITY> sdRingBuf;
 // Create the global ring buffer with external buffer
 baja::buffer::RingBuffer<baja::data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE> sampleBuffer(ringBufferStorage);
 
-// Create the ADC handler
-baja::adc::ADC7175Handler adcHandler(sampleBuffer);
-
-// Create the SD writer with external RingBuf
-baja::storage::SDWriter sdWriter(sampleBuffer, &sdRingBuf);
-
-
-// Create the HTTP client
-baja::network::AsyncHTTPClient httpClient(sampleBuffer);
-
 // Global status flags
 bool adcInitialized = false;
 bool sdCardInitialized = false;
@@ -47,13 +38,6 @@ uint32_t loopCount = 0;
 uint32_t samplesProcessedTotal = 0;
 uint32_t startTime = 0;
 uint32_t lastSampleCount = 0;
-
-
-// Flag for SD writer thread
-volatile bool sdWriterRunning = false;
-
-// Thread handle for SD writer thread
-int sdWriterThreadId = -1;
 
 // Function to get time from Teensy RTC
 time_t getTeensyTime() {
@@ -81,148 +65,6 @@ void setupTime() {
     sprintf(timeStr, "%04d-%02d-%02d %02d:%02d:%02d", 
             year(), month(), day(), hour(), minute(), second());
     baja::util::Debug::info(F("Current time: ") + String(timeStr));
-}
-
-
-
-using namespace qindesign::network;
-
-// Create a global AsyncHTTPRequest instance
-AsyncHTTPRequest httpRequest;
-
-#define NOT_SEND_HEADER_AFTER_CONNECTED        true
-#define ASYNC_HTTP_DEBUG_PORT     Serial
-#define _ASYNC_HTTP_LOGLEVEL_     4
-
-const int HTTP_REQUEST_INTERVAL = 3000; // 3 seconds between requests
-
-// Your server URL
-const char* HTTP_SERVER_URL = "http://192.168.20.3:9365/";
-
-
-
-void httpClientThreadFunc() {
-    baja::util::Debug::info("HTTP client thread started");
-    
-    // Wait for things to stabilize before sending first request
-    delay(3000);
-    
-    uint32_t lastProcessTime = 0;
-    uint32_t lastStatsTime = 0;
-    uint32_t successCount = 0;
-    uint32_t errorCount = 0;
-    
-    // Set channel configurations for the HTTP client
-    httpClient.setChannelConfigs(channelConfigsArray);
-    
-    // Set downsample ratio (send fewer samples)
-    httpClient.setDownsampleRatio(5);  // Only send 1 in every 5 samples
-    
-    while (true) {
-        uint32_t currentTime = millis();
-        
-        // Process data every 100ms
-        if (currentTime - lastProcessTime >= 100) {
-            lastProcessTime = currentTime;
-            
-            // Try to process samples from the buffer
-            size_t processed = httpClient.process();
-            
-            if (processed > 0) {
-                successCount++;
-            }
-        }
-        
-        // Print stats every 30 seconds
-        if (currentTime - lastStatsTime >= 30000) {
-            lastStatsTime = currentTime;
-            
-            baja::util::Debug::info("HTTP client stats - Successful batches: " + 
-                String(successCount) + ", Errors: " + String(errorCount));
-                
-            // Check network status
-            bool connected = httpClient.isConnected();
-            baja::util::Debug::info("Network status: " + String(connected ? "Connected" : "Disconnected"));
-            
-            // If not connected, try to reconnect
-            if (!connected) {
-                baja::util::Debug::info("Attempting to reconnect...");
-                if (httpClient.reconnect()) {
-                    baja::util::Debug::info("Reconnection successful");
-                } else {
-                    baja::util::Debug::error("Reconnection failed");
-                    errorCount++;
-                }
-            }
-        }
-        
-        // Small yield to allow other threads to run
-        threads.yield();
-        
-        // Add a small delay to prevent tight loop
-        delay(10);
-    }
-}
-
-
-// SD writer thread function
-void sdWriterThreadFunc() {
-    baja::util::Debug::info(F("SD Writer thread started"));
-    sdWriterRunning = true;
-    
-    // Set thread priority
-    threads.setTimeSlice(threads.id(), baja::config::SD_WRITER_THREAD_PRIORITY);
-    
-    // Create a new data file
-    if (!sdWriter.createNewFile()) {
-        baja::util::Debug::error(F("SD Writer: Failed to create initial data file!"));
-    } else {
-        baja::util::Debug::info(F("SD Writer: Created initial file: ") + String(sdWriter.getCurrentFilename().c_str()));
-    }
-    
-    // Main SD writer loop
-    uint32_t totalWritten = 0;
-    uint32_t lastStatusTime = 0;
-    
-    while (sdWriterRunning) {
-        // Process samples and write to SD card
-        size_t samplesWritten = sdWriter.process();
-        totalWritten += samplesWritten;
-        
-        // Print status occasionally
-        uint32_t now = millis();
-        if (now - lastStatusTime > 30000) {
-            baja::util::Debug::info(F("SD Writer: Samples written: ") + 
-                                 String(totalWritten) + 
-                                 F(", File: ") + 
-                                 String(sdWriter.getCurrentFilename().c_str()) + 
-                                 F(", Bytes: ") + 
-                                 String(sdWriter.getBytesWritten()));
-            lastStatusTime = now;
-        }
-        
-        // Check health and attempt recovery if needed
-        if (!sdWriter.isHealthy()) {
-            baja::util::Debug::warning(F("SD Writer: Detected unhealthy state, attempting recovery"));
-            sdWriter.closeFile();
-            delay(100);
-            
-            if (sdWriter.createNewFile()) {
-                baja::util::Debug::info(F("SD Writer: Recovery successful"));
-                sdWriter.resetHealth();
-            } else {
-                baja::util::Debug::warning(F("SD Writer: Recovery failed, will retry later"));
-                delay(5000);
-            }
-        }
-        
-        // Small yield for other threads
-        threads.yield();
-    }
-    
-    // Close the file before exiting
-    sdWriter.closeFile();
-    baja::util::Debug::info(F("SD Writer thread stopped"));
 }
 
 // Initialize channel configurations
@@ -269,11 +111,10 @@ void setup() {
     // Initialize channel configurations
     initializeChannelConfigs();
 
-    // Initialize the SD card
-    baja::util::Debug::info(F("Initializing SD card..."));
-    if (!(sdCardInitialized = sdWriter.begin())) {
-        baja::util::Debug::error(F("SD card initialization failed!"));
-    } else {
+    // Initialize the SD card thread
+    sdCardInitialized = baja::storage::SDThread::initialize(sampleBuffer, &sdRingBuf, SD_CS_PIN);
+    
+    if (sdCardInitialized) {
         baja::util::Debug::info(F("SD card initialized."));
         
         // Create vector of enabled channel configs
@@ -284,17 +125,23 @@ void setup() {
             }
         }
         
-        sdWriter.setChannelNames(channelConfigs);
+        // Set channel names for SD writer
+        baja::storage::SDThread::setChannelConfigs(channelConfigs);
+        
+        // Start SD writer thread
+        baja::util::Debug::info(F("Starting SD writer thread..."));
+        int sdThreadId = baja::storage::SDThread::start();
+        
+        if (sdThreadId < 0) {
+            baja::util::Debug::error(F("Failed to start SD writer thread!"));
+        } else {
+            baja::util::Debug::info(F("SD writer thread started with ID: ") + String(sdThreadId));
+        }
+    } else {
+        baja::util::Debug::error(F("SD card initialization failed!"));
     }
     
-    // Initialize the ADC
-    baja::util::Debug::info(F("Initializing ADC..."));
-    
-    // Configure CS pin
-    pinMode(ADC_CS_PIN, OUTPUT);
-    digitalWrite(ADC_CS_PIN, HIGH);
-    
-    // Configure ADC settings
+    // Initialize ADC with default settings
     baja::adc::ADCSettings adcSettings;
     adcSettings.deviceType = ID_AD7175_8;
     adcSettings.referenceSource = INTERNAL_REF;
@@ -302,100 +149,62 @@ void setup() {
     adcSettings.readStatusWithData = true;
     adcSettings.odrSetting = SPS_2500;
     
-    // Initialize ADC
-    adcInitialized = adcHandler.begin(ADC_CS_PIN, SPI, adcSettings);
-    
-    if (!adcInitialized) {
-        baja::util::Debug::error(F("ADC initialization failed!"));
-        // Try a reset and reinitialize
-        adcHandler.resetADC();
-        delay(50);
-        baja::util::Debug::info(F("Retrying ADC initialization..."));
-        adcInitialized = adcHandler.begin(ADC_CS_PIN, SPI, adcSettings);
-    }
+    // Initialize the ADC thread
+    adcInitialized = baja::adc::ADCThread::initialize(sampleBuffer, ADC_CS_PIN, SPI, adcSettings);
     
     if (adcInitialized) {
         baja::util::Debug::info(F("ADC initialized successfully."));
         
         // Configure ADC channels
-        baja::util::Debug::info(F("Configuring ADC channels..."));
-        
-        bool configSuccess = adcHandler.configureChannels(channelConfigsArray, baja::adc::ADC_CHANNEL_COUNT);
+        bool configSuccess = baja::adc::ADCThread::configureChannels(channelConfigsArray, baja::adc::ADC_CHANNEL_COUNT);
         
         if (!configSuccess) {
             baja::util::Debug::error(F("ADC channel configuration failed!"));
-        } else {
-            baja::util::Debug::info(F("ADC channels configured successfully."));
-        }
-    }
-    
-    // Start SD writer thread if SD card is initialized
-    if (sdCardInitialized) {
-        baja::util::Debug::info(F("Starting SD writer thread..."));
-        
-        sdWriterThreadId = threads.addThread(sdWriterThreadFunc, 0, baja::config::SD_WRITER_THREAD_STACK_SIZE);
-        
-        if (sdWriterThreadId < 0) {
-            baja::util::Debug::error(F("Failed to create SD writer thread!"));
-            sdWriterRunning = false;
-        } else {
-            baja::util::Debug::info(F("SD writer thread created with ID: ") + String(sdWriterThreadId));
-        }
-    } else {
-        baja::util::Debug::warning(F("SD card not initialized, skipping SD writer thread"));
-    }
-    
-    // Start ADC sampling if initialized
-    if (adcInitialized) {
-        baja::util::Debug::info(F("Starting ADC continuous sampling..."));
-        if (!adcHandler.startSampling()) {
-            baja::util::Debug::error(F("Failed to start ADC sampling!"));
             adcInitialized = false;
         } else {
-            baja::util::Debug::info(F("ADC sampling started."));
+            baja::util::Debug::info(F("ADC channels configured successfully."));
             
-            // Wait a bit and check for samples
-            delay(100);
-            adcHandler.pollForSample(10);
+            // Start ADC thread
+            baja::util::Debug::info(F("Starting ADC thread..."));
+            int adcThreadId = baja::adc::ADCThread::start();
             
-            baja::util::Debug::info(F("Sample count after startup: ") + String(adcHandler.getSampleCount()));
+            if (adcThreadId < 0) {
+                baja::util::Debug::error(F("Failed to start ADC thread!"));
+                adcInitialized = false;
+            } else {
+                baja::util::Debug::info(F("ADC thread started with ID: ") + String(adcThreadId));
+            }
         }
+    } else {
+        baja::util::Debug::error(F("ADC initialization failed!"));
     }
-
-    // Network initialization for HTTP
+    
+    // Initialize HTTP client thread if ADC is working
     if (adcInitialized) {
-        // Simple network initialization with static IP only
-        baja::util::Debug::info("Initializing network with static IP...");
-
-        // End any existing connections first to ensure clean state
-        Ethernet.end();
-        delay(100);
-
-        // Initialize with static IP (no DHCP)
-        IPAddress staticIP(192, 168, 20, 13);    // Use the IP that worked for you
-        IPAddress gateway(192, 168, 20, 1);      // Your router's IP
-        IPAddress subnet(255, 255, 255, 0);      // Standard subnet mask
-
-        // Begin with static IP
-        Ethernet.begin(staticIP, subnet, gateway);
-        delay(100);
-
-        // Log network status
-        IPAddress ip = Ethernet.localIP();
-        baja::util::Debug::info("Network initialized with IP: " + 
-            String(ip[0]) + "." + String(ip[1]) + "." + String(ip[2]) + "." + String(ip[3]));
-
-        // Initialize HTTP client with same server settings
-        baja::util::Debug::info("Initializing HTTP client...");
-        httpClient.begin("192.168.20.3", 9365, "/");
-
-        // Start HTTP client thread
-        baja::util::Debug::info("Starting HTTP client thread...");
-        int httpClientThreadId = threads.addThread(httpClientThreadFunc, 0, 8192);
-        if (httpClientThreadId < 0) {
-            baja::util::Debug::error("Failed to create HTTP client thread!");
+        // Initialize HTTP client thread
+        bool httpInitialized = baja::network::HTTPThread::initialize(
+            sampleBuffer, HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_SERVER_ENDPOINT);
+        
+        if (httpInitialized) {
+            baja::util::Debug::info(F("HTTP client initialized."));
+            
+            // Set channel configurations for HTTP client
+            baja::network::HTTPThread::setChannelConfigs(channelConfigsArray);
+            
+            // Set downsample ratio to reduce data sent over network
+            baja::network::HTTPThread::setDownsampleRatio(5);
+            
+            // Start HTTP client thread
+            baja::util::Debug::info(F("Starting HTTP client thread..."));
+            int httpThreadId = baja::network::HTTPThread::start();
+            
+            if (httpThreadId < 0) {
+                baja::util::Debug::error(F("Failed to start HTTP client thread!"));
+            } else {
+                baja::util::Debug::info(F("HTTP client thread started with ID: ") + String(httpThreadId));
+            }
         } else {
-            baja::util::Debug::info("HTTP client thread created with ID: " + String(httpClientThreadId));
+            baja::util::Debug::error(F("HTTP client initialization failed!"));
         }
     }
     
@@ -406,19 +215,16 @@ void loop() {
     // Increment loop counter
     loopCount++;
     
-    // Process ADC data using polling approach
-    if (adcInitialized) {
-        // Poll for new sample (non-blocking)
-        if (adcHandler.pollForSample(0)) {
-            samplesProcessedTotal++;
+    // Process ADC data directly from main loop if needed
+    if (adcInitialized && baja::adc::ADCThread::processSample()) {
+        samplesProcessedTotal++;
+        
+        // Print visual progress indicator
+        if (samplesProcessedTotal % 10000 == 0) {
+            Serial.print(".");
             
-            // Print visual progress indicator
-            if (samplesProcessedTotal % 10000 == 0) {
-                Serial.print(".");
-                
-                if (samplesProcessedTotal % 500000 == 0) {
-                    Serial.println();
-                }
+            if (samplesProcessedTotal % 500000 == 0) {
+                Serial.println();
             }
         }
     }
@@ -432,25 +238,44 @@ void loop() {
         lastThreadCheckTime = currentTime;
         
         // Check SD writer thread health
-        if (sdWriterRunning && sdWriterThreadId > 0) {
-            int threadState = threads.getState(sdWriterThreadId);
+        if (sdCardInitialized && !baja::storage::SDThread::isRunning()) {
+            baja::util::Debug::warning("SD Writer thread is not running! Attempting to restart...");
             
-            // If thread has ended unexpectedly, restart it
-            if (threadState != Threads::RUNNING) {
-                baja::util::Debug::warning("SD Writer thread is not running! Attempting to restart...");
-                
-                sdWriterRunning = false;
-                delay(100);
-                
-                // Create a new thread
-                sdWriterThreadId = threads.addThread(sdWriterThreadFunc, 0, baja::config::SD_WRITER_THREAD_STACK_SIZE);
-                
-                if (sdWriterThreadId > 0) {
-                    baja::util::Debug::info("SD Writer thread restarted with ID: " + String(sdWriterThreadId));
-                    threads.setTimeSlice(sdWriterThreadId, baja::config::SD_WRITER_THREAD_PRIORITY);
-                } else {
-                    baja::util::Debug::error("Failed to restart SD Writer thread!");
-                }
+            // Attempt to restart the thread
+            int sdThreadId = baja::storage::SDThread::start();
+            
+            if (sdThreadId > 0) {
+                baja::util::Debug::info("SD Writer thread restarted with ID: " + String(sdThreadId));
+            } else {
+                baja::util::Debug::error("Failed to restart SD Writer thread!");
+            }
+        }
+        
+        // Check ADC thread health
+        if (adcInitialized && !baja::adc::ADCThread::isRunning()) {
+            baja::util::Debug::warning("ADC thread is not running! Attempting to restart...");
+            
+            // Attempt to restart the thread
+            int adcThreadId = baja::adc::ADCThread::start();
+            
+            if (adcThreadId > 0) {
+                baja::util::Debug::info("ADC thread restarted with ID: " + String(adcThreadId));
+            } else {
+                baja::util::Debug::error("Failed to restart ADC thread!");
+            }
+        }
+        
+        // Check HTTP thread health
+        if (adcInitialized && !baja::network::HTTPThread::isRunning()) {
+            baja::util::Debug::warning("HTTP thread is not running! Attempting to restart...");
+            
+            // Attempt to restart the thread
+            int httpThreadId = baja::network::HTTPThread::start();
+            
+            if (httpThreadId > 0) {
+                baja::util::Debug::info("HTTP thread restarted with ID: " + String(httpThreadId));
+            } else {
+                baja::util::Debug::error("Failed to restart HTTP thread!");
             }
         }
     }
@@ -463,7 +288,11 @@ void loop() {
         lastStatusTime = currentTime;
         
         // Check for new samples
-        uint32_t currentSampleCount = adcHandler.getSampleCount();
+        uint32_t currentSampleCount = 0;
+        if (adcInitialized && baja::adc::ADCThread::getHandler()) {
+            currentSampleCount = baja::adc::ADCThread::getHandler()->getSampleCount();
+        }
+        
         uint32_t sampleDelta = currentSampleCount - lastSampleCount;
         baja::util::Debug::info("New samples in last 30 seconds: " + 
                            String(sampleDelta) + 
@@ -476,17 +305,23 @@ void loop() {
         baja::util::Debug::info("\n========== SYSTEM STATUS ==========");
         baja::util::Debug::info("Uptime: " + String((currentTime - startTime) / 1000) + " seconds");
         baja::util::Debug::info("Loop count: " + String(loopCount));
-        baja::util::Debug::info("Samples collected: " + String(adcHandler.getSampleCount()));
-        baja::util::Debug::info("Active channel: " + String(adcHandler.getActiveChannel()));
+        baja::util::Debug::info("Samples collected: " + String(currentSampleCount));
+        
+        if (adcInitialized && baja::adc::ADCThread::getHandler()) {
+            baja::util::Debug::info("Active channel: " + 
+                String(baja::adc::ADCThread::getHandler()->getActiveChannel()));
+        }
         
         baja::util::Debug::info("Buffer usage: " + 
                          String(sampleBuffer.available()) + "/" + 
                          String(sampleBuffer.capacity()) + 
                          " (" + String((float)sampleBuffer.available() / sampleBuffer.capacity() * 100.0f) + "%)");
         
-        if (sdCardInitialized) {
-            baja::util::Debug::info("SD file: " + String(sdWriter.getCurrentFilename().c_str()));
-            baja::util::Debug::info("SD bytes written: " + String(sdWriter.getBytesWritten()));
+        if (sdCardInitialized && baja::storage::SDThread::getWriter()) {
+            baja::util::Debug::info("SD file: " + 
+                String(baja::storage::SDThread::getWriter()->getCurrentFilename().c_str()));
+            baja::util::Debug::info("SD bytes written: " + 
+                String(baja::storage::SDThread::getWriter()->getBytesWritten()));
         }
         
         baja::util::Debug::info("===================================\n");
@@ -494,7 +329,10 @@ void loop() {
     
     // Check if we have no samples after 10 seconds
     static bool noSamplesWarningPrinted = false;
-    if (adcInitialized && currentTime - startTime > 10000 && adcHandler.getSampleCount() == 0 && !noSamplesWarningPrinted) {
+    if (adcInitialized && currentTime - startTime > 10000 && 
+        baja::adc::ADCThread::getHandler() && 
+        baja::adc::ADCThread::getHandler()->getSampleCount() == 0 && 
+        !noSamplesWarningPrinted) {
         baja::util::Debug::warning("\n*** WARNING: No samples collected after 10 seconds! ***");
         baja::util::Debug::warning("Check ADC communication and waitForReady() operation");
         noSamplesWarningPrinted = true;
@@ -502,4 +340,5 @@ void loop() {
     
     // Small yield for other tasks
     yield();
+    Ethernet.loop();
 }

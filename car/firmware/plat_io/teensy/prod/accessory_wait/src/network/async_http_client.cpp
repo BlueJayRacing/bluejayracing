@@ -1,6 +1,13 @@
-#include "async_http_client.hpp"
+// #define HTTP_IMPLEMENTATION
+// #include "network/http_include.hpp"
+// #undef HTTP_IMPLEMENTATION
+
+
+#include "network/async_http_client.hpp"
 #include <ArduinoJson.h>
-#include "debug_util.hpp"
+#include "util/debug_util.hpp"
+
+#include <AsyncHTTPRequest_Teensy41.h>
 
 namespace baja {
 namespace network {
@@ -28,7 +35,10 @@ static bool firstAttempt = true;
 AsyncHTTPClient::AsyncHTTPClient(buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer)
     : ringBuffer_(ringBuffer),
       requestPtr_(nullptr),
+      serverAddress_(),
+      endpoint_(),
       port_(80),
+      customHeaders_(),
       downsampleRatio_(1),
       sampleCounter_(0),
       lastReadPosition_(0),
@@ -39,9 +49,10 @@ AsyncHTTPClient::AsyncHTTPClient(buffer::RingBuffer<data::ChannelSample, config:
       lastReadyState_(readyStateUnsent),
       networkInitialized_(false),
       retryCount_(0),
-      channelConfigs_(nullptr),
       successCount_(0),
-      errorCount_(0) {
+      errorCount_(0),
+      channelConfigs_(nullptr),
+      messageBuffer_() {
     
     // Initialize default server address
     strncpy(serverAddress_, "localhost", sizeof(serverAddress_) - 1);
