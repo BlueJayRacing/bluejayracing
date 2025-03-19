@@ -2,6 +2,7 @@
 
 #include <TeensyThreads.h>
 #include "network/async_http_client.hpp" 
+#include "serialization/pb_serializer.hpp"
 // All other includes are already in async_http_client.hpp
 
 #include <QNEthernet.h>
@@ -21,14 +22,14 @@ public:
     /**
      * @brief Initialize the HTTP thread module
      * 
-     * @param ringBuffer Reference to the ring buffer to read samples from
+     * @param encodedBuffer Reference to the buffer containing encoded protobuf messages
      * @param serverAddress Server address (hostname or IP address)
      * @param port Server port
      * @param endpoint API endpoint to post to (e.g., "/api/data")
      * @return true if initialization was successful
      */
     static bool initialize(
-        buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer,
+        buffer::RingBuffer<serialization::EncodedMessage, config::PB_MESSAGE_BUFFER_SIZE>& encodedBuffer,
         const char* serverAddress,
         uint16_t port = 80,
         const char* endpoint = "/api/data");

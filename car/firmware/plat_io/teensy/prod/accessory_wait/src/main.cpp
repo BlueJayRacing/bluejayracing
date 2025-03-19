@@ -16,20 +16,25 @@
 #include "adc/adc_thread.hpp"
 #include "network/http_thread.hpp"
 #include "storage/sd_thread.hpp"
+#include "serialization/pb_thread.hpp"
 
 // Pin definitions
 const uint8_t ADC_CS_PIN = 10;     // ADC chip select pin
 const uint8_t SD_CS_PIN = 254;     // SD card CS pin (for SPI fallback)
 
-// Create global buffers in RAM2 to reduce RAM1 usage
+// Create global buffers in RAM2/EXTMEM to reduce RAM1 usage
 EXTMEM baja::data::ChannelSample ringBufferStorage[baja::config::SAMPLE_RING_BUFFER_SIZE];
 EXTMEM baja::adc::ChannelConfig channelConfigsArray[baja::adc::ADC_CHANNEL_COUNT];
 
 // Define the SdFat RingBuf in EXTMEM
 DMAMEM RingBuf<FsFile, baja::config::SD_RING_BUF_CAPACITY> sdRingBuf;
 
-// Create the global ring buffer with external buffer
+// Create the two new buffers for protobuf serialization
+EXTMEM baja::serialization::EncodedMessage encodedBufferStorage[baja::config::PB_MESSAGE_BUFFER_SIZE];
+
+// Create all the ring buffers with external storage
 baja::buffer::RingBuffer<baja::data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE> sampleBuffer(ringBufferStorage);
+baja::buffer::RingBuffer<baja::serialization::EncodedMessage, baja::config::PB_MESSAGE_BUFFER_SIZE> encodedBuffer(encodedBufferStorage);
 
 // Global status flags
 bool adcInitialized = false;
@@ -179,32 +184,52 @@ void setup() {
         baja::util::Debug::error(F("ADC initialization failed!"));
     }
     
-    // Initialize HTTP client thread if ADC is working
+    // Initialize PB serialization thread if ADC is working
     if (adcInitialized) {
-        // Initialize HTTP client thread
-        bool httpInitialized = baja::network::HTTPThread::initialize(
-            sampleBuffer, HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_SERVER_ENDPOINT);
+        // Initialize PB serialization thread
+        bool pbInitialized = baja::serialization::PBThread::initialize(
+            sampleBuffer, encodedBuffer);
         
-        if (httpInitialized) {
-            baja::util::Debug::info(F("HTTP client initialized."));
+        if (pbInitialized) {
+            baja::util::Debug::info(F("PB serialization thread initialized."));
             
-            // Set channel configurations for HTTP client
-            baja::network::HTTPThread::setChannelConfigs(channelConfigsArray);
+            // Start PB serialization thread
+            baja::util::Debug::info(F("Starting PB serialization thread..."));
+            int pbThreadId = baja::serialization::PBThread::start();
             
-            // Set downsample ratio to reduce data sent over network
-            baja::network::HTTPThread::setDownsampleRatio(5);
-            
-            // Start HTTP client thread
-            baja::util::Debug::info(F("Starting HTTP client thread..."));
-            int httpThreadId = baja::network::HTTPThread::start();
-            
-            if (httpThreadId < 0) {
-                baja::util::Debug::error(F("Failed to start HTTP client thread!"));
+            if (pbThreadId < 0) {
+                baja::util::Debug::error(F("Failed to start PB serialization thread!"));
             } else {
-                baja::util::Debug::info(F("HTTP client thread started with ID: ") + String(httpThreadId));
+                baja::util::Debug::info(F("PB serialization thread started with ID: ") + String(pbThreadId));
+            }
+            
+            // Initialize HTTP client thread with encoded buffer
+            bool httpInitialized = baja::network::HTTPThread::initialize(
+                encodedBuffer, HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_SERVER_ENDPOINT);
+            
+            if (httpInitialized) {
+                baja::util::Debug::info(F("HTTP client initialized."));
+                
+                // Set channel configurations for HTTP client
+                baja::network::HTTPThread::setChannelConfigs(channelConfigsArray);
+                
+                // Set downsample ratio to reduce data sent over network
+                baja::network::HTTPThread::setDownsampleRatio(5);
+                
+                // Start HTTP client thread
+                baja::util::Debug::info(F("Starting HTTP client thread..."));
+                int httpThreadId = baja::network::HTTPThread::start();
+                
+                if (httpThreadId < 0) {
+                    baja::util::Debug::error(F("Failed to start HTTP client thread!"));
+                } else {
+                    baja::util::Debug::info(F("HTTP client thread started with ID: ") + String(httpThreadId));
+                }
+            } else {
+                baja::util::Debug::error(F("HTTP client initialization failed!"));
             }
         } else {
-            baja::util::Debug::error(F("HTTP client initialization failed!"));
+            baja::util::Debug::error(F("PB serialization thread initialization failed!"));
         }
     }
     
@@ -265,6 +290,20 @@ void loop() {
             }
         }
         
+        // Check PB serialization thread health
+        if (adcInitialized && !baja::serialization::PBThread::isRunning()) {
+            baja::util::Debug::warning("PB serialization thread is not running! Attempting to restart...");
+            
+            // Attempt to restart the thread
+            int pbThreadId = baja::serialization::PBThread::start();
+            
+            if (pbThreadId > 0) {
+                baja::util::Debug::info("PB serialization thread restarted with ID: " + String(pbThreadId));
+            } else {
+                baja::util::Debug::error("Failed to restart PB serialization thread!");
+            }
+        }
+        
         // Check HTTP thread health
         if (adcInitialized && !baja::network::HTTPThread::isRunning()) {
             baja::util::Debug::warning("HTTP thread is not running! Attempting to restart...");
@@ -299,12 +338,12 @@ void loop() {
                            " (" + String(sampleDelta / 30.0f) + " samples/sec)");
         lastSampleCount = currentSampleCount;
         
-        // Print buffer stats
-        sampleBuffer.printStats();
+        // Focus on protobuf logging - comment out other buffer stats
+        // sampleBuffer.printStats();
         
         baja::util::Debug::info("\n========== SYSTEM STATUS ==========");
         baja::util::Debug::info("Uptime: " + String((currentTime - startTime) / 1000) + " seconds");
-        baja::util::Debug::info("Loop count: " + String(loopCount));
+        // baja::util::Debug::info("Loop count: " + String(loopCount));
         baja::util::Debug::info("Samples collected: " + String(currentSampleCount));
         
         if (adcInitialized && baja::adc::ADCThread::getHandler()) {
@@ -312,16 +351,25 @@ void loop() {
                 String(baja::adc::ADCThread::getHandler()->getActiveChannel()));
         }
         
-        baja::util::Debug::info("Buffer usage: " + 
+        // Focus on the essential buffer information
+        baja::util::Debug::info("Sample buffer: " + 
                          String(sampleBuffer.available()) + "/" + 
-                         String(sampleBuffer.capacity()) + 
-                         " (" + String((float)sampleBuffer.available() / sampleBuffer.capacity() * 100.0f) + "%)");
+                         String(sampleBuffer.capacity()) + " samples");
         
-        if (sdCardInitialized && baja::storage::SDThread::getWriter()) {
+        baja::util::Debug::info("Encoded buffer: " + 
+                         String(encodedBuffer.available()) + "/" + 
+                         String(encodedBuffer.capacity()) + " messages");
+        
+        // Get PB serialization stats
+        uint32_t encodedCount = 0, sampleCount = 0;
+        baja::serialization::PBThread::getStats(encodedCount, sampleCount);
+        baja::util::Debug::info("PB serializer: " + String(encodedCount) + " messages encoded, " + 
+                                String(sampleCount) + " samples processed");
+        
+        // Only log SD info if PB_DEBUG_LOGGING is false to reduce output
+        if (!baja::config::PB_DEBUG_LOGGING && sdCardInitialized && baja::storage::SDThread::getWriter()) {
             baja::util::Debug::info("SD file: " + 
                 String(baja::storage::SDThread::getWriter()->getCurrentFilename().c_str()));
-            baja::util::Debug::info("SD bytes written: " + 
-                String(baja::storage::SDThread::getWriter()->getBytesWritten()));
         }
         
         baja::util::Debug::info("===================================\n");

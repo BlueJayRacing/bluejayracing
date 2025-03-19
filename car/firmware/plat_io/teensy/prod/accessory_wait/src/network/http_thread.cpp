@@ -1,7 +1,6 @@
 #include "network/http_thread.hpp"
 #include "util/debug_util.hpp"
 
-#include <AsyncHTTPRequest_Teensy41.hpp>
 
 namespace baja {
 namespace network {
@@ -15,15 +14,15 @@ uint32_t HTTPThread::successCount_ = 0;
 uint32_t HTTPThread::errorCount_ = 0;
 
 bool HTTPThread::initialize(
-    buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer,
+    buffer::RingBuffer<serialization::EncodedMessage, config::PB_MESSAGE_BUFFER_SIZE>& encodedBuffer,
     const char* serverAddress,
     uint16_t port,
     const char* endpoint) {
     
     util::Debug::info("HTTP Thread: Initializing");
     
-    // Create the HTTP client
-    httpClient_ = new AsyncHTTPClient(ringBuffer);
+    // Create the HTTP client with encoded buffer
+    httpClient_ = new AsyncHTTPClient(encodedBuffer);
     
     if (!httpClient_) {
         util::Debug::error("HTTP Thread: Failed to create HTTP client");
@@ -36,13 +35,13 @@ bool HTTPThread::initialize(
         return false;
     }
     
-    // Initialize HTTP client
-    if (!httpClient_->begin(serverAddress, port, endpoint)) {
+    // Initialize HTTP client with persistent connections
+    if (!httpClient_->begin(serverAddress, port, endpoint, true)) {
         util::Debug::error("HTTP Thread: HTTP client initialization failed");
         return false;
     }
     
-    util::Debug::info("HTTP Thread: Initialization successful");
+    util::Debug::info("HTTP Thread: Initialization successful with persistent connections");
     return true;
 }
 
@@ -73,6 +72,9 @@ int HTTPThread::start() {
         running_ = false;
         return -2;
     }
+    
+    // Set thread priority
+    threads.setTimeSlice(threadId_, 3);  // Medium priority
     
     util::Debug::info("HTTP Thread: Started with ID " + String(threadId_));
     return threadId_;
@@ -123,30 +125,30 @@ void HTTPThread::setDownsampleRatio(uint8_t ratio) {
 void HTTPThread::threadFunction(void* arg) {
     util::Debug::info("HTTP Thread: Thread started");
     
-    // Set thread priority
-    threads.setTimeSlice(threads.id(), 3);  // Medium priority
-    
     // Wait for things to stabilize before sending first request
-    delay(3000);
+    delay(2000);
     
     uint32_t lastProcessTime = 0;
     uint32_t lastStatsTime = 0;
+    uint32_t requestsAttempted = 0;
+    uint32_t requestsSucceeded = 0;
     
     // Main thread loop
     while (running_) {
         uint32_t currentTime = millis();
         
-        // Process data every 100ms
-        if (currentTime - lastProcessTime >= 100) {
+        // Process data as frequently as possible
+        // Let the client's rate limiting handle delays
+        if (currentTime - lastProcessTime >= 5) {  // Try every 5ms for more responsive processing
             lastProcessTime = currentTime;
             
-            // Try to process samples from the buffer
+            // Try to process encoded messages from the buffer
             if (httpClient_) {
                 size_t processed = httpClient_->process();
                 
                 if (processed > 0) {
-                    requestsCount_++;
-                    successCount_++;
+                    requestsAttempted++;
+                    requestsSucceeded++;
                 }
             }
         }
@@ -155,8 +157,14 @@ void HTTPThread::threadFunction(void* arg) {
         if (currentTime - lastStatsTime >= 30000) {
             lastStatsTime = currentTime;
             
-            util::Debug::info("HTTP Thread: Stats - Successful batches: " + 
-                String(successCount_) + ", Errors: " + String(errorCount_));
+            util::Debug::info("HTTP Thread: Stats - Attempted: " + 
+                String(requestsAttempted) + ", Succeeded: " + 
+                String(requestsSucceeded) + ", Rate: " + 
+                String((float)requestsSucceeded * 1000 / 30000, 1) + " msg/sec");
+                
+            // Reset counters for next period
+            requestsAttempted = 0;
+            requestsSucceeded = 0;
                 
             // Check network status
             if (httpClient_) {
@@ -181,7 +189,7 @@ void HTTPThread::threadFunction(void* arg) {
         threads.yield();
         
         // Add a small delay to prevent tight loop
-        delay(10);
+        delay(5);
     }
     
     util::Debug::info("HTTP Thread: Thread ended");
@@ -189,3 +197,4 @@ void HTTPThread::threadFunction(void* arg) {
 
 } // namespace network
 } // namespace baja
+    

@@ -9,6 +9,7 @@
 #include "adc/adc_channel_config.hpp"
 #include "config/config.hpp"
 #include "config/defines.h"
+#include "serialization/pb_serializer.hpp"
 // Required for AsyncHTTPRequest class
 #include <AsyncHTTPRequest_Teensy41.hpp>
 
@@ -17,20 +18,32 @@ namespace network {
 
 using namespace qindesign::network;
 
+// State machine states for HTTP client
+enum HttpClientState {
+    STATE_IDLE,
+    STATE_CONNECTING,
+    STATE_SENDING,
+    STATE_WAITING,
+    STATE_READING,
+    STATE_PROCESSING,
+    STATE_CLOSING,
+    STATE_KEEPALIVE   // New state for persistent connections
+};
+
 /**
  * @brief Asynchronous HTTP client for telemetry data
  * 
  * Handles publishing data to a server via HTTP POST requests.
- * Uses AsyncHTTPRequest_Teensy41 library.
+ * Uses a state machine approach with persistent connections.
  */
 class AsyncHTTPClient {
 public:
     /**
      * @brief Construct a new Async HTTP Client
      * 
-     * @param ringBuffer Reference to the ring buffer to read samples from
+     * @param encodedBuffer Reference to the buffer containing encoded protobuf messages
      */
-    AsyncHTTPClient(buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer);
+    AsyncHTTPClient(buffer::RingBuffer<serialization::EncodedMessage, config::PB_MESSAGE_BUFFER_SIZE>& encodedBuffer);
     
     /**
      * @brief Destroy the Async HTTP Client
@@ -43,9 +56,11 @@ public:
      * @param serverAddress Server address (hostname or IP address)
      * @param port Server port
      * @param endpoint API endpoint to post to (e.g., "/api/data")
+     * @param usePersistentConnection Whether to use persistent connections (keep-alive)
      * @return true if initialization successful
      */
-    bool begin(const char* serverAddress, uint16_t port = 80, const char* endpoint = "/api/data");
+    bool begin(const char* serverAddress, uint16_t port = 80, const char* endpoint = "/api/data", 
+              bool usePersistentConnection = true);
     
     /**
      * @brief Initialize network connection with proper error handling
@@ -87,12 +102,12 @@ public:
     void setHeader(const char* headerName, const char* headerValue);
     
     /**
-     * @brief Process data from the ring buffer
+     * @brief Process encoded messages from the buffer
      * 
      * This function should be called regularly from the thread.
-     * It reads data from the ring buffer and sends it to the HTTP server.
+     * It reads encoded messages from the buffer and sends them to the HTTP server.
      * 
-     * @return Number of samples processed
+     * @return Number of messages processed
      */
     size_t process();
     
@@ -109,10 +124,24 @@ public:
      * @return true if reconnection successful
      */
     bool reconnect();
+    
+    /**
+     * @brief Set the persistent connection mode
+     * 
+     * @param enable Whether to use persistent connections
+     */
+    void setPersistentConnection(bool enable);
+    
+    /**
+     * @brief Get current state name for debugging
+     * 
+     * @return String representation of current state
+     */
+    String getStateName() const;
 
 private:
-    // Reference to the ring buffer
-    buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer_;
+    // Reference to the encoded message buffer (instead of raw samples)
+    buffer::RingBuffer<serialization::EncodedMessage, config::PB_MESSAGE_BUFFER_SIZE>& encodedBuffer_;
     
     // HTTP request object (defined in the cpp file)
     AsyncHTTPRequest* requestPtr_;
@@ -129,11 +158,19 @@ private:
     };
     std::vector<Header> customHeaders_;
     
+    // Connection management
+    bool usePersistentConnection_;
+    bool connectionEstablished_;
+    uint32_t idleConnectionTime_;
+    uint32_t connectionAttempts_;
+    
     // Downsampling
     uint8_t downsampleRatio_;
     uint32_t sampleCounter_;
     
     // State tracking
+    volatile HttpClientState currentState_;
+    uint32_t stateStartTime_;
     size_t lastReadPosition_;
     volatile bool requestInProgress_;
     uint32_t lastRequestTime_;
@@ -143,24 +180,34 @@ private:
     bool networkInitialized_;      // Track if network was successfully initialized
     uint32_t retryCount_;          // Network reconnection attempt counter
     
+    // State variables for direct request
+    size_t bytesSent_;
+    String responseBuffer_;
+    int statusCode_;
+    
     // Statistics
     uint32_t successCount_;
     uint32_t errorCount_;
+    uint32_t timeoutCount_;
+    uint32_t requestCount_;
     
     // Channel configurations
     baja::adc::ChannelConfig* channelConfigs_;
     
-    // Buffer for message
-    char messageBuffer_[data::MQTT_OPTIMAL_MESSAGE_SIZE];
+    // EthernetClient for persistent connection
+    EthernetClient client_;
+    
+    // Dynamic buffer for message (instead of fixed size)
+    char* messageBuffer_;
+    size_t messageBufferSize_;
     
     /**
-     * @brief Build JSON batch of samples
+     * @brief Build JSON wrapper for encoded protobuf message
      * 
-     * @param samples Array of samples
-     * @param count Number of samples
+     * @param encodedMsg Encoded protobuf message
      * @return true if successful
      */
-    bool buildJsonBatch(const data::ChannelSample* samples, size_t count);
+    bool buildJsonWrapper(const serialization::EncodedMessage& encodedMsg);
     
     /**
      * @brief Get channel name from index
@@ -178,13 +225,6 @@ private:
     bool sendRequest();
     
     /**
-     * @brief Send HTTP request using direct EthernetClient
-     * 
-     * @return true if request was initiated or is in progress
-     */
-    bool sendDirectRequest();
-    
-    /**
      * @brief Start a new direct HTTP request using the state machine
      * 
      * @return true if request was initiated successfully
@@ -197,6 +237,48 @@ private:
      * @return true if request is in progress or completed successfully
      */
     bool continueDirectRequest();
+    
+    /**
+     * @brief Close the connection if needed
+     * 
+     * @param force Force close even if using persistent connections
+     */
+    void closeConnection(bool force = false);
+    
+    /**
+     * @brief Establish a connection to the server if not already connected
+     * 
+     * @return true if connection is established or in progress
+     */
+    bool ensureConnection();
+    
+    /**
+     * @brief Manage persistent connection
+     * 
+     * Checks if connection is still alive and resets if idle too long
+     * 
+     * @return true if connection is healthy
+     */
+    bool managePersistentConnection();
+    
+    /**
+     * @brief Process a completed response
+     * 
+     * @return true if processing was successful
+     */
+    bool processResponse();
+    
+    /**
+     * @brief Reset the state machine for the next request
+     * 
+     * @param closeConn Whether to close the connection
+     */
+    void resetState(bool closeConn = false);
+    
+    /**
+     * @brief Log timeout error with appropriate details
+     */
+    void logTimeoutError();
     
     /**
      * @brief Static callback for HTTP request completion

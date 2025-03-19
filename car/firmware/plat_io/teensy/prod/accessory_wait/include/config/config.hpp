@@ -32,9 +32,15 @@ constexpr int THREAD_SLICE_MICROS = 100;   // Time slice in microseconds for Tee
 constexpr int SD_WRITER_THREAD_PRIORITY = 5; // Higher number = higher priority (for TeensyThreads)
 constexpr int SD_WRITER_THREAD_STACK_SIZE = 8192; // Stack size for SD writer thread
 
-// MQTT Configuration
-constexpr size_t MQTT_MESSAGE_SIZE = 1024; // Size of MQTT messages in bytes
-constexpr uint8_t MQTT_DEFAULT_DOWNSAMPLE = 10; // Default downsampling ratio for MQTT
+// Protocol Buffer Configuration
+constexpr size_t PB_MESSAGE_BUFFER_SIZE = 128;  // Increased from 64 to 128
+constexpr size_t PB_MAX_MESSAGE_SIZE = 4096;    // Increased from 3072 to 4096
+constexpr uint16_t PB_MAX_TIMESTAMP_DELTA = 65000; // Maximum timestamp delta for fixed chunks
+constexpr size_t MAX_SAMPLES_PER_BATCH = 120;   // Reduced from 150 to 120 to keep messages smaller
+constexpr uint32_t PB_SERIALIZATION_INTERVAL_MS = 200; // Increased from 50 to 100ms
+constexpr bool USE_VERBOSE_DATA_CHUNK = true;   // Use VerboseDataChunk instead of FixedDataChunk
+constexpr bool PB_DEBUG_LOGGING = true;         // Enable detailed logging for protobuf operations
+
 
 // Debug configuration
 constexpr bool ENABLE_DETAILED_LOGS = true; // Enable detailed logging
