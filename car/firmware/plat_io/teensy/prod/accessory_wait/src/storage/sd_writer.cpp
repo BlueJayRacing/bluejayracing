@@ -179,7 +179,7 @@ size_t SDWriter::process() {
     }
     
     // Determine batch size based on available samples
-    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(25)); ///////////////////////////////////////////////////////////// set samples smaler
+    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(15)); ///////////////////////////////////////////////////////////// set samples smaler
     
     // For first file, process smaller batches to ensure quicker writes
     if (isFirstFile_) {
@@ -512,7 +512,7 @@ bool SDWriter::syncRingBuf(bool forceFullSync) {
         }
         String a = (syncType? "Force":"write");
         // Only print the log if either bytesWritten > 500 or syncTime > 100 AND the calculated speed is below 20 MB/s
-        if ((bytesWritten > 1000 || syncTime > 50) && (static_cast<float>(bytesWritten) / syncTime < 20.0)) {
+        if ((bytesWritten > 1000 || syncTime > 30) && (static_cast<float>(bytesWritten) / syncTime < 20.0) || syncTime > 50) {
             util::Debug::info("SD: " + a + "-Synced " + String(bytesWritten) + 
                             " bytes in " + String(syncTime) + " µs");
         }

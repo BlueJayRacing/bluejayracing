@@ -87,6 +87,8 @@ private:
     static size_t lastReadPosition_;
     static uint32_t encodedCount_;
     static uint32_t sampleCount_;
+
+    static data::ChannelSample sampleBuffer_[config::MAX_SAMPLES_PER_BATCH];
     
     /**
      * @brief Encode samples into a nanopb protobuf message

@@ -14,6 +14,8 @@ size_t PBSerializer::lastReadPosition_ = 0;
 uint32_t PBSerializer::encodedCount_ = 0;
 uint32_t PBSerializer::sampleCount_ = 0;
 
+data::ChannelSample PBSerializer::sampleBuffer_[config::MAX_SAMPLES_PER_BATCH];
+
 bool PBSerializer::initialize(
     buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& sourceBuffer,
     buffer::RingBuffer<EncodedMessage, config::PB_MESSAGE_BUFFER_SIZE>& targetBuffer) {
@@ -30,6 +32,9 @@ bool PBSerializer::initialize(
 }
 
 size_t PBSerializer::processBatch(size_t maxSamples) {
+    static int counter = 0;
+    uint32_t current_time = micros();
+
     if (!sourceBuffer_ || !targetBuffer_) {
         util::Debug::error("PBSerializer: Not initialized");
         return 0;
@@ -60,27 +65,34 @@ size_t PBSerializer::processBatch(size_t maxSamples) {
                                       static_cast<size_t>(config::MAX_SAMPLES_PER_BATCH));
     
     // Create a temporary buffer for the samples we'll process
-    data::ChannelSample* samples = new data::ChannelSample[samplesToProcess];
-    if (!samples) {
-        util::Debug::error("PBSerializer: Failed to allocate sample buffer");
-        return 0;
-    }
-    
+    // data::ChannelSample* samples = new data::ChannelSample[samplesToProcess];
+    // if (!samples) {
+    //     util::Debug::error("PBSerializer: Failed to allocate sample buffer");
+    //     return 0;
+    // }
+    counter++;
+    if (counter == 10) Serial.println("PBSerializer: Initial Conditionals " + String(micros() - current_time) + "us");
+
+    current_time = micros();
     // Read samples from the source ring buffer (using peek to not remove them yet)
-    size_t actualSamples = 0;
-    for (size_t i = 0; i < samplesToProcess; i++) {
-        data::ChannelSample sample;
-        if (sourceBuffer_->peek(sample, i + lastReadPosition_)) {
-            samples[actualSamples++] = sample;
-        }
-    }
-    
+    // size_t actualSamples = 0;
+    // for (size_t i = 0; i < samplesToProcess; i++) {
+    //     data::ChannelSample sample;
+    //     if (sourceBuffer_->peek(sample, i + lastReadPosition_)) {
+    //         samples[actualSamples++] = sample;
+    //     }
+    // }
+    size_t actualSamples = sourceBuffer_->peekMultiple(PBSerializer::sampleBuffer_, samplesToProcess, lastReadPosition_);
+    if (counter == 10) Serial.println("PBSerializer: Read samples from source buffer in " + String(micros() - current_time) + "us");
+
+    current_time = micros();
     size_t processedCount = 0;
     if (actualSamples > 0) {
         // Create and encode the message
         EncodedMessage encodedMsg;
-        if (encodeSamples(samples, actualSamples, encodedMsg)) {
+        if (encodeSamples(PBSerializer::sampleBuffer_, actualSamples, encodedMsg)) {
             // Add to target buffer
+            uint32_t write_time_st = micros();
             if (targetBuffer_->write(encodedMsg)) {
                 // Update statistics
                 encodedCount_++;
@@ -95,13 +107,16 @@ size_t PBSerializer::processBatch(size_t maxSamples) {
             } else {
                 util::Debug::warning("PBSerializer: Target buffer full, encoded message discarded");
             }
+            if (counter == 10) Serial.println("PBSerializer: Wrote samples in " + String(micros() - write_time_st) + "us");
         } else {
             util::Debug::error("PBSerializer: Failed to encode samples");
         }
     }
+    if (counter == 10) Serial.println("PBSerializer: Write and Encoded samples in " + String(micros() - current_time) + "us");
+    if (counter == 10) counter = 0;
     
     // Free the temporary buffer
-    delete[] samples;
+    // delete[] samples;
     
     return processedCount;
 }
@@ -194,13 +209,6 @@ static inline size_t varint_size(uint32_t value) {
 }
 
 // Optimized hard-coded encoding for VerboseDataChunk submessage.
-// The proto:
-// message VerboseDataChunk {
-//   repeated fixed64 timestamps = 1 [(nanopb).max_count = 100, (nanopb).fixed_count = true];
-//   repeated uint32 channel_ids = 2 [(nanopb).max_count = 100, (nanopb).fixed_count = true, (nanopb).int_size = IS_8];
-//   repeated uint32 values = 3 [(nanopb).max_count = 100, (nanopb).fixed_count = true];
-//   uint32 sample_count = 4 [(nanopb).int_size = IS_16];
-// }
 static bool encodeVerboseDataChunk(pb_ostream_t *stream, const data::ChannelSample *samples, size_t count) {
 
     // 1. Encode timestamps as a packed fixed64 field.
@@ -280,7 +288,6 @@ static bool hardEncodeSamples(
     size_t count, 
     EncodedMessage& encodedMsg)
 {
-    uint32_t start_time = micros();
     if (count == 0 || count > 1000) {
         util::Debug::error("PBSerializer: Invalid sample count: " + String(count));
         return false;

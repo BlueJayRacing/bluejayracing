@@ -33,15 +33,17 @@ constexpr int SD_WRITER_THREAD_PRIORITY = 10; // Higher number = higher priority
 constexpr int SD_WRITER_THREAD_STACK_SIZE = 8192; // Stack size for SD writer thread
 
 // Protocol Buffer Configuration
-constexpr size_t PB_MESSAGE_BUFFER_SIZE = 128;  // Increased from 64 to 128
-constexpr size_t PB_MAX_MESSAGE_SIZE = 1472;    // Increased from 3072 to 4096
+constexpr size_t PB_MESSAGE_BUFFER_SIZE = 32;  // 5/s = 6s DC buffer is small but its in tightly coupled mem
+constexpr size_t PB_MAX_MESSAGE_SIZE = 1472;    // Maximum size of ethernet frame minux UDP Header
 constexpr uint16_t PB_MAX_TIMESTAMP_DELTA = 65000; // Maximum timestamp delta for fixed chunks
-constexpr size_t MAX_SAMPLES_PER_BATCH = 50;   // Reduced from 150 to 120 to keep messages smaller
-constexpr uint32_t PB_SERIALIZATION_INTERVAL_MS = 200; // Increased from 50 to 100ms
-constexpr bool USE_VERBOSE_DATA_CHUNK = true;   // Use VerboseDataChunk instead of FixedDataChunk
+constexpr size_t MAX_SAMPLES_PER_BATCH = 50;   // Reduced size improves nanopb encode times
+constexpr uint32_t PB_SERIALIZATION_INTERVAL_MS = 200; // 5/s rate to match udp transmit
+constexpr bool USE_VERBOSE_DATA_CHUNK = true;   // Verbose provides arrays for all of the elements instead of serializing
+constexpr bool USE_HARD_CODED_ENCODING = true; // hard encoding doesnt work if the proto changes but is faster
+
 constexpr bool PB_DEBUG_LOGGING = true;         // Enable detailed logging for protobuf operations
 
-constexpr bool USE_HARD_CODED_ENCODING = true;
+
 
 
 // Debug configuration

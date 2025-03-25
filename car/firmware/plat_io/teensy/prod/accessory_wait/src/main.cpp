@@ -39,7 +39,7 @@ EXTMEM baja::adc::ChannelConfig channelConfigsArray[baja::adc::ADC_CHANNEL_COUNT
 DMAMEM RingBuf<FsFile, baja::config::SD_RING_BUF_CAPACITY> sdRingBuf;
 
 // Create the two new buffers for protobuf serialization
-EXTMEM baja::serialization::EncodedMessage encodedBufferStorage[baja::config::PB_MESSAGE_BUFFER_SIZE];
+DMAMEM baja::serialization::EncodedMessage encodedBufferStorage[baja::config::PB_MESSAGE_BUFFER_SIZE];
 
 // Create all the ring buffers with external storage
 baja::buffer::RingBuffer<baja::data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE> sampleBuffer(ringBufferStorage);

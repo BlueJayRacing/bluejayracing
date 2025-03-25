@@ -94,7 +94,7 @@ bool AsyncUDPClient::initializeNetwork() {
         }
         
         // Wait for DHCP to complete
-        if (!Ethernet.waitForLocalIP(5000)) {
+        if (!Ethernet.waitForLocalIP(10000)) {
             util::Debug::error("AsyncUDPClient: DHCP timeout");
             return false;
         }
@@ -135,22 +135,17 @@ String AsyncUDPClient::ipToString(IPAddress ip) {
 }
 
 size_t AsyncUDPClient::process(size_t maxMessages, uint32_t maxTimeUs) {
-    static int counter = 0;
-    counter++;
     // First check if network is connected
     if (!checkConnection()) {
         util::Debug::warning("AsyncUDPClient: Network connection is down");
         return 0;
     }
-    uint32_t currentTime = micros();
     
     // Get number of available encoded messages
     size_t availableMessages = encodedBuffer_.available();
     if (availableMessages == 0) {
         return 0;
     }
-
-    if (counter > 5000) Serial.println("Took " + String(micros() - currentTime) + " microseconds to check connection and buffer availability");
     
     // Set max messages if not specified
     if (maxMessages == 0 || maxMessages > availableMessages) {
@@ -160,7 +155,8 @@ size_t AsyncUDPClient::process(size_t maxMessages, uint32_t maxTimeUs) {
     // Set start time for timing constraint
     uint32_t startTime = micros();
     size_t processedCount = 0;
-    
+
+
     // Process messages up to max count or time limit
     for (size_t i = 0; i < maxMessages; i++) {
         // Check if we've exceeded the max processing time
@@ -168,23 +164,20 @@ size_t AsyncUDPClient::process(size_t maxMessages, uint32_t maxTimeUs) {
             break;
         }
         
+
+
         // Read an encoded message from the buffer
         serialization::EncodedMessage encodedMsg;
-        uint32_t readTime = micros();
         if (!encodedBuffer_.read(encodedMsg)) {
             util::Debug::warning("AsyncUDPClient: Failed to read encoded message from buffer");
             break;
         }
-        if (counter > 5000) Serial.println("Took " + String(micros() - readTime) + " microseconds to read encoded message from buffer");
         yield();
         
         // Send the message
-        uint32_t sendTime = micros();
         if (sendMessage(encodedMsg)) {
             processedCount++;
         }
-        if (counter > 5000) Serial.println("Took " + String(micros() - sendTime) + " microseconds to send message");
-        if (counter > 5000) counter = 0;
     }
     
     // Log stats periodically
@@ -201,14 +194,14 @@ bool AsyncUDPClient::sendMessage(const serialization::EncodedMessage& encodedMsg
         oversizedMessages_++;
         return false;
     }
-    
+
     // Send the raw encoded data directly
     if (!udp_.write(encodedMsg.buffer, encodedMsg.size)) {
         util::Debug::warning("AsyncUDPClient: Failed to send UDP message");
         sendErrors_++;
         return false;
     }
-    
+
     // Update statistics
     messagesSent_++;
     bytesTransferred_ += encodedMsg.size;

@@ -67,6 +67,12 @@ public:
      * @return true if write was successful, false if buffer is full
      */
     bool write(const T& item) {
+
+        if (count_ >= SIZE) {
+            overrunCount_++;
+            return false;
+        }
+
         Threads::Scope lock(mutex_);
         
         if (count_ >= SIZE) {
@@ -88,6 +94,11 @@ public:
      * @return true if read was successful, false if buffer is empty
      */
     bool read(T& item) {
+
+        if (count_ == 0) {
+            return false;
+        }
+
         Threads::Scope lock(mutex_);
         
         if (count_ == 0) {
@@ -109,6 +120,11 @@ public:
      * @return true if peek was successful, false if offset is beyond available items
      */
     bool peek(T& item, size_t offset = 0) const {
+
+        if (offset >= count_) {
+            return false;
+        }
+
         Threads::Scope lock(mutex_);
         
         if (offset >= count_) {
@@ -151,6 +167,28 @@ public:
         }
         
         return itemsToRead;
+    }
+
+
+    /**
+     * @brief Peek multiple items
+     * 
+     * @param items Array to store read items
+     * @param maxItems Maximum number of items to read
+     * @return Number of items actually read
+     */
+    size_t peekMultiple(T* items, size_t maxItems, size_t startOffset = 0) {
+        Threads::Scope lock(mutex_); // Only one lock for the entire operation
+        
+        size_t available = count_ > startOffset ? count_ - startOffset : 0;
+        size_t itemsToPeek = (maxItems < available) ? maxItems : available;
+        
+        for (size_t i = 0; i < itemsToPeek; i++) {
+            size_t peekIndex = (readIndex_ + startOffset + i) % SIZE;
+            items[i] = buffer_[peekIndex];
+        }
+        
+        return itemsToPeek;
     }
 
     /**
