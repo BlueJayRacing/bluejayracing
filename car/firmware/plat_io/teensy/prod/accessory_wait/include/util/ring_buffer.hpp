@@ -141,7 +141,7 @@ public:
         totalReadCount_ += itemsToRead;
         
         // Only log larger reads to reduce log spam
-        if (itemsToRead > 1000) {
+        if (itemsToRead > 200) {
             Serial.print("RingBuffer: Read ");
             Serial.print(itemsToRead);
             Serial.print(" samples. Total reads=");

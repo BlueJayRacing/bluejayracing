@@ -14,13 +14,22 @@
 
 // Thread modules
 #include "adc/adc_thread.hpp"
-#include "network/http_thread.hpp"
+// Replace HTTP with UDP
+// #include "network/http_thread.hpp"
+#include "network/udp_thread.hpp"
 #include "storage/sd_thread.hpp"
 #include "serialization/pb_thread.hpp"
+#include <AsyncUDP_Teensy41.h>
+
+uint32_t freeRamLow = UINT32_MAX;
 
 // Pin definitions
 const uint8_t ADC_CS_PIN = 10;     // ADC chip select pin
 const uint8_t SD_CS_PIN = 254;     // SD card CS pin (for SPI fallback)
+
+// UDP server configuration
+const char* UDP_SERVER_ADDRESS = "192.168.20.3";
+const uint16_t UDP_SERVER_PORT = 8888;
 
 // Create global buffers in RAM2/EXTMEM to reduce RAM1 usage
 EXTMEM baja::data::ChannelSample ringBufferStorage[baja::config::SAMPLE_RING_BUFFER_SIZE];
@@ -49,10 +58,33 @@ time_t getTeensyTime() {
     return Teensy3Clock.get();
 }
 
+void resetWatchdog() {
+    // Service the watchdog by writing the WDOG service sequence
+    WDOG1_WSR = 0x5555;
+    WDOG1_WSR = 0xAAAA;
+  }
+
 void dateTime(uint16_t *date, uint16_t *time) {
     *date = FAT_DATE(year(), month(), day());
     *time = FAT_TIME(hour(), minute(), second());
 }
+
+// Function to get free RAM on Teensy 4.1
+uint32_t getFreeRAM() {
+    extern unsigned long _heap_start;
+    extern unsigned long _heap_end;
+    extern char *__brkval;
+    
+    uint32_t free_memory;
+    
+    if (__brkval == 0)
+      free_memory = ((uint32_t)&_heap_end - (uint32_t)&_heap_start);
+    else
+      free_memory = ((uint32_t)&_heap_end - (uint32_t)__brkval);
+      
+    return free_memory;
+}
+  
 
 // Function to set up the correct time for the Teensy
 void setupTime() {
@@ -203,30 +235,27 @@ void setup() {
                 baja::util::Debug::info(F("PB serialization thread started with ID: ") + String(pbThreadId));
             }
             
-            // Initialize HTTP client thread with encoded buffer
-            bool httpInitialized = baja::network::HTTPThread::initialize(
-                encodedBuffer, HTTP_SERVER_ADDRESS, HTTP_SERVER_PORT, HTTP_SERVER_ENDPOINT);
+            // Initialize UDP client thread with encoded buffer
+            bool udpInitialized = baja::network::UDPThread::initialize(
+                encodedBuffer, 
+                UDP_SERVER_ADDRESS,
+                UDP_SERVER_PORT
+            );
             
-            if (httpInitialized) {
-                baja::util::Debug::info(F("HTTP client initialized."));
+            if (udpInitialized) {
+                baja::util::Debug::info(F("UDP client initialized."));
                 
-                // Set channel configurations for HTTP client
-                baja::network::HTTPThread::setChannelConfigs(channelConfigsArray);
+                // Start UDP client thread
+                baja::util::Debug::info(F("Starting UDP client thread..."));
+                int udpThreadId = baja::network::UDPThread::start();
                 
-                // Set downsample ratio to reduce data sent over network
-                baja::network::HTTPThread::setDownsampleRatio(5);
-                
-                // Start HTTP client thread
-                baja::util::Debug::info(F("Starting HTTP client thread..."));
-                int httpThreadId = baja::network::HTTPThread::start();
-                
-                if (httpThreadId < 0) {
-                    baja::util::Debug::error(F("Failed to start HTTP client thread!"));
+                if (udpThreadId < 0) {
+                    baja::util::Debug::error(F("Failed to start UDP client thread!"));
                 } else {
-                    baja::util::Debug::info(F("HTTP client thread started with ID: ") + String(httpThreadId));
+                    baja::util::Debug::info(F("UDP client thread started with ID: ") + String(udpThreadId));
                 }
             } else {
-                baja::util::Debug::error(F("HTTP client initialization failed!"));
+                baja::util::Debug::error(F("UDP client initialization failed!"));
             }
         } else {
             baja::util::Debug::error(F("PB serialization thread initialization failed!"));
@@ -304,17 +333,17 @@ void loop() {
             }
         }
         
-        // Check HTTP thread health
-        if (adcInitialized && !baja::network::HTTPThread::isRunning()) {
-            baja::util::Debug::warning("HTTP thread is not running! Attempting to restart...");
+        // Check UDP thread health
+        if (adcInitialized && !baja::network::UDPThread::isRunning()) {
+            baja::util::Debug::warning("UDP thread is not running! Attempting to restart...");
             
             // Attempt to restart the thread
-            int httpThreadId = baja::network::HTTPThread::start();
+            int udpThreadId = baja::network::UDPThread::start();
             
-            if (httpThreadId > 0) {
-                baja::util::Debug::info("HTTP thread restarted with ID: " + String(httpThreadId));
+            if (udpThreadId > 0) {
+                baja::util::Debug::info("UDP thread restarted with ID: " + String(udpThreadId));
             } else {
-                baja::util::Debug::error("Failed to restart HTTP thread!");
+                baja::util::Debug::error("Failed to restart UDP thread!");
             }
         }
     }
@@ -366,6 +395,19 @@ void loop() {
         baja::util::Debug::info("PB serializer: " + String(encodedCount) + " messages encoded, " + 
                                 String(sampleCount) + " samples processed");
         
+        // Get UDP stats
+        if (baja::network::UDPThread::getClient()) {
+            uint32_t messagesSent = 0, oversizedMessages = 0, bytesTransferred = 0, sendErrors = 0;
+            baja::network::UDPThread::getStats(messagesSent, oversizedMessages, bytesTransferred, sendErrors);
+            
+            baja::util::Debug::info("UDP client: " + String(messagesSent) + " messages sent, " + 
+                                   String(bytesTransferred / 1024.0f, 1) + " KB transferred");
+            
+            if (oversizedMessages > 0) {
+                baja::util::Debug::warning("UDP client: " + String(oversizedMessages) + " oversized messages dropped");
+            }
+        }
+        
         // Only log SD info if PB_DEBUG_LOGGING is false to reduce output
         if (!baja::config::PB_DEBUG_LOGGING && sdCardInitialized && baja::storage::SDThread::getWriter()) {
             baja::util::Debug::info("SD file: " + 
@@ -388,5 +430,20 @@ void loop() {
     
     // Small yield for other tasks
     yield();
-    Ethernet.loop();
+    resetWatchdog();
+    // Ethernet will handle itself through the UDP library
+
+    uint32_t freeRam = getFreeRAM();
+  if (freeRam < freeRamLow) {
+    freeRamLow = freeRam;
+    
+    Serial.print("Free RAM low mark: ");
+    Serial.println(freeRamLow);
+  }
+  
+  // Check for critically low memory
+  if (freeRam < 10000) { // Adjust this threshold based on your application
+    Serial.println("WARNING: Memory critically low, resetting all connections");
+    delay(1000); // Give system time to recover
+  }
 }

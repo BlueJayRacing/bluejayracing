@@ -106,20 +106,247 @@ size_t PBSerializer::processBatch(size_t maxSamples) {
     return processedCount;
 }
 
-bool PBSerializer::encodeSamples(
+// Helper function: hard-coded encoding for FixedDataChunk submessage.
+// Optimized hard-coded encoding for FixedDataChunk submessage.
+static bool encodeFixedDataChunk(pb_ostream_t *stream, const data::ChannelSample *samples, size_t count) {
+    Serial.print("Encoding FixedDataChunk with " + String(count) + " samples\n");
+    uint32_t start_time = micros();
+
+    // Field 1: Encode base_timestamp (fixed64) from the first sample.
+    uint64_t base_timestamp = samples[0].timestamp;
+    if (!pb_encode_tag(stream, PB_WT_64BIT, FixedDataChunk_base_timestamp_tag))
+        return false;
+    if (!pb_encode_fixed64(stream, &base_timestamp))
+        return false;
+
+    // We'll use the same temporary buffer for each sample.
+    uint8_t sample_buffer[32];
+    // Cache the output pointer to avoid repeated pointer arithmetic.
+    uint8_t *out_buffer = (uint8_t *)stream->state;
+    
+    size_t valid_samples = count;
+    for (size_t i = 0; i < valid_samples; i++) {
+        uint64_t delta = samples[i].timestamp - base_timestamp;
+        if (delta > UINT16_MAX) {
+            // If delta exceeds the maximum representable value,
+            // truncate the batch (if not first sample) or clamp delta.
+            if (i > 0) {
+                valid_samples = i;
+                break;
+            } else {
+                delta = UINT16_MAX;
+            }
+        }
+
+        // Instead of creating a new temporary buffer each iteration,
+        // reuse sample_buffer and create a temporary stream over it.
+        pb_ostream_t sample_stream = pb_ostream_from_buffer(sample_buffer, sizeof(sample_buffer));
+
+        // Encode Sample.field1: channel_id (varint)
+        if (!pb_encode_tag(&sample_stream, PB_WT_VARINT, Sample_channel_id_tag))
+            return false;
+        if (!pb_encode_varint(&sample_stream, samples[i].channelIndex))
+            return false;
+
+        // Encode Sample.field2: value (varint)
+        if (!pb_encode_tag(&sample_stream, PB_WT_VARINT, Sample_value_tag))
+            return false;
+        if (!pb_encode_varint(&sample_stream, samples[i].rawValue))
+            return false;
+
+        // Encode Sample.field3: timestamp_delta (varint)
+        if (!pb_encode_tag(&sample_stream, PB_WT_VARINT, Sample_timestamp_delta_tag))
+            return false;
+        if (!pb_encode_varint(&sample_stream, delta))
+            return false;
+
+        // Now encode this Sample as a length-delimited field in the main stream.
+        if (!pb_encode_tag(stream, PB_WT_STRING, FixedDataChunk_samples_tag))
+            return false;
+        if (!pb_encode_varint(stream, sample_stream.bytes_written))
+            return false;
+        if (stream->bytes_written + sample_stream.bytes_written > stream->max_size)
+            return false;
+        memcpy(&out_buffer[stream->bytes_written], sample_buffer, sample_stream.bytes_written);
+        stream->bytes_written += sample_stream.bytes_written;
+    }
+
+    // Field 3: Encode sample_count.
+    if (!pb_encode_tag(stream, PB_WT_VARINT, FixedDataChunk_sample_count_tag))
+        return false;
+    if (!pb_encode_varint(stream, valid_samples))
+        return false;
+    
+    uint32_t end_time = micros();
+    Serial.print("Encoding time: " + String(end_time - start_time) + "us\n");
+    return true;
+}
+
+
+// Helper: compute how many bytes a varint will take.
+static inline size_t varint_size(uint32_t value) {
+    size_t size = 1;
+    while (value >= 128) {
+        value >>= 7;
+        size++;
+    }
+    return size;
+}
+
+// Optimized hard-coded encoding for VerboseDataChunk submessage.
+// The proto:
+// message VerboseDataChunk {
+//   repeated fixed64 timestamps = 1 [(nanopb).max_count = 100, (nanopb).fixed_count = true];
+//   repeated uint32 channel_ids = 2 [(nanopb).max_count = 100, (nanopb).fixed_count = true, (nanopb).int_size = IS_8];
+//   repeated uint32 values = 3 [(nanopb).max_count = 100, (nanopb).fixed_count = true];
+//   uint32 sample_count = 4 [(nanopb).int_size = IS_16];
+// }
+static bool encodeVerboseDataChunk(pb_ostream_t *stream, const data::ChannelSample *samples, size_t count) {
+
+    // 1. Encode timestamps as a packed fixed64 field.
+    if (!pb_encode_tag(stream, PB_WT_STRING, VerboseDataChunk_timestamps_tag)) {
+         Serial.print("Failed to encode timestamps tag\n");
+         return false;
+    }
+    size_t timestamps_length = count * 8; // each fixed64 is 8 bytes
+    if (!pb_encode_varint(stream, timestamps_length)) {
+         Serial.print("Failed to encode timestamps length\n");
+         return false;
+    }
+    for (size_t i = 0; i < count; i++) {
+         if (!pb_encode_fixed64(stream, (uint64_t *)&samples[i].timestamp)) {
+              Serial.print("Failed to encode timestamp at index " + String(i) + "\n");
+              return false;
+         }
+    }
+
+    // 2. Encode channel_ids as a packed varint field.
+    if (!pb_encode_tag(stream, PB_WT_STRING, VerboseDataChunk_channel_ids_tag)) {
+         Serial.print("Failed to encode channel_ids tag\n");
+         return false;
+    }
+    size_t channel_ids_length = 0;
+    for (size_t i = 0; i < count; i++) {
+         channel_ids_length += varint_size(samples[i].channelIndex);
+    }
+    if (!pb_encode_varint(stream, channel_ids_length)) {
+         Serial.print("Failed to encode channel_ids length\n");
+         return false;
+    }
+    for (size_t i = 0; i < count; i++) {
+         if (!pb_encode_varint(stream, samples[i].channelIndex)) {
+              Serial.print("Failed to encode channel_id at index " + String(i) + "\n");
+              return false;
+         }
+    }
+
+    // 3. Encode values as a packed varint field.
+    if (!pb_encode_tag(stream, PB_WT_STRING, VerboseDataChunk_values_tag)) {
+         Serial.print("Failed to encode values tag\n");
+         return false;
+    }
+    size_t values_length = 0;
+    for (size_t i = 0; i < count; i++) {
+         values_length += varint_size(samples[i].rawValue);
+    }
+    if (!pb_encode_varint(stream, values_length)) {
+         Serial.print("Failed to encode values length\n");
+         return false;
+    }
+    for (size_t i = 0; i < count; i++) {
+         if (!pb_encode_varint(stream, samples[i].rawValue)) {
+              Serial.print("Failed to encode value at index " + String(i) + "\n");
+              return false;
+         }
+    }
+
+    // 4. Encode sample_count (non-packed, varint).
+    if (!pb_encode_tag(stream, PB_WT_VARINT, VerboseDataChunk_sample_count_tag)) {
+         Serial.print("Failed to encode sample_count tag\n");
+         return false;
+    }
+    if (!pb_encode_varint(stream, count)) {
+         Serial.print("Failed to encode sample_count\n");
+         return false;
+    }
+    
+    return true;
+}
+
+
+// Refactored PBSerializer::encodeSamples() using hard-coded encoding.
+static bool hardEncodeSamples(
     const data::ChannelSample* samples, 
     size_t count, 
-    EncodedMessage& encodedMsg) {
-    
-    if (count == 0 || count > 150) {
+    EncodedMessage& encodedMsg)
+{
+    uint32_t start_time = micros();
+    if (count == 0 || count > 1000) {
         util::Debug::error("PBSerializer: Invalid sample count: " + String(count));
         return false;
     }
     
-    if (config::PB_DEBUG_LOGGING) {
-        util::Debug::detail("PBSerializer: Encoding " + String(count) + 
-                          " samples with " + String(config::USE_VERBOSE_DATA_CHUNK ? "verbose" : "fixed") + 
-                          " chunk format");
+    // First pass: encode the submessage (either FixedDataChunk or VerboseDataChunk)
+    uint8_t submsg_buffer[config::PB_MAX_MESSAGE_SIZE];
+    pb_ostream_t submsg_stream = pb_ostream_from_buffer(submsg_buffer, sizeof(submsg_buffer));
+    bool status = false;
+    if (config::USE_VERBOSE_DATA_CHUNK) {
+        status = encodeVerboseDataChunk(&submsg_stream, samples, count);
+    } else {
+        status = encodeFixedDataChunk(&submsg_stream, samples, count);
+    }
+    if (!status) {
+        util::Debug::error("PBSerializer: Failed to hard-code encode samples");
+        return false;
+    }
+    
+    // Second pass: encode the wrapper DataChunk message.
+    // In our .proto, DataChunk is defined as a oneof with:
+    //    FixedDataChunk fixed = 1;
+    //    VerboseDataChunk verbose = 2;
+    // We'll choose the appropriate one based on our configuration.
+    
+    pb_ostream_t main_stream = pb_ostream_from_buffer(encodedMsg.buffer, config::PB_MAX_MESSAGE_SIZE);
+    
+    // Determine the oneof field tag to use.
+    uint32_t oneof_field = config::USE_VERBOSE_DATA_CHUNK ? DataChunk_verbose_tag : DataChunk_fixed_tag;
+    // For oneof fields, the wire type is length-delimited.
+    if (!pb_encode_tag(&main_stream, PB_WT_STRING, oneof_field)) {
+        util::Debug::error("PBSerializer: Failed to encode oneof tag");
+        return false;
+    }
+    
+    // Next, encode the length of the submessage.
+    if (!pb_encode_varint(&main_stream, submsg_stream.bytes_written)) {
+        util::Debug::error("PBSerializer: Failed to encode submessage length");
+        return false;
+    }
+    
+    // Finally, copy the pre-encoded submessage into the main stream.
+    if (main_stream.bytes_written + submsg_stream.bytes_written > config::PB_MAX_MESSAGE_SIZE) {
+        util::Debug::error("PBSerializer: Main buffer overflow");
+        return false;
+    }
+    memcpy(&encodedMsg.buffer[main_stream.bytes_written], submsg_buffer, submsg_stream.bytes_written);
+    main_stream.bytes_written += submsg_stream.bytes_written;
+
+    encodedMsg.size = main_stream.bytes_written;
+    encodedMsg.timestamp = millis();
+
+    return true;
+}
+
+bool PBSerializer::encodeSamples(
+    const data::ChannelSample* samples, 
+    size_t count, 
+    EncodedMessage& encodedMsg) {
+    if (config::USE_HARD_CODED_ENCODING) {
+        return hardEncodeSamples(samples, count, encodedMsg);
+    }
+    
+    if (count == 0 || count > 1000) {
+        util::Debug::error("PBSerializer: Invalid sample count: " + String(count));
+        return false;
     }
     
     // Create and initialize the DataChunk message
@@ -139,13 +366,6 @@ bool PBSerializer::encodeSamples(
             message.chunk_type.verbose.channel_ids[i] = sample.channelIndex;
             message.chunk_type.verbose.values[i] = sample.rawValue;
             
-            // Log first few samples for debugging
-            if (config::PB_DEBUG_LOGGING && i < 3) {
-                util::Debug::detail("PBSerializer: Sample " + String(i) + 
-                                  ": ch=" + String(sample.channelIndex) + 
-                                  ", val=" + String(sample.rawValue) + 
-                                  ", ts=" + String(sample.timestamp));
-            }
         }
     } else {
         // Set up FixedDataChunk with differential timestamps
@@ -192,6 +412,7 @@ bool PBSerializer::encodeSamples(
                                   ", delta=" + String(delta));
             }
         }
+
     }
     
     // Create a stream that writes to the encodedMsg buffer
@@ -205,11 +426,6 @@ bool PBSerializer::encodeSamples(
         encodedMsg.timestamp = millis();
         
         if (config::PB_DEBUG_LOGGING) {
-            // util::Debug::info("PBSerializer: Successfully encoded " + 
-            //                String(count) + " samples into " + 
-            //                String(stream.bytes_written) + " bytes");
-            
-            // Debug: Show first few bytes of encoded message
             String hexBytes = "";
             for (size_t i = 0; i < min(16UL, stream.bytes_written); i++) {
                 char hex[3];
@@ -225,6 +441,7 @@ bool PBSerializer::encodeSamples(
         return false;
     }
 }
+
 
 size_t PBSerializer::getLastReadPosition() {
     return lastReadPosition_;
@@ -276,14 +493,6 @@ bool PBSerializer::testEncoding() {
         }
         util::Debug::detail("PBSerializer: Encoded data:\n" + hexData);
         
-        // If we have a target buffer, also write the test message to it
-        if (targetBuffer_) {
-            if (targetBuffer_->write(encodedMsg)) {
-                util::Debug::info("PBSerializer: Test message added to encoded buffer");
-            } else {
-                util::Debug::error("PBSerializer: Failed to add test message to buffer");
-            }
-        }
     } else {
         util::Debug::error("PBSerializer: Test encoding failed");
     }

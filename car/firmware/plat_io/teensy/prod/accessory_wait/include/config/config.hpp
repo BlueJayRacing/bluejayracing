@@ -28,18 +28,20 @@ constexpr uint32_t SD_FILE_ROTATION_INTERVAL_MS = 30 * 1000; // 30 seconds for t
 constexpr size_t SD_MAX_FILENAME_LENGTH = 32;
 
 // Thread Configuration
-constexpr int THREAD_SLICE_MICROS = 100;   // Time slice in microseconds for TeensyThreads
-constexpr int SD_WRITER_THREAD_PRIORITY = 5; // Higher number = higher priority (for TeensyThreads)
+constexpr int THREAD_SLICE_MICROS = 50;   // Time slice in microseconds for TeensyThreads
+constexpr int SD_WRITER_THREAD_PRIORITY = 10; // Higher number = higher priority (for TeensyThreads)
 constexpr int SD_WRITER_THREAD_STACK_SIZE = 8192; // Stack size for SD writer thread
 
 // Protocol Buffer Configuration
 constexpr size_t PB_MESSAGE_BUFFER_SIZE = 128;  // Increased from 64 to 128
-constexpr size_t PB_MAX_MESSAGE_SIZE = 4096;    // Increased from 3072 to 4096
+constexpr size_t PB_MAX_MESSAGE_SIZE = 1472;    // Increased from 3072 to 4096
 constexpr uint16_t PB_MAX_TIMESTAMP_DELTA = 65000; // Maximum timestamp delta for fixed chunks
-constexpr size_t MAX_SAMPLES_PER_BATCH = 120;   // Reduced from 150 to 120 to keep messages smaller
+constexpr size_t MAX_SAMPLES_PER_BATCH = 50;   // Reduced from 150 to 120 to keep messages smaller
 constexpr uint32_t PB_SERIALIZATION_INTERVAL_MS = 200; // Increased from 50 to 100ms
 constexpr bool USE_VERBOSE_DATA_CHUNK = true;   // Use VerboseDataChunk instead of FixedDataChunk
 constexpr bool PB_DEBUG_LOGGING = true;         // Enable detailed logging for protobuf operations
+
+constexpr bool USE_HARD_CODED_ENCODING = true;
 
 
 // Debug configuration

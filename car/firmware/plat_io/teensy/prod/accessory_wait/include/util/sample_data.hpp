@@ -46,7 +46,7 @@ struct ChannelSample {
 constexpr size_t MQTT_OPTIMAL_MESSAGE_SIZE = 1024; // 1KB chunks
 
 // Define maximum possible downsampling ratio
-constexpr uint8_t MAX_DOWNSAMPLE_RATIO = 100;
+constexpr uint8_t MAX_DOWNSAMPLE_RATIO = 1;
 
 // Define file rotation interval in milliseconds (2 minutes)
 constexpr uint32_t FILE_ROTATION_INTERVAL_MS =  30 * 1000;

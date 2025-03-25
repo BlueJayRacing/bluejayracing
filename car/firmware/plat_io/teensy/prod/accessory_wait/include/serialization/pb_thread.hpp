@@ -62,6 +62,22 @@ public:
      * @param sampleCount Output parameter for number of samples encoded
      */
     static void getStats(uint32_t& encodedCount, uint32_t& sampleCount);
+    
+    /**
+     * @brief Get detailed timing statistics
+     * 
+     * @param avgProcessingTime Output parameter for average processing time in microseconds
+     * @param minProcessingTime Output parameter for minimum processing time in microseconds
+     * @param maxProcessingTime Output parameter for maximum processing time in microseconds
+     * @param totalBatches Output parameter for total number of batches processed
+     */
+    static void getTimingStats(float& avgProcessingTime, uint32_t& minProcessingTime, 
+                             uint32_t& maxProcessingTime, uint32_t& totalBatches);
+    
+    /**
+     * @brief Print benchmark results to debug output
+     */
+    static void printBenchmarks();
 
 private:
     static int threadId_;
@@ -69,6 +85,21 @@ private:
     static uint32_t lastProcessTime_;
     static uint32_t batchesProcessed_;
     static uint32_t samplesProcessed_;
+    
+    // Benchmarking metrics
+    static uint32_t batchProcessingTimes_[100];  // Circular buffer of processing times
+    static uint8_t timeIndex_;                  // Current index in circular buffer
+    static uint32_t maxProcessingTime_;         // Maximum processing time recorded in microseconds
+    static uint32_t minProcessingTime_;         // Minimum processing time recorded in microseconds
+    static uint32_t totalProcessingTime_;       // Sum of all processing times for average calculation
+    static uint32_t benchmarkStartTime_;        // Time when benchmarking started
+    
+    /**
+     * @brief Record processing time for benchmarking
+     * 
+     * @param processingTime Processing time in microseconds
+     */
+    static void recordProcessingTime(uint32_t processingTime);
     
     /**
      * @brief PB serialization thread function

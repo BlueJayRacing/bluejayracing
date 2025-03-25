@@ -6,14 +6,10 @@
 #endif
 
 // Debug Level from 0 to 4
-#define _TEENSY41_ASYNC_TCP_LOGLEVEL_       4
-#define _AWS_TEENSY41_LOGLEVEL_             4
+#define _AWS_TEENSY41_LOGLEVEL_             1
+#define _ASYNC_UDP_TEENSY41_LOGLEVEL_       1
 
 #define SHIELD_TYPE     "Teensy4.1 QNEthernet"
-
-#if (_AWS_TEENSY41_LOGLEVEL_ > 3)
-  #warning Using QNEthernet lib for Teensy 4.1. Must also use Teensy Packages Patch or error
-#endif
 
 #define USING_DHCP            true
 //#define USING_DHCP            false
@@ -39,24 +35,20 @@ const int LinkStatus_kLinkStatusUp = 1;
 #define QNETHERNET_MAX_TXNS 16
 
 // Connection parameters
+// UDP Server settings (matches those in main.cpp)
+// #define UDP_SERVER_ADDRESS "192.168.20.3"
+// #define UDP_SERVER_PORT 8888
+
+// Maximum UDP payload size (typical Ethernet MTU minus headers)
+#define UDP_MAX_PAYLOAD_SIZE 1472
+
+// HTTP Configuration (kept for compatibility)
 #define HTTP_SERVER_ADDRESS "192.168.20.3"
 #define HTTP_SERVER_PORT 9365
 #define HTTP_SERVER_ENDPOINT "/"
-
-// HTTP Configuration
-#define HTTP_REQUEST_INTERVAL_MS 200    // 200ms interval between requests (faster with persistent connections)
-#define DEFAULT_RX_TIMEOUT 5            // 5 seconds timeout for HTTP requests
+#define HTTP_REQUEST_INTERVAL_MS 500   // 5 seconds interval between requests
+#define DEFAULT_RX_TIMEOUT 15           // 15 seconds timeout for HTTP requests
 #define HTTP_MAX_RETRIES 5              // Maximum number of reconnection attempts
-#define HTTP_MAX_IDLE_CONNECTION_TIME 30000  // Close persistent connection after 30 seconds of inactivity
-#define HTTP_READ_TIMEOUT 3000          // Timeout for reading responses (3 seconds)
-#define HTTP_CONNECT_TIMEOUT 5000       // Timeout for establishing connection (5 seconds)
-
-// Use persistent connections by default (much more efficient)
-#define HTTP_USE_PERSISTENT_CONNECTION true
-
-// Adjust Ethernet socket behavior for persistent connections
-#define HTTP_SOCKET_TIMEOUT 500         // TCP socket timeout in ms
-#define HTTP_DEFER_LINGER_TIME 1        // Enable linger with 1 second timeout
 
 // Error reporting
 #define ERROR_REPORT_INTERVAL_MS 10000  // Only report errors every 10 seconds
