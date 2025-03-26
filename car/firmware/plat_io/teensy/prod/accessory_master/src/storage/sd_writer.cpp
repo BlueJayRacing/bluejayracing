@@ -4,24 +4,32 @@
 namespace baja {
 namespace storage {
 
+Threads::Mutex SDWriter::mutex_;
+
 SDWriter::SDWriter(buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer,
-                 RingBuf<FsFile, config::SD_RING_BUF_CAPACITY>* sdRingBuf)
+        RingBuf<FsFile, config::SD_RING_BUF_CAPACITY>* sdRingBuf)
     : dataBuffer_(ringBuffer),
-      ringBuf_(sdRingBuf),
-      fileCreationTime_(0),
-      bytesWritten_(0),
-      lastError_(0),
-      healthy_(true),
-      lastErrorTime_(0),
-      consecutiveErrors_(0),
-      totalErrors_(0),
-      lastSuccessfulWrite_(0),
-      lastWriteTime_(0),
-      totalWrites_(0),
-      maxWriteTime_(0),
-      totalSamplesWritten_(0),
-      wasBufferFull_(false),
-      isFirstFile_(true) {
+    ringBuf_(sdRingBuf),
+    fileCreationTime_(0),
+    bytesWritten_(0),
+    lastError_(0),
+    healthy_(true),
+    lastErrorTime_(0),
+    consecutiveErrors_(0),
+    totalErrors_(0),
+    lastSuccessfulWrite_(0),
+    lastWriteTime_(0),
+    totalWrites_(0),
+    maxWriteTime_(0),
+    totalSamplesWritten_(0),
+    wasBufferFull_(false),
+    isFirstFile_(true),
+    lastPeriodicSyncTime_(0),
+    totalSyncTime_(0),
+    syncCount_(0),
+    maxSyncTime_(0),
+    performingFileOperation_(false),
+    needDataSync_(false) {
 }
 
 SDWriter::~SDWriter() {
@@ -97,17 +105,49 @@ bool SDWriter::begin(uint8_t chipSelect) {
 }
 
 void SDWriter::setChannelNames(const std::vector<adc::ChannelConfig>& channelConfigs) {
+    // Clear any existing names
     channelNames_.clear();
+    
+    // Resize the vector to handle all possible ADC channels (0-15)
+    channelNames_.resize(16);
+    
+    // Initialize all to empty strings
+    for (size_t i = 0; i < channelNames_.size(); i++) {
+        channelNames_[i] = "";
+    }
+    
+    // Add channel names at their respective indices
+    size_t enabledCount = 0;
     for (const auto& config : channelConfigs) {
-        if (config.enabled) {
-            channelNames_.push_back(config.name);
+        // Store the channel name at its actual ADC index
+        if (config.channelIndex < channelNames_.size()) {
+            channelNames_[config.channelIndex] = config.name;
+            if (config.enabled) {
+                enabledCount++;
+            }
         }
     }
     
-    util::Debug::info(F("SD: Set ") + String(channelNames_.size()) + F(" channel names"));
+    util::Debug::info(F("SD: Set ") + String(enabledCount) + F(" enabled channel names out of ") + 
+                   String(channelNames_.size()) + F(" total channels"));
 }
 
 size_t SDWriter::process() {
+    static int deferCount = 0;
+    // Skip processing if we're in the middle of a file operation
+    if (performingFileOperation_) {
+        
+        
+        if (mutex_.getState() == 0) {
+            deferCount--;
+            if (deferCount == 0) {
+                Serial.println("Sync In Progress, skipping, and unlocking");
+                performingFileOperation_ = false;
+            }
+        }
+        return 0;
+    }
+
     // Health recovery and file handling
     if (!healthy_) {
         if (millis() - lastErrorTime_ > 10000) {
@@ -140,6 +180,59 @@ size_t SDWriter::process() {
         }
         return 0;
     }
+
+
+    // Periodic sync check - perform regular syncs to ensure data is written
+    uint32_t currentTime = millis();
+    if (currentTime - lastPeriodicSyncTime_ >= config::SD_SYNC_INTERVAL_MS) {
+        Serial.println("Syncing directory !!!!!!!!!!!!!!!!!!!!!");
+        // Only perform sync if not busy 
+        if (!dataFile_.isBusy()) {
+            util::Debug::detail("SD: Performing periodic sync");
+            
+            // Benchmark the sync operation
+            uint32_t syncStartTime = micros();
+            startAsyncSync(dataFile_);
+            deferCount = 3000;
+            uint32_t syncDuration = micros() - syncStartTime;
+            
+            // Update sync statistics
+            lastPeriodicSyncTime_ = currentTime;
+            totalSyncTime_ += syncDuration;
+            syncCount_++;
+            
+            if (syncDuration > maxSyncTime_) {
+                maxSyncTime_ = syncDuration;
+            }
+            
+            // Log warning if sync took too long
+            if (syncDuration > config::SD_MAX_SYNC_TIME_US) {
+                util::Debug::warning("SD: Long sync time: " + String(syncDuration) + " us");
+                Serial.print("!");
+            } else {
+                util::Debug::detail("SD: Periodic sync completed in " + String(syncDuration) + " ms");
+                Serial.print("ok");
+            }
+            
+        } else {
+            // Mark that we need a sync when card is not busy
+            needDataSync_ = true;
+        }
+        return 0;
+    }
+
+    // Process deferred sync if needed and card is not busy
+    if (needDataSync_ && !dataFile_.isBusy()) {
+        Serial.println("Syncing directory !!!!!!!!!!!!!!!!!!!!!");
+        uint32_t syncStartTime = micros();
+        startAsyncSync(dataFile_);
+        deferCount = 3000;
+        Serial.println("Took " + String(micros() - syncStartTime) + " us to sync");
+        needDataSync_ = false;
+        lastPeriodicSyncTime_ = currentTime;
+        return 0;
+    }
+
 
     // Get available samples from the data buffer
     size_t availableSamples = dataBuffer_.available();
@@ -259,7 +352,10 @@ bool SDWriter::createNewFile(bool addHeader) {
     // Pre-allocate file space to reduce fragmentation
     util::Debug::detail("SD: Pre-allocating " + String(config::SD_PREALLOC_SIZE / 1024 / 1024) + " MB");
     
+    uint32_t preAllocStart = micros();
     bool preAllocSuccess = dataFile_.preAllocate(config::SD_PREALLOC_SIZE);
+    Serial.println("Pre-alloc time: " + String(micros() - preAllocStart) + " us");
+
     if (!preAllocSuccess) {
         util::Debug::warning("SD: File preallocation failed - continuing without preallocation");
     } else {
@@ -466,16 +562,19 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
         pos += n;
         remaining = sizeof(buffer) - pos;
 
-        // If a channel name is available, append it preceded by a comma.
-        if (sample.channelIndex < channelNames_.size()) {
+        // Add channel name if available and not empty
+        // FIXED: Ensure we check the channel index is in range AND the name isn't empty
+        if (sample.channelIndex < channelNames_.size() && !channelNames_[sample.channelIndex].empty()) {
             if (remaining > 0) {
                 buffer[pos++] = ',';
                 remaining--;
             }
+            
             const std::string& chName = channelNames_[sample.channelIndex];
             size_t nameLen = chName.length();
             if (nameLen > remaining)
                 nameLen = remaining;
+            
             memcpy(buffer + pos, chName.c_str(), nameLen);
             pos += nameLen;
             remaining = sizeof(buffer) - pos;
@@ -508,7 +607,8 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
                 sample.timestamp, sample.channelIndex, sample.rawValue);
         
         // Add channel name if available
-        if (sample.channelIndex < channelNames_.size()) {
+        // FIXED: Ensure we check the channel index is in range AND the name isn't empty
+        if (sample.channelIndex < channelNames_.size() && !channelNames_[sample.channelIndex].empty()) {
             len += snprintf(buffer + len, sizeof(buffer) - len, ",%s", 
                         channelNames_[sample.channelIndex].c_str());
         }
@@ -613,6 +713,27 @@ void SDWriter::recordError(int errorCode, const char* errorMessage) {
     if (consecutiveErrors_ >= 3) {
         healthy_ = false;
     }
+}
+
+void SDWriter::asyncSyncTask(void* arg) {
+    threads.setSliceMicros(50);
+    // Cast the argument to a pointer to FsFile.
+    FsFile* file = static_cast<FsFile*>(arg);
+    // Call the blocking sync() operation.
+    bool syncResult = file->sync();
+    // Optionally, print the result for debugging.
+    Serial.print("Async sync result: ");
+    Serial.println(syncResult ? "Success" : "Failure");
+    // When the function returns, the thread exits.
+    mutex_.unlock();
+}
+  
+// This function starts the async sync operation.
+void SDWriter::startAsyncSync(FsFile &file) {
+    performingFileOperation_ = true;
+    mutex_.lock();
+    // Use the global TeensyThreads instance to add a new thread.
+    threads.addThread(asyncSyncTask, &file);
 }
 
 } // namespace storage

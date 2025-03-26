@@ -26,6 +26,9 @@ constexpr size_t SD_PREALLOC_SIZE = 50UL * 1024 * 1024; // 50MB file preallocati
 constexpr uint32_t SD_FILE_ROTATION_INTERVAL_MS = 120 * 1000; // 30 seconds for testing (adjust as needed)
 constexpr size_t SD_MAX_FILENAME_LENGTH = 32;
 constexpr bool CUSTOM_STRING_CONVERSION_ROUTINE = true; // Use custom string conversion routine
+constexpr uint32_t SD_SYNC_INTERVAL_MS = 15 * 1000;     // 15 seconds periodic sync
+constexpr uint32_t SD_MAX_SYNC_TIME_US = 60;           // Warning threshold for sync time
+constexpr size_t SD_SYNC_MIN_BUFFER_BYTES = 16 * 1024;  // Minimum bytes before doing periodic sync
 
 // Protocol Buffer Configuration
 constexpr size_t PB_MAX_MESSAGE_SIZE = 1472;   // Maximum size of ethernet frame minus UDP Header

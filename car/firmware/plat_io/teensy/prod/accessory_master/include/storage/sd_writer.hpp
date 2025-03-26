@@ -11,6 +11,8 @@
 #include "config/config.hpp"
 #include "util/debug_util.hpp"
 
+#include <TeensyThreads.h>
+
 namespace baja {
 namespace storage {
 
@@ -119,6 +121,13 @@ public:
      */
     void resetHealth();
 
+    void getSyncStats(uint32_t& count, uint32_t& avgTime, uint32_t& maxTime) {
+        count = syncCount_;
+        avgTime = (syncCount_ > 0) ? totalSyncTime_ / syncCount_ : 0;
+        maxTime = maxSyncTime_;
+    }
+
+    static Threads::Mutex mutex_;
 private:
     buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& dataBuffer_;
     SdFs sd_;
@@ -139,13 +148,27 @@ private:
     uint32_t maxWriteTime_;
     size_t totalSamplesWritten_;
     bool wasBufferFull_;
-    bool isFirstFile_;      // Flag to handle first file specially
+    bool isFirstFile_;      
+
+    uint32_t lastPeriodicSyncTime_;       // Time of last periodic sync
+    uint32_t totalSyncTime_;              // Total time spent in sync operations
+    uint32_t syncCount_;                  // Number of sync operations
+    uint32_t maxSyncTime_;                // Maximum sync duration
+    bool performingFileOperation_;        // Flag to indicate file operation in progress
+    bool needDataSync_;                   // Flag indicating data needs to be synced
     
     std::string generateFilename() const;
     bool writeHeader();
     bool writeSampleToRingBuf(const data::ChannelSample& sample);
     bool syncRingBuf(bool forceFullSync = false);
     void recordError(int errorCode, const char* errorMessage);
+
+
+    static void asyncSyncTask(void* arg);
+    void startAsyncSync(FsFile &file);
+
+
+    
 };
 
 } // namespace storage
