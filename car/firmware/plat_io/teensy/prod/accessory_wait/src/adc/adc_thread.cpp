@@ -605,11 +605,11 @@ void ADCThread::threadFunction(void* arg) {
         }
         
         // Small yield for other tasks
-        static int counter = 0;
-        if (counter++ > 0) {
-            threads.yield();
-            counter = 0;
-        }   
+        // static int counter = 0;
+        // if (counter++ > 0) {
+        //     threads.yield();
+        //     counter = 0;
+        // }   
     }
     
     // Log final statistics if we have samples

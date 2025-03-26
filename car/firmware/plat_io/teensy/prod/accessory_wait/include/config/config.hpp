@@ -32,9 +32,9 @@ constexpr uint32_t SD_FILE_ROTATION_INTERVAL_MS = 90 * 1000; // 30 seconds for t
 constexpr size_t SD_MAX_FILENAME_LENGTH = 32;
 
 // Thread Configuration
-constexpr int THREAD_SLICE_MICROS = 10;   // Time slice in microseconds for TeensyThreads
+constexpr int THREAD_SLICE_MICROS = 100;   // Time slice in microseconds for TeensyThreads
 constexpr int SD_WRITER_THREAD_PRIORITY = 5; // Higher number = higher priority
-constexpr int ADC_THREAD_PRIORITY = 15;      // High priority for ADC thread
+constexpr int ADC_THREAD_PRIORITY = 10;      // High priority for ADC thread
 constexpr int PBUDP_THREAD_PRIORITY = 6;    // Medium-high priority for combined PB+UDP thread
 constexpr int SD_WRITER_THREAD_STACK_SIZE = 8192; // Stack size for SD writer thread
 constexpr int PBUDP_THREAD_STACK_SIZE = 108192;    // Stack size for combined PB+UDP thread

@@ -193,7 +193,7 @@ void setup() {
     adcSettings.referenceSource = INTERNAL_REF;
     adcSettings.operatingMode = CONTINUOUS;
     adcSettings.readStatusWithData = true;
-    adcSettings.odrSetting = SPS_25000;
+    adcSettings.odrSetting = SPS_10000;
     
     // Initialize the ADC thread with both buffers
     adcInitialized = baja::adc::ADCThread::initialize(
