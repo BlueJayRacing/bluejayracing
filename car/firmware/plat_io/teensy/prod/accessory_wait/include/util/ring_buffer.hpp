@@ -68,10 +68,10 @@ public:
      */
     bool write(const T& item) {
 
-        if (count_ >= SIZE) {
-            overrunCount_++;
-            return false;
-        }
+        // if (count_ >= SIZE) {
+        //     overrunCount_++;
+        //     return false;
+        // }
 
         Threads::Scope lock(mutex_);
         
@@ -95,9 +95,9 @@ public:
      */
     bool read(T& item) {
 
-        if (count_ == 0) {
-            return false;
-        }
+        // if (count_ == 0) {
+        //     return false;
+        // }
 
         Threads::Scope lock(mutex_);
         
@@ -121,9 +121,9 @@ public:
      */
     bool peek(T& item, size_t offset = 0) const {
 
-        if (offset >= count_) {
-            return false;
-        }
+        // if (offset >= count_) {
+        //     return false;
+        // }
 
         Threads::Scope lock(mutex_);
         

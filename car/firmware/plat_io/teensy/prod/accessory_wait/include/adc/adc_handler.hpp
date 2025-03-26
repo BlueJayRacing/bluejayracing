@@ -113,6 +113,14 @@ public:
      */
     void resetADC();
 
+    /**
+     * @brief Read a sample from the ADC
+     * 
+     * @param sample Output parameter for the sample data
+     * @return true if read was successful
+     */
+    bool readSample(ad717x_data_t& sample);
+
 private:
     buffer::RingBuffer<data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer_;
     AD717X adcDriver_;
@@ -123,13 +131,7 @@ private:
     volatile uint64_t sampleCount_;
     volatile bool samplingActive_;
     
-    /**
-     * @brief Read a sample from the ADC
-     * 
-     * @param sample Output parameter for the sample data
-     * @return true if read was successful
-     */
-    bool readSample(ad717x_data_t& sample);
+    
 };
 
 } // namespace adc

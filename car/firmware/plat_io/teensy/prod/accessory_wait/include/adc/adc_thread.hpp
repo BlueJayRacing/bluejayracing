@@ -3,8 +3,10 @@
 #include <TeensyThreads.h>
 #include "adc/adc_handler.hpp"
 #include "util/ring_buffer.hpp"
+#include "util/circular_buffer.hpp"
 #include "util/sample_data.hpp"
 #include "config/config.hpp"
+#include <algorithm>
 
 namespace baja {
 namespace adc {
@@ -19,7 +21,8 @@ public:
     /**
      * @brief Initialize the ADC thread module
      * 
-     * @param ringBuffer Reference to the ring buffer to store samples
+     * @param ringBuffer Reference to the main ring buffer for SD storage
+     * @param fastBuffer Reference to the fast path buffer for network transmission
      * @param csPin ADC chip select pin
      * @param spiInterface SPI interface to use
      * @param settings ADC settings
@@ -27,6 +30,7 @@ public:
      */
     static bool initialize(
         buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer,
+        buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>& fastBuffer,
         uint8_t csPin,
         SPIClass& spiInterface,
         const ADCSettings& settings = ADCSettings());
@@ -60,6 +64,13 @@ public:
     static ADC7175Handler* getHandler();
     
     /**
+     * @brief Get the fast buffer instance
+     * 
+     * @return Pointer to the fast buffer
+     */
+    static buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>* getFastBuffer();
+    
+    /**
      * @brief Configure ADC channels
      * 
      * @param configs Array of channel configurations
@@ -81,13 +92,22 @@ private:
     static volatile bool running_;
     static uint64_t sampleCount_;
     
+    // Fast path buffer for network transmission
+    static buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>* fastBuffer_;
+    
+    // Per-channel downsampling counters
+    static uint16_t channelSampleCounters_[ADC_CHANNEL_COUNT];
+    
     /**
      * @brief ADC sampling thread function
      * 
      * @param arg Thread argument (not used)
      */
     static void threadFunction(void* arg);
+
 };
+
+
 
 } // namespace adc
 } // namespace baja

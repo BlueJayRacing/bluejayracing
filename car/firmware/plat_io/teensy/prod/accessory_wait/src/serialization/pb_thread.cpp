@@ -175,7 +175,7 @@ void PBThread::printBenchmarks() {
     
     // Calculate encoder efficiency
     float encoderEfficiency = sampleCount > 0 ? 
-                            encodedCount * 100.0f / sampleCount * config::MAX_SAMPLES_PER_BATCH : 0.0f;
+                            encodedCount * 100.0f / sampleCount * config::FIXED_SAMPLE_COUNT : 0.0f;
     
     util::Debug::info("Serializer efficiency: " + String(encoderEfficiency, 2) + "%");
     util::Debug::info("----------------------------------------------");
@@ -205,7 +205,7 @@ void PBThread::threadFunction(void* arg) {
             lastProcessTime_ = currentTime;
             
             // Process a batch of samples with timing
-            constexpr size_t batchSize = config::MAX_SAMPLES_PER_BATCH;
+            constexpr size_t batchSize = config::FIXED_SAMPLE_COUNT;
             
             // Start timing
             uint32_t startMicros = micros();

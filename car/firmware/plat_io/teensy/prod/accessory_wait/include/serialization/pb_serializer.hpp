@@ -43,7 +43,7 @@ public:
      * @param maxSamples Maximum number of samples to process
      * @return Number of samples processed
      */
-    static size_t processBatch(size_t maxSamples = config::MAX_SAMPLES_PER_BATCH);
+    static size_t processBatch(size_t maxSamples = config::FIXED_SAMPLE_COUNT);
     
     /**
      * @brief Get the last read position in the source buffer
@@ -88,7 +88,7 @@ private:
     static uint32_t encodedCount_;
     static uint32_t sampleCount_;
 
-    static data::ChannelSample sampleBuffer_[config::MAX_SAMPLES_PER_BATCH];
+    static data::ChannelSample sampleBuffer_[config::FIXED_SAMPLE_COUNT];
     
     /**
      * @brief Encode samples into a nanopb protobuf message

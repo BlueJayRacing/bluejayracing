@@ -69,7 +69,7 @@ void setup() {
   setupConfig.setup.ref_buff = true;
   setupConfig.setup.ref_source = EXTERNAL_REF;
   // Choose an output data rate; for example, SPS_2500 (adjust as needed)
-  setupConfig.filter_config.odr = SPS_5;
+  setupConfig.filter_config.odr = SPS_25000;
   setupConfig.gain = 1.0;
   initParams.setups.push_back(setupConfig);
 

@@ -129,8 +129,11 @@ void processingThreadFunction(void* arg) {
         }
     }
 }
-
+#include "test.hpp"
 void setup() {
+    Test test;
+    test.continuousChannelReadStats();
+
     // Initialize serial for debugging and wait for connection
     Serial.begin(115200);
     uint32_t startTime = millis();

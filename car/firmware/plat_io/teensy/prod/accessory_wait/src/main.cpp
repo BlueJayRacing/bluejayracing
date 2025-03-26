@@ -2,6 +2,8 @@
 #include <TeensyThreads.h>
 #include <SPI.h>
 #include <TimeLib.h>
+#include <QNEthernet.h>
+#include <AsyncUDP_Teensy41.h> // need to include h once in main and hpp elsewhere where needed 
 
 // Configuration
 #include "config/config.hpp"
@@ -9,17 +11,14 @@
 
 // Utilities
 #include "util/ring_buffer.hpp"
+#include "util/circular_buffer.hpp"
 #include "util/sample_data.hpp"
 #include "util/debug_util.hpp"
 
 // Thread modules
 #include "adc/adc_thread.hpp"
-// Replace HTTP with UDP
-// #include "network/http_thread.hpp"
-#include "network/udp_thread.hpp"
 #include "storage/sd_thread.hpp"
-#include "serialization/pb_thread.hpp"
-#include <AsyncUDP_Teensy41.h>
+#include "network/pbudp_thread.hpp"      // Combined PB+UDP thread
 
 uint32_t freeRamLow = UINT32_MAX;
 
@@ -38,16 +37,17 @@ EXTMEM baja::adc::ChannelConfig channelConfigsArray[baja::adc::ADC_CHANNEL_COUNT
 // Define the SdFat RingBuf in EXTMEM
 DMAMEM RingBuf<FsFile, baja::config::SD_RING_BUF_CAPACITY> sdRingBuf;
 
-// Create the two new buffers for protobuf serialization
-DMAMEM baja::serialization::EncodedMessage encodedBufferStorage[baja::config::PB_MESSAGE_BUFFER_SIZE];
+// Fast path buffer in DMAMEM for low-latency network transmission
+DMAMEM baja::data::ChannelSample fastBufferStorage[baja::config::FAST_BUFFER_SIZE];
 
 // Create all the ring buffers with external storage
 baja::buffer::RingBuffer<baja::data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE> sampleBuffer(ringBufferStorage);
-baja::buffer::RingBuffer<baja::serialization::EncodedMessage, baja::config::PB_MESSAGE_BUFFER_SIZE> encodedBuffer(encodedBufferStorage);
+baja::buffer::CircularBuffer<baja::data::ChannelSample, baja::config::FAST_BUFFER_SIZE> fastBuffer(fastBufferStorage);
 
 // Global status flags
 bool adcInitialized = false;
 bool sdCardInitialized = false;
+bool networkInitialized = false;
 uint32_t loopCount = 0;
 uint32_t samplesProcessedTotal = 0;
 uint32_t startTime = 0;
@@ -62,7 +62,7 @@ void resetWatchdog() {
     // Service the watchdog by writing the WDOG service sequence
     WDOG1_WSR = 0x5555;
     WDOG1_WSR = 0xAAAA;
-  }
+}
 
 void dateTime(uint16_t *date, uint16_t *time) {
     *date = FAT_DATE(year(), month(), day());
@@ -84,7 +84,6 @@ uint32_t getFreeRAM() {
       
     return free_memory;
 }
-  
 
 // Function to set up the correct time for the Teensy
 void setupTime() {
@@ -133,8 +132,13 @@ void setup() {
     // Initialize debug utility
     baja::util::Debug::init(baja::util::Debug::INFO);
     
-    baja::util::Debug::info(F("Baja Data Acquisition System"));
+    baja::util::Debug::info(F("Baja Data Acquisition System - Fast Path Version"));
     baja::util::Debug::info(F("Initializing..."));
+    
+    // Log memory usage at start
+    uint32_t freeRam = getFreeRAM();
+    freeRamLow = freeRam;
+    baja::util::Debug::info(F("Initial free RAM: ") + String(freeRam) + F(" bytes"));
     
     // Set up the correct time
     setupTime();
@@ -144,15 +148,18 @@ void setup() {
     
     // Set up thread timing
     threads.setSliceMicros(baja::config::THREAD_SLICE_MICROS);
+    baja::util::Debug::info(F("Thread time slice set to ") + 
+                          String(baja::config::THREAD_SLICE_MICROS) + F(" microseconds"));
     
     // Initialize channel configurations
     initializeChannelConfigs();
 
     // Initialize the SD card thread
-    sdCardInitialized = baja::storage::SDThread::initialize(sampleBuffer, &sdRingBuf, SD_CS_PIN);
+    baja::util::Debug::info(F("Initializing SD card..."));
+    // sdCardInitialized = baja::storage::SDThread::initialize(sampleBuffer, &sdRingBuf, SD_CS_PIN);
     
     if (sdCardInitialized) {
-        baja::util::Debug::info(F("SD card initialized."));
+        baja::util::Debug::info(F("SD card initialized successfully."));
         
         // Create vector of enabled channel configs
         std::vector<baja::adc::ChannelConfig> channelConfigs;
@@ -172,28 +179,41 @@ void setup() {
         if (sdThreadId < 0) {
             baja::util::Debug::error(F("Failed to start SD writer thread!"));
         } else {
-            baja::util::Debug::info(F("SD writer thread started with ID: ") + String(sdThreadId));
+            baja::util::Debug::info(F("SD writer thread started with ID: ") + String(sdThreadId) + 
+                                  F(", priority: ") + String(baja::config::SD_WRITER_THREAD_PRIORITY));
         }
     } else {
         baja::util::Debug::error(F("SD card initialization failed!"));
     }
     
     // Initialize ADC with default settings
+    baja::util::Debug::info(F("Initializing ADC..."));
     baja::adc::ADCSettings adcSettings;
     adcSettings.deviceType = ID_AD7175_8;
     adcSettings.referenceSource = INTERNAL_REF;
     adcSettings.operatingMode = CONTINUOUS;
     adcSettings.readStatusWithData = true;
-    adcSettings.odrSetting = SPS_2500;
+    adcSettings.odrSetting = SPS_25000;
     
-    // Initialize the ADC thread
-    adcInitialized = baja::adc::ADCThread::initialize(sampleBuffer, ADC_CS_PIN, SPI, adcSettings);
+    // Initialize the ADC thread with both buffers
+    adcInitialized = baja::adc::ADCThread::initialize(
+        sampleBuffer,      // Main buffer for SD storage
+        fastBuffer,        // Fast buffer for network transmission
+        ADC_CS_PIN, 
+        SPI, 
+        adcSettings
+    );
+    // adcInitialized = baja::adc::ADCThread::initialize(sampleBuffer, ADC_CS_PIN, SPI, adcSettings);
     
     if (adcInitialized) {
         baja::util::Debug::info(F("ADC initialized successfully."));
         
         // Configure ADC channels
-        bool configSuccess = baja::adc::ADCThread::configureChannels(channelConfigsArray, baja::adc::ADC_CHANNEL_COUNT);
+        baja::util::Debug::info(F("Configuring ADC channels..."));
+        bool configSuccess = baja::adc::ADCThread::configureChannels(
+            channelConfigsArray, 
+            baja::adc::ADC_CHANNEL_COUNT
+        );
         
         if (!configSuccess) {
             baja::util::Debug::error(F("ADC channel configuration failed!"));
@@ -209,58 +229,57 @@ void setup() {
                 baja::util::Debug::error(F("Failed to start ADC thread!"));
                 adcInitialized = false;
             } else {
-                baja::util::Debug::info(F("ADC thread started with ID: ") + String(adcThreadId));
+                baja::util::Debug::info(F("ADC thread started with ID: ") + String(adcThreadId) + 
+                                      F(", priority: ") + String(baja::config::ADC_THREAD_PRIORITY));
             }
         }
     } else {
         baja::util::Debug::error(F("ADC initialization failed!"));
     }
     
-    // Initialize PB serialization thread if ADC is working
-    if (adcInitialized) {
-        // Initialize PB serialization thread
-        bool pbInitialized = baja::serialization::PBThread::initialize(
-            sampleBuffer, encodedBuffer);
+    // // Initialize the combined PB+UDP thread if ADC is working
+    // if (adcInitialized) {
+    //     // Initialize the combined PB+UDP thread with the fast buffer
+    //     baja::util::Debug::info(F("Initializing combined PB+UDP thread..."));
+    //     baja::util::Debug::info(F("Server: ") + String(UDP_SERVER_ADDRESS) + F(":") + String(UDP_SERVER_PORT));
         
-        if (pbInitialized) {
-            baja::util::Debug::info(F("PB serialization thread initialized."));
+    //     bool pbpdpInitialized = baja::network::PBUDPThread::initialize(
+    //         fastBuffer,
+    //         UDP_SERVER_ADDRESS,
+    //         UDP_SERVER_PORT
+    //     );
+        
+    //     if (pbpdpInitialized) {
+    //         baja::util::Debug::info(F("Combined PB+UDP thread initialized."));
+    //         networkInitialized = true;
             
-            // Start PB serialization thread
-            baja::util::Debug::info(F("Starting PB serialization thread..."));
-            int pbThreadId = baja::serialization::PBThread::start();
+    //         // Start the combined PB+UDP thread
+    //         baja::util::Debug::info(F("Starting combined PB+UDP thread..."));
+    //         int pbpdpThreadId = baja::network::PBUDPThread::start();
             
-            if (pbThreadId < 0) {
-                baja::util::Debug::error(F("Failed to start PB serialization thread!"));
-            } else {
-                baja::util::Debug::info(F("PB serialization thread started with ID: ") + String(pbThreadId));
-            }
-            
-            // Initialize UDP client thread with encoded buffer
-            bool udpInitialized = baja::network::UDPThread::initialize(
-                encodedBuffer, 
-                UDP_SERVER_ADDRESS,
-                UDP_SERVER_PORT
-            );
-            
-            if (udpInitialized) {
-                baja::util::Debug::info(F("UDP client initialized."));
-                
-                // Start UDP client thread
-                baja::util::Debug::info(F("Starting UDP client thread..."));
-                int udpThreadId = baja::network::UDPThread::start();
-                
-                if (udpThreadId < 0) {
-                    baja::util::Debug::error(F("Failed to start UDP client thread!"));
-                } else {
-                    baja::util::Debug::info(F("UDP client thread started with ID: ") + String(udpThreadId));
-                }
-            } else {
-                baja::util::Debug::error(F("UDP client initialization failed!"));
-            }
-        } else {
-            baja::util::Debug::error(F("PB serialization thread initialization failed!"));
-        }
-    }
+    //         if (pbpdpThreadId < 0) {
+    //             baja::util::Debug::error(F("Failed to start combined PB+UDP thread!"));
+    //             networkInitialized = false;
+    //         } else {
+    //             baja::util::Debug::info(F("Combined PB+UDP thread started with ID: ") + String(pbpdpThreadId) + 
+    //                                   F(", priority: ") + String(baja::config::PBUDP_THREAD_PRIORITY));
+    //         }
+    //     } else {
+    //         baja::util::Debug::error(F("Combined PB+UDP thread initialization failed!"));
+    //         networkInitialized = false;
+    //     }
+    // }
+    
+    // Log configuration summary
+    baja::util::Debug::info(F("\n========== CONFIGURATION SUMMARY =========="));
+    baja::util::Debug::info(F("Main buffer size: ") + String(baja::config::SAMPLE_RING_BUFFER_SIZE) + F(" samples"));
+    baja::util::Debug::info(F("Fast buffer size: ") + String(baja::config::FAST_BUFFER_SIZE) + F(" samples"));
+    baja::util::Debug::info(F("Downsampling ratio: 1:") + String(baja::config::FAST_BUFFER_DOWNSAMPLE_RATIO));
+    baja::util::Debug::info(F("Encoding mode: ") + String(baja::config::USE_VERBOSE_DATA_CHUNK ? "Verbose" : "Fixed"));
+    baja::util::Debug::info(F("Hard-coded encoding: ") + String(baja::config::USE_HARD_CODED_ENCODING ? "Enabled" : "Disabled"));
+    baja::util::Debug::info(F("Fixed samples per batch: ") + String(baja::config::FIXED_SAMPLE_COUNT));
+    baja::util::Debug::info(F("Thread slice: ") + String(baja::config::THREAD_SLICE_MICROS) + F(" µs"));
+    baja::util::Debug::info(F("==========================================\n"));
     
     baja::util::Debug::info(F("Initialization complete. System running."));
 }
@@ -293,57 +312,43 @@ void loop() {
         
         // Check SD writer thread health
         if (sdCardInitialized && !baja::storage::SDThread::isRunning()) {
-            baja::util::Debug::warning("SD Writer thread is not running! Attempting to restart...");
+            baja::util::Debug::warning(F("SD Writer thread is not running! Attempting to restart..."));
             
             // Attempt to restart the thread
             int sdThreadId = baja::storage::SDThread::start();
             
             if (sdThreadId > 0) {
-                baja::util::Debug::info("SD Writer thread restarted with ID: " + String(sdThreadId));
+                baja::util::Debug::info(F("SD Writer thread restarted with ID: ") + String(sdThreadId));
             } else {
-                baja::util::Debug::error("Failed to restart SD Writer thread!");
+                baja::util::Debug::error(F("Failed to restart SD Writer thread!"));
             }
         }
         
         // Check ADC thread health
         if (adcInitialized && !baja::adc::ADCThread::isRunning()) {
-            baja::util::Debug::warning("ADC thread is not running! Attempting to restart...");
+            baja::util::Debug::warning(F("ADC thread is not running! Attempting to restart..."));
             
             // Attempt to restart the thread
             int adcThreadId = baja::adc::ADCThread::start();
             
             if (adcThreadId > 0) {
-                baja::util::Debug::info("ADC thread restarted with ID: " + String(adcThreadId));
+                baja::util::Debug::info(F("ADC thread restarted with ID: ") + String(adcThreadId));
             } else {
-                baja::util::Debug::error("Failed to restart ADC thread!");
+                baja::util::Debug::error(F("Failed to restart ADC thread!"));
             }
         }
         
-        // Check PB serialization thread health
-        if (adcInitialized && !baja::serialization::PBThread::isRunning()) {
-            baja::util::Debug::warning("PB serialization thread is not running! Attempting to restart...");
+        // Check combined PB+UDP thread health
+        if (networkInitialized && !baja::network::PBUDPThread::isRunning()) {
+            baja::util::Debug::warning(F("Combined PB+UDP thread is not running! Attempting to restart..."));
             
             // Attempt to restart the thread
-            int pbThreadId = baja::serialization::PBThread::start();
+            int pbpdpThreadId = baja::network::PBUDPThread::start();
             
-            if (pbThreadId > 0) {
-                baja::util::Debug::info("PB serialization thread restarted with ID: " + String(pbThreadId));
+            if (pbpdpThreadId > 0) {
+                baja::util::Debug::info(F("Combined PB+UDP thread restarted with ID: ") + String(pbpdpThreadId));
             } else {
-                baja::util::Debug::error("Failed to restart PB serialization thread!");
-            }
-        }
-        
-        // Check UDP thread health
-        if (adcInitialized && !baja::network::UDPThread::isRunning()) {
-            baja::util::Debug::warning("UDP thread is not running! Attempting to restart...");
-            
-            // Attempt to restart the thread
-            int udpThreadId = baja::network::UDPThread::start();
-            
-            if (udpThreadId > 0) {
-                baja::util::Debug::info("UDP thread restarted with ID: " + String(udpThreadId));
-            } else {
-                baja::util::Debug::error("Failed to restart UDP thread!");
+                baja::util::Debug::error(F("Failed to restart combined PB+UDP thread!"));
             }
         }
     }
@@ -362,59 +367,79 @@ void loop() {
         }
         
         uint32_t sampleDelta = currentSampleCount - lastSampleCount;
-        baja::util::Debug::info("New samples in last 30 seconds: " + 
+        float samplesPerSecond = sampleDelta / 30.0f;
+        baja::util::Debug::info(F("New samples in last 30 seconds: ") + 
                            String(sampleDelta) + 
-                           " (" + String(sampleDelta / 30.0f) + " samples/sec)");
+                           F(" (") + String(samplesPerSecond, 1) + F(" samples/sec)"));
         lastSampleCount = currentSampleCount;
         
-        // Focus on protobuf logging - comment out other buffer stats
-        // sampleBuffer.printStats();
-        
-        baja::util::Debug::info("\n========== SYSTEM STATUS ==========");
-        baja::util::Debug::info("Uptime: " + String((currentTime - startTime) / 1000) + " seconds");
-        // baja::util::Debug::info("Loop count: " + String(loopCount));
-        baja::util::Debug::info("Samples collected: " + String(currentSampleCount));
+        baja::util::Debug::info(F("\n========== SYSTEM STATUS =========="));
+        baja::util::Debug::info(F("Uptime: ") + String((currentTime - startTime) / 1000) + F(" seconds"));
+        baja::util::Debug::info(F("Samples collected: ") + String(currentSampleCount));
         
         if (adcInitialized && baja::adc::ADCThread::getHandler()) {
-            baja::util::Debug::info("Active channel: " + 
+            baja::util::Debug::info(F("Active channel: ") + 
                 String(baja::adc::ADCThread::getHandler()->getActiveChannel()));
         }
         
-        // Focus on the essential buffer information
-        baja::util::Debug::info("Sample buffer: " + 
-                         String(sampleBuffer.available()) + "/" + 
-                         String(sampleBuffer.capacity()) + " samples");
+        // Print buffer statistics
+        baja::util::Debug::info(F("Main buffer: ") + 
+                         String(sampleBuffer.available()) + F("/") + 
+                         String(sampleBuffer.capacity()) + F(" samples (") + 
+                         String(100.0f * sampleBuffer.available() / sampleBuffer.capacity(), 1) + F("%)"));
         
-        baja::util::Debug::info("Encoded buffer: " + 
-                         String(encodedBuffer.available()) + "/" + 
-                         String(encodedBuffer.capacity()) + " messages");
+        // if (baja::adc::ADCThread::getFastBuffer()) {
+        //     baja::buffer::CircularBuffer<baja::data::ChannelSample, baja::config::FAST_BUFFER_SIZE>* fastBufferPtr = 
+        //         baja::adc::ADCThread::getFastBuffer();
+                
+        //     baja::util::Debug::info(F("Fast buffer: ") + 
+        //                      String(fastBufferPtr->available()) + F("/") + 
+        //                      String(fastBufferPtr->capacity()) + F(" samples (") + 
+        //                      String(100.0f * fastBufferPtr->available() / fastBufferPtr->capacity(), 1) + F("%), ") +
+        //                      F("Overwrites: ") + String(fastBufferPtr->getOverwriteCount()));
+        // }
         
-        // Get PB serialization stats
-        uint32_t encodedCount = 0, sampleCount = 0;
-        baja::serialization::PBThread::getStats(encodedCount, sampleCount);
-        baja::util::Debug::info("PB serializer: " + String(encodedCount) + " messages encoded, " + 
-                                String(sampleCount) + " samples processed");
-        
-        // Get UDP stats
-        if (baja::network::UDPThread::getClient()) {
-            uint32_t messagesSent = 0, oversizedMessages = 0, bytesTransferred = 0, sendErrors = 0;
-            baja::network::UDPThread::getStats(messagesSent, oversizedMessages, bytesTransferred, sendErrors);
+        // Get combined PB+UDP thread stats
+        if (networkInitialized && baja::network::PBUDPThread::getHandler()) {
+            uint32_t messagesSent = 0, sampleCount = 0, bytesTransferred = 0, sendErrors = 0;
+            baja::network::PBUDPThread::getStats(messagesSent, sampleCount, bytesTransferred, sendErrors);
             
-            baja::util::Debug::info("UDP client: " + String(messagesSent) + " messages sent, " + 
-                                   String(bytesTransferred / 1024.0f, 1) + " KB transferred");
+            float samplesPerMsg = messagesSent > 0 ? (float)sampleCount / messagesSent : 0;
+            float msgsPerSec = messagesSent / ((currentTime - startTime) / 1000.0f);
+            float kbytesPerSec = bytesTransferred / ((currentTime - startTime) / 1000.0f) / 1024.0f;
             
-            if (oversizedMessages > 0) {
-                baja::util::Debug::warning("UDP client: " + String(oversizedMessages) + " oversized messages dropped");
+            baja::util::Debug::info(F("Network stats: ") + String(messagesSent) + F(" messages sent (") + 
+                                  String(msgsPerSec, 1) + F(" msgs/sec), ") + 
+                                  String(sampleCount) + F(" samples processed (") +
+                                  String(samplesPerMsg, 1) + F(" samples/msg), ") +
+                                  String(bytesTransferred / 1024.0f, 1) + F(" KB transferred (") +
+                                  String(kbytesPerSec, 1) + F(" KB/sec)"));
+            
+            if (sendErrors > 0) {
+                baja::util::Debug::warning(F("Network send errors: ") + String(sendErrors));
             }
         }
         
-        // Only log SD info if PB_DEBUG_LOGGING is false to reduce output
-        if (!baja::config::PB_DEBUG_LOGGING && sdCardInitialized && baja::storage::SDThread::getWriter()) {
-            baja::util::Debug::info("SD file: " + 
-                String(baja::storage::SDThread::getWriter()->getCurrentFilename().c_str()));
-        }
+        // // Log SD info
+        // if (sdCardInitialized && baja::storage::SDThread::getWriter()) {
+        //     baja::util::Debug::info(F("SD file: ") + 
+        //         String(baja::storage::SDThread::getWriter()->getCurrentFilename().c_str()));
+            
+        //     uint32_t bytesWritten = baja::storage::SDThread::getWriter()->getBytesWritten();
+        //     uint32_t samplesWritten = baja::storage::SDThread::getWriter()->getSamplesWritten();
+        //     float bytesPerSample = samplesWritten > 0 ? (float)bytesWritten / samplesWritten : 0;
+            
+        //     baja::util::Debug::info(F("SD stats: ") + String(bytesWritten / 1024.0f, 1) + F(" KB written, ") + 
+        //                           String(samplesWritten) + F(" samples (") + 
+        //                           String(bytesPerSample, 1) + F(" bytes/sample)"));
+        // }
         
-        baja::util::Debug::info("===================================\n");
+        // Log memory usage
+        uint32_t freeRam = getFreeRAM();
+        baja::util::Debug::info(F("Memory: Free RAM = ") + String(freeRam) + F(" bytes, Low mark = ") + 
+                             String(freeRamLow) + F(" bytes"));
+        
+        baja::util::Debug::info(F("===================================\n"));
     }
     
     // Check if we have no samples after 10 seconds
@@ -423,27 +448,43 @@ void loop() {
         baja::adc::ADCThread::getHandler() && 
         baja::adc::ADCThread::getHandler()->getSampleCount() == 0 && 
         !noSamplesWarningPrinted) {
-        baja::util::Debug::warning("\n*** WARNING: No samples collected after 10 seconds! ***");
-        baja::util::Debug::warning("Check ADC communication and waitForReady() operation");
+        baja::util::Debug::warning(F("\n*** WARNING: No samples collected after 10 seconds! ***"));
+        baja::util::Debug::warning(F("Check ADC communication and waitForReady() operation"));
         noSamplesWarningPrinted = true;
     }
     
     // Small yield for other tasks
     yield();
     resetWatchdog();
-    // Ethernet will handle itself through the UDP library
-
-    uint32_t freeRam = getFreeRAM();
-  if (freeRam < freeRamLow) {
-    freeRamLow = freeRam;
     
-    Serial.print("Free RAM low mark: ");
-    Serial.println(freeRamLow);
-  }
-  
-  // Check for critically low memory
-  if (freeRam < 10000) { // Adjust this threshold based on your application
-    Serial.println("WARNING: Memory critically low, resetting all connections");
-    delay(1000); // Give system time to recover
-  }
+    // Monitor free RAM
+    uint32_t freeRam = getFreeRAM();
+    if (freeRam < freeRamLow) {
+        freeRamLow = freeRam;
+        
+        // Only log significant changes to reduce spam
+        static uint32_t lastRamLogTime = 0;
+        if (currentTime - lastRamLogTime > 5000) {
+            baja::util::Debug::info(F("Free RAM low mark update: ") + String(freeRamLow) + F(" bytes"));
+            lastRamLogTime = currentTime;
+        }
+    }
+    
+    // Check for critically low memory
+    if (freeRam < 10000) {
+        static uint32_t lastLowMemoryWarningTime = 0;
+        if (currentTime - lastLowMemoryWarningTime > 10000) {
+            baja::util::Debug::warning(F("CRITICAL: Memory critically low (") + 
+                                     String(freeRam) + F(" bytes), consider system reset"));
+            lastLowMemoryWarningTime = currentTime;
+        }
+        
+        // If extremely critical, force reset
+        if (freeRam < 2000) {
+            baja::util::Debug::error(F("FATAL: Memory exhausted, triggering watchdog reset"));
+            delay(1000);
+            // Intentionally do not reset watchdog to trigger reset
+            while(1) { }
+        }
+    }
 }

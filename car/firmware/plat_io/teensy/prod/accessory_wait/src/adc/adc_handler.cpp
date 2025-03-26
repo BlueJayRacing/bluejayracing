@@ -185,31 +185,131 @@ bool ADC7175Handler::stopSampling() {
     return true;
 }
 
+// bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
+//     // Check if sampling is active
+//     if (!samplingActive_) {
+//         return false;
+//     }
+
+//     static int counter = 0;
+//     counter ++;
+//     uint32_t start_time = micros();
+    
+//     // Wait for ready with timeout
+//     uint32_t timeout = timeout_ms == 0 ? 0xFFFFFFFF : timeout_ms * 10; // Convert to internal units
+//     int result = adcDriver_.waitForReady(timeout);
+//     if (counter > 40000)Serial.println("It took " + String(micros() - start_time) + "us to wait for ready");
+
+
+//     if (result < 0) {
+//         if (result == TIMEOUT) {
+//             // This is normal if timeout_ms was specified
+//             return false;
+//         }
+        
+//         util::Debug::warning("ADC: waitForReady failed with code " + String(result));
+//         return false;
+//     }
+    
+    
+
+
+//     start_time = micros();
+//     // Read the sample
+//     ad717x_data_t sample;
+//     if (!readSample(sample)) {
+//         return false;
+//     }
+//     if (counter > 40000)Serial.println("It took " + String(micros() - start_time) + "us to read the sample");
+    
+//     // Create a channel sample and add to ring buffer
+//     data::ChannelSample channelSample(
+//         micros(),                   // Microsecond timestamp
+//         sample.status.active_channel, // Channel index
+//         sample.value                // Raw ADC value
+//     );
+    
+//     start_time = micros();
+//     // Add to the ring buffer
+//     if (!ringBuffer_.write(channelSample)) {
+//         // util::Debug::warning("ADC: Ring buffer full, sample dropped");
+//         return false;
+//     }
+//     if (counter > 40000) Serial.println("It took " + String(micros() - start_time) + "us to write the sample");
+//     if (counter > 40000) counter = 0;
+    
+//     // Update counters and active channel
+//     sampleCount_++;
+//     activeChannel_ = sample.status.active_channel;
+    
+//     // Debug every 1,000,000 samples
+//     if (sampleCount_ % 1000000 == 0) {
+//         util::Debug::info("ADC: Sample #" + String(sampleCount_) + 
+//                        ": Channel=" + String(sample.status.active_channel) + 
+//                        ", Value=" + String(sample.value));
+//     }
+    
+//     return true;
+// }
+
 bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     // Check if sampling is active
     if (!samplingActive_) {
         return false;
     }
+
+    // Timing statistics - only log occasionally
+    static uint32_t sampleCounter = 0;
+    static uint32_t totalWaitTime = 0;
+    static uint32_t totalReadTime = 0;
+    static uint32_t totalWriteTime = 0;
+    static uint32_t samplesSinceLastLog = 0;
+    static uint32_t lastLogTime = 0;
+    const uint32_t LOG_INTERVAL = 10000; // ms
+    
+    sampleCounter++;
+    samplesSinceLastLog++;
+    
+    // Start timing for wait operation
+    uint32_t wait_start = micros();
     
     // Wait for ready with timeout
     uint32_t timeout = timeout_ms == 0 ? 0xFFFFFFFF : timeout_ms * 10; // Convert to internal units
     int result = adcDriver_.waitForReady(timeout);
     
+    // Calculate wait time
+    uint32_t wait_time = micros() - wait_start;
+    totalWaitTime += wait_time;
+    
+    // Check wait result
     if (result < 0) {
         if (result == TIMEOUT) {
             // This is normal if timeout_ms was specified
             return false;
         }
         
-        util::Debug::warning("ADC: waitForReady failed with code " + String(result));
+        // Only log occasionally to avoid spamming
+        static uint32_t lastWarnTime = 0;
+        uint32_t currentTime = millis();
+        if (currentTime - lastWarnTime > 1000) { // Only warn once per second
+            util::Debug::warning("ADC: waitForReady failed with code " + String(result));
+            lastWarnTime = currentTime;
+        }
         return false;
     }
+    
+    // Start timing for read operation
+    uint32_t read_start = micros();
     
     // Read the sample
     ad717x_data_t sample;
     if (!readSample(sample)) {
         return false;
     }
+    
+    // Calculate read time
+    uint32_t read_time = micros() - read_start;
+    totalReadTime += read_time;
     
     // Create a channel sample and add to ring buffer
     data::ChannelSample channelSample(
@@ -218,10 +318,56 @@ bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
         sample.value                // Raw ADC value
     );
     
+    // Start timing for write operation
+    uint32_t write_start = micros();
+    
     // Add to the ring buffer
     if (!ringBuffer_.write(channelSample)) {
-        // util::Debug::warning("ADC: Ring buffer full, sample dropped");
+        // Only log occasionally to avoid spamming
+        static uint32_t lastRingBufferWarnTime = 0;
+        uint32_t currentTime = millis();
+        if (currentTime - lastRingBufferWarnTime > 5000) { // Only warn every 5 seconds
+            util::Debug::warning("ADC: Ring buffer full, sample dropped");
+            lastRingBufferWarnTime = currentTime;
+        }
         return false;
+    }
+    
+    // Calculate write time
+    uint32_t write_time = micros() - write_start;
+    totalWriteTime += write_time;
+    
+    // Log timing statistics every LOG_INTERVAL samples or 10 seconds
+    uint32_t currentTime = millis();
+    if ((sampleCounter % 40000 == 0) || (currentTime - lastLogTime > LOG_INTERVAL && samplesSinceLastLog > 0)) {
+        float avg_wait = (float)totalWaitTime / samplesSinceLastLog;
+        float avg_read = (float)totalReadTime / samplesSinceLastLog;
+        float avg_write = (float)totalWriteTime / samplesSinceLastLog;
+        float avg_total = avg_wait + avg_read + avg_write;
+        float samples_per_sec = samplesSinceLastLog * 1000.0f / (currentTime - lastLogTime);
+        
+        // Check for long waits that could indicate performance issues
+        if (wait_time > 100) {
+            util::Debug::detail("ADC Long Wait: " + String(wait_time) + "µs for sample #" + String(sampleCounter));
+        }
+        
+        // Only log the first few and then periodically to avoid spam
+        if (sampleCounter < 1000 || sampleCounter % 500000 == 0) {
+            util::Debug::detail("ADC Poll Timing: " + 
+                        String(samplesSinceLastLog) + " samples @ " + 
+                        String(samples_per_sec, 1) + " sps, avg=" + 
+                        String(avg_total, 1) + "µs (wait=" + 
+                        String(avg_wait, 1) + "µs, read=" + 
+                        String(avg_read, 1) + "µs, write=" + 
+                        String(avg_write, 1) + "µs)");
+        }
+        
+        // Reset timing statistics
+        totalWaitTime = 0;
+        totalReadTime = 0;
+        totalWriteTime = 0;
+        samplesSinceLastLog = 0;
+        lastLogTime = currentTime;
     }
     
     // Update counters and active channel

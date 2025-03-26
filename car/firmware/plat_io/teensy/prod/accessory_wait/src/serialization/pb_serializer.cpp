@@ -14,7 +14,7 @@ size_t PBSerializer::lastReadPosition_ = 0;
 uint32_t PBSerializer::encodedCount_ = 0;
 uint32_t PBSerializer::sampleCount_ = 0;
 
-data::ChannelSample PBSerializer::sampleBuffer_[config::MAX_SAMPLES_PER_BATCH];
+data::ChannelSample PBSerializer::sampleBuffer_[config::FIXED_SAMPLE_COUNT];
 
 bool PBSerializer::initialize(
     buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& sourceBuffer,
@@ -62,7 +62,7 @@ size_t PBSerializer::processBatch(size_t maxSamples) {
     // Limit to maximum number of samples per batch
     // This is constrained by the fixed size in the protobuf definition
     size_t samplesToProcess = std::min(std::min(availableSamples, maxSamples), 
-                                      static_cast<size_t>(config::MAX_SAMPLES_PER_BATCH));
+                                      static_cast<size_t>(config::FIXED_SAMPLE_COUNT));
     
     // Create a temporary buffer for the samples we'll process
     // data::ChannelSample* samples = new data::ChannelSample[samplesToProcess];

@@ -9,7 +9,7 @@ class Test {
 public:
     void readAnalogChannels(void);
     void readDigitalChannels(void);
-
+    void continuousChannelReadStats(void);
 private:
     AD717X ad7175;
 };
