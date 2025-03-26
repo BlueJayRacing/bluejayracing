@@ -32,6 +32,7 @@ SDWriter::SDWriter(buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_B
     needDataSync_(false) {
 }
 
+
 SDWriter::~SDWriter() {
     closeFile();
 }
@@ -148,21 +149,21 @@ size_t SDWriter::process() {
         return 0;
     }
 
-    // Health recovery and file handling
+    // Health recovery and file handling (existing code)
     if (!healthy_) {
         if (millis() - lastErrorTime_ > 10000) {
             util::Debug::warning("SD: Attempting recovery after errors");
             closeFile();
             if (!createNewFile()) {
                 return 0;
-            } else {
-                healthy_ = true;
-                util::Debug::info("SD: Recovery successful");
             }
+            healthy_ = true;
+            util::Debug::info("SD: Recovery successful");
         } else {
             return 0;
         }
     }
+
 
     // Check if file is open
     if (!dataFile_.isOpen()) {
@@ -172,7 +173,7 @@ size_t SDWriter::process() {
         return 0;
     }
 
-    // Check if we need to rotate the file
+    // Check if we need to rotate the file.
     if (shouldRotateFile()) {
         closeFile();
         if (!createNewFile()) {
@@ -181,11 +182,9 @@ size_t SDWriter::process() {
         return 0;
     }
 
-
     // Periodic sync check - perform regular syncs to ensure data is written
     uint32_t currentTime = millis();
     if (currentTime - lastPeriodicSyncTime_ >= config::SD_SYNC_INTERVAL_MS) {
-        Serial.println("Syncing directory !!!!!!!!!!!!!!!!!!!!!");
         // Only perform sync if not busy 
         if (!dataFile_.isBusy()) {
             util::Debug::detail("SD: Performing periodic sync");
@@ -193,7 +192,7 @@ size_t SDWriter::process() {
             // Benchmark the sync operation
             uint32_t syncStartTime = micros();
             startAsyncSync(dataFile_);
-            deferCount = 3000;
+            deferCount = 30000;
             uint32_t syncDuration = micros() - syncStartTime;
             
             // Update sync statistics
@@ -208,10 +207,8 @@ size_t SDWriter::process() {
             // Log warning if sync took too long
             if (syncDuration > config::SD_MAX_SYNC_TIME_US) {
                 util::Debug::warning("SD: Long sync time: " + String(syncDuration) + " us");
-                Serial.print("!");
             } else {
                 util::Debug::detail("SD: Periodic sync completed in " + String(syncDuration) + " ms");
-                Serial.print("ok");
             }
             
         } else {
@@ -223,11 +220,9 @@ size_t SDWriter::process() {
 
     // Process deferred sync if needed and card is not busy
     if (needDataSync_ && !dataFile_.isBusy()) {
-        Serial.println("Syncing directory !!!!!!!!!!!!!!!!!!!!!");
         uint32_t syncStartTime = micros();
         startAsyncSync(dataFile_);
-        deferCount = 3000;
-        Serial.println("Took " + String(micros() - syncStartTime) + " us to sync");
+        deferCount = 30000;
         needDataSync_ = false;
         lastPeriodicSyncTime_ = currentTime;
         return 0;

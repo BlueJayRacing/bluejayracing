@@ -134,10 +134,10 @@ bool processSample() {
     // Poll for new sample (non-blocking)
     ad717x_data_t adcSample;
     bool sampleProcessed = false;
-    
-    if (adcHandler_->pollForSample(0)) {
+    int ret = adcHandler_->pollForSample(0);
+    if ( ret == AH_BUFFERBAD || ret == AH_OK ) {
         // Get the actual sample data
-        if (adcHandler_->readSample(adcSample)) {
+        if (adcHandler_->getLatestConversion(adcSample)) {
             // Create a channel sample
             data::ChannelSample channelSample(
                 micros(),                      // Microsecond timestamp
@@ -164,8 +164,11 @@ bool processSample() {
             }
             
             // Update sample count and completed flag
-            sampleCount_++;
-            sampleProcessed = true;
+            if ( ret == AH_OK ) {
+                sampleCount_++;
+                sampleProcessed = true;
+            }
+            
         }
     }
     

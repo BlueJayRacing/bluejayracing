@@ -166,9 +166,6 @@ private:
 
     static void asyncSyncTask(void* arg);
     void startAsyncSync(FsFile &file);
-
-
-    
 };
 
 } // namespace storage

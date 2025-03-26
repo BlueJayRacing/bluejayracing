@@ -252,10 +252,10 @@ bool ADC7175Handler::stopSampling() {
 //     return true;
 // }
 
-bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
+int ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     // Check if sampling is active
     if (!samplingActive_) {
-        return false;
+        return INVALID_VAL;
     }
 
     // Timing statistics - only log occasionally
@@ -285,7 +285,7 @@ bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     if (result < 0) {
         if (result == TIMEOUT) {
             // This is normal if timeout_ms was specified
-            return false;
+            return AH_TIMEOUT;
         }
         
         // Only log occasionally to avoid spamming
@@ -295,7 +295,7 @@ bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
             util::Debug::warning("ADC: waitForReady failed with code " + String(result));
             lastWarnTime = currentTime;
         }
-        return false;
+        return AH_COMM_ERR;
     }
     
     // Start timing for read operation
@@ -304,8 +304,11 @@ bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     // Read the sample
     ad717x_data_t sample;
     if (!readSample(sample)) {
-        return false;
+        return AH_COMM_ERR;
     }
+
+    // Cache the conversion result
+    lastConversion_ = sample;
     
     // Calculate read time
     uint32_t read_time = micros() - read_start;
@@ -330,7 +333,7 @@ bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
             util::Debug::warning("ADC: Ring buffer full, sample dropped");
             lastRingBufferWarnTime = currentTime;
         }
-        return false;
+        return AH_BUFFERBAD;
     }
     
     // Calculate write time
@@ -381,7 +384,7 @@ bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
                        ", Value=" + String(sample.value));
     }
     
-    return true;
+    return AH_OK;
 }
 
 bool ADC7175Handler::readSample(ad717x_data_t& sample) {

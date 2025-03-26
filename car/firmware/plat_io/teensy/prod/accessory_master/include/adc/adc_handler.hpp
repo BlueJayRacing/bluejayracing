@@ -13,6 +13,14 @@
 namespace baja {
 namespace adc {
 
+
+#define AH_BUFFERBAD     1 /* No error */
+#define AH_OK            0 /* No error */
+#define AH_INVALID_VAL  -1 /* Invalid argument */
+#define AH_COMM_ERR     -2 /* Communication error on receive */
+#define AH_TIMEOUT      -3 /* A timeout has occured */
+#define AH_DISABLED     -4 /* Channel is disabled */
+
 /**
  * @brief Handler for the AD7175-8 ADC
  * 
@@ -80,7 +88,7 @@ public:
      * @param timeout_ms Maximum time to wait for data in milliseconds (0 = infinite)
      * @return true if a sample was processed
      */
-    bool pollForSample(uint32_t timeout_ms = 0);
+    int pollForSample(uint32_t timeout_ms = 0);
     
     /**
      * @brief Get the active channel index
@@ -113,13 +121,12 @@ public:
      */
     void resetADC();
 
-    /**
-     * @brief Read a sample from the ADC
-     * 
-     * @param sample Output parameter for the sample data
-     * @return true if read was successful
-     */
-    bool readSample(ad717x_data_t& sample);
+    
+
+    bool getLatestConversion(ad717x_data_t& sample) const {
+        sample = lastConversion_;
+        return true;
+    }
 
 private:
     buffer::RingBuffer<data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer_;
@@ -130,8 +137,15 @@ private:
     volatile uint8_t activeChannel_;
     volatile uint64_t sampleCount_;
     volatile bool samplingActive_;
+    ad717x_data_t lastConversion_;
     
-    
+    /**
+     * @brief Read a sample from the ADC
+     * 
+     * @param sample Output parameter for the sample data
+     * @return true if read was successful
+     */
+    bool readSample(ad717x_data_t& sample);
 };
 
 } // namespace adc
