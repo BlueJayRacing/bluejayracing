@@ -10,22 +10,15 @@ from ament_index_python.packages import get_package_share_directory
 
 
 def generate_launch_description():
-    ads1115_pkg_path = get_package_share_directory('ads1115')
-    adc_node_launch_path = os.path.join(ads1115_pkg_path, 'launch', 'adc_node.launch.py')
-
-    adc_node_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([adc_node_launch_path])
-    )
-
-    mqtt_client_node = Node(
+    wsg_update_time_node = Node(
         package="car",
-        executable="mqtt_client_node",
+        executable="wsg_update_time_node",
         output="screen",
     )
 
-    mqtt_client_publish_node = Node(
+    wsg_drive_data_node  = Node(
         package="car",
-        executable="mqtt_client_publish_node",
+        executable="wsg_drive_data_node",
         output="screen",
     )
 
@@ -55,9 +48,8 @@ def generate_launch_description():
 
     return LaunchDescription(
         [
-            # adc_node_launch,
-            mqtt_client_node,
-            mqtt_client_publish_node,
+            wsg_update_time_node,
+            wsg_drive_data_node,
             broker_node,
             writer_node,
             transmit_prioritizer_node,

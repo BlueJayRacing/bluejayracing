@@ -117,22 +117,28 @@ RUN sudo chmod -R +rwx bjr_ws/src/common
 RUN sudo chown -R dock bjr_ws/src/common
 
 RUN cd /bjr_ws/src && \
-    sudo ln -s common/inertial-sense-sdk/ROS/ros2    
+    sudo ln -s common/inertial-sense-sdk/ROS/ros2 && \
+    sudo ln -s common/inertial-sense-sdk 
 
 ADD src bjr_ws/src/bjr_packages
 
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
 RUN sudo chown -R dock bjr_ws/src/bjr_packages
 
-#RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
-#    cd /bjr_ws && \
-#    colcon build'
+RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd /bjr_ws && \
+    colcon build'
 
 # Set ROS_DOMAIN_ID from hostname
 RUN echo 'export ROS_DOMAIN_ID=$(hostname | grep -o '[0-9]*$')' >> /home/$USER/.bashrc
 ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
+RUN cd /home/dock && \
+    mkdir Documents
+
 RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
 RUN echo 'source /bjr_ws/install/setup.bash' >> /home/$USER/.bashrc
+
+
 
 WORKDIR /bjr_ws/

@@ -9,6 +9,7 @@
 
   <depend>car_description</depend>
   <depend>car</depend>
+  <depend>inertial_sense_ros2</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

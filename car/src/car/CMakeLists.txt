@@ -35,25 +35,25 @@ include_directories(
 
 
 # # MQTT CLIENT SUBSCRIBE
-add_library(mqtt_client_driver SHARED src/mqtt_client_driver.cpp)
-ament_target_dependencies(mqtt_client_driver
-  rclcpp
-  baja_msgs
-  baja_proto
-  paho_mqtt
-  nanopb
-  baja_nanopb
-)
-add_executable(mqtt_client_node src/mqtt_client_node.cpp)
-target_link_libraries(mqtt_client_node mqtt_client_driver)
-ament_target_dependencies(mqtt_client_node
-  rclcpp
-  baja_msgs
-  baja_proto
-  paho_mqtt
-  nanopb
-  baja_nanopb
-)
+# add_library(mqtt_client_driver SHARED src/mqtt_client_driver.cpp)
+# ament_target_dependencies(mqtt_client_driver
+#   rclcpp
+#   baja_msgs
+#   baja_proto
+#   paho_mqtt
+#   nanopb
+#   baja_nanopb
+# )
+# add_executable(mqtt_client_node src/mqtt_client_node.cpp)
+# target_link_libraries(mqtt_client_node mqtt_client_driver)
+# ament_target_dependencies(mqtt_client_node
+#   rclcpp
+#   baja_msgs
+#   baja_proto
+#   paho_mqtt
+#   nanopb
+#   baja_nanopb
+# )
 
 # WSG UPDATE TIME
 add_library(wsg_update_time_driver SHARED src/wsg_update_time_driver.cpp)
@@ -235,7 +235,7 @@ install(DIRECTORY
 install(TARGETS
   broker_driver
   writer_driver
-  mqtt_client_driver
+  # mqtt_client_driver
   transmit_prioritizer_driver
   xbee_driver
   # calibration_printer
@@ -247,7 +247,7 @@ install(TARGETS
 
 # Install targets
 install(TARGETS
-  mqtt_client_node
+  # mqtt_client_node
   broker_node
   writer_node
   transmit_prioritizer_node
