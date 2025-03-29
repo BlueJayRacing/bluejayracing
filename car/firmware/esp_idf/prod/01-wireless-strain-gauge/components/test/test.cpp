@@ -946,7 +946,7 @@ void Test::testDriveSensorSetupSPS(void) {
     int num_success_reads = 0;
 
     while (esp_timer_get_time() - start_time < 1000000) {
-        drive_setup_.measure(&measurement, true);
+        drive_setup_.measure(true, &measurement);
         num_success_reads++;
     }
 
@@ -964,10 +964,29 @@ void Test::testDriveSensorSetupReadAnalogFrontEnd(void)
 
     drive_measurement_t measurement;
 
+    drive_cfg_t sample_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
+    drive_cfg_t excitn_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
+    drive_cfg_t dacbias_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::DAC_BIAS};
+
+    float strain_gauge_volt;
+    float excitation_volt;
+    float dac_bias_volt;
+
     while (true) {
-        drive_setup_.measure(&measurement, true);
-        ESP_LOGI(TAG, "Measurement: %f V, %d", measurement.voltage, measurement.adc_value);
-        vTaskDelay(10);
+        drive_setup_.configure(sample_cfg);
+        drive_setup_.measure(true, &measurement);
+        strain_gauge_volt = measurement.voltage;
+
+        drive_setup_.configure(excitn_cfg);
+        drive_setup_.measure(true, &measurement);
+        excitation_volt = measurement.voltage;
+
+        drive_setup_.configure(dacbias_cfg);
+        drive_setup_.measure(true, &measurement);
+        dac_bias_volt = measurement.voltage;
+
+        ESP_LOGI(TAG, "%f \t%f \t%f", strain_gauge_volt, excitation_volt, dac_bias_volt);
+        vTaskDelay(50);
     }
 }
 
