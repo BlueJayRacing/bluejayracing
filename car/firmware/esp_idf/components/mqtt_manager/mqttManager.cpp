@@ -11,6 +11,7 @@
 #include <lockGuard.hpp>
 #include <mqtt_client.h>
 #include <nvs_flash.h>
+#include <esp_mac.h>
 
 #define MQTT_CONNECTED_BIT  BIT0
 #define MQTT_PUBLISHED_BIT  BIT1
@@ -160,7 +161,12 @@ mqtt_client_t* mqttManager::createClient(const std::string& t_broker_uri)
     esp_mqtt_client_config_t mqtt_config;
     memset(&mqtt_config, 0, sizeof(esp_mqtt_client_config_t));
 
-    std::string client_id(std::to_string(client_id_counter++));
+    uint8_t mac[6];
+    char mac_address[19];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    sprintf(mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    std::string client_id(std::string(mac_address) + std::to_string(client_id_counter++));
 
     mqtt_config.broker.address.uri    = t_broker_uri.data();
     mqtt_config.credentials.client_id = client_id.data();
