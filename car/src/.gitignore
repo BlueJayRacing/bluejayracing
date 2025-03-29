@@ -51,3 +51,4 @@ qtcreator-*
 CATKIN_IGNORE
 
 nanopb_pkg/*
+**/data.txt
