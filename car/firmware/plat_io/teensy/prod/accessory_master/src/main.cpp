@@ -296,7 +296,7 @@ void setup() {
     baja::util::Debug::info(F("Initializing ADC..."));
     baja::adc::ADCSettings adcSettings;
     adcSettings.deviceType = ID_AD7175_8;
-    adcSettings.referenceSource = EXTERNAL_REF;
+    adcSettings.referenceSource = EXTERNAL_REF2;
     adcSettings.operatingMode = CONTINUOUS;
     adcSettings.readStatusWithData = true;
     adcSettings.odrSetting = SPS_10000;
