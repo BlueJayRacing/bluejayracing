@@ -8,7 +8,9 @@
 #include "pb_encode.h"
 #include "pb_decode.h"
 #include "wsg_cal_com.pb.h"
-#include "wsg_drive_data.pb.h"
+#include "esp_data_chunk.pb.h"
+#include <nlohmann/json.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #define LOCALHOST_ADDRESS       "localhost:1883"
 #define CLIENTID                "wsg_drive_data_node"
@@ -20,15 +22,30 @@
 
 namespace wsg_drive_data_driver {
 
+using json = nlohmann::json;
+
 WSGDriveDataDriver::WSGDriveDataDriver() : Node("wsg_drive_data_driver") {
     rclcpp::PublisherOptions pub_options;
     pub_options.callback_group = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-    publisher_ = create_publisher<baja_msgs::msg::Observation>("mqtt_data", rclcpp::QoS(1000).best_effort().durability_volatile(), pub_options);
+    publisher_ = create_publisher<baja_msgs::msg::DataChunk>("mqtt_data", rclcpp::QoS(1000).best_effort().durability_volatile(), pub_options);
     connect_to_broker();
     subscribe_to_topics();
 
     std::ofstream csvFile("src/bjr_packages/car/data.txt");
     csvFile.close();
+
+    // Get the path to the package
+    std::string car_cfg_pkg_path = ament_index_cpp::get_package_share_directory("car_config");
+    std::string car_cfg_json_path = car_cfg_pkg_path + "/config/car_config.json";
+
+    // Open and read JSON file
+    std::ifstream car_cfg_json(car_cfg_json_path);
+    if (!car_cfg_json.is_open()) {
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to open JSON file: %s", car_cfg_json_path.c_str());
+        return;
+    }
+
+    car_config_ = json::parse(car_cfg_json);
 }
 
 WSGDriveDataDriver::~WSGDriveDataDriver() {
@@ -157,53 +174,39 @@ int WSGDriveDataDriver::message_arrived(void *context, char *topicName, int topi
 
                 RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "published drive start command");
             }
-        } else if (topic_str == WSG_DRIVE_DATA_TOPIC) { 
-            drive_data_t drive_data = drive_data_t_init_zero;
+        } else if (topic_str == WSG_DRIVE_DATA_TOPIC) {
+            ESPDataChunk drive_data = ESPDataChunk_init_zero;
             pb_istream_t istream = pb_istream_from_buffer((const pb_byte_t*) message->payload, message->payloadlen);
 
-            if (!pb_decode(&istream, drive_data_t_fields, &drive_data)) {
+            if (!pb_decode(&istream, ESPDataChunk_fields, &drive_data)) {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error decoding ESP Data: %s", PB_GET_ERROR(&istream));
                 break;
             }
 
-            std::string mac_str(drive_data.mac_address);
+            std::string esp_mac_address(drive_data.mac_address);
 
-            uint8_t channel_type;
-            if (mac_str == "84:FC:E6:00:99:98") {
-                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_REAR_LEFT", mac_str.data());
-                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_REAR_LEFT; //after swap
-            } else if (mac_str == "8C:BF:EA:CB:AD:F4") {
-                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_REAR_RIGHT\n", mac_str.data());
-                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_REAR_RIGHT;
-            } else if (mac_str == "54:32:04:22:5A:40") {
-                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_FRONT_LEFT");
-                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_FRONT_LEFT; //after swap
-            } else if (mac_str == "EC:DA:3B:BE:75:68") {
-                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as AXLE_TORQUE_FRONT_RIGHT", mac_str.data());
-                channel_type = baja_msgs::msg::AnalogChannel::AXLE_TORQUE_FRONT_RIGHT;
-            } else {
-                // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%s identified as MISCELLANEOUS", mac_str.data());
-                channel_type = baja_msgs::msg::AnalogChannel::MISCELLANEOUS;
-            }
+            int global_channel_id = find_global_channel_id(driver->car_config_, esp_mac_address, drive_data.sample_channel_id);
 
             std::ofstream csvFile("src/bjr_packages/car/data.txt", std::ios::app);
 
             // Reuse AnalogChannel object
-            baja_msgs::msg::AnalogChannel analog_ch;
-            analog_ch.channel_type = channel_type;
+            baja_msgs::msg::UnifiedSample sample;
+            sample.mac_address = esp_mac_address;
+            sample.ros_channel_id = global_channel_id;
+            sample.internal_channel_id = drive_data.sample_channel_id;
 
             // Needs to put time one to one
-            baja_msgs::msg::Observation observation;
+            baja_msgs::msg::DataChunk data_chunk;
             for (int i = 0; i < 1000; i++) {
-                observation.timestamp.ts = drive_data.base_time + drive_data.time_offset[i];
-                analog_ch.encoded_analog_points = static_cast<double>(drive_data.voltage[i]);
-                observation.analog_ch.push_back(analog_ch);
+                sample.recorded_time = drive_data.base_timestamp + drive_data.samples[i].timestamp_delta;
+                sample.data_value = static_cast<double>(drive_data.samples[i].value);
+                data_chunk.samples.push_back(sample);
 
                 if (csvFile.is_open()) {
-                    csvFile << int(channel_type) << "," << drive_data.base_time + drive_data.time_offset[i] <<"," << drive_data.voltage[i] << ",\n";
+                    csvFile << int(global_channel_id) << "," << drive_data.base_timestamp + drive_data.samples[i].timestamp_delta <<"," << drive_data.samples[i].value << ",\n";
                 }
             }
-            driver->publisher_->publish(observation);
+            driver->publisher_->publish(data_chunk);
 
             csvFile.close();  // Close the file after writing
         }
@@ -225,5 +228,51 @@ void WSGDriveDataDriver::connection_lost(void *context, char *cause) {
     	RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "     cause: %s", cause);
 }
 
+int WSGDriveDataDriver::find_global_channel_id(
+    const json& configJson, 
+    const std::string& macAddress,
+    int localChannelId
+) {
+    // Convert the integer localChannelId to string for JSON lookup
+    std::string localChannelIdStr = std::to_string(localChannelId);
+    
+    // Check if we have ESP32 configuration
+    if (!configJson.contains("esp32") || !configJson["esp32"].contains("variants")) {
+        return -1;
+    }
+    
+    // Iterate through all ESP32 variants
+    for (const auto& [variantName, variantConfig] : configJson["esp32"]["variants"].items()) {
+        // Check if this variant has MAC addresses
+        if (!variantConfig.contains("mac_addresses")) {
+            continue;
+        }
+
+        // Check if the requested MAC address is in this variant's list
+        const auto& macAddresses = variantConfig["mac_addresses"];
+        bool macFound = false;
+        
+        for (const auto& mac : macAddresses) {
+            if (mac.get<std::string>() == macAddress) {
+                macFound = true;
+                break;
+            }
+        }
+        
+        if (macFound) {
+            // Found the variant with matching MAC address
+            // Check if it has the requested local channel ID
+            if (variantConfig.contains("channel_mapping") && 
+                variantConfig["channel_mapping"].contains(localChannelIdStr)) {
+                // Return the global channel ID as an integer
+                return variantConfig["channel_mapping"][localChannelIdStr].get<int>();
+            }
+            return -1; // MAC found but channel not found
+        }
+    }
+    
+    // MAC address not found in any variant
+    return -1;
+}
 
 } // namespace wsg_drive_data_driver

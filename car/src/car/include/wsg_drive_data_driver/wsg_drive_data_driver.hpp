@@ -2,10 +2,13 @@
 #pragma once
 
 #include <rclcpp/rclcpp.hpp>
-#include <baja_msgs/msg/observation.hpp>
+#include <baja_msgs/msg/data_chunk.hpp>
 #include "MQTTClient.h"
+#include <nlohmann/json.hpp>
 
 namespace wsg_drive_data_driver {
+
+using json = nlohmann::json;
 
 class WSGDriveDataDriver : public rclcpp::Node {
 public:
@@ -20,9 +23,11 @@ private:
     static int message_arrived(void *context, char *topicName, int topicLen, MQTTClient_message *message);
     static void delivery_complete(void *context, MQTTClient_deliveryToken dt);
     static void connection_lost(void *context, char *cause);
+    static int find_global_channel_id(const json& configJson, const std::string& macAddress,int localChannelId);
 
-    rclcpp::Publisher<baja_msgs::msg::Observation>::SharedPtr publisher_;
+    rclcpp::Publisher<baja_msgs::msg::DataChunk>::SharedPtr publisher_;
     MQTTClient client_;
+    json car_config_;
 };
 
 } // namespace wsg_drive_data_driver

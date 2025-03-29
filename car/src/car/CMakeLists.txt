@@ -18,6 +18,8 @@ find_package(paho_mqtt REQUIRED)
 find_package(ads1115 REQUIRED)
 find_package(nanopb REQUIRED)
 find_package(baja_nanopb REQUIRED)
+find_package(car_config REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 # Include directories
 include_directories(
@@ -31,28 +33,6 @@ include_directories(
 #   rclcpp
 #   baja_proto
 #   ads1115
-# )
-
-
-# # MQTT CLIENT SUBSCRIBE
-# add_library(mqtt_client_driver SHARED src/mqtt_client_driver.cpp)
-# ament_target_dependencies(mqtt_client_driver
-#   rclcpp
-#   baja_msgs
-#   baja_proto
-#   paho_mqtt
-#   nanopb
-#   baja_nanopb
-# )
-# add_executable(mqtt_client_node src/mqtt_client_node.cpp)
-# target_link_libraries(mqtt_client_node mqtt_client_driver)
-# ament_target_dependencies(mqtt_client_node
-#   rclcpp
-#   baja_msgs
-#   baja_proto
-#   paho_mqtt
-#   nanopb
-#   baja_nanopb
 # )
 
 # WSG UPDATE TIME
@@ -154,6 +134,7 @@ target_include_directories(wsg_drive_data_driver PUBLIC
   "${CMAKE_INSTALL_PREFIX}/include/nanopb"
 )
 ament_target_dependencies(wsg_drive_data_driver
+  car_config
   rclcpp
   baja_msgs
   std_msgs
@@ -161,6 +142,7 @@ ament_target_dependencies(wsg_drive_data_driver
   nanopb
   baja_nanopb
   baja_proto
+  ament_index_cpp
 )
 add_executable(wsg_drive_data_node src/wsg_drive_data_node.cpp)
 target_link_libraries(wsg_drive_data_node wsg_drive_data_driver)
@@ -168,6 +150,7 @@ target_include_directories(wsg_drive_data_node PUBLIC
   ${nanopb_INCLUDE_DIRS}
 )
 ament_target_dependencies(wsg_drive_data_node
+  car_config
   rclcpp
   baja_msgs
   std_msgs
@@ -175,6 +158,7 @@ ament_target_dependencies(wsg_drive_data_node
   nanopb
   baja_nanopb
   baja_proto
+  ament_index_cpp
 )
 
 # WSG Calibration Driver
@@ -235,7 +219,6 @@ install(DIRECTORY
 install(TARGETS
   broker_driver
   writer_driver
-  # mqtt_client_driver
   transmit_prioritizer_driver
   xbee_driver
   # calibration_printer
@@ -247,7 +230,6 @@ install(TARGETS
 
 # Install targets
 install(TARGETS
-  # mqtt_client_node
   broker_node
   writer_node
   transmit_prioritizer_node
