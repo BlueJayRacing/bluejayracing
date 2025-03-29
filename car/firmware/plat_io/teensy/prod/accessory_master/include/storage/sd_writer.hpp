@@ -44,6 +44,11 @@ public:
      * @return true if initialization was successful
      */
     bool begin(uint8_t chipSelect = 254);
+
+     /**
+     * @brief Set channel names for CSV header
+     */
+    void setChannelNames();
     
     /**
      * @brief Set channel names for CSV header
@@ -51,6 +56,13 @@ public:
      * @param channelConfigs Vector of channel configurations
      */
     void setChannelNames(const std::vector<adc::ChannelConfig>& channelConfigs);
+
+    /**
+     * @brief Initialize all channels for writing
+     * 
+     * @return true if all channels were initialized successfully
+     */
+    bool initializeAllChannels();
     
     /**
      * @brief Process data from the ring buffer

@@ -10,7 +10,7 @@ static ADC7175Handler* adcHandler_ = nullptr;
 static bool running_ = false;
 static uint64_t sampleCount_ = 0;
 static buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>* fastBuffer_ = nullptr;
-static uint16_t channelSampleCounters_[ADC_CHANNEL_COUNT] = {0};
+static uint16_t channelSampleCounters_[util::TOTAL_CHANNEL_COUNT] = {0};
 
 // Timing statistics
 static uint32_t totalProcessingTime_ = 0;
@@ -32,7 +32,7 @@ bool initialize(
     fastBuffer_ = &fastBuffer;
     
     // Reset all channel sample counters
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < util::TOTAL_CHANNEL_COUNT; i++) {
         channelSampleCounters_[i] = 0;
     }
     
@@ -90,7 +90,7 @@ bool start() {
     
     // Reset sample count and channel counters
     sampleCount_ = 0;
-    for (int i = 0; i < ADC_CHANNEL_COUNT; i++) {
+    for (int i = 0; i < util::TOTAL_CHANNEL_COUNT; i++) {
         channelSampleCounters_[i] = 0;
     }
     
@@ -138,24 +138,28 @@ bool processSample() {
     if ( ret == AH_BUFFERBAD || ret == AH_OK ) {
         // Get the actual sample data
         if (adcHandler_->getLatestConversion(adcSample)) {
-            // Create a channel sample
+            // IMPORTANT: Convert ADC channel index to internal channel ID
+            uint8_t internalChannelId = static_cast<uint8_t>(
+                util::mapADCToInternalID(adcSample.status.active_channel));
+            
+            // Create a channel sample with internal ID and recorded time
             data::ChannelSample channelSample(
-                micros(),                      // Microsecond timestamp
-                adcSample.status.active_channel, // Channel index
-                adcSample.value                // Raw ADC value
+                micros(),                // Microsecond timestamp
+                internalChannelId,       // Internal channel ID (converted from ADC channel)
+                adcSample.value,         // Raw ADC value
+                millis()                 // Add recorded time in milliseconds
             );
             
             // Write to fast buffer with downsampling
             if (fastBuffer_) {
-                uint8_t channelIndex = channelSample.channelIndex;
-                if (channelIndex < ADC_CHANNEL_COUNT) {
+                if (internalChannelId < util::TOTAL_CHANNEL_COUNT) {
                     // Increment channel counter
-                    channelSampleCounters_[channelIndex]++;
+                    channelSampleCounters_[internalChannelId]++;
                     
                     // Every N samples, write to fast buffer
-                    if (channelSampleCounters_[channelIndex] >= config::FAST_BUFFER_DOWNSAMPLE_RATIO) {
+                    if (channelSampleCounters_[internalChannelId] >= config::FAST_BUFFER_DOWNSAMPLE_RATIO) {
                         // Reset counter
-                        channelSampleCounters_[channelIndex] = 0;
+                        channelSampleCounters_[internalChannelId] = 0;
                         
                         // Write to fast buffer (this will always succeed due to overwrite policy)
                         fastBuffer_->write(channelSample);
@@ -242,6 +246,13 @@ uint64_t getSampleCount() {
 
 uint8_t getActiveChannel() {
     return adcHandler_ ? adcHandler_->getActiveChannel() : 0;
+}
+
+uint8_t getActiveInternalChannelId() {
+    if (!adcHandler_) return 0;
+    
+    uint8_t adcChannel = adcHandler_->getActiveChannel();
+    return static_cast<uint8_t>(util::mapADCToInternalID(adcChannel));
 }
 
 } // namespace functions

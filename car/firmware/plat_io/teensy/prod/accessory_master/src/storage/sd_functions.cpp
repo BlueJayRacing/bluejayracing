@@ -41,6 +41,9 @@ bool initialize(
         return false;
     }
     
+    // Initialize all channel names and enable all channels for writing
+    sdWriter_->initializeAllChannels();
+    
     // Reset timing statistics
     resetTimingStats();
     
@@ -151,6 +154,38 @@ void setChannelConfigs(const std::vector<adc::ChannelConfig>& channelConfigs) {
     }
     
     sdWriter_->setChannelNames(channelConfigs);
+}
+
+// Update a custom name for any channel (ADC, digital, or misc)
+void setCustomChannelName(uint8_t internalChannelId, const std::string& customName) {
+    if (!sdWriter_) {
+        util::Debug::error(F("SD: SD writer not initialized"));
+        return;
+    }
+    
+    if (internalChannelId >= util::TOTAL_CHANNEL_COUNT) {
+        util::Debug::warning(F("SD: Invalid channel ID: ") + String(internalChannelId));
+        return;
+    }
+    
+    // Create a temporary vector with one config entry
+    std::vector<adc::ChannelConfig> tempConfig;
+    adc::ChannelConfig config;
+    
+    // For ADC channels (0-15), we need to adjust the config
+    if (internalChannelId < 16) {
+        config.channelIndex = internalChannelId; // For ADC, internal ID equals channel index
+        config.name = customName;
+        config.enabled = true;
+        tempConfig.push_back(config);
+        
+        // Use the standard interface
+        sdWriter_->setChannelNames(tempConfig);
+    } else {
+        // For non-ADC channels, we'd need a different method which isn't yet implemented
+        // For now, we'll log a warning
+        util::Debug::warning(F("SD: Custom naming for non-ADC channels not yet implemented"));
+    }
 }
 
 bool createNewFile(bool addHeader) {

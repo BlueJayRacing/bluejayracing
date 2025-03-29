@@ -81,26 +81,26 @@
   * @param channelIndex The ADC channel index (0-15)
   * @return The corresponding ChannelName enum value
   */
- inline ChannelName getChannelNameFromIndex(uint8_t channelIndex) {
-     if (channelIndex < ALL_CHANNEL_NAMES.size()) {
-         return ALL_CHANNEL_NAMES[channelIndex];
-     }
-     return ChannelName::UNKNOWN;
- }
+//  inline ChannelName getChannelNameFromIndex(uint8_t channelIndex) {
+//      if (channelIndex < ALL_CHANNEL_NAMES.size()) {
+//          return ALL_CHANNEL_NAMES[channelIndex];
+//      }
+//      return ChannelName::UNKNOWN;
+//  }
  
  /**
   * @brief Get the ADC channel index for a channel name
   * @param channelName The ChannelName enum value
   * @return The corresponding ADC channel index (0-15)
   */
- inline uint8_t getIndexFromChannelName(ChannelName channelName) {
-     for (uint8_t i = 0; i < ALL_CHANNEL_NAMES.size(); i++) {
-         if (ALL_CHANNEL_NAMES[i] == channelName) {
-             return i;
-         }
-     }
-     return UINT8_MAX; // Invalid index
- }
+//  inline uint8_t getIndexFromChannelName(ChannelName channelName) {
+//      for (uint8_t i = 0; i < ALL_CHANNEL_NAMES.size(); i++) {
+//          if (ALL_CHANNEL_NAMES[i] == channelName) {
+//              return i;
+//          }
+//      }
+//      return UINT8_MAX; // Invalid index
+//  }
  
  /**
   * @brief Get the string representation of a channel name
@@ -120,9 +120,9 @@
   * @param channelIndex The ADC channel index (0-15)
   * @return String representation of the channel name
   */
- inline std::string getChannelNameString(uint8_t channelIndex) {
-     return getChannelNameString(getChannelNameFromIndex(channelIndex));
- }
+//  inline std::string getChannelNameString(uint8_t channelIndex) {
+//      return getChannelNameString(getChannelNameFromIndex(channelIndex));
+//  }
  
  /**
   * @brief Check if a channel should be enabled by default

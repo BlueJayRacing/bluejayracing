@@ -44,6 +44,7 @@ typedef enum ad717x_mode
 typedef enum ad717x_ref_source
 {
     EXTERNAL_REF = 0x0, /* External Reference REF+/-*/
+    EXTERNAL_REF2 = 0x1, /* External Reference REF2+/-*/
     INTERNAL_REF = 0x2, /* Internal 2.5V Reference */
     AVDD_AVSS    = 0x3  /* AVDD - AVSS */
 } ad717x_ref_source_t;

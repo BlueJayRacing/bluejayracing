@@ -75,6 +75,14 @@ namespace functions {
     void setChannelConfigs(const std::vector<adc::ChannelConfig>& channelConfigs);
     
     /**
+     * @brief Set a custom name for a channel
+     * 
+     * @param internalChannelId Internal channel ID (0-29)
+     * @param customName Custom name for the channel
+     */
+    void setCustomChannelName(uint8_t internalChannelId, const std::string& customName);
+
+    /**
      * @brief Create a new file for writing
      * 
      * @param addHeader Whether to add a header to the file

@@ -6,7 +6,7 @@
 #include "util/circular_buffer.hpp"
 #include "util/sample_data.hpp"
 #include "config/config.hpp"
-#include "baja_sample.pb.h"
+#include "teensy_data.pb.h"
 
 namespace baja {
 namespace network {
@@ -165,18 +165,19 @@ private:
     void logStats();
     
     /**
-     * @brief Helper: Hard-coded encoding for FixedDataChunk
+     * @brief Helper: Hard-coded encoding for DataChunk
+     * 
+     * @param buffer Pointer to encoded data
+     * @param bufferSize Size of buffer to serialize to
+     * @param samples pointer to samples to encode
+     * @param count numbers of samples to encode - should be fixed
+     * 
+     * 
+     * @return true if send was successful
      */
-    bool encodeFixedDataChunk(uint8_t* buffer, size_t bufferSize, 
-                           const data::ChannelSample* samples, size_t count,
-                           size_t& outputSize);
-    
-    /**
-     * @brief Helper: Hard-coded encoding for VerboseDataChunk
-     */
-    bool encodeVerboseDataChunk(uint8_t* buffer, size_t bufferSize,
-                             const data::ChannelSample* samples, size_t count,
-                             size_t& outputSize);
+    bool encodeDataChunk(uint8_t* buffer, size_t bufferSize,
+        const data::ChannelSample* samples, size_t count,
+        size_t& outputSize);
 };
 
 } // namespace network

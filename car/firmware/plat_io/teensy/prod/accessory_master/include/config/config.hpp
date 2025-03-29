@@ -29,11 +29,11 @@ constexpr bool CUSTOM_STRING_CONVERSION_ROUTINE = true; // Use custom string con
 constexpr uint32_t SD_SYNC_INTERVAL_MS = 15 * 1000;     // 15 seconds periodic sync
 constexpr uint32_t SD_MAX_SYNC_TIME_US = 60;           // Warning threshold for sync time
 constexpr size_t SD_SYNC_MIN_BUFFER_BYTES = 16 * 1024;  // Minimum bytes before doing periodic sync
+constexpr bool CSV_INCLUDE_CHANNEL_NAMES = false;  // Include channel names in CSV for readability
 
 // Protocol Buffer Configuration
 constexpr size_t PB_MAX_MESSAGE_SIZE = 1472;   // Maximum size of ethernet frame minus UDP Header
 constexpr size_t FIXED_SAMPLE_COUNT = 50;   // Maximum samples to process per batch
-constexpr bool USE_VERBOSE_DATA_CHUNK = true;   // Use verbose encoding format
 constexpr bool USE_HARD_CODED_ENCODING = true;  // Use hard-coded optimized encoders
 
 // ADC settings

@@ -1,5 +1,6 @@
 #include "storage/sd_writer.hpp"
 #include <TimeLib.h>
+#include "util/teensy_mapping.hpp"
 
 namespace baja {
 namespace storage {
@@ -105,56 +106,79 @@ bool SDWriter::begin(uint8_t chipSelect) {
     return true;
 }
 
-void SDWriter::setChannelNames(const std::vector<adc::ChannelConfig>& channelConfigs) {
+void SDWriter::setChannelNames() {
     // Clear any existing names
     channelNames_.clear();
     
-    // Resize the vector to handle all possible ADC channels (0-15)
-    channelNames_.resize(16);
+    // Resize the vector to handle all possible internal channel IDs (0-29)
+    channelNames_.resize(util::TOTAL_CHANNEL_COUNT);
     
-    // Initialize all to empty strings
+    // Initialize all channel names directly from the global mapping
     for (size_t i = 0; i < channelNames_.size(); i++) {
-        channelNames_[i] = "";
+        channelNames_[i] = util::CHANNEL_NAMES[i];
     }
     
-    // Add channel names at their respective indices
-    size_t enabledCount = 0;
+    // Log the configuration
+    util::Debug::info(F("SD: Initialized all ") + String(channelNames_.size()) + F(" channel names for logging"));
+}
+
+// Overload that accepts channel configs but just uses them for custom naming
+void SDWriter::setChannelNames(const std::vector<adc::ChannelConfig>& channelConfigs) {
+    // First set all names from the global mapping
+    setChannelNames();
+    
+    // Then override only if custom names are provided
+    size_t customNameCount = 0;
     for (const auto& config : channelConfigs) {
-        // Store the channel name at its actual ADC index
-        if (config.channelIndex < channelNames_.size()) {
-            channelNames_[config.channelIndex] = config.name;
-            if (config.enabled) {
-                enabledCount++;
-            }
+        // Convert ADC channel index to internal channel ID
+        uint8_t internalId = static_cast<uint8_t>(util::mapADCToInternalID(config.channelIndex));
+        
+        // Store the channel name at its internal ID index if not empty
+        if (internalId < channelNames_.size() && !config.name.empty()) {
+            // Append the custom name to the hardware description
+            channelNames_[internalId] = util::CHANNEL_NAMES[internalId] + " (" + config.name + ")";
+            customNameCount++;
         }
     }
     
-    util::Debug::info(F("SD: Set ") + String(enabledCount) + F(" enabled channel names out of ") + 
-                   String(channelNames_.size()) + F(" total channels"));
+    if (customNameCount > 0) {
+        util::Debug::info(F("SD: Added ") + String(customNameCount) + F(" custom channel names"));
+    }
+}
+
+// New method to initialize SD writer with all channels enabled by default
+bool SDWriter::initializeAllChannels() {
+    // Set all channel names from the global mapping
+    setChannelNames();
+    
+    // Consider all channels as enabled for writing
+    util::Debug::info(F("SD: All channels enabled for writing"));
+    
+    return true;
 }
 
 size_t SDWriter::process() {
     static int deferCount = 0;
+    
     // Skip processing if we're in the middle of a file operation
     if (performingFileOperation_) {
-        
-        
         if (mutex_.getState() == 0) {
             deferCount--;
             if (deferCount == 0) {
-                Serial.println("Sync In Progress, skipping, and unlocking");
+                Serial.println("Sync complete, unlocking");
                 performingFileOperation_ = false;
             }
         }
         return 0;
     }
 
-    // Health recovery and file handling (existing code)
+    // Health recovery and file handling
     if (!healthy_) {
         if (millis() - lastErrorTime_ > 10000) {
             util::Debug::warning("SD: Attempting recovery after errors");
             closeFile();
             if (!createNewFile()) {
+                Serial.println("SD: Recovery failed - couldn't create new file");
                 return 0;
             }
             healthy_ = true;
@@ -164,7 +188,6 @@ size_t SDWriter::process() {
         }
     }
 
-
     // Check if file is open
     if (!dataFile_.isOpen()) {
         if (!createNewFile()) {
@@ -173,7 +196,7 @@ size_t SDWriter::process() {
         return 0;
     }
 
-    // Check if we need to rotate the file.
+    // Check if we need to rotate the file
     if (shouldRotateFile()) {
         closeFile();
         if (!createNewFile()) {
@@ -182,20 +205,15 @@ size_t SDWriter::process() {
         return 0;
     }
 
-    // Periodic sync check - perform regular syncs to ensure data is written
+    // Periodic sync check
     uint32_t currentTime = millis();
     if (currentTime - lastPeriodicSyncTime_ >= config::SD_SYNC_INTERVAL_MS) {
-        // Only perform sync if not busy 
         if (!dataFile_.isBusy()) {
-            util::Debug::detail("SD: Performing periodic sync");
-            
-            // Benchmark the sync operation
             uint32_t syncStartTime = micros();
             startAsyncSync(dataFile_);
-            deferCount = 30000;
+            deferCount = 3000;
             uint32_t syncDuration = micros() - syncStartTime;
             
-            // Update sync statistics
             lastPeriodicSyncTime_ = currentTime;
             totalSyncTime_ += syncDuration;
             syncCount_++;
@@ -204,42 +222,35 @@ size_t SDWriter::process() {
                 maxSyncTime_ = syncDuration;
             }
             
-            // Log warning if sync took too long
             if (syncDuration > config::SD_MAX_SYNC_TIME_US) {
-                util::Debug::warning("SD: Long sync time: " + String(syncDuration) + " us");
             } else {
-                util::Debug::detail("SD: Periodic sync completed in " + String(syncDuration) + " ms");
             }
-            
         } else {
-            // Mark that we need a sync when card is not busy
             needDataSync_ = true;
         }
         return 0;
     }
 
-    // Process deferred sync if needed and card is not busy
+    // Process deferred sync if needed
     if (needDataSync_ && !dataFile_.isBusy()) {
         uint32_t syncStartTime = micros();
         startAsyncSync(dataFile_);
-        deferCount = 30000;
+        deferCount = 3000;
         needDataSync_ = false;
         lastPeriodicSyncTime_ = currentTime;
         return 0;
     }
 
-
     // Get available samples from the data buffer
     size_t availableSamples = dataBuffer_.available();
+    
     if (availableSamples == 0) {
         if (ringBuf_->bytesUsed() > 0) {
             if (isFirstFile_ || (millis() - lastWriteTime_ > 5000)) {
                 syncRingBuf(true); // Force full sync
             } else if (!dataFile_.isBusy()) {
-                baja::util::Debug::info("SD: Syncing RingBuf, no samples");
                 syncRingBuf(false); // Normal sync of complete sectors
             } else {
-                baja::util::Debug::info("no sample available, ring buffer is busy");
             }
         }
         return 0;
@@ -255,6 +266,7 @@ size_t SDWriter::process() {
         shouldWrite = false;
         wasBufferFull_ = false;
     }
+    
     if (!shouldWrite) {
         return 0;
     }
@@ -265,9 +277,10 @@ size_t SDWriter::process() {
         samplesInBatch = min(samplesInBatch, static_cast<size_t>(25));
     }
 
-    // Ensure RingBuf has enough space (approx. 50 bytes per sample in CSV)
+    // Ensure RingBuf has enough space
     size_t ringBufFree = ringBuf_->bytesFree();
     size_t estimatedBatchSize = samplesInBatch * 50;
+    
     if (ringBufFree < estimatedBatchSize) {
         // Not enough space - force a sync
         syncRingBuf(true);
@@ -283,7 +296,7 @@ size_t SDWriter::process() {
     size_t samplesProcessed = 0;
     for (size_t i = 0; i < samplesInBatch; i++) {
         data::ChannelSample sample;
-        if (dataBuffer_.read(sample)) {
+        if (dataBuffer_.read(sample)) {            
             if (writeSampleToRingBuf(sample)) {
                 samplesProcessed++;
             } else {
@@ -297,9 +310,6 @@ size_t SDWriter::process() {
     // Update statistics if samples were processed
     if (samplesProcessed > 0) {
         totalSamplesWritten_ += samplesProcessed;
-        if (samplesProcessed > 50) {
-            util::Debug::detail("SD: Processed " + String(samplesProcessed) + " samples");
-        }
     }
 
     // Sync RingBuf based on operation mode and file status
@@ -307,21 +317,17 @@ size_t SDWriter::process() {
         syncRingBuf(true);
         if (bytesWritten_ > 1024) {
             isFirstFile_ = false;
-            util::Debug::info("SD: First file successfully initialized");
         }
     } else if (!dataFile_.isBusy() && ringBuf_->bytesUsed() >= config::SD_SECTOR_SIZE) {
         syncRingBuf(false);
-    }
-
+    } 
     // Update buffer state
     if (samplesProcessed == availableSamples) {
         wasBufferFull_ = false;
     }
+    
     return samplesProcessed;
 }
-
-
-
 
 
 
@@ -478,12 +484,20 @@ std::string SDWriter::generateFilename() const {
 }
 
 bool SDWriter::writeHeader() {
-    // Create CSV header
-    std::string header = "timestamp_us,channel_index,raw_value";
+    // First, add the channel mappings as a comment
+    std::string mappingHeader = util::generateChannelMappingHeader();
+    if (ringBuf_->write(mappingHeader.c_str(), mappingHeader.length()) != mappingHeader.length()) {
+        util::Debug::error("SD: Failed to write channel mapping header");
+        return false;
+    }
     
-    // Add channel name header if available
-    if (!channelNames_.empty()) {
-        header += ",channel_name";
+    // Then create the main CSV header
+    std::string header;
+    
+    if (config::CSV_INCLUDE_CHANNEL_NAMES) {
+        header = "timestamp_us,recorded_time_ms,internal_channel_id,channel_name,value";
+    } else {
+        header = "timestamp_us,recorded_time_ms,internal_channel_id,value";
     }
     
     // Add newline (CRLF for compatibility)
@@ -502,16 +516,18 @@ bool SDWriter::writeHeader() {
     return true;
 }
 
+
 bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
+    // All channels are always enabled for writing in this simplified model
+    
     if (config::CUSTOM_STRING_CONVERSION_ROUTINE) {
-        char buffer[128];
+        char buffer[256]; // Increased size to accommodate channel names
         size_t pos = 0;
         size_t remaining = sizeof(buffer);
 
-        // A helper lambda to convert an unsigned integer (up to 64 bits) to a decimal string.
-        // It writes into 'dest' (which has size destSize) and returns the number of characters written.
+        // Helper lambda for unsigned integer to string conversion
         auto u64_to_str = [](uint64_t value, char* dest, size_t destSize) -> size_t {
-            char temp[21]; // Maximum 20 digits for 64-bit number.
+            char temp[21]; // Maximum 20 digits for 64-bit number
             size_t tempPos = 0;
             if (value == 0) {
                 if (destSize > 0) {
@@ -520,12 +536,12 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
                 }
                 return 0;
             }
-            // Write digits in reverse order.
+            // Write digits in reverse order
             while (value > 0 && tempPos < sizeof(temp)) {
                 temp[tempPos++] = '0' + (value % 10);
                 value /= 10;
             }
-            // Now copy them in correct order.
+            // Now copy them in correct order
             size_t len = tempPos;
             if (len > destSize) len = destSize;
             for (size_t i = 0; i < len; i++) {
@@ -534,7 +550,7 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
             return len;
         };
 
-        // Convert and write the timestamp.
+        // Convert and write the timestamp
         size_t n = u64_to_str(sample.timestamp, buffer + pos, remaining);
         pos += n;
         remaining = sizeof(buffer) - pos;
@@ -542,9 +558,9 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
             buffer[pos++] = ',';
             remaining--;
         }
-
-        // Convert and write the channel index.
-        n = u64_to_str(sample.channelIndex, buffer + pos, remaining);
+        
+        // Convert and write the recorded time
+        n = u64_to_str(sample.recordedTimeMs, buffer + pos, remaining);
         pos += n;
         remaining = sizeof(buffer) - pos;
         if (remaining > 0) {
@@ -552,30 +568,51 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
             remaining--;
         }
 
-        // Convert and write the raw ADC value.
-        n = u64_to_str(sample.rawValue, buffer + pos, remaining);
+        // Convert and write the internal channel ID
+        n = u64_to_str(sample.internalChannelId, buffer + pos, remaining);
         pos += n;
         remaining = sizeof(buffer) - pos;
+        if (remaining > 0) {
+            buffer[pos++] = ',';
+            remaining--;
+        }
 
-        // Add channel name if available and not empty
-        // FIXED: Ensure we check the channel index is in range AND the name isn't empty
-        if (sample.channelIndex < channelNames_.size() && !channelNames_[sample.channelIndex].empty()) {
+        // Add channel name if configured - use names directly from our array
+        if (config::CSV_INCLUDE_CHANNEL_NAMES) {
+            std::string channelName;
+            if (sample.internalChannelId < channelNames_.size()) {
+                channelName = channelNames_[sample.internalChannelId];
+            } else {
+                channelName = "Unknown Channel";
+            }
+            
+            // Add quotes around the name
+            buffer[pos++] = '"';
+            remaining--;
+            
+            size_t nameLen = channelName.length();
+            if (nameLen > remaining - 2) // -2 for closing quote and comma
+                nameLen = remaining - 2;
+            
+            memcpy(buffer + pos, channelName.c_str(), nameLen);
+            pos += nameLen;
+            remaining = sizeof(buffer) - pos;
+            
+            buffer[pos++] = '"';
+            remaining--;
+            
             if (remaining > 0) {
                 buffer[pos++] = ',';
                 remaining--;
             }
-            
-            const std::string& chName = channelNames_[sample.channelIndex];
-            size_t nameLen = chName.length();
-            if (nameLen > remaining)
-                nameLen = remaining;
-            
-            memcpy(buffer + pos, chName.c_str(), nameLen);
-            pos += nameLen;
-            remaining = sizeof(buffer) - pos;
         }
+        
+        // Convert and write the raw value
+        n = u64_to_str(sample.rawValue, buffer + pos, remaining);
+        pos += n;
+        remaining = sizeof(buffer) - pos;
 
-        // Append CRLF.
+        // Append CRLF
         const char* crlf = "\r\n";
         size_t crlfLen = 2;
         if (crlfLen > remaining)
@@ -583,7 +620,7 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
         memcpy(buffer + pos, crlf, crlfLen);
         pos += crlfLen;
 
-        // Write the complete CSV line to the ring buffer.
+        // Write the complete CSV line to the ring buffer
         size_t bytesWritten = ringBuf_->write(buffer, pos);
         if (bytesWritten != pos) {
             if (ringBuf_->getWriteError()) {
@@ -595,17 +632,27 @@ bool SDWriter::writeSampleToRingBuf(const data::ChannelSample& sample) {
         return true;
     } else {
         // Format CSV line efficiently using a buffer
-        char buffer[128];
+        char buffer[256]; // Increased size to accommodate channel names
         
-        // Format timestamp, channel, and value
-        int len = snprintf(buffer, sizeof(buffer), "%llu,%u,%lu", 
-                sample.timestamp, sample.channelIndex, sample.rawValue);
+        // Format base fields
+        int len;
         
-        // Add channel name if available
-        // FIXED: Ensure we check the channel index is in range AND the name isn't empty
-        if (sample.channelIndex < channelNames_.size() && !channelNames_[sample.channelIndex].empty()) {
-            len += snprintf(buffer + len, sizeof(buffer) - len, ",%s", 
-                        channelNames_[sample.channelIndex].c_str());
+        if (config::CSV_INCLUDE_CHANNEL_NAMES) {
+            // Get channel name directly from our array
+            std::string channelName;
+            if (sample.internalChannelId < channelNames_.size()) {
+                channelName = channelNames_[sample.internalChannelId];
+            } else {
+                channelName = "Unknown Channel";
+            }
+            
+            len = snprintf(buffer, sizeof(buffer), "%llu,%u,%u,\"%s\",%lu", 
+                          sample.timestamp, sample.recordedTimeMs, sample.internalChannelId,
+                          channelName.c_str(), sample.rawValue);
+        } else {
+            len = snprintf(buffer, sizeof(buffer), "%llu,%u,%u,%lu", 
+                          sample.timestamp, sample.recordedTimeMs, sample.internalChannelId,
+                          sample.rawValue);
         }
         
         // Add CRLF

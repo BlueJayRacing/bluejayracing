@@ -101,7 +101,7 @@ void setupTime() {
     char timeStr[32];
     sprintf(timeStr, "%04d-%02d-%02d %02d:%02d:%02d", 
             year(), month(), day(), hour(), minute(), second());
-    baja::util::Debug::info(F("Current time: ") + String(timeStr));
+    Serial.println(F("Current time: ") + String(timeStr));
 }
 
 // Print consolidated system status
@@ -130,7 +130,7 @@ void printSystemStatus() {
         
         baja::util::Debug::info(F("ADC: Samples: ") + String(sampleCount) + 
                              F(", Rate: ") + String(samplesPerSecond, 1) + F(" sps") +
-                             F(", Active Ch: ") + String(activeChannel));
+                             F(", Active ADC Ch: ") + String(activeChannel));
         
         // Print ADC timing stats
         float avgTime;
@@ -371,7 +371,6 @@ void setup() {
     baja::util::Debug::info(F("Main buffer size: ") + String(baja::config::SAMPLE_RING_BUFFER_SIZE) + F(" samples"));
     baja::util::Debug::info(F("Fast buffer size: ") + String(baja::config::FAST_BUFFER_SIZE) + F(" samples"));
     baja::util::Debug::info(F("Downsampling ratio: 1:") + String(baja::config::FAST_BUFFER_DOWNSAMPLE_RATIO));
-    baja::util::Debug::info(F("Encoding mode: ") + String(baja::config::USE_VERBOSE_DATA_CHUNK ? "Verbose" : "Fixed"));
     baja::util::Debug::info(F("Hard-coded encoding: ") + String(baja::config::USE_HARD_CODED_ENCODING ? "Enabled" : "Disabled"));
     baja::util::Debug::info(F("Fixed samples per batch: ") + String(baja::config::FIXED_SAMPLE_COUNT));
     baja::util::Debug::info(F("==========================================\n"));

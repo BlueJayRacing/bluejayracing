@@ -3,39 +3,40 @@
 #include "ad717x.hpp"
 
 // Pin definitions
-#define ADC_DRDY_PIN       24    // Dedicated DRDY input (buffered from ADC's DRDY/MISO pin)
 #define ADC_CS_PIN         10    // Chip Select for ADC
-#define PRINT_INTERVAL_MS  300   // 300 ms averaging period
+#define PRINT_INTERVAL_MS  500   // Interval for printing results
 
-// Global ADC driver instance and initialization parameters
+// AVDD-AVSS reference voltage (measured at 3.4V)
+#define VREF               5   // Replace with your actual measured value
+
+// Global ADC driver instance
 AD717X adcDriver;
-ad717x_init_param_t initParams;
-
-// Interrupt flag: set when DRDY goes low
-volatile bool dataReadyFlag = false;
 
 // Arrays to accumulate conversion sums and counts for 16 channels
-volatile uint64_t channelSum[16];
-volatile uint32_t channelCount[16];
-
-// For monitoring overall conversion count (optional)
-volatile uint64_t totalSampleCount = 0;
+uint64_t channelSum[16];
+uint32_t channelCount[16];
 
 uint32_t lastPrintTime = 0;
-bool headerPrinted = false;
+uint32_t totalSamples = 0;
 
-// ISR: only sets the flag (keep it minimal)
-void drdyISR() {
-  dataReadyFlag = true;
-}
+// Channel names for better readability
+const char* channelNames[] = {
+  "AIN0 (Pin 2)",
+  "AIN1/REF2+ (5v_reful)",
+  "AIN2",
+  "AIN3",
+  "AIN4 (2v5_ref)",
+  "AIN5 (2v5_reful)",
+  "REFOUT",
+  "AIN7"
+};
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial);  // Wait for Serial to initialize
+  while (!Serial && millis() < 3000);  // Wait for Serial or timeout
 
-  // Print CSV header (only once)
-  Serial.println("Rate,Ch0,Ch1,Ch2,Ch3,Ch4,Ch5,Ch6,Ch7,Ch8,Ch9,Ch10,Ch11,Ch12,Ch13,Ch14,Ch15");
-  headerPrinted = true;
+  Serial.println("\nAD7175-8 Configuration with 3.4V Reference");
+  Serial.println("=========================================");
 
   // Initialize accumulators to zero
   for (int i = 0; i < 16; i++) {
@@ -43,154 +44,166 @@ void setup() {
     channelCount[i] = 0;
   }
 
-  // Initialize SPI (use a moderate clock speed, e.g. 5MHz)
+  // Initialize SPI
   SPI.begin();
   
   // Configure chip-select pin for ADC
   pinMode(ADC_CS_PIN, OUTPUT);
   digitalWrite(ADC_CS_PIN, HIGH);  // Deselect ADC
 
-  // Configure the DRDY pin; ensure it’s properly buffered
-  pinMode(ADC_DRDY_PIN, INPUT_PULLUP);
+  // Reset the ADC
+  Serial.println("Resetting ADC...");
+  adcDriver.reset();
+  delay(50);  // Allow time for reset to complete
 
-  // Set up ADC initialization parameters:
-  // - Use continuous conversion mode.
-  // - Enable status on read (so each conversion result includes channel info).
-  // - Use external reference (adjust if needed).
+  // Basic ADC configuration
+  ad717x_init_param_t initParams;
   initParams.active_device = ID_AD7175_8;
   initParams.mode = CONTINUOUS;
-  initParams.stat_on_read_en = true;
-  initParams.ref_en = true;
+  initParams.stat_on_read_en = true;  // Important to get channel info
+  initParams.ref_en = false;           // Enable reference
 
-  // Create one default setup configuration.
-  ad717x_setup_t setupConfig;
-  setupConfig.setup.bi_polar = false;
-  setupConfig.setup.input_buff = true;
-  setupConfig.setup.ref_buff = true;
-  setupConfig.setup.ref_source = EXTERNAL_REF;
-  // Choose an output data rate; for example, SPS_2500 (adjust as needed)
-  setupConfig.filter_config.odr = SPS_25000;
-  setupConfig.gain = 1.0;
-  initParams.setups.push_back(setupConfig);
+  // Create setup that uses AVDD-AVSS (3.4V) as reference
+  ad717x_setup_t setup0;
+  setup0.setup.bi_polar = false;            // Unipolar mode
+  setup0.setup.input_buff = true;           // Enable input buffer
+  setup0.setup.ref_buff = false;            // Disable reference buffer
+  setup0.setup.ref_source = AVDD_AVSS;      // Use AVDD-AVSS (3.4V) as reference
+  setup0.filter_config.odr = SPS_50;        // 50 samples per second
+  setup0.gain = 1.0;                        // Unity gain
+  initParams.setups.push_back(setup0);
 
-  // Configure channel mapping for all 16 channels.
+  // Configure channel mappings
   initParams.chan_map.resize(16);
-  for (int i = 0; i < 16; i++) {
-    initParams.chan_map[i].channel_enable = true;  // Enable every channel
-    initParams.chan_map[i].setup_sel = 0;            // All channels use setup 0
-    // Configure inputs: assume single-ended; positive input is channel number, negative tied to REF_M.
+  
+  // Configure first 6 channels with AVSS as negative input
+  for (int i = 0; i < 6; i++) {
+    initParams.chan_map[i].channel_enable = true;
+    initParams.chan_map[i].setup_sel = 0;  // Use setup 0 (AVDD-AVSS)
     initParams.chan_map[i].inputs.ainp.pos_input = static_cast<ad717x_analog_input_t>(i);
-    initParams.chan_map[i].inputs.ainp.neg_input = REF_M;
+    initParams.chan_map[i].inputs.ainp.neg_input = AVDD_AVSS_M;  // Use AVSS as negative input
   }
 
-  // Initialize the ADC (using a 5MHz SPI clock).
-  int initResult = adcDriver.init(initParams, &SPI, ADC_CS_PIN, SPISettings(50000000, MSBFIRST, SPI_MODE3));
-//   Serial.print("ADC init result: ");
-//   Serial.println(initResult);
+  // Disable other channels
+  for (int i = 6; i < 16; i++) {
+    initParams.chan_map[i].channel_enable = false;
+  }
+
+  // Initialize the ADC
+  Serial.println("Initializing ADC...");
+  int initResult = adcDriver.init(initParams, &SPI, ADC_CS_PIN);
   if (initResult < 0) {
     Serial.println("ADC initialization failed. Check wiring and SPI settings.");
-    while (1);
-  }
-
-  // Optionally, read back the ID register to verify communication.
-  ad717x_st_reg_t* idReg = adcDriver.getReg(AD717X_ID_REG);
-  if (idReg) {
-    // Serial.print("ADC ID register value: 0x");
-    // Serial.println(idReg->value, HEX);
+    while (1); // Stop if initialization failed
   } else {
-    Serial.println("Could not read ADC ID register.");
+    Serial.println("ADC initialized successfully.");
+  }
+  
+  // Manually verify key register settings
+  ad717x_st_reg* adcModeReg = adcDriver.getReg(AD717X_ADCMODE_REG);
+  if (adcModeReg) {
+    // Force REF_EN bit
+    adcModeReg->value |= AD717X_ADCMODE_REG_REF_EN;
+    adcDriver.writeRegister(AD717X_ADCMODE_REG);
+    
+    // Read back to verify
+    adcDriver.readRegister(AD717X_ADCMODE_REG);
+    Serial.print("ADC Mode Register: 0x");
+    Serial.println(adcModeReg->value, HEX);
+    Serial.print("Reference Enable: ");
+    Serial.println((adcModeReg->value & AD717X_ADCMODE_REG_REF_EN) ? "YES" : "NO");
   }
 
-  ad717x_st_reg_t* filtReg = adcDriver.getReg(AD717X_FILTCON0_REG);
-  if (filtReg) {
-    // Print in hex:
-    Serial.print("FILTCON0 register (raw) = 0x");
-    Serial.println(filtReg->value, HEX);
-
-    // Print as a 32-bit binary:
-    uint32_t regVal = (uint32_t)filtReg->value & 0xFFFFFFFFUL;
-    Serial.print("FILTCON0 register (32-bit binary) = ");
-    for (int i = 31; i >= 0; i--) {
-      Serial.print((regVal >> i) & 1);
-      // Optional spacing every 4 bits:
-      if (i % 4 == 0) {
-        Serial.print(" ");
-      }
+  // Verify setup 0 register
+  ad717x_st_reg* setupReg = adcDriver.getReg(AD717X_SETUPCON0_REG);
+  if (setupReg) {
+    // Read to verify
+    adcDriver.readRegister(AD717X_SETUPCON0_REG);
+    Serial.print("Setup 0 Register: 0x");
+    Serial.println(setupReg->value, HEX);
+    
+    // Check reference source
+    uint8_t refSource = (setupReg->value & AD717X_SETUP_CONF_REG_REF_SEL(3)) >> 4;
+    Serial.print("Reference Source: ");
+    switch (refSource) {
+      case 0: Serial.println("External REFIN1(+)/REFIN1(-)"); break;
+      case 1: Serial.println("External REFIN2(+)/REFIN2(-)"); break;
+      case 2: Serial.println("Internal Reference"); break;
+      case 3: Serial.println("AVDD-AVSS"); break;
+      default: Serial.println("Unknown"); break;
     }
-    Serial.println();
-  } else {
-    Serial.println("Could not read FILTCON0 register.");
   }
 
+  Serial.print("Using reference voltage: ");
+  Serial.print(VREF);
+  Serial.println("V");
 
-  // Attach an interrupt to the dedicated DRDY pin (FALLING edge triggers when conversion is complete).
-  attachInterrupt(digitalPinToInterrupt(ADC_DRDY_PIN), drdyISR, FALLING);
-
+  // Print CSV header
+  Serial.println("\nChannel,Name,Raw Value,Voltage");
+  
   lastPrintTime = millis();
-
-  delay(1);
-  dataReadyFlag = true;
-
 }
 
 void loop() {
-  // Process ADC conversion results whenever the interrupt flag is set.
-  if (dataReadyFlag) {
-    noInterrupts();
-    dataReadyFlag = false;
-    interrupts();
-
+  // Poll for ADC data using waitForReady
+  if (adcDriver.waitForReady(0) == 0) {  // This will return immediately if data is ready
+    // Read ADC data with status
     ad717x_data_t sample;
     int result = adcDriver.contConvReadData(&sample);
+    
     if (result >= 0) {
-      uint8_t ch = sample.status.active_channel; // Determine which channel this conversion is for
-      if (ch < 16) {  // safeguard in case channel index is out-of-range
+      uint8_t ch = sample.status.active_channel;
+      if (ch < 16) {
+        // Accumulate the reading
         channelSum[ch] += sample.value;
         channelCount[ch]++;
+        totalSamples++;
       }
-      totalSampleCount++;
     }
-    // If result < 0, you could record an error (not shown here)
   }
 
+  // Print results periodically
   uint32_t currentMillis = millis();
   if (currentMillis - lastPrintTime >= PRINT_INTERVAL_MS) {
-    // Create temporary arrays to hold sums and counts while resetting global accumulators.
-    uint64_t tempSum[16];
-    uint32_t tempCount[16];
-    uint32_t totalCount = 0;
+    // Print sample rate
+    float sampleRate = (float)totalSamples * 1000.0 / PRINT_INTERVAL_MS;
+    Serial.print("Sample rate: ");
+    Serial.print(sampleRate, 1);
+    Serial.println(" SPS");
+    totalSamples = 0;
+    
+    // Print raw values and voltages for active channels
+    for (int i = 0; i < 6; i++) {
+      if (channelCount[i] > 0) {
+        double rawValue = (double)channelSum[i] / channelCount[i];
+        
+        // Calculate voltage using the actual VREF (3.4V)
+        double voltage = rawValue / 16777216.0 * VREF;
+        
+        // Calculate what the 5V equivalent would be
+        double voltage5V = (voltage / VREF) * 5.0;
+        
+        Serial.print(i);
+        Serial.print(",");
+        Serial.print(channelNames[i]);
+        Serial.print(",");
+        Serial.print(rawValue, 0);  // Raw ADC value
+        Serial.print(",");
+        Serial.print(voltage, 4);   // Actual voltage with 3.4V reference
+        Serial.print(",");
+        Serial.println(voltage5V, 4); // Equivalent voltage with 5V reference (for comparison)
+      }
+    }
+    
+    // Reset accumulators after printing
     for (int i = 0; i < 16; i++) {
-      noInterrupts();
-      tempSum[i] = channelSum[i];
-      tempCount[i] = channelCount[i];
       channelSum[i] = 0;
       channelCount[i] = 0;
-      interrupts();
-      totalCount += tempCount[i];
     }
-    // Compute a per-channel rate (samples per second) as an average over channels.
-    double rate = 0.0;
-    if (16 > 0) {
-      rate = ((double)totalCount) * (1000.0 / PRINT_INTERVAL_MS);
-    }
-
-    // Compute average conversion value for each channel.
-    double averages[16];
-    for (int i = 0; i < 16; i++) {
-      if (tempCount[i] > 0)
-        averages[i] = (double)tempSum[i] / tempCount[i];
-      else
-        averages[i] = 0;
-    }
-
-    // Print CSV line: first column is the average rate, then one column per channel.
-    Serial.print(rate, 2);
-    for (int i = 0; i < 16; i++) {
-      Serial.print(",");
-      Serial.print(averages[i], 2);
-    }
-    Serial.println();
-
+    
+    // Add a separator between readings
+    Serial.println("---");
+    
     lastPrintTime = currentMillis;
   }
 }

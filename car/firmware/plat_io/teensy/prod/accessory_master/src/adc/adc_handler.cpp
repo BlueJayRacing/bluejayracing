@@ -315,10 +315,14 @@ int ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     totalReadTime += read_time;
     
     // Create a channel sample and add to ring buffer
+    uint8_t internalChannelId = static_cast<uint8_t>(
+        util::mapADCToInternalID(sample.status.active_channel));
+    
     data::ChannelSample channelSample(
         micros(),                   // Microsecond timestamp
-        sample.status.active_channel, // Channel index
-        sample.value                // Raw ADC value
+        internalChannelId,          // Internal channel ID
+        sample.value,               // Raw ADC value
+        millis()                    // Add recorded time
     );
     
     // Start timing for write operation

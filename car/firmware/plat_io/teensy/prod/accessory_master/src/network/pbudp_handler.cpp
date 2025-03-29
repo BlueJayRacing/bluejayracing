@@ -1,7 +1,7 @@
 #include "network/pbudp_handler.hpp"
 #include "util/debug_util.hpp"
 #include "pb_encode.h"
-#include "baja_sample.pb.h"
+#include "teensy_data.pb.h"
 
 
 #define LinkStatus_kLinkStatusUp 1
@@ -183,6 +183,27 @@ size_t PBUDPHandler::processAndSendBatch() {
         return 0;
     }
     
+    // Group counters for channel activity tracking
+    std::array<uint32_t, util::TOTAL_CHANNEL_COUNT> channelCounts = {};
+    
+    // Count samples by channel ID type
+    uint32_t adcCount = 0;
+    uint32_t dinCount = 0;
+    uint32_t miscCount = 0;
+    
+    // Analyze sample distribution for logging
+    for (size_t i = 0; i < actualSamples; i++) {
+        uint8_t chId = sampleBuffer_[i].internalChannelId;
+        if (chId < util::TOTAL_CHANNEL_COUNT) {
+            channelCounts[chId]++;
+            
+            // Track by channel type
+            if (chId < 16) adcCount++;
+            else if (chId < 22) dinCount++;
+            else miscCount++;
+        }
+    }
+    
     // Directly encode the samples to the encoded buffer
     size_t encodedSize = 0;
     bool encodingSuccess = encodeSamples(sampleBuffer_, actualSamples, encodedBuffer_, encodedSize);
@@ -190,6 +211,7 @@ size_t PBUDPHandler::processAndSendBatch() {
         util::Debug::warning("PBUDPHandler: Failed to encode samples");
         return 0;
     }
+    
     // Send the encoded message via UDP
     if (!sendEncodedData(encodedBuffer_, encodedSize)) {
         util::Debug::warning("PBUDPHandler: Failed to send encoded message");
@@ -200,6 +222,18 @@ size_t PBUDPHandler::processAndSendBatch() {
     sampleCount_ += actualSamples;
     messagesSent_++;
     bytesTransferred_ += encodedSize;
+    
+    // Log detailed stats periodically
+    static uint32_t lastDetailLogTime = 0;
+    uint32_t currentTime = millis();
+    
+    if (currentTime - lastDetailLogTime > 30000) { // Every 30 seconds
+        lastDetailLogTime = currentTime;
+        
+        util::Debug::detail("PBUDPHandler: Channel distribution in last batch - ADC: " + String(adcCount) + ", " +
+                          "DIN: " + String(dinCount) + ", " +
+                          "MISC: " + String(miscCount));
+    }
     
     // Log statistics periodically
     logStats();
@@ -212,85 +246,35 @@ size_t PBUDPHandler::processAndSendBatch() {
 }
 
 bool PBUDPHandler::encodeSamples(const data::ChannelSample* samples, size_t count, 
-                               uint8_t* outputBuffer, size_t& outputSize) {
-    if (count != config::FIXED_SAMPLE_COUNT) {
+        uint8_t* outputBuffer, size_t& outputSize) {
+    if (count > config::FIXED_SAMPLE_COUNT) {
         util::Debug::error("PBUDPHandler: Invalid sample count: " + String(count) + 
-                         ", must be exactly " + String(config::FIXED_SAMPLE_COUNT));
+            ", must be no more than " + String(config::FIXED_SAMPLE_COUNT));
         return false;
     }
     
-    // Choose between fixed and verbose encoding formats
     if (config::USE_HARD_CODED_ENCODING) {
-        // Use hard-coded encoders for maximum performance
-        if (config::USE_VERBOSE_DATA_CHUNK) {
-            return encodeVerboseDataChunk(outputBuffer, config::PB_MAX_MESSAGE_SIZE, samples, count, outputSize);
-        } else {
-            return encodeFixedDataChunk(outputBuffer, config::PB_MAX_MESSAGE_SIZE, samples, count, outputSize);
-        }
+        // Use hard-coded encoder for maximum performance.
+        return encodeDataChunk(outputBuffer, config::PB_MAX_MESSAGE_SIZE, samples, count, outputSize);
     } else {
         // Create and initialize the DataChunk message
         DataChunk message = DataChunk_init_zero;
-        
-        if (config::USE_VERBOSE_DATA_CHUNK) {
-            // Set up VerboseDataChunk
-            message.which_chunk_type = DataChunk_verbose_tag;
-            message.chunk_type.verbose.sample_count = count;
-            
-            // Add full timestamps and values for each sample
-            for (size_t i = 0; i < count; i++) {
-                const data::ChannelSample& sample = samples[i];
-                message.chunk_type.verbose.timestamps[i] = sample.timestamp;
-                message.chunk_type.verbose.channel_ids[i] = sample.channelIndex;
-                message.chunk_type.verbose.values[i] = sample.rawValue;
-            }
-        } else {
-            // Set up FixedDataChunk with differential timestamps
-            message.which_chunk_type = DataChunk_fixed_tag;
-            message.chunk_type.fixed.base_timestamp = samples[0].timestamp;
-            message.chunk_type.fixed.sample_count = count;
-            
-            // Add samples with differential timestamps
-            for (size_t i = 0; i < count; i++) {
-                const data::ChannelSample& sample = samples[i];
-                
-                // Calculate timestamp delta from base timestamp
-                uint64_t delta = sample.timestamp - message.chunk_type.fixed.base_timestamp;
-                
-                // Check if delta exceeds the maximum representable value in protobuf (uint16)
-                if (delta > UINT16_MAX) {
-                    // Truncate batch if not the first sample
-                    if (i > 0) {
-                        message.chunk_type.fixed.sample_count = i;
-                        break;
-                    } else {
-                        // Force using verbose format for this batch
-                        return encodeSamples(samples, count, outputBuffer, outputSize);
-                    }
-                }
-                
-                // Add the sample to the message
-                Sample& pbSample = message.chunk_type.fixed.samples[i];
-                pbSample.channel_id = sample.channelIndex;
-                pbSample.value = sample.rawValue;
-                pbSample.timestamp_delta = static_cast<uint16_t>(delta);
-            }
+        message.sample_count = count;
+        for (size_t i = 0; i < count; i++) {
+            message.timestamps[i] = samples[i].timestamp;
+            message.internal_channel_ids[i] = samples[i].internalChannelId;
+            message.values[i] = samples[i].rawValue;
         }
-        
-        // Create a stream that writes to the output buffer
         pb_ostream_t stream = pb_ostream_from_buffer(outputBuffer, config::PB_MAX_MESSAGE_SIZE);
-        
-        // Encode the message
-        bool status = pb_encode(&stream, DataChunk_fields, &message);
-        
-        if (status) {
-            outputSize = stream.bytes_written;
-            return true;
-        } else {
+        if (!pb_encode(&stream, DataChunk_fields, &message)) {
             util::Debug::error("PBUDPHandler: Encoding failed: " + String(PB_GET_ERROR(&stream)));
             return false;
         }
+        outputSize = stream.bytes_written;
+        return true;
     }
 }
+
 
 // Helper function: compute how many bytes a varint will take
 static inline size_t varint_size(uint32_t value) {
@@ -302,219 +286,67 @@ static inline size_t varint_size(uint32_t value) {
     return size;
 }
 
-bool PBUDPHandler::encodeFixedDataChunk(uint8_t* buffer, size_t bufferSize,
-                                    const data::ChannelSample* samples, size_t count,
-                                    size_t& outputSize) {
+bool PBUDPHandler::encodeDataChunk(uint8_t* buffer, size_t bufferSize,
+        const data::ChannelSample* samples, size_t count,
+        size_t& outputSize) {
+    // Create a stream that writes directly into the output buffer.
     pb_ostream_t stream = pb_ostream_from_buffer(buffer, bufferSize);
-    
-    // First, encode the DataChunk wrapper with the fixed field
-    if (!pb_encode_tag(&stream, PB_WT_STRING, DataChunk_fixed_tag)) {
-        return false;
-    }
-    
-    // We need to encode the size of the submessage, but we don't know it yet
-    // So we'll reserve space for it by writing a dummy value
-    size_t sizePos = stream.bytes_written;
-    uint32_t dummySize = 0;
-    if (!pb_encode_varint(&stream, dummySize)) {
-        return false;
-    }
-    size_t submsgStart = stream.bytes_written;
-    
-    // Field 1: Encode base_timestamp (fixed64) from the first sample
-    uint64_t base_timestamp = samples[0].timestamp;
-    if (!pb_encode_tag(&stream, PB_WT_64BIT, FixedDataChunk_base_timestamp_tag)) {
-        return false;
-    }
-    if (!pb_encode_fixed64(&stream, &base_timestamp)) {
-        return false;
-    }
-    
-    // Cache the output pointer to avoid repeated pointer arithmetic
-    uint8_t* out_buffer = buffer;
-    
-    // We'll use the same temporary buffer for each sample
-    uint8_t sample_buffer[32];
-    
-    // Process all samples
-    size_t valid_samples = count;
-    for (size_t i = 0; i < valid_samples; i++) {
-        uint64_t delta = samples[i].timestamp - base_timestamp;
-        if (delta > UINT16_MAX) {
-            // If delta exceeds the maximum representable value,
-            // truncate the batch (if not first sample) or clamp delta
-            if (i > 0) {
-                valid_samples = i;
-                break;
-            } else {
-                delta = UINT16_MAX;
-            }
-        }
-        
-        // Use sample_buffer to avoid new allocations
-        pb_ostream_t sample_stream = pb_ostream_from_buffer(sample_buffer, sizeof(sample_buffer));
-        
-        // Encode Sample.field1: channel_id (varint)
-        if (!pb_encode_tag(&sample_stream, PB_WT_VARINT, Sample_channel_id_tag))
-            return false;
-        if (!pb_encode_varint(&sample_stream, samples[i].channelIndex))
-            return false;
-            
-        // Encode Sample.field2: value (varint)
-        if (!pb_encode_tag(&sample_stream, PB_WT_VARINT, Sample_value_tag))
-            return false;
-        if (!pb_encode_varint(&sample_stream, samples[i].rawValue))
-            return false;
-            
-        // Encode Sample.field3: timestamp_delta (varint)
-        if (!pb_encode_tag(&sample_stream, PB_WT_VARINT, Sample_timestamp_delta_tag))
-            return false;
-        if (!pb_encode_varint(&sample_stream, delta))
-            return false;
-            
-        // Now encode this Sample as a length-delimited field in the main stream
-        if (!pb_encode_tag(&stream, PB_WT_STRING, FixedDataChunk_samples_tag))
-            return false;
-        if (!pb_encode_varint(&stream, sample_stream.bytes_written))
-            return false;
-        if (stream.bytes_written + sample_stream.bytes_written > stream.max_size)
-            return false;
-        memcpy(&out_buffer[stream.bytes_written], sample_buffer, sample_stream.bytes_written);
-        stream.bytes_written += sample_stream.bytes_written;
-    }
-    
-    // Field 3: Encode sample_count
-    if (!pb_encode_tag(&stream, PB_WT_VARINT, FixedDataChunk_sample_count_tag))
-        return false;
-    if (!pb_encode_varint(&stream, valid_samples))
-        return false;
-        
-    // Now go back and write the correct submessage size
-    size_t submsgSize = stream.bytes_written - submsgStart;
-    uint8_t sizeBytes[10];
-    pb_ostream_t sizeStream = pb_ostream_from_buffer(sizeBytes, sizeof(sizeBytes));
-    if (!pb_encode_varint(&sizeStream, submsgSize)) {
-        return false;
-    }
-    
-    // Move the rest of the message forward if necessary
-    if (sizeStream.bytes_written != 1) {
-        memmove(
-            &out_buffer[sizePos + sizeStream.bytes_written], 
-            &out_buffer[sizePos + 1], 
-            stream.bytes_written - (sizePos + 1)
-        );
-        stream.bytes_written += (sizeStream.bytes_written - 1);
-    }
-    
-    // Copy the size bytes
-    memcpy(&out_buffer[sizePos], sizeBytes, sizeStream.bytes_written);
-    
-    // Set output size
-    outputSize = stream.bytes_written;
-    return true;
-}
 
-bool PBUDPHandler::encodeVerboseDataChunk(uint8_t* buffer, size_t bufferSize,
-                                      const data::ChannelSample* samples, size_t count,
-                                      size_t& outputSize) {
-    pb_ostream_t stream = pb_ostream_from_buffer(buffer, bufferSize);
-    
-    // First, encode the DataChunk wrapper with the verbose field
-    if (!pb_encode_tag(&stream, PB_WT_STRING, DataChunk_verbose_tag)) {
+    // 1. Encode the timestamps field (packed fixed64)
+    // Write the tag for a length-delimited field.
+    if (!pb_encode_tag(&stream, PB_WT_STRING, DataChunk_timestamps_tag))
         return false;
-    }
-    
-    // We need to encode the size of the submessage, but we don't know it yet
-    // So we'll reserve space for it by writing a dummy value
-    size_t sizePos = stream.bytes_written;
-    uint32_t dummySize = 0;
-    if (!pb_encode_varint(&stream, dummySize)) {
-        return false;
-    }
-    size_t submsgStart = stream.bytes_written;
-
-    // 1. Encode timestamps as a packed fixed64 field
-    if (!pb_encode_tag(&stream, PB_WT_STRING, VerboseDataChunk_timestamps_tag)) {
-        return false;
-    }
+    // Calculate and encode the byte length of the packed timestamps.
     size_t timestamps_length = count * 8; // each fixed64 is 8 bytes
-    if (!pb_encode_varint(&stream, timestamps_length)) {
+    if (!pb_encode_varint(&stream, timestamps_length))
         return false;
-    }
+    // Write each timestamp.
     for (size_t i = 0; i < count; i++) {
-        if (!pb_encode_fixed64(&stream, (uint64_t *)&samples[i].timestamp)) {
+        if (!pb_encode_fixed64(&stream, (uint64_t *)&samples[i].timestamp))
             return false;
-        }
     }
-    
-    // 2. Encode channel_ids as a packed varint field
-    if (!pb_encode_tag(&stream, PB_WT_STRING, VerboseDataChunk_channel_ids_tag)) {
+
+    // 2. Encode the internal_channel_ids field (packed varint)
+    if (!pb_encode_tag(&stream, PB_WT_STRING, DataChunk_internal_channel_ids_tag))
         return false;
-    }
     size_t channel_ids_length = 0;
     for (size_t i = 0; i < count; i++) {
-        channel_ids_length += varint_size(samples[i].channelIndex);
+        channel_ids_length += varint_size(samples[i].internalChannelId);
     }
-    if (!pb_encode_varint(&stream, channel_ids_length)) {
+    if (!pb_encode_varint(&stream, channel_ids_length))
         return false;
-    }
     for (size_t i = 0; i < count; i++) {
-        if (!pb_encode_varint(&stream, samples[i].channelIndex)) {
+        if (!pb_encode_varint(&stream, samples[i].internalChannelId))
             return false;
-        }
     }
-    
-    // 3. Encode values as a packed varint field
-    if (!pb_encode_tag(&stream, PB_WT_STRING, VerboseDataChunk_values_tag)) {
+
+    // 3. Encode the values field (packed varint)
+    if (!pb_encode_tag(&stream, PB_WT_STRING, DataChunk_values_tag))
         return false;
-    }
     size_t values_length = 0;
     for (size_t i = 0; i < count; i++) {
         values_length += varint_size(samples[i].rawValue);
     }
-    if (!pb_encode_varint(&stream, values_length)) {
+    if (!pb_encode_varint(&stream, values_length))
         return false;
-    }
     for (size_t i = 0; i < count; i++) {
-        if (!pb_encode_varint(&stream, samples[i].rawValue)) {
+        if (!pb_encode_varint(&stream, samples[i].rawValue))
             return false;
-        }
     }
-    
-    // 4. Encode sample_count (non-packed, varint)
-    if (!pb_encode_tag(&stream, PB_WT_VARINT, VerboseDataChunk_sample_count_tag)) {
+
+    // 4. Encode the sample_count field (non-packed varint)
+    if (!pb_encode_tag(&stream, PB_WT_VARINT, DataChunk_sample_count_tag))
         return false;
-    }
-    if (!pb_encode_varint(&stream, count)) {
+    if (!pb_encode_varint(&stream, count))
         return false;
-    }
-    
-    // Now go back and write the correct submessage size
-    size_t submsgSize = stream.bytes_written - submsgStart;
-    uint8_t sizeBytes[10];
-    pb_ostream_t sizeStream = pb_ostream_from_buffer(sizeBytes, sizeof(sizeBytes));
-    if (!pb_encode_varint(&sizeStream, submsgSize)) {
-        return false;
-    }
-    
-    // Move the rest of the message forward if necessary
-    if (sizeStream.bytes_written != 1) {
-        memmove(
-            &buffer[sizePos + sizeStream.bytes_written], 
-            &buffer[sizePos + 1], 
-            stream.bytes_written - (sizePos + 1)
-        );
-        stream.bytes_written += (sizeStream.bytes_written - 1);
-    }
-    
-    // Copy the size bytes
-    memcpy(&buffer[sizePos], sizeBytes, sizeStream.bytes_written);
-    
-    // Set output size
+
     outputSize = stream.bytes_written;
     return true;
 }
+
+
+
+
 
 bool PBUDPHandler::sendEncodedData(const uint8_t* data, size_t size) {
     // Check if message is too large for UDP

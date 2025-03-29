@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include "teensy_mapping.hpp"
 
 namespace baja {
 namespace data {
@@ -9,53 +10,70 @@ namespace data {
 /**
  * @brief Channel Sample Structure
  * 
- * Contains a single ADC sample with timestamp, channel information, and raw value.
+ * Contains a single data sample with timestamp, internal channel ID, and value.
  * This is the basic unit of data flowing through the system.
  */
 struct ChannelSample {
-    uint64_t timestamp;      // Microsecond timestamp
-    uint8_t channelIndex;    // Physical channel index
-    uint32_t rawValue;       // Raw ADC value (24-bit from AD7175-8)
+    uint64_t timestamp;                // Microsecond timestamp
+    uint8_t internalChannelId;         // Internal channel ID (0-29)
+    uint32_t rawValue;                 // Sensor value (24-bit for ADC, other values for different sensors)
+    uint32_t recordedTimeMs;           // Millisecond timestamp when the sample was processed (optional)
     
     // Default constructor
     ChannelSample() : 
         timestamp(0), 
-        channelIndex(0), 
-        rawValue(0) {}
+        internalChannelId(0), 
+        rawValue(0),
+        recordedTimeMs(0) {}
+    
+    // Constructor with main parameters
+    ChannelSample(uint64_t ts, uint8_t chId, uint32_t val) : 
+        timestamp(ts), 
+        internalChannelId(chId), 
+        rawValue(val),
+        recordedTimeMs(0) {}
     
     // Constructor with all parameters
-    ChannelSample(uint64_t ts, uint8_t ch, uint32_t val) : 
+    ChannelSample(uint64_t ts, uint8_t chId, uint32_t val, uint32_t recTime) : 
         timestamp(ts), 
-        channelIndex(ch), 
-        rawValue(val) {}
+        internalChannelId(chId), 
+        rawValue(val),
+        recordedTimeMs(recTime) {}
         
     /**
-     * @brief Convert sample to CSV format
+     * @brief Convert sample to CSV format with minimal fields
      * 
-     * @return CSV string representation of the sample
+     * @return CSV string representation of the sample (timestamp,channelID,value)
      */
     std::string toCSV() const {
         char buffer[64];
         snprintf(buffer, sizeof(buffer), "%llu,%u,%lu", 
-                 timestamp, channelIndex, rawValue);
+                 timestamp, internalChannelId, rawValue);
         return std::string(buffer);
     }
+    
+    // /**
+    //  * @brief Convert sample to CSV format with all fields
+    //  * 
+    //  * @param includeChannelName Whether to include the channel name in CSV
+    //  * @return Full CSV string representation of the sample
+    //  */
+    // std::string toFullCSV(bool includeChannelName = true) const {
+    //     char buffer[128];
+        
+    //     if (includeChannelName) {
+    //         std::string channelName = baja::util::getChannelName(internalChannelId);
+    //         snprintf(buffer, sizeof(buffer), "%llu,%u,%u,\"%s\",%lu", 
+    //                  timestamp, recordedTimeMs, internalChannelId, 
+    //                  channelName.c_str(), rawValue);
+    //     } else {
+    //         snprintf(buffer, sizeof(buffer), "%llu,%u,%u,%lu", 
+    //                  timestamp, recordedTimeMs, internalChannelId, rawValue);
+    //     }
+        
+    //     return std::string(buffer);
+    // }
 };
-
-// Define the MQTT message size for optimal transmission
-constexpr size_t MQTT_OPTIMAL_MESSAGE_SIZE = 1024; // 1KB chunks
-
-// Define maximum possible downsampling ratio
-constexpr uint8_t MAX_DOWNSAMPLE_RATIO = 1;
-
-// Define file rotation interval in milliseconds (2 minutes)
-constexpr uint32_t FILE_ROTATION_INTERVAL_MS =  30 * 1000;
 
 } // namespace data
 } // namespace baja
-
-// External buffer declarations
-extern uint8_t mqttMessageBuffer[];
-extern uint8_t sdWriterBuffer[];
-// extern baja::data::ChannelSample sdSampleBuffer[];
-extern baja::data::ChannelSample ringBufferStorage[];
