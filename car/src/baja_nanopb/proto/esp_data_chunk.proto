@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+
+// Single sample with timestamp
+message ESPSample {
+  float value = 1;                                  // Raw ADC value (24-bit)
+  uint32 timestamp_delta = 2;
+}
+
+// Fixed-size batch with differential timestamps
+message ESPDataChunk {
+  string mac_address = 1 [(nanopb).max_length = 17];
+  fixed64 base_timestamp = 2;  // Base timestamp in microseconds
+  repeated ESPSample samples = 3 [(nanopb).max_count = 1000, (nanopb).fixed_count = true];
+  uint32 dac_bias = 4;
+  uint32 excitation_voltage = 5;
+  uint32 sample_channel_id = 6 [(nanopb).int_size = IS_8];
+}
