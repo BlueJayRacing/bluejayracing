@@ -11,7 +11,7 @@ int min_(int a, int b);
 
 int max_(int a, int b);
 
-driveSensorSetup::driveSensorSetup() { params_.gain = GAIN_1; };
+driveSensorSetup::driveSensorSetup() {};
 
 /*******************************************************************************
  * @brief Initializes the sensorSetup.
@@ -33,7 +33,8 @@ esp_err_t driveSensorSetup::init(ads1120_init_param_t adc_params, ad5626_init_pa
         return ret;
     }
 
-    ret = setMode(MEASURING_MODE);
+    drive_cfg_t init_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
+    ret                  = configure(init_cfg);
     if (ret) {
         return ret;
     }
@@ -41,12 +42,12 @@ esp_err_t driveSensorSetup::init(ads1120_init_param_t adc_params, ad5626_init_pa
     return ESP_OK;
 }
 
-esp_err_t driveSensorSetup::measure(drive_measurement_t* t_meas, bool wait_ready)
+esp_err_t driveSensorSetup::measure(bool wait_ready, drive_measurement_t* t_meas)
 {
     if (t_meas == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    
+
     // Spin until the ADC has data ready
     if (wait_ready) {
         while (!adc_.isDataReady()) {
@@ -108,7 +109,9 @@ esp_err_t driveSensorSetup::zero(void)
     drive_measurement_t measurements[NUM_MEASUREMENTS];
 
     // Set ADC into Zeroing Mode
-    ret = setMode(ZEROING_MODE);
+    drive_cfg_t old_cfg  = cfg_;
+    drive_cfg_t zero_cfg = {drive_cfg_t::ZEROING_MODE, drive_cfg_t::STRAIN_GAUGE};
+    ret                  = configure(zero_cfg);
     if (ret) {
         return ret;
     }
@@ -118,7 +121,7 @@ esp_err_t driveSensorSetup::zero(void)
         float sum_volt_errors = 0;
 
         for (int i = 0; i < NUM_MEASUREMENTS; i++) {
-            ret = measure(&(measurements[i]), true);
+            ret = measure(true, &(measurements[i]));
             if (ret) {
                 vTaskDelay(10);
                 continue;
@@ -153,7 +156,7 @@ esp_err_t driveSensorSetup::zero(void)
     }
 
     drive_measurement_t last_measurement;
-    ret = measure(&last_measurement, true);
+    ret = measure(true, &last_measurement);
     if (ret) {
         return ret;
     }
@@ -162,7 +165,7 @@ esp_err_t driveSensorSetup::zero(void)
     ESP_LOGI(TAG, "Final Voltage: %f", last_measurement.voltage);
 
     // Set ADC into Measuring Mode
-    ret = setMode(MEASURING_MODE);
+    ret = configure(old_cfg);
     if (ret) {
         return ret;
     }
@@ -174,61 +177,47 @@ esp_err_t driveSensorSetup::zero(void)
     }
 }
 
-esp_err_t driveSensorSetup::setCalParams(drive_cal_param_t cal_params)
+esp_err_t driveSensorSetup::configure(drive_cfg_t new_cfg)
 {
-    params_ = cal_params;
+    esp_err_t ret;
+    ads1120_regs_t regs;
+    memset(&regs, 0, sizeof(ads1120_regs_t));
 
-    esp_err_t ret = setMode(mode_);
+    switch (new_cfg.channel) {
+    case drive_cfg_t::STRAIN_GAUGE:
+        regs.channels = AIN1_AVSS;
+        break;
+    case drive_cfg_t::EXCITATION:
+        regs.channels = AIN0_AVSS;
+        break;
+    case drive_cfg_t::DAC_BIAS:
+        regs.channels = AIN2_AVSS;
+        break;
+    }
+
+    switch (new_cfg.mode) {
+    case drive_cfg_t::ZEROING_MODE:
+        regs.conv_mode = CONTINUOUS;
+        regs.op_mode   = NORMAL;
+        regs.data_rate = 2;
+        regs.volt_refs = REFP0_REFN0;
+        regs.gain      = GAIN_1;
+        break;
+    case drive_cfg_t::MEASURING_MODE:
+        regs.conv_mode = CONTINUOUS;
+        regs.op_mode   = TURBO;
+        regs.data_rate = 6;
+        regs.volt_refs = REFP0_REFN0;
+        regs.gain      = GAIN_1;
+        break;
+    }
+
+    ret = adc_.configure(regs);
     if (ret) {
         return ret;
     }
 
-    return ESP_OK;
-}
-
-esp_err_t driveSensorSetup::setMode(drive_sensor_mode_t new_mode)
-{
-    esp_err_t ret;
-    ads1120_regs_t regs;
-
-    switch (new_mode) {
-    case ZEROING_MODE:
-        memset(&regs, 0, sizeof(ads1120_regs_t));
-
-        regs.conv_mode = CONTINUOUS;
-        regs.op_mode   = NORMAL;
-        regs.channels  = AIN1_AVSS;
-        regs.data_rate = 2;
-        regs.volt_refs = REFP0_REFN0;
-        regs.gain      = params_.gain;
-
-        ret = adc_.configure(regs);
-        if (ret) {
-            return ret;
-        }
-
-        mode_ = ZEROING_MODE;
-        ESP_LOGI(TAG, "Set zeroing mode");
-        break;
-    case MEASURING_MODE:
-        memset(&regs, 0, sizeof(ads1120_regs_t));
-
-        regs.conv_mode = CONTINUOUS;
-        regs.op_mode   = TURBO;
-        regs.channels  = AIN1_AVSS;
-        regs.data_rate = 6;
-        regs.volt_refs = REFP0_REFN0;
-        regs.gain      = params_.gain;
-
-        ret = adc_.configure(regs);
-        if (ret) {
-            return ret;
-        }
-
-        ESP_LOGI(TAG, "Set measuring mode");
-        mode_ = MEASURING_MODE;
-        break;
-    }
+    cfg_ = new_cfg;
 
     return ESP_OK;
 }
