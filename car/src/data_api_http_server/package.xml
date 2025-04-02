@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="3">
-  <name>udp_data_chunk_server</name>
+  <name>data_api_http_server</name>
   <version>0.0.1</version>
-  <description>Teensy Receiving Data Chunk Server</description>
+  <description>Http Server for providing realtime endpoint</description>
   <maintainer email="awong69@jhu.edu">Aaren Wong</maintainer>
   <license>Apache-2.0</license>
 
@@ -10,8 +10,6 @@
 
   <depend>rclcpp</depend>
   <depend>baja_msgs</depend>
-  <depend>ament_index_cpp</depend>
-  <depend>car_config</depend>
 
 
 

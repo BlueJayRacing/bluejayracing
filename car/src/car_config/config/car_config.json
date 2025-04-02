@@ -1,11 +1,11 @@
 {
     "teensy": {
         "variants": {
-            "general": {
+            "acc_v3-01": {
                 "device_id": 1,
-                "device_name": "Teensy_General",
+                "device_name": "20xt_Logger",
                 "mac_addresses": [
-                    "AA:BB:CC:DD:EE:01"
+                    "04:e9:e5:19:61:83"
                 ],
                 "channel_mapping": {
                     "0": 101,
@@ -40,11 +40,11 @@
                     "29": 130
                 }
             },
-            "wft": {
+            "acc_v3-02": {
                 "device_id": 2,
-                "device_name": "Teensy_WFT",
+                "device_name": "WFT_Logger",
                 "mac_addresses": [
-                    "AA:BB:CC:DD:EE:02"
+                    "04:e9:e5:19:60:b6"
                 ],
                 "channel_mapping": {
                     "0": 201,
@@ -79,9 +79,9 @@
                     "29": 230
                 }
             },
-            "comp": {
+            "acc_v4-01": {
                 "device_id": 3,
-                "device_name": "Teensy_Comp",
+                "device_name": "Comp_Logger",
                 "mac_addresses": [
                     "AA:BB:CC:DD:EE:03"
                 ],
