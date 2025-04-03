@@ -73,6 +73,41 @@ void AggregationHttpHandler::onRequest(const Pistache::Http::Request& request, P
         response.send(Pistache::Http::Code::Ok, j.dump(2));
         return;
     }
+
+
+    if (uri == "/config" && request.method() == Pistache::Http::Method::Post) {
+        auto json = nlohmann::json::parse(request.body(), nullptr, false);
+
+        if (!json.contains("aggregation_window_microseconds") || !json["aggregation_window_microseconds"].is_number_unsigned()) {
+            response.send(Pistache::Http::Code::Bad_Request, R"({"error": "Invalid or missing 'aggregation_window_microseconds' field"})");
+            return;
+        }
+
+        uint64_t aggregation_window_microseconds = json["aggregation_window_microseconds"];
+
+        if (!json.contains("down_sampling_factor") || !json["down_sampling_factor"].is_number_unsigned()) {
+            response.send(Pistache::Http::Code::Bad_Request, R"({"error": "Invalid or missing 'down_sampling_factor' field"})");
+            return;
+        }
+
+        size_t down_sampling_factor = json["down_sampling_factor"];
+
+        if (!json.contains("max_messages") || !json["max_messages"].is_number_unsigned()) {
+            response.send(Pistache::Http::Code::Bad_Request, R"({"error": "Invalid or missing 'max_messages' field"})");
+            return;
+        }
+        size_t max_messages = json["max_messages"];
+
+        baja::aggregator::AggregationConfig config;
+        config.aggregationWindowMicroseconds = aggregation_window_microseconds;
+        config.maxMessages = max_messages;
+        config.downSamplingFactor = down_sampling_factor;
+        aggregator_->updateConfig(config);
+        response.send(Pistache::Http::Code::Ok, "{\n\"Status\": \"OK\"\n}");
+        return;
+    }
+
+
     // Unknown endpoint.
     nlohmann::json error; error["error"] = "Endpoint not found";
     response.send(Pistache::Http::Code::Not_Found, error.dump(2));
