@@ -1,103 +1,127 @@
 // src/components/data_view/NumericDisplay.tsx
-import React, { useEffect, useState } from 'react';
-import { Channel } from '../shared/types';
+
+import React from 'react';
+import { Box, Paper, Typography } from '@mui/material';
+import { Channel } from '../shared/DataContext';
+import { getChannelCategoryColor } from '../../config/deviceConfig';
 
 interface NumericDisplayProps {
   channels: Channel[];
 }
 
 const NumericDisplay: React.FC<NumericDisplayProps> = ({ channels }) => {
-  const [values, setValues] = useState<{ [key: string]: number }>({});
-  
-  // Update values at a rate of 10Hz (100ms)
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      const newValues: { [key: string]: number } = {};
-      
-      channels.forEach(channel => {
-        const samples = channel.samples;
-        if (samples && samples.length > 0) {
-          // Get the latest value
-          newValues[channel.name] = samples[samples.length - 1].value;
-        } else {
-          newValues[channel.name] = 0;
-        }
-      });
-      
-      setValues(newValues);
-    }, 100);
-    
-    return () => clearInterval(intervalId);
-  }, [channels]);
+  if (channels.length === 0) {
+    return (
+      <Box textAlign="center" py={2}>
+        <Typography variant="body2" color="text.secondary">
+          No channels selected
+        </Typography>
+      </Box>
+    );
+  }
 
-  // Get formatted display value based on channel type
-  const getDisplayValue = (channel: Channel): string => {
-    const value = values[channel.name] ?? 0;
+  // Group channels by device
+  const channelsByDevice = channels.reduce((groups, channel) => {
+    const deviceId = channel.device_id || 'unknown';
+    if (!groups[deviceId]) {
+      groups[deviceId] = [];
+    }
+    groups[deviceId].push(channel);
+    return groups;
+  }, {} as Record<string, Channel[]>);
+
+  // Helper to get the latest value for a channel
+  const getLatestValue = (channel: Channel) => {
+    if (!channel.samples || channel.samples.length === 0) {
+      return 'N/A';
+    }
     
-    // Format based on value range and precision needed
-    if (value === 0) return '0';
+    // Get the last sample
+    const lastSample = channel.samples[channel.samples.length - 1];
+    
+    // Format the value based on its magnitude
+    const value = lastSample.value;
     
     if (Math.abs(value) < 0.01) {
-      return value.toExponential(2);
-    }
-    
-    if (Math.abs(value) < 1) {
+      return value.toFixed(5);
+    } else if (Math.abs(value) < 10) {
       return value.toFixed(3);
-    }
-    
-    if (Math.abs(value) < 10) {
+    } else if (Math.abs(value) < 100) {
       return value.toFixed(2);
-    }
-    
-    if (Math.abs(value) < 100) {
+    } else if (Math.abs(value) < 1000) {
       return value.toFixed(1);
+    } else {
+      return value.toFixed(0);
     }
+  };
+  
+  // Helper to get the channel name without device prefix
+  const getChannelShortName = (channel: Channel) => {
+    const parts = channel.name.split('/');
+    return parts.length > 1 ? parts[1] : channel.name;
+  };
+  
+  // Helper to get the channel category
+  const getChannelCategory = (channel: Channel) => {
+    // Extract just the channel name from the full name (deviceId/channelName)
+    const channelName = getChannelShortName(channel);
     
-    return value.toFixed(0);
+    if (channelName.includes("linpot_")) return "Potentiometers";
+    if (channelName.includes("wheel_speed_")) return "Wheel Speeds";
+    if (channelName.includes("brake_pressure_")) return "Brake Pressure";
+    if (channelName.includes("steering_")) return "Steering";
+    if (channelName.includes("axle_")) return "Axle";
+    if (channelName.includes("temperature_")) return "Temperature";
+    if (channelName.includes("pressure_")) return "Pressure";
+    if (channelName.includes("imu_")) return "IMU";
+    if (channelName.includes("gps_")) return "GPS";
+    if (channelName.includes("Channel_")) return "WFT";
+    
+    return "Other";
   };
 
   return (
-    <div className="space-y-2">
-      {channels.map(channel => {
-        const value = values[channel.name] ?? 0;
-        const displayValue = getDisplayValue(channel);
-        
-        // Determine color based on value relative to range
-        let valueColor = 'text-gray-900';
-        if (channel.min_value !== undefined && channel.max_value !== undefined) {
-          const range = channel.max_value - channel.min_value;
-          const normalizedValue = (value - channel.min_value) / range;
-          
-          if (normalizedValue > 0.8) valueColor = 'text-red-600';
-          else if (normalizedValue > 0.6) valueColor = 'text-orange-500';
-          else if (normalizedValue < 0.2) valueColor = 'text-blue-600';
-        }
-        
-        return (
-          <div 
-            key={channel.name}
-            className="flex justify-between items-center p-2 border rounded bg-white hover:bg-gray-50 shadow-sm"
-          >
-            <div className="text-sm font-medium text-gray-700">{channel.name}</div>
-            <div className="text-right">
-              <div className={`text-lg font-semibold ${valueColor}`}>
-                {displayValue}
-              </div>
-              <div className="text-xs text-gray-500">
-                Range: [{channel.min_value}, {channel.max_value}]
-              </div>
-            </div>
-          </div>
-        );
-      })}
-      
-      {channels.length === 0 && (
-        <div className="text-gray-500 italic text-center py-4">
-          No channels selected
-        </div>
-      )}
-    </div>
+    <Box>
+      {Object.entries(channelsByDevice).map(([deviceId, deviceChannels]) => (
+        <Box key={deviceId} mb={2}>          
+          <Box className="grid grid-cols-1 gap-2">
+            {deviceChannels.map((channel) => {
+              const categoryColor = getChannelCategoryColor(getChannelCategory(channel));
+              const shortName = getChannelShortName(channel);
+              
+              return (
+                <Paper
+                  key={channel.name}
+                  elevation={0}
+                  className="p-2 border"
+                  sx={{
+                    borderLeft: `4px solid ${categoryColor}`,
+                    backgroundColor: 'rgba(0, 0, 0, 0.02)'
+                  }}
+                >
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" className="font-medium">
+                      {shortName}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      className="font-mono font-bold"
+                      sx={{ 
+                        minWidth: '80px', 
+                        textAlign: 'right' 
+                      }}
+                    >
+                      {getLatestValue(channel)}
+                    </Typography>
+                  </Box>
+                </Paper>
+              );
+            })}
+          </Box>
+        </Box>
+      ))}
+    </Box>
   );
 };
 
-export default React.memo(NumericDisplay);
+export default NumericDisplay;

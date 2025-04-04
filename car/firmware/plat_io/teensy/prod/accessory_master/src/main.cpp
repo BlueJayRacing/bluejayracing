@@ -21,6 +21,9 @@
 #include "storage/sd_functions.hpp"
 #include "network/pbudp_functions.hpp"      // Combined PB+UDP thread
 
+// NEW: Time functions module (our NTP/SRTC updater)
+#include "ntp/time_functions.hpp"
+
 uint32_t freeRamLow = UINT32_MAX;
 
 // Pin definitions
@@ -365,6 +368,8 @@ void setup() {
             baja::util::Debug::error(F("Network initialization failed!"));
         }
     }
+
+    baja::time::functions::initialize();
     
     // Log configuration summary
     baja::util::Debug::info(F("\n========== CONFIGURATION SUMMARY =========="));
@@ -399,6 +404,12 @@ void loop() {
     if (networkInitialized && baja::network::functions::isRunning() && loopCount % 10 == 1) {
         baja::network::functions::process();
     }
+
+    if (networkInitialized && loopCount % 100 == 0) {
+        // Process NTP time updates
+        baja::time::functions::update();
+    }
+    
     
     // System monitoring and status reporting (every 5 seconds)
     static uint32_t lastStatusTime = 0;

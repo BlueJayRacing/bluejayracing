@@ -141,10 +141,13 @@ bool processSample() {
             // IMPORTANT: Convert ADC channel index to internal channel ID
             uint8_t internalChannelId = static_cast<uint8_t>(
                 util::mapADCToInternalID(adcSample.status.active_channel));
+
+            uint64_t conversion_time;
+            adcHandler_->getLastConversionTime(conversion_time);
             
             // Create a channel sample with internal ID and recorded time
             data::ChannelSample channelSample(
-                micros(),                // Microsecond timestamp
+                conversion_time,                // Microsecond timestamp
                 internalChannelId,       // Internal channel ID (converted from ADC channel)
                 adcSample.value,         // Raw ADC value
                 millis()                 // Add recorded time in milliseconds
@@ -190,18 +193,6 @@ bool processSample() {
         
         if (processingTime > maxProcessingTime_) {
             maxProcessingTime_ = processingTime;
-        }
-        
-        // Log extremely long processing times
-        if (processingTime > 100) {
-            // Avoid log spam by only logging long times occasionally
-            static uint32_t lastLogTime = 0;
-            uint32_t currentTime = millis();
-            
-            if (currentTime - lastLogTime > 5000) {
-                util::Debug::warning(F("ADC: Long processing time: ") + String(processingTime) + F("µs"));
-                lastLogTime = currentTime;
-            }
         }
     }
     

@@ -1,241 +1,249 @@
-// Draw all points regardless of time range - for debugging
-const forceDrawAllPoints = true;
-// Increase time window to show more data (60 seconds instead of 20)
-const timeWindowSeconds = 60;// src/components/data_view/SimpleChartComponent.tsx
-// A simpler chart component as fallback
-import React, { useEffect, useRef } from 'react';
+// src/components/data_view/SimpleChartComponent.tsx
+
+import React, { useEffect, useRef, useState } from 'react';
+import { Line } from 'react-chartjs-2';
+import { Chart, registerables } from 'chart.js';
 import { useDataContext } from '../../hooks/useDataContext';
-import { safeFormatDate, normalizeTimestamp } from '../../utils/timeDebug';
+import { getChannelCategoryColor } from '../../config/deviceConfig';
+import { Box, Typography, Paper } from '@mui/material';
+
+// Register Chart.js components
+Chart.register(...registerables);
+
+// Import streaming plugin
+import 'chartjs-adapter-date-fns';
+import StreamingPlugin from 'chartjs-plugin-streaming';
+Chart.register(StreamingPlugin);
 
 interface SimpleChartProps {
-channelNames: string[];
-height?: number;
+  channelName: string;
+  height?: number;
+  showValue?: boolean;
+  timeWindow?: number;
 }
 
-const SimpleChartComponent: React.FC<SimpleChartProps> = ({ 
-channelNames, 
-height = 300 
+const SimpleChart: React.FC<SimpleChartProps> = ({
+  channelName,
+  height = 80,
+  showValue = false,
+  timeWindow = 10000 // 10 seconds default
 }) => {
-const canvasRef = useRef<HTMLCanvasElement>(null);
-const { channels } = useDataContext();
-
-useEffect(() => {
-  if (!canvasRef.current || !channels.length || !channelNames.length) return;
+  const { channels, getAllDataForChannel, getAllNewData } = useDataContext();
+  const chartRef = useRef<any>(null);
+  const [data, setData] = useState<Array<{x: number, y: number}>>([]);
+  const [currentValue, setCurrentValue] = useState<number | null>(null);
   
-  const ctx = canvasRef.current.getContext('2d');
-  if (!ctx) return;
-  
-  // Get selected channels data
-  const selectedChannels = channels.filter(channel => 
-    channelNames.includes(channel.name)
-  );
-  
-  // Setup canvas
-  const canvas = canvasRef.current;
-  const width = canvas.width;
-  const height = canvas.height;
-  
-  // Clear canvas
-  ctx.clearRect(0, 0, width, height);
-  
-  // Draw background
-  ctx.fillStyle = '#f5f5f5';
-  ctx.fillRect(0, 0, width, height);
-  
-  // Draw grid
-  ctx.strokeStyle = '#e0e0e0';
-  ctx.lineWidth = 1;
-  
-  // Vertical grid lines
-  for (let x = 50; x < width; x += 50) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
-  }
-  
-  // Horizontal grid lines
-  for (let y = 50; y < height; y += 50) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
-  }
-  
-  // Time range - show last 20 seconds
-  const now = Date.now();
-  const timeStart = now - 20000;
-  
-  // Draw data for each channel
-  selectedChannels.forEach((channel, channelIndex) => {
-    if (!channel.samples.length) return;
-    
-    // Set line style
-    ctx.strokeStyle = `hsl(${channelIndex * 30}, 70%, 50%)`;
-    ctx.lineWidth = 2;
-    
-    // Find min/max values for scaling
-    const minValue = channel.min_value !== undefined ? channel.min_value : 
-      Math.min(...channel.samples.map(s => s.value));
-    const maxValue = channel.max_value !== undefined ? channel.max_value : 
-      Math.max(...channel.samples.map(s => s.value));
-    
-    // Start drawing the line
-    ctx.beginPath();
-    
-    // Draw each data point
-    let pointsDrawn = 0;
-    channel.samples.forEach((sample, index) => {
-      // Skip points outside time range - Ensure proper numeric conversion
-      const sampleTime = normalizeTimestamp(sample.timestamp) || 0;
-      const startTime = Number(timeStart);
-      const currentTime = Number(now);
-      
-      if (sampleTime === 0) {
-        console.warn(`Invalid timestamp value after normalization: ${sample.timestamp}`);
-        return;
-      }
-      
-      // Debug timestamp issues for first few samples
-      if (index < 5) {
-        try {
-          console.log(`Sample ${index} timestamp: ${sampleTime}, formatted: ${safeFormatDate(sampleTime)}`);
-        } catch (e) {
-          console.log(`Sample ${index} timestamp: ${sampleTime} (not a valid date)`);
-        }
-      }
-      
-      // Check if point is in visible time range or bypass check if forceDrawAllPoints is true
-      const pointInRange = forceDrawAllPoints || (sampleTime >= startTime && sampleTime <= currentTime);
-      
-      if (!pointInRange) {
-        return;
-      }
-      
-      // Calculate position with error checks
-      let x;
-      if (forceDrawAllPoints) {
-        // Use array index for X position when forcing all points
-        x = (index / channel.samples.length) * width;
-      } else {
-        // Normal time-based position
-        const xRatio = (sampleTime - startTime) / (currentTime - startTime);
-        if (isNaN(xRatio)) {
-          console.warn(`Invalid x ratio: ${xRatio}`);
-          return;
-        }
-        x = xRatio * width;
-      }
-      const valueRange = maxValue - minValue;
-      if (valueRange <= 0) {
-        console.warn(`Invalid value range: ${valueRange}`);
-        return;
-      }
-      
-      const yRatio = (sample.value - minValue) / valueRange;
-      if (isNaN(yRatio)) {
-        console.warn(`Invalid y ratio: ${yRatio}`);
-        return;
-      }
-      
-      const y = height - yRatio * height;
-      
-      // if (firstPoint) {
-      //   ctx.moveTo(x, y);
-      //   firstPoint = false;
-      // } else {
-      //   ctx.lineTo(x, y);
-      // }
-      
-      pointsDrawn++;
-      
-      // Draw dots for every 10th point to make sure something is visible
-      if (pointsDrawn % 1 === 0) {
-        // Save current state
-        ctx.save();
-        
-        // Draw a small red dot
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Restore state
-        ctx.restore();
-      }
-    });
-    
-    console.log(`Drew ${pointsDrawn} points for ${channel.name}`);
-    
-    // Stroke the line
-    ctx.stroke();
-    
-    // Draw label
-    ctx.fillStyle = ctx.strokeStyle;
-    ctx.font = '12px Arial';
-    ctx.fillText(channel.name, 10, 20 + channelIndex * 20);
-  });
-  
-  // Draw time labels
-  ctx.fillStyle = '#666';
-  ctx.font = '10px Arial';
-  
-  const dateFormat = new Intl.DateTimeFormat('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-  
-  // Current time for reference
-  const currentTime = Date.now();
-  
-  // Show labels every 5 seconds
-  for (let t = 0; t <= 20000; t += 5000) {
-    const x = (t / 20000) * width;
-    const labelTime = new Date(currentTime - (20000 - t));
-    ctx.fillText(dateFormat.format(labelTime), x, height - 5);
-  }
-}, [channels, channelNames]);
-
-// Re-render the chart every 100ms
-useEffect(() => {
-  const intervalId = setInterval(() => {
-    // Force re-render by updating a ref
-    if (canvasRef.current) {
-      const event = new Event('update');
-      canvasRef.current.dispatchEvent(event);
+  // Get device and channel information
+  const getDeviceAndChannelName = (fullName: string): { deviceId: string, channelName: string } => {
+    const parts = fullName.split('/');
+    if (parts.length < 2) {
+      return { deviceId: 'unknown', channelName: fullName };
     }
-  }, 100);
+    return { deviceId: parts[0], channelName: parts[1] };
+  };
   
-  return () => clearInterval(intervalId);
-}, []);
-
-return (
-  <div style={{ height: `${height}px`, width: '100%', position: 'relative' }}>
-    <canvas 
-      ref={canvasRef} 
-      height={height} 
-      width={800}
-      style={{ width: '100%', height: '100%' }}
-    />
-    {!channelNames.length && (
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#999'
-      }}>
-        Select channels to display
-      </div>
-    )}
-  </div>
-);
+  // Get channel display name (without device prefix)
+  const { channelName: displayName } = getDeviceAndChannelName(channelName);
+  
+  // Get channel details
+  const channel = channels.find(c => c.name === channelName);
+  
+  // Get channel category and color
+  const getChannelCategory = (name: string): string => {
+    if (name.includes("linpot_")) return "Potentiometers";
+    if (name.includes("wheel_speed_")) return "Wheel Speeds";
+    if (name.includes("brake_pressure_")) return "Brake Pressure";
+    if (name.includes("steering_")) return "Steering";
+    if (name.includes("axle_")) return "Axle";
+    if (name.includes("temperature_")) return "Temperature";
+    if (name.includes("pressure_")) return "Pressure";
+    if (name.includes("imu_")) return "IMU";
+    if (name.includes("gps_")) return "GPS";
+    if (name.includes("Channel_")) return "WFT";
+    
+    return "Other";
+  };
+  
+  const category = getChannelCategory(displayName);
+  const color = getChannelCategoryColor(category);
+  
+  // Format the current value
+  const formatValue = (value: number): string => {
+    if (Math.abs(value) < 0.01) {
+      return value.toFixed(5);
+    } else if (Math.abs(value) < 10) {
+      return value.toFixed(3);
+    } else if (Math.abs(value) < 100) {
+      return value.toFixed(2);
+    } else if (Math.abs(value) < 1000) {
+      return value.toFixed(1);
+    } else {
+      return value.toFixed(0);
+    }
+  };
+  
+  // Load initial data
+  useEffect(() => {
+    const loadInitialData = async () => {
+      const channelData = getAllDataForChannel(channelName);
+      
+      if (channelData && channelData.length > 0) {
+        // Convert to chart data points
+        const points = channelData.map(sample => ({
+          x: sample.timestamp,
+          y: sample.value
+        }));
+        
+        // Sort by timestamp
+        points.sort((a, b) => a.x - b.x);
+        
+        // Set the current value
+        if (points.length > 0) {
+          setCurrentValue(points[points.length - 1].y);
+        }
+        
+        // Update state
+        setData(points);
+      }
+    };
+    
+    loadInitialData();
+  }, [channelName]);
+  
+  // Chart refresh callback
+  const handleRefresh = (chart: any) => {
+    // Get new data for this channel
+    const result = getAllNewData([channelName])[channelName];
+    
+    if (result && result.hasNewData && result.newSamples.length > 0) {
+      // Convert to chart points
+      const newPoints = result.newSamples.map(sample => ({
+        x: sample.timestamp,
+        y: sample.value
+      }));
+      
+      // Update current value
+      if (newPoints.length > 0) {
+        setCurrentValue(newPoints[newPoints.length - 1].y);
+      }
+      
+      // Add to chart data
+      const now = Date.now();
+      const oldestVisibleTime = now - timeWindow - 1000; // Add 1s buffer
+      
+      // Filter to visible range only
+      const newData = [
+        ...data,
+        ...newPoints
+      ].filter(point => point.x >= oldestVisibleTime);
+      
+      // Sort by timestamp
+      newData.sort((a, b) => a.x - b.x);
+      
+      // Update state
+      setData(newData);
+      
+      // Update chart
+      chart.data.datasets[0].data = newData;
+      chart.update('none');
+    }
+  };
+  
+  // Chart options
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'nearest',
+      intersect: false,
+      axis: 'x'
+    },
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        enabled: true,
+        mode: 'nearest',
+        intersect: false
+      }
+    },
+    scales: {
+      x: {
+        type: 'realtime',
+        realtime: {
+          duration: timeWindow,
+          refresh: 100,
+          delay: 1000,
+          onRefresh: handleRefresh
+        },
+        display: false
+      },
+      y: {
+        beginAtZero: channel?.min_value === 0,
+        display: false,
+        suggestedMin: channel?.min_value,
+        suggestedMax: channel?.max_value
+      }
+    },
+    elements: {
+      point: {
+        radius: 0
+      },
+      line: {
+        tension: 0.3,
+        borderWidth: 1.5
+      }
+    },
+    animation: false
+  };
+  
+  // Chart data
+  const chartData = {
+    datasets: [
+      {
+        data,
+        borderColor: color,
+        backgroundColor: `${color}33`,
+        fill: true,
+        cubicInterpolationMode: 'monotone'
+      }
+    ]
+  };
+  
+  return (
+    <Paper
+      elevation={0}
+      className="p-2 border"
+      sx={{ 
+        borderLeft: `4px solid ${color}`,
+        height: showValue ? height + 24 : height,
+        backgroundColor: 'rgba(0, 0, 0, 0.02)'
+      }}
+    >
+      {showValue && (
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
+          <Typography variant="body2" fontWeight="medium">
+            {displayName}
+          </Typography>
+          
+          {currentValue !== null && (
+            <Typography variant="body2" fontWeight="bold" fontFamily="monospace">
+              {formatValue(currentValue)}
+            </Typography>
+          )}
+        </Box>
+      )}
+      
+      <Box height={height}>
+        <Line
+          ref={chartRef}
+          data={chartData}
+          options={options as any}
+        />
+      </Box>
+    </Paper>
+  );
 };
 
-export default SimpleChartComponent;
+export default React.memo(SimpleChart);

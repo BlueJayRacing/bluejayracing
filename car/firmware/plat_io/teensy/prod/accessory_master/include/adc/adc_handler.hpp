@@ -128,6 +128,11 @@ public:
         return true;
     }
 
+    bool getLastConversionTime(uint64_t& time) const {
+        time = lastConversionTime_;
+        return true;
+    }
+
 private:
     buffer::RingBuffer<data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer_;
     AD717X adcDriver_;
@@ -138,6 +143,7 @@ private:
     volatile uint64_t sampleCount_;
     volatile bool samplingActive_;
     ad717x_data_t lastConversion_;
+    uint64_t lastConversionTime_;
     
     /**
      * @brief Read a sample from the ADC

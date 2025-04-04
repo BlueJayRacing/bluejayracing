@@ -1,4 +1,5 @@
 #include "adc/adc_handler.hpp"
+#include "util/time_since_epoch.hpp"
 
 namespace baja {
 namespace adc {
@@ -14,7 +15,8 @@ ADC7175Handler::ADC7175Handler(buffer::RingBuffer<data::ChannelSample, baja::con
       spiInterface_(nullptr),
       activeChannel_(0),
       sampleCount_(0),
-      samplingActive_(false) {
+      samplingActive_(false),
+      lastConversionTime_(0) {
     channelConfigs_ = nullptr;
 }
 
@@ -185,73 +187,6 @@ bool ADC7175Handler::stopSampling() {
     return true;
 }
 
-// bool ADC7175Handler::pollForSample(uint32_t timeout_ms) {
-//     // Check if sampling is active
-//     if (!samplingActive_) {
-//         return false;
-//     }
-
-//     static int counter = 0;
-//     counter ++;
-//     uint32_t start_time = micros();
-    
-//     // Wait for ready with timeout
-//     uint32_t timeout = timeout_ms == 0 ? 0xFFFFFFFF : timeout_ms * 10; // Convert to internal units
-//     int result = adcDriver_.waitForReady(timeout);
-//     if (counter > 40000)Serial.println("It took " + String(micros() - start_time) + "us to wait for ready");
-
-
-//     if (result < 0) {
-//         if (result == TIMEOUT) {
-//             // This is normal if timeout_ms was specified
-//             return false;
-//         }
-        
-//         util::Debug::warning("ADC: waitForReady failed with code " + String(result));
-//         return false;
-//     }
-    
-    
-
-
-//     start_time = micros();
-//     // Read the sample
-//     ad717x_data_t sample;
-//     if (!readSample(sample)) {
-//         return false;
-//     }
-//     if (counter > 40000)Serial.println("It took " + String(micros() - start_time) + "us to read the sample");
-    
-//     // Create a channel sample and add to ring buffer
-//     data::ChannelSample channelSample(
-//         micros(),                   // Microsecond timestamp
-//         sample.status.active_channel, // Channel index
-//         sample.value                // Raw ADC value
-//     );
-    
-//     start_time = micros();
-//     // Add to the ring buffer
-//     if (!ringBuffer_.write(channelSample)) {
-//         // util::Debug::warning("ADC: Ring buffer full, sample dropped");
-//         return false;
-//     }
-//     if (counter > 40000) Serial.println("It took " + String(micros() - start_time) + "us to write the sample");
-//     if (counter > 40000) counter = 0;
-    
-//     // Update counters and active channel
-//     sampleCount_++;
-//     activeChannel_ = sample.status.active_channel;
-    
-//     // Debug every 1,000,000 samples
-//     if (sampleCount_ % 1000000 == 0) {
-//         util::Debug::info("ADC: Sample #" + String(sampleCount_) + 
-//                        ": Channel=" + String(sample.status.active_channel) + 
-//                        ", Value=" + String(sample.value));
-//     }
-    
-//     return true;
-// }
-
 int ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     // Check if sampling is active
     if (!samplingActive_) {
@@ -309,6 +244,7 @@ int ADC7175Handler::pollForSample(uint32_t timeout_ms) {
 
     // Cache the conversion result
     lastConversion_ = sample;
+    lastConversionTime_ = getMicrosecondsSinceEpoch();
     
     // Calculate read time
     uint32_t read_time = micros() - read_start;
@@ -318,8 +254,10 @@ int ADC7175Handler::pollForSample(uint32_t timeout_ms) {
     uint8_t internalChannelId = static_cast<uint8_t>(
         util::mapADCToInternalID(sample.status.active_channel));
     
+
+    
     data::ChannelSample channelSample(
-        micros(),                   // Microsecond timestamp
+        lastConversionTime_,// Microsecond timestamp
         internalChannelId,          // Internal channel ID
         sample.value,               // Raw ADC value
         millis()                    // Add recorded time
@@ -333,10 +271,10 @@ int ADC7175Handler::pollForSample(uint32_t timeout_ms) {
         // Only log occasionally to avoid spamming
         static uint32_t lastRingBufferWarnTime = 0;
         uint32_t currentTime = millis();
-        if (currentTime - lastRingBufferWarnTime > 5000) { // Only warn every 5 seconds
-            util::Debug::warning("ADC: Ring buffer full, sample dropped");
-            lastRingBufferWarnTime = currentTime;
-        }
+        // if (currentTime - lastRingBufferWarnTime > 15000) { // Only warn every 5 seconds
+        //     util::Debug::warning("ADC: Ring buffer full, sample dropped");
+        //     lastRingBufferWarnTime = currentTime;
+        // }
         return AH_BUFFERBAD;
     }
     

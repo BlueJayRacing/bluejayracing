@@ -236,7 +236,7 @@ size_t PBUDPHandler::processAndSendBatch() {
     }
     
     // Log statistics periodically
-    logStats();
+    // logStats();
     
     uint32_t processingTime = micros() - startTime;
     util::Debug::detail("PBUDPHandler: Processed and sent " + String(actualSamples) + 

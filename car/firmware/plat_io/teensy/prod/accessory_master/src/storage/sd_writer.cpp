@@ -211,7 +211,7 @@ size_t SDWriter::process() {
         if (!dataFile_.isBusy()) {
             uint32_t syncStartTime = micros();
             startAsyncSync(dataFile_);
-            deferCount = 3000;
+            deferCount = 300;
             uint32_t syncDuration = micros() - syncStartTime;
             
             lastPeriodicSyncTime_ = currentTime;
@@ -233,9 +233,8 @@ size_t SDWriter::process() {
 
     // Process deferred sync if needed
     if (needDataSync_ && !dataFile_.isBusy()) {
-        uint32_t syncStartTime = micros();
         startAsyncSync(dataFile_);
-        deferCount = 3000;
+        deferCount = 300;
         needDataSync_ = false;
         lastPeriodicSyncTime_ = currentTime;
         return 0;
@@ -246,11 +245,8 @@ size_t SDWriter::process() {
     
     if (availableSamples == 0) {
         if (ringBuf_->bytesUsed() > 0) {
-            if (isFirstFile_ || (millis() - lastWriteTime_ > 5000)) {
-                syncRingBuf(true); // Force full sync
-            } else if (!dataFile_.isBusy()) {
+            if (!dataFile_.isBusy()) {
                 syncRingBuf(false); // Normal sync of complete sectors
-            } else {
             }
         }
         return 0;
@@ -272,10 +268,7 @@ size_t SDWriter::process() {
     }
 
     // Determine batch size based on available samples
-    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(15));
-    if (isFirstFile_) {
-        samplesInBatch = min(samplesInBatch, static_cast<size_t>(25));
-    }
+    size_t samplesInBatch = min(availableSamples, static_cast<size_t>(12));
 
     // Ensure RingBuf has enough space
     size_t ringBufFree = ringBuf_->bytesFree();
@@ -315,7 +308,7 @@ size_t SDWriter::process() {
     // Sync RingBuf based on operation mode and file status
     if (isFirstFile_ && samplesProcessed > 0) {
         syncRingBuf(true);
-        if (bytesWritten_ > 1024) {
+        if (bytesWritten_ > 250) {
             isFirstFile_ = false;
         }
     } else if (!dataFile_.isBusy() && ringBuf_->bytesUsed() >= config::SD_SECTOR_SIZE) {

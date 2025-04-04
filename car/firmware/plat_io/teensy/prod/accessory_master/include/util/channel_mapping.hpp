@@ -64,14 +64,14 @@
      {ChannelName::SG2, "SG2"},
      {ChannelName::SG1, "SG1"},
      {ChannelName::CHANNEL_1, "Channel_1"},
-     {ChannelName::CHANNEL_2, "Channel_2"},
-     {ChannelName::CHANNEL_3, "Channel_3"},
-     {ChannelName::CHANNEL_4, "Channel_4"},
-     {ChannelName::CHANNEL_5, "Channel_5"},
      {ChannelName::CHANNEL_6, "Channel_6"},
+     {ChannelName::CHANNEL_2, "Channel_2"},
      {ChannelName::CHANNEL_7, "Channel_7"},
+     {ChannelName::CHANNEL_3, "Channel_3"},
      {ChannelName::CHANNEL_8, "Channel_8"},
+     {ChannelName::CHANNEL_4, "Channel_4"},
      {ChannelName::CHANNEL_9, "Channel_9"},
+     {ChannelName::CHANNEL_5, "Channel_5"},
      {ChannelName::CHANNEL_10, "Channel_10"},
      {ChannelName::UNKNOWN, "Unknown"}
  };
