@@ -19,6 +19,7 @@ class Test {
     void testADCDACReadAnalogFrontEnd(void); // Reads the analog front end forever after zeroing
     void testCalSensorSetup(void); // Reads the analog front end forever after zeroing
     void testDriveSensorSetup(void); // Reads the analog front end forever after zeroing
+    void testProtobufEncode(void);
 
   private:
     void testMQTTManagerBasicParamErrors(void);
@@ -39,6 +40,10 @@ class Test {
     void testDriveSensorSetupSPS(void);
     void testDriveSensorSetupReadAnalogFrontEnd(void);
     void testDriveSensorSetupZero(void);
+
+    void testProtobufStockEncode(void);
+    void testProtobufHardEncode(void);
+
 
   private:
     mqttManager* mqtt_manager_;

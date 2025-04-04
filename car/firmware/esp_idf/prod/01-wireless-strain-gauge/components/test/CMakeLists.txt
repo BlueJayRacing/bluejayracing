@@ -12,4 +12,7 @@ idf_component_register( SRCS "test.cpp"
                             esp_timer
                             ads1120
                             ad5626
+                            baja_nanopb
+                            baja_proto
+                            hard_encoder
                             )

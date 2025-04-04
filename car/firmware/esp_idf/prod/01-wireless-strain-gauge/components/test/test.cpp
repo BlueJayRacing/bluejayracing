@@ -4,6 +4,12 @@
 #include <esp_timer.h>
 #include <test.hpp>
 
+#include <hardEncoder.hpp>
+#include <pb_common.h>
+#include <pb_encode.h>
+#include <pb_decode.h>
+#include <esp_data_chunk.pb.h>
+
 #if ENABLE_TESTS == 1
 
 #define SPI2_MOSI_PIN 18
@@ -60,10 +66,13 @@ void Test::testMQTTManagerBasicParamErrors(void)
     std::string test_mes("hi");
 
     assert(mqtt_manager_->clientPublish(NULL, NULL, 5, "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), 0, "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), test_mes.length(), "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 3) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientPublish(&client, (uint8_t*) test_mes.data(), test_mes.length(), "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), 0, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), test_mes.length(), "", 2) ==
+           ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), test_mes.length(), "topic", 3) ==
+           ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), test_mes.length(), "topic", 2) ==
+           ESP_ERR_WIFI_NOT_CONNECT);
 
     assert(mqtt_manager_->clientSubscribe(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientSubscribe(&client, "", 2) == ESP_ERR_INVALID_ARG);
@@ -397,7 +406,8 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
 
     for (int i = 0; i < 10; i++) {
         std::string hi_mes("hi " + std::to_string(i));
-        assert(mqtt_manager_->clientPublish(client, (uint8_t*) hi_mes.data(), hi_mes.length(), "esp32/test_publish", 2) == ESP_OK);
+        assert(mqtt_manager_->clientPublish(client, (uint8_t*)hi_mes.data(), hi_mes.length(), "esp32/test_publish",
+                                            2) == ESP_OK);
         // assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
         // assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
         ESP_LOGD(TAG, "Client Published to MQTT");
@@ -437,10 +447,10 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
 void Test::testADCDACEndtoEnd(void)
 {
     gpio_config_t config;
-    config.mode = GPIO_MODE_OUTPUT;
-    config.intr_type = GPIO_INTR_DISABLE;
+    config.mode         = GPIO_MODE_OUTPUT;
+    config.intr_type    = GPIO_INTR_DISABLE;
     config.pin_bit_mask = 1ULL << GPIO_NUM_17;
-    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_up_en   = GPIO_PULLUP_DISABLE;
     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
     esp_err_t ret = gpio_config(&config);
@@ -775,7 +785,7 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     adc_regs.channels  = AIN1_AIN2;
     adc_regs.data_rate = 2;
     adc_regs.volt_refs = REFP0_REFN0;
-    adc_regs.gain = GAIN_1;
+    adc_regs.gain      = GAIN_1;
 
     ret = adc_.configure(adc_regs);
     if (ret != ESP_OK) {
@@ -806,8 +816,8 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     }
 }
 
-
-void Test::testCalSensorSetup(void) {
+void Test::testCalSensorSetup(void)
+{
     spi_bus_config_t spi_cfg;
     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
 
@@ -820,14 +830,14 @@ void Test::testCalSensorSetup(void) {
     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
     if (ret) {
         ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
-        return;        
+        return;
     }
 
     gpio_config_t config;
-    config.mode = GPIO_MODE_OUTPUT;
-    config.intr_type = GPIO_INTR_DISABLE;
+    config.mode         = GPIO_MODE_OUTPUT;
+    config.intr_type    = GPIO_INTR_DISABLE;
     config.pin_bit_mask = 1ULL << GPIO_NUM_17;
-    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_up_en   = GPIO_PULLUP_DISABLE;
     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
     ret = gpio_config(&config);
@@ -888,7 +898,7 @@ void Test::testCalSensorSetupZero(void)
 void Test::testDriveSensorSetup(void)
 {
     ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
-    
+
     spi_bus_config_t spi_cfg;
     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
 
@@ -901,14 +911,14 @@ void Test::testDriveSensorSetup(void)
     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
     if (ret) {
         ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
-        return;        
+        return;
     }
 
     gpio_config_t config;
-    config.mode = GPIO_MODE_OUTPUT;
-    config.intr_type = GPIO_INTR_DISABLE;
+    config.mode         = GPIO_MODE_OUTPUT;
+    config.intr_type    = GPIO_INTR_DISABLE;
     config.pin_bit_mask = 1ULL << GPIO_NUM_17;
-    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_up_en   = GPIO_PULLUP_DISABLE;
     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
     ret = gpio_config(&config);
@@ -938,7 +948,14 @@ void Test::testDriveSensorSetup(void)
     ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
 }
 
-void Test::testDriveSensorSetupSPS(void) {
+void Test::testProtobufEncode(void)
+{
+    testProtobufStockEncode();
+    testProtobufHardEncode();
+}
+
+void Test::testDriveSensorSetupSPS(void)
+{
     ESP_LOGI(TAG, "Testing Drive Sensor Setup SPS");
 
     uint32_t start_time = esp_timer_get_time();
@@ -964,8 +981,8 @@ void Test::testDriveSensorSetupReadAnalogFrontEnd(void)
 
     drive_measurement_t measurement;
 
-    drive_cfg_t sample_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
-    drive_cfg_t excitn_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
+    drive_cfg_t sample_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
+    drive_cfg_t excitn_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
     drive_cfg_t dacbias_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::DAC_BIAS};
 
     float strain_gauge_volt;
@@ -1003,6 +1020,109 @@ void Test::testDriveSensorSetupZero(void)
     }
 
     ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
+}
+
+#define NUM_ENCODES 100
+
+std::array<uint8_t, 12000> buffer;
+ESPDataChunk measurements = ESPDataChunk_init_zero;
+ESPDataChunk out_measurements = ESPDataChunk_init_zero;
+
+void Test::testProtobufStockEncode(void)
+{
+    ESP_LOGI(TAG, "Testing Protobuf stock encoding");
+
+    uint32_t encode_times_micros[NUM_ENCODES];
+    uint32_t start_time;
+    uint32_t end_time;
+
+    // Generate a test data packet to be serialized
+    measurements.base_timestamp = esp_timer_get_time();
+    measurements.dac_bias = 4095;
+    measurements.excitation_voltage = 2.5;
+    strcpy(measurements.mac_address, "AB:CD:EF:GH:IJ:KL");
+    measurements.sample_channel_id = 0;
+
+    for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
+        measurements.samples[i].timestamp_delta = i * 500;
+        measurements.samples[i].value = 3.000;
+    }
+
+    for (int i = 0; i < NUM_ENCODES; i++) {
+        pb_ostream_t o_stream     = pb_ostream_from_buffer(buffer.data(), buffer.size());
+    
+        start_time = esp_timer_get_time();
+        pb_encode(&o_stream, ESPDataChunk_fields, &measurements);
+        end_time = esp_timer_get_time();
+
+        encode_times_micros[i] = end_time - start_time;
+    }
+
+    uint64_t total_micros = 0;
+    for (int i = 0; i < NUM_ENCODES; i++) {
+        total_micros += encode_times_micros[i];
+    }
+
+    ESP_LOGI(TAG, "Average stock encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    ESP_LOGI(TAG, "Finished testing Protobuf stock encoding");
+}
+
+void Test::testProtobufHardEncode(void) {
+    ESP_LOGI(TAG, "Testing Protobuf hard encoding");
+    
+    uint32_t encode_times_micros[NUM_ENCODES];
+    uint32_t start_time;
+    uint32_t end_time;
+    int num_bytes_written;
+
+    // Generate a test data packet to be serialized
+    measurements.base_timestamp = esp_timer_get_time();
+    measurements.dac_bias = 4095;
+    measurements.excitation_voltage = 2.5;
+    strcpy(measurements.mac_address, "AB:CD:EF:GH:IJ:KL");
+    measurements.sample_channel_id = 0;
+
+    for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
+        measurements.samples[i].timestamp_delta = i * 500;
+        measurements.samples[i].value = i * 3.000;
+    }
+
+    for (int i = 0; i < NUM_ENCODES; i++) {    
+        start_time = esp_timer_get_time();
+        num_bytes_written = hardEncoder::encodeESPDataChunk(measurements, buffer);
+        end_time = esp_timer_get_time();
+
+        encode_times_micros[i] = end_time - start_time;
+    }
+
+    uint64_t total_micros = 0;
+    for (int i = 0; i < NUM_ENCODES; i++) {
+        total_micros += encode_times_micros[i];
+    }
+
+    ESP_LOGI(TAG, "Average hard encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+
+    pb_istream_t istream = pb_istream_from_buffer(buffer.data(), num_bytes_written);
+
+    if (!pb_decode(&istream, ESPDataChunk_fields, &out_measurements)) {
+        ESP_LOGI(TAG, "Failed to decode stream");
+        return;
+    }
+
+    assert(out_measurements.base_timestamp == measurements.base_timestamp);
+    assert(out_measurements.dac_bias == measurements.dac_bias);
+    assert(out_measurements.excitation_voltage == measurements.excitation_voltage);
+    assert(out_measurements.sample_channel_id == measurements.sample_channel_id);
+    assert(strcmp(out_measurements.mac_address, measurements.mac_address) == 0);
+
+    for (int i = 0; i < 10; i++) {
+        // ESP_LOGI(TAG, "Timestamp delta: %d", (int) out_measurements.samples[i].timestamp_delta);
+        // ESP_LOGI(TAG, "Value: %d", (int) out_measurements.samples[i].value);
+        assert(out_measurements.samples[i].timestamp_delta == measurements.samples[i].timestamp_delta);
+        assert(out_measurements.samples[i].value == measurements.samples[i].value);
+    }
+
+    ESP_LOGI(TAG, "Finished testing Protobuf hard encoding");
 }
 
 #endif

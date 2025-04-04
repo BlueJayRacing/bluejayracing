@@ -50,7 +50,7 @@ extern "C" void app_main(void)
 {
 #if ENABLE_TESTS == 1
     Test test(ESP_LOG_DEBUG);
-    test.testDriveSensorSetup();
+    test.testProtobufEncode();
 #else
     esp_log_level_set("mqttManager", ESP_LOG_NONE);
     DecisionTask();
