@@ -133,12 +133,12 @@ void DecisionTask(void)
 
         if (start_command.command == 1) {
             ESP_LOGI(TAG, "Executing Calibration Task");
-            xTaskCreate(vTaskCalTask, "Calibration Main Control Loop", (1 << 12), NULL, 3, NULL);
+            xTaskCreate(vTaskCalTask, "Calibration Main Control Loop", (1 << 15), NULL, 3, NULL);
             break;
         } else if (start_command.command == 2) {
             ESP_LOGI(TAG, "Executing Drive Task");
-            drive_data_queue = xQueueCreate(5, sizeof(ESPDataChunk));
-            time_queue       = xQueueCreate(5, sizeof(ts_translation_t));
+            drive_data_queue = xQueueCreate(10, sizeof(ESPDataChunk));
+            time_queue       = xQueueCreate(10, sizeof(ts_translation_t));
 
             xTaskCreate(vTaskDriveRecordADCTask, "Drive Record ADC Task", (1 << 15), NULL, 3, NULL);
             xTaskCreate(vTaskDriveSendDataTask, "Drive Send Data Task", (1 << 15), NULL, 3, NULL);
@@ -257,8 +257,8 @@ void vTaskDriveRecordADCTask(void*)
 
     ts_translation_t time_trans = {0, 0};
     xQueueReceive(time_queue, &time_trans, portMAX_DELAY);
-    ESP_LOGI(TAG, "Received Time Translation: pi_time_us: %lld, esp_time_us: %ld", time_trans.pi_time_us,
-             time_trans.esp_time_us);
+    // ESP_LOGI(TAG, "Received Time Translation: pi_time_us: %lld, esp_time_us: %ld", time_trans.pi_time_us,
+    //          time_trans.esp_time_us);
 
     drive_cfg_t sample_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
     drive_cfg_t excitn_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
@@ -269,8 +269,8 @@ void vTaskDriveRecordADCTask(void*)
 
         if (uxQueueMessagesWaiting(time_queue) > 0) {
             xQueueReceive(time_queue, &time_trans, 0);
-            ESP_LOGI(TAG, "Received Time Translation: pi_time_us: %lld, esp_time_us: %ld", time_trans.pi_time_us,
-                     time_trans.esp_time_us);
+            // ESP_LOGI(TAG, "Received Time Translation: pi_time_us: %lld, esp_time_us: %ld", time_trans.pi_time_us,
+            //          time_trans.esp_time_us);
         }
 
         uint32_t packet_start_time_us = esp_timer_get_time();
@@ -362,7 +362,7 @@ void vTaskDriveSendDataTask(void*)
         int bytes_written = hardEncoder::encodeESPDataChunk(measurements, proto_o_buf);
 
         mqtt_manager->clientPublish(drive_mqtt_client, proto_o_buf.data(), bytes_written, DRIVE_DATA_TOPIC, 2);
-        ESP_LOGI(TAG, "Sent Data");
+        // ESP_LOGI(TAG, "Sent Data");
     }
 }
 

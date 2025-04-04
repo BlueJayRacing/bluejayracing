@@ -135,7 +135,7 @@ esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string&
         return err;
     }
 
-    err = esp_wifi_set_max_tx_power(40);
+    err = esp_wifi_set_max_tx_power(80);
     if (err) {
         ESP_LOGE(TAG, "Failed to set WiFi TX Power (err: %d)\n", err);
         return err;
