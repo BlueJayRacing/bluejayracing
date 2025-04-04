@@ -6,6 +6,7 @@
 #include <esp_timer.h>
 #include <mqttManager.hpp>
 #include <test.hpp>
+#include <hardEncoder.hpp>
 
 #include <esp_data_chunk.pb.h>
 #include <pb_decode.h>
@@ -279,8 +280,8 @@ void vTaskDriveRecordADCTask(void*)
             drive_setup.configure(sample_cfg);
             drive_setup.measure(true, &meas);
 
-            measurements.samples[i].timestamp_delta = esp_timer_get_time() - packet_start_time_us;
-            measurements.samples[i].value           = meas.voltage;
+            measurements.timestamp_deltas[i] = esp_timer_get_time() - packet_start_time_us;
+            measurements.values[i]           = meas.voltage;
         }
 
         drive_setup.configure(dacbias_cfg);
@@ -302,7 +303,7 @@ void vTaskDriveSendDataTask(void*)
     bool proto_status;
     esp_err_t ret;
     mqtt_client_t* drive_mqtt_client;
-    uint8_t proto_o_buf[16000];
+    std::array<uint8_t, 12000> proto_o_buf;
 
     drive_mqtt_client = mqtt_manager->createClient(BROKER_URI);
     if (drive_mqtt_client == NULL) {
@@ -352,19 +353,15 @@ void vTaskDriveSendDataTask(void*)
             xQueueSend(time_queue, &new_translation, 0);
         }
 
-        pb_ostream_t o_stream     = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
         ESPDataChunk measurements = ESPDataChunk_init_zero;
 
         if (xQueueReceive(drive_data_queue, &measurements, 1000) != pdTRUE) {
             continue;
         }
 
-        proto_status = pb_encode(&o_stream, ESPDataChunk_fields, &measurements);
-        if (!proto_status) {
-            ESP_LOGE(TAG, "Failed to encode data message: %s\n", PB_GET_ERROR(&o_stream));
-        }
+        int bytes_written = hardEncoder::encodeESPDataChunk(measurements, proto_o_buf);
 
-        mqtt_manager->clientPublish(drive_mqtt_client, proto_o_buf, o_stream.bytes_written, DRIVE_DATA_TOPIC, 2);
+        mqtt_manager->clientPublish(drive_mqtt_client, proto_o_buf.data(), bytes_written, DRIVE_DATA_TOPIC, 2);
         ESP_LOGI(TAG, "Sent Data");
     }
 }

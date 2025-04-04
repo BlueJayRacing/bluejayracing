@@ -1,35 +1,24 @@
 #include <hardEncoder.hpp>
+#include <esp_log.h>
+
+static const char* TAG = "hard_encoder";
 
 namespace hardEncoder
 {
 
-static void encodeESPSample(ESPSample& data_sample, pb_ostream_t& stream) {
-    if (!pb_encode_tag(&stream, PB_WT_32BIT, ESPSample_value_tag)) {
-        return;
-    }
-    if (!pb_encode_fixed32(&stream, &data_sample.value)) {
-        return;
-    }
-
-    if (!pb_encode_tag(&stream, PB_WT_VARINT, ESPSample_timestamp_delta_tag)) {
-        return;
-    }
-    if (!pb_encode_varint(&stream, data_sample.timestamp_delta)) {
-        return;
-    }
-}
-
 int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buffer)
 {
-    pb_ostream_t stream = pb_ostream_from_buffer(buffer.data(), buffer.size());
+    pb_ostream_t stream = pb_ostream_from_buffer(buffer.data(), 12000);
 
     // Encode MAC Address
     if (!pb_encode_tag(&stream, PB_WT_STRING, ESPDataChunk_mac_address_tag)) {
         return -1;
     }
-    if (!pb_encode_string(&stream, (pb_byte_t*)data_chunk.mac_address, strlen(data_chunk.mac_address))) {
+    if (!pb_encode_string(&stream, (pb_byte_t*)data_chunk.mac_address, 17)) {
         return -1;
     }
+
+    // ESP_LOGI(TAG, "After MAC: %u", stream.bytes_written);
 
     // Encode Base Timestamp
     if (!pb_encode_tag(&stream, PB_WT_64BIT, ESPDataChunk_base_timestamp_tag)) {
@@ -39,25 +28,37 @@ int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buf
         return -1;
     }
 
+    // ESP_LOGI(TAG, "After Timestamp: %u", stream.bytes_written);
+
+    if (!pb_encode_tag(&stream, PB_WT_STRING, ESPDataChunk_values_tag)) {
+        return -1;
+    }
+    if(!pb_encode_varint(&stream, 4000)) {
+        return -1;
+    }
+
     for (int i = 0; i < 1000; i++) {
-        if (!pb_encode_tag(&stream, PB_WT_STRING, ESPDataChunk_samples_tag)) {
-            return -1;
-        }
-
-        uint8_t sub_buffer[20];
-        pb_ostream_t sub_stream = pb_ostream_from_buffer(sub_buffer, sizeof(sub_buffer));
-
-        encodeESPSample(data_chunk.samples[i], sub_stream);
-
-        if (!pb_encode_varint(&stream, sub_stream.bytes_written)) {
-            return -1;
-        }
-
-        // 4. Write submessage bytes
-        if (!pb_write(&stream, sub_buffer, sub_stream.bytes_written)) {
+        if (!pb_encode_fixed32(&stream, &data_chunk.values[i])) {
             return -1;
         }
     }
+
+    // ESP_LOGI(TAG, "After Values: %u", stream.bytes_written);
+
+    if (!pb_encode_tag(&stream, PB_WT_STRING, ESPDataChunk_timestamp_deltas_tag)) {
+        return -1;
+    }
+    if(!pb_encode_varint(&stream, 4000)) {
+        return -1;
+    }
+
+    for (int i = 0; i < 1000; i++) {
+        if (!pb_encode_fixed32(&stream, &data_chunk.timestamp_deltas[i])) {
+            return -1;
+        }
+    }
+
+    // ESP_LOGI(TAG, "After timestamp deltas: %u", stream.bytes_written);
 
     // Encode DAC Bias
     if (!pb_encode_tag(&stream, PB_WT_VARINT, ESPDataChunk_dac_bias_tag)) {

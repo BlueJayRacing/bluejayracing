@@ -1024,7 +1024,8 @@ void Test::testDriveSensorSetupZero(void)
 
 #define NUM_ENCODES 100
 
-std::array<uint8_t, 12000> buffer;
+std::array<uint8_t, 12000> buffer_1;
+std::array<uint8_t, 12000> buffer_2;
 ESPDataChunk measurements = ESPDataChunk_init_zero;
 ESPDataChunk out_measurements = ESPDataChunk_init_zero;
 
@@ -1035,6 +1036,7 @@ void Test::testProtobufStockEncode(void)
     uint32_t encode_times_micros[NUM_ENCODES];
     uint32_t start_time;
     uint32_t end_time;
+    pb_ostream_t o_stream;
 
     // Generate a test data packet to be serialized
     measurements.base_timestamp = esp_timer_get_time();
@@ -1044,12 +1046,12 @@ void Test::testProtobufStockEncode(void)
     measurements.sample_channel_id = 0;
 
     for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
-        measurements.samples[i].timestamp_delta = i * 500;
-        measurements.samples[i].value = 3.000;
+        measurements.timestamp_deltas[i] = i * 500;
+        measurements.values[i] = 3.000;
     }
 
     for (int i = 0; i < NUM_ENCODES; i++) {
-        pb_ostream_t o_stream     = pb_ostream_from_buffer(buffer.data(), buffer.size());
+        o_stream     = pb_ostream_from_buffer(buffer_1.data(), buffer_1.size());
     
         start_time = esp_timer_get_time();
         pb_encode(&o_stream, ESPDataChunk_fields, &measurements);
@@ -1064,6 +1066,7 @@ void Test::testProtobufStockEncode(void)
     }
 
     ESP_LOGI(TAG, "Average stock encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    ESP_LOGI(TAG, "Stock encoded bytestream length (bytes): %u", o_stream.bytes_written);
     ESP_LOGI(TAG, "Finished testing Protobuf stock encoding");
 }
 
@@ -1083,13 +1086,13 @@ void Test::testProtobufHardEncode(void) {
     measurements.sample_channel_id = 0;
 
     for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
-        measurements.samples[i].timestamp_delta = i * 500;
-        measurements.samples[i].value = i * 3.000;
+        measurements.timestamp_deltas[i] = i * 500;
+        measurements.values[i] = i * 3.000;
     }
 
     for (int i = 0; i < NUM_ENCODES; i++) {    
         start_time = esp_timer_get_time();
-        num_bytes_written = hardEncoder::encodeESPDataChunk(measurements, buffer);
+        num_bytes_written = hardEncoder::encodeESPDataChunk(measurements, buffer_2);
         end_time = esp_timer_get_time();
 
         encode_times_micros[i] = end_time - start_time;
@@ -1100,9 +1103,17 @@ void Test::testProtobufHardEncode(void) {
         total_micros += encode_times_micros[i];
     }
 
-    ESP_LOGI(TAG, "Average hard encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    for (int i = 0; i < 12000; i++) {
+        if (buffer_1[i] != buffer_2[i]) {
+            ESP_LOGI(TAG, "Index not equal: %d", i);
+            break;
+        }
+    }
 
-    pb_istream_t istream = pb_istream_from_buffer(buffer.data(), num_bytes_written);
+    ESP_LOGI(TAG, "Average hard encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    ESP_LOGI(TAG, "Hard encoded bytestream length (bytes): %u", num_bytes_written);
+
+    pb_istream_t istream = pb_istream_from_buffer(buffer_2.data(), num_bytes_written);
 
     if (!pb_decode(&istream, ESPDataChunk_fields, &out_measurements)) {
         ESP_LOGI(TAG, "Failed to decode stream");
@@ -1116,10 +1127,8 @@ void Test::testProtobufHardEncode(void) {
     assert(strcmp(out_measurements.mac_address, measurements.mac_address) == 0);
 
     for (int i = 0; i < 10; i++) {
-        // ESP_LOGI(TAG, "Timestamp delta: %d", (int) out_measurements.samples[i].timestamp_delta);
-        // ESP_LOGI(TAG, "Value: %d", (int) out_measurements.samples[i].value);
-        assert(out_measurements.samples[i].timestamp_delta == measurements.samples[i].timestamp_delta);
-        assert(out_measurements.samples[i].value == measurements.samples[i].value);
+        assert(out_measurements.timestamp_deltas[i] == measurements.timestamp_deltas[i]);
+        assert(out_measurements.values[i] == measurements.values[i]);
     }
 
     ESP_LOGI(TAG, "Finished testing Protobuf hard encoding");
