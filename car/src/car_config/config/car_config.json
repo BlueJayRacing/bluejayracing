@@ -141,7 +141,7 @@
                     "4": 1005
                 }
             }, 
-            "esp_v3_b3": {
+            "esp_v3_b1": {
                 "device_id": 11,
                 "device_name": "REAR_LEFT",
                 "mac_addresses": [
@@ -167,6 +167,34 @@
                     "2": 1203,
                     "3": 1204,
                     "4": 1205
+                }
+            },
+            "esp_v3_b5": {
+                "device_id": 13,
+                "device_name": "FRONT_LEFT",
+                "mac_addresses": [
+                    "8C:BF:EA:CB:B4:3C"
+                ],
+                "channel_mapping": {
+                    "0": 1301,
+                    "1": 1302,
+                    "2": 1303,
+                    "3": 1304,
+                    "4": 1305
+                }
+            },
+            "esp_v3_b3": {
+                "device_id": 14,
+                "device_name": "FRONT_RIGHT",
+                "mac_addresses": [
+                    "9C:9E:6E:77:B0:E0"
+                ],
+                "channel_mapping": {
+                    "0": 1401,
+                    "1": 1402,
+                    "2": 1403,
+                    "3": 1404,
+                    "4": 1405
                 }
             },
             "in_shaft": {

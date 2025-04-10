@@ -198,12 +198,12 @@ int WSGDriveDataDriver::message_arrived(void *context, char *topicName, int topi
             // Needs to put time one to one
             baja_msgs::msg::DataChunk data_chunk;
             for (int i = 0; i < 1000; i++) {
-                sample.recorded_time = drive_data.base_timestamp + drive_data.samples[i].timestamp_delta;
-                sample.data_value = static_cast<double>(drive_data.samples[i].value);
+                sample.recorded_time = drive_data.base_timestamp + drive_data.timestamp_deltas[i];
+                sample.data_value = static_cast<double>(drive_data.values[i]);
                 data_chunk.samples.push_back(sample);
 
                 if (csvFile.is_open()) {
-                    csvFile << int(global_channel_id) << "," << drive_data.base_timestamp + drive_data.samples[i].timestamp_delta <<"," << drive_data.samples[i].value << ",\n";
+                    csvFile << int(global_channel_id) << "," << drive_data.base_timestamp + drive_data.timestamp_deltas[i] <<"," << drive_data.values[i] << ",\n";
                 }
             }
             driver->publisher_->publish(data_chunk);
