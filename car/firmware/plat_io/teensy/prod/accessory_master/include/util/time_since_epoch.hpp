@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-uint64_t getMicrosecondsSinceEpoch() {
+inline uint64_t getMicrosecondsSinceEpoch() {
   // Atomic read loop: read RTC registers until two consecutive reads are identical.
   uint32_t hi1 = SNVS_HPRTCMR;
   uint32_t lo1 = SNVS_HPRTCLR;

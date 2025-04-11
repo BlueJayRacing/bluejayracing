@@ -211,7 +211,7 @@ size_t SDWriter::process() {
         if (!dataFile_.isBusy()) {
             uint32_t syncStartTime = micros();
             startAsyncSync(dataFile_);
-            deferCount = 300;
+            deferCount = 100;
             uint32_t syncDuration = micros() - syncStartTime;
             
             lastPeriodicSyncTime_ = currentTime;
@@ -234,7 +234,7 @@ size_t SDWriter::process() {
     // Process deferred sync if needed
     if (needDataSync_ && !dataFile_.isBusy()) {
         startAsyncSync(dataFile_);
-        deferCount = 300;
+        deferCount = 100;
         needDataSync_ = false;
         lastPeriodicSyncTime_ = currentTime;
         return 0;

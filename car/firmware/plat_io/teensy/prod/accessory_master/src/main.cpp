@@ -20,6 +20,7 @@
 #include "adc/adc_functions.hpp"
 #include "storage/sd_functions.hpp"
 #include "network/pbudp_functions.hpp"      // Combined PB+UDP thread
+#include "digital/digital_functions.hpp"    // Digital input monitoring
 
 // NEW: Time functions module (our NTP/SRTC updater)
 #include "ntp/time_functions.hpp"
@@ -52,6 +53,7 @@ baja::buffer::CircularBuffer<baja::data::ChannelSample, baja::config::FAST_BUFFE
 bool adcInitialized = false;
 bool sdCardInitialized = false;
 bool networkInitialized = false;
+bool digitalInitialized = false;    // Digital input status flag
 uint32_t loopCount = 0;
 uint32_t samplesProcessedTotal = 0;
 uint32_t startTime = 0;
@@ -144,6 +146,23 @@ void printSystemStatus() {
         baja::util::Debug::info(F("ADC Timing: avg=") + String(avgTime, 1) + 
                              F("µs, min=") + String(minTime) + 
                              F("µs, max=") + String(maxTime) + F("µs"));
+    }
+    
+    // Print digital input status
+    if (digitalInitialized && baja::digital::functions::isRunning()) {
+        uint64_t sampleCount = baja::digital::functions::getSampleCount();
+        
+        baja::util::Debug::info(F("Digital: Samples: ") + String(sampleCount));
+        
+        // Print digital timing stats
+        float avgTime;
+        uint32_t minTime, maxTime;
+        uint64_t sampleCountTiming;
+        baja::digital::functions::getTimingStats(avgTime, minTime, maxTime, sampleCountTiming);
+        
+        baja::util::Debug::info(F("Digital Timing: avg=") + String(avgTime, 1) + 
+                            F("µs, min=") + String(minTime) + 
+                            F("µs, max=") + String(maxTime) + F("µs"));
     }
     
     // Print buffer statistics
@@ -259,6 +278,27 @@ void setup() {
     } else {
         // Print the channel configurations
         baja::adc::printChannelConfigs(channelConfigsArray);
+    }
+
+    // Initialize digital inputs
+    baja::util::Debug::info(F("Initializing digital inputs..."));
+    digitalInitialized = baja::digital::functions::initialize(
+        sampleBuffer
+    );
+    
+    if (digitalInitialized) {
+        baja::util::Debug::info(F("Digital inputs initialized successfully."));
+        
+        // Start digital monitoring
+        baja::util::Debug::info(F("Starting digital input monitoring..."));
+        if (!baja::digital::functions::start()) {
+            baja::util::Debug::error(F("Failed to start digital input monitoring!"));
+            digitalInitialized = false;
+        } else {
+            baja::util::Debug::info(F("Digital input monitoring started successfully"));
+        }
+    } else {
+        baja::util::Debug::error(F("Digital input initialization failed!"));
     }
 
     // Initialize the SD card
@@ -378,6 +418,7 @@ void setup() {
     baja::util::Debug::info(F("Downsampling ratio: 1:") + String(baja::config::FAST_BUFFER_DOWNSAMPLE_RATIO));
     baja::util::Debug::info(F("Hard-coded encoding: ") + String(baja::config::USE_HARD_CODED_ENCODING ? "Enabled" : "Disabled"));
     baja::util::Debug::info(F("Fixed samples per batch: ") + String(baja::config::FIXED_SAMPLE_COUNT));
+    baja::util::Debug::info(F("Digital inputs: ") + String(digitalInitialized ? "Enabled" : "Disabled"));
     baja::util::Debug::info(F("==========================================\n"));
     
     baja::util::Debug::info(F("Initialization complete. System running."));
@@ -393,15 +434,20 @@ void loop() {
         samplesProcessedTotal++;
     }
     
+    // Process digital inputs every cycle
+    if (digitalInitialized && baja::digital::functions::isRunning()) {
+        baja::digital::functions::process();
+    }
+    
     // Process SD operations - only if enough samples are available
     // (This is already handled in SDWriter::process())
-    if (sdCardInitialized && baja::storage::functions::isRunning() && loopCount % 10 == 0) {
+    if (sdCardInitialized && baja::storage::functions::isRunning() && loopCount % 5 == 0) {
         baja::storage::functions::process();
     }
     
     // Process network operations - only if enough samples are available
     // (This is already handled in PBUDPHandler::processAndSendBatch())
-    if (networkInitialized && baja::network::functions::isRunning() && loopCount % 10 == 1) {
+    if (networkInitialized && baja::network::functions::isRunning() && loopCount % 5 == 1) {
         baja::network::functions::process();
     }
 
