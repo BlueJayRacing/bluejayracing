@@ -102,9 +102,9 @@ ADD src bjr_ws/src/bjr_packages
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
 RUN sudo chown -R dock bjr_ws/src/bjr_packages
 
-# RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
-#     cd /bjr_ws && \
-#     colcon build'
+RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd /bjr_ws && \
+    colcon build'
 
 
 

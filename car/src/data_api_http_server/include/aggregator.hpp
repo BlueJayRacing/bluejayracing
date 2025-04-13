@@ -64,6 +64,7 @@ private:
     void removeExpiredSamples(std::deque<baja::data::ChannelSample>& samples, uint64_t latestTimestamp);
 
     std::unordered_map<ChannelKey, std::deque<baja::data::ChannelSample>> channelSamples_;
+    std::unordered_map<ChannelKey, std::vector<bool>> downsampleFlags_; // added
     std::unordered_map<ChannelKey, MappingInfo> mappingInfo_;
     AggregationConfig config_;
     std::mutex mutex_;
