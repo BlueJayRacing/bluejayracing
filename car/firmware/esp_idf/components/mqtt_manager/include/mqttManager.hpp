@@ -33,8 +33,9 @@ typedef struct mqtt_message {
 class mqttManager {
   public:
     static mqttManager* getInstance();
-    esp_err_t init(void);
-    esp_err_t connectWiFi(const std::string& wifi_ssid, const std::string& wifi_pswd);
+    esp_err_t init(const std::string& t_ssid, const std::string& t_pswd);
+    esp_err_t connectWiFi(void);
+    esp_err_t waitWiFiConnect(TickType_t ticks_to_wait);
     void disconnectWiFi(void);
     bool isWiFiConnected(void) const;
 

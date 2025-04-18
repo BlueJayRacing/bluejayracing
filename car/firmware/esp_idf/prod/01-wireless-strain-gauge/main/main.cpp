@@ -4,9 +4,9 @@
 #include <esp_log.h>
 #include <esp_mac.h>
 #include <esp_timer.h>
+#include <hardEncoder.hpp>
 #include <mqttManager.hpp>
 #include <test.hpp>
-#include <hardEncoder.hpp>
 
 #include <esp_data_chunk.pb.h>
 #include <pb_decode.h>
@@ -64,7 +64,7 @@ void DecisionTask(void)
     mqtt_client_t* main_mqtt_client;
     bool proto_status;
 
-    esp_err_t ret = mqtt_manager->init();
+    esp_err_t ret = mqtt_manager->init(WIFI_SSID, WIFI_PSWD);
     if (ret) {
         ESP_LOGE(TAG, "Failed to initialize MQTT Manager: %d", ret);
         return;
@@ -80,27 +80,41 @@ void DecisionTask(void)
     poll_command.command = 1;
 
     for (;;) {
+        int num_wifi_disconnects = 0;
+
         // Connect to WiFi if not connected
         while (!mqtt_manager->isWiFiConnected()) {
-            ret = mqtt_manager->connectWiFi(WIFI_SSID, WIFI_PSWD);
+            ESP_LOGE(TAG, "WiFi Is Not Connected");
+            ret = mqtt_manager->connectWiFi();
             if (ret) {
                 ESP_LOGE(TAG, "Failed to Start WiFi Connection");
             }
 
-            vTaskDelay(4000);
+            mqtt_manager->waitWiFiConnect(40000 + 5000 * num_wifi_disconnects);
+            num_wifi_disconnects++;
         }
 
         // Connect to MQTT and Subscribe to Command Topic if not Connected
-        while (!mqtt_manager->isClientConnected(main_mqtt_client)) {
-            ret = mqtt_manager->clientConnect(main_mqtt_client);
-            if (ret) {
-                ESP_LOGE(TAG, "Failed to connect MQTT Client");
-                vTaskDelay(4000);
-                continue;
+        if (!mqtt_manager->isClientConnected(main_mqtt_client)) {
+            bool mqtt_successfully_connected = false;
+
+            for (int i = 0; i < 5; i++) {
+                mqtt_manager->clientConnect(main_mqtt_client);
+
+                vTaskDelay(1000);
+
+                if (mqtt_manager->isClientConnected(main_mqtt_client)) {
+                    mqtt_manager->clientSubscribe(main_mqtt_client, DEC_PI_ESP_TOPIC, 2);
+                    mqtt_successfully_connected = true;
+                    break;
+                }
             }
 
-            vTaskDelay(2000);
-            mqtt_manager->clientSubscribe(main_mqtt_client, DEC_PI_ESP_TOPIC, 2);
+            if (!mqtt_successfully_connected) {
+                mqtt_manager->destroyClient(main_mqtt_client);
+                main_mqtt_client = mqtt_manager->createClient(BROKER_URI);
+                continue;
+            }
         }
 
         uint8_t proto_o_buf[30];
@@ -137,11 +151,11 @@ void DecisionTask(void)
             break;
         } else if (start_command.command == 2) {
             ESP_LOGI(TAG, "Executing Drive Task");
-            drive_data_queue = xQueueCreate(10, sizeof(ESPDataChunk));
+            drive_data_queue = xQueueCreate(20, sizeof(ESPDataChunk));
             time_queue       = xQueueCreate(10, sizeof(ts_translation_t));
 
-            xTaskCreate(vTaskDriveRecordADCTask, "Drive Record ADC Task", (1 << 15), NULL, 3, NULL);
-            xTaskCreate(vTaskDriveSendDataTask, "Drive Send Data Task", (1 << 15), NULL, 3, NULL);
+            xTaskCreate(vTaskDriveRecordADCTask, "Drive Record ADC Task", 24000, NULL, 3, NULL);
+            xTaskCreate(vTaskDriveSendDataTask, "Drive Send Data Task", 24000, NULL, 3, NULL);
             break;
         }
     }
@@ -180,26 +194,41 @@ void vTaskCalTask(void*)
 
     ESP_LOGI(TAG, "Measuring and sending data");
     while (true) {
+        int num_wifi_disconnects = 0;
+
         // Connect to WiFi if not connected
         while (!mqtt_manager->isWiFiConnected()) {
-            ret = mqtt_manager->connectWiFi(WIFI_SSID, WIFI_PSWD);
+            ESP_LOGE(TAG, "WiFi Is Not Connected");
+            ret = mqtt_manager->connectWiFi();
             if (ret) {
                 ESP_LOGE(TAG, "Failed to Start WiFi Connection");
             }
 
-            vTaskDelay(400);
+            mqtt_manager->waitWiFiConnect(40000 + 5000 * num_wifi_disconnects);
+            num_wifi_disconnects++;
         }
 
         // Connect to MQTT and Subscribe to Command Topic if not Connected
-        while (!mqtt_manager->isClientConnected(cal_mqtt_client)) {
-            ret = mqtt_manager->clientConnect(cal_mqtt_client);
-            if (ret) {
-                ESP_LOGE(TAG, "Failed to connect MQTT Client");
-                vTaskDelay(400);
-                continue;
+        if (!mqtt_manager->isClientConnected(cal_mqtt_client)) {
+            bool mqtt_successfully_connected = false;
+
+            for (int i = 0; i < 5; i++) {
+                mqtt_manager->clientConnect(cal_mqtt_client);
+
+                vTaskDelay(1000);
+
+                if (mqtt_manager->isClientConnected(cal_mqtt_client)) {
+                    mqtt_manager->clientSubscribe(cal_mqtt_client, WSG_PI_TIME_TOPIC, 2);
+                    mqtt_successfully_connected = true;
+                    break;
+                }
             }
 
-            vTaskDelay(200);
+            if (!mqtt_successfully_connected) {
+                mqtt_manager->destroyClient(cal_mqtt_client);
+                cal_mqtt_client = mqtt_manager->createClient(BROKER_URI);
+                continue;
+            }
         }
 
         cal_data_t measurements = cal_data_t_init_zero;
@@ -260,8 +289,8 @@ void vTaskDriveRecordADCTask(void*)
     // ESP_LOGI(TAG, "Received Time Translation: pi_time_us: %lld, esp_time_us: %ld", time_trans.pi_time_us,
     //          time_trans.esp_time_us);
 
-    drive_cfg_t sample_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
-    drive_cfg_t excitn_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
+    drive_cfg_t sample_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
+    drive_cfg_t excitn_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
     drive_cfg_t dacbias_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::DAC_BIAS};
 
     while (true) {
@@ -314,27 +343,41 @@ void vTaskDriveSendDataTask(void*)
     mqtt_manager->clientSubscribe(drive_mqtt_client, WSG_PI_TIME_TOPIC, 2);
 
     while (true) {
+        int num_wifi_disconnects = 0;
+
         // Connect to WiFi if not connected
         while (!mqtt_manager->isWiFiConnected()) {
-            ret = mqtt_manager->connectWiFi(WIFI_SSID, WIFI_PSWD);
+            ESP_LOGE(TAG, "WiFi Is Not Connected");
+            ret = mqtt_manager->connectWiFi();
             if (ret) {
                 ESP_LOGE(TAG, "Failed to Start WiFi Connection");
             }
 
-            vTaskDelay(400);
+            mqtt_manager->waitWiFiConnect(40000 + 5000 * num_wifi_disconnects);
+            num_wifi_disconnects++;
         }
 
         // Connect to MQTT and Subscribe to Command Topic if not Connected
-        while (!mqtt_manager->isClientConnected(drive_mqtt_client)) {
-            ret = mqtt_manager->clientConnect(drive_mqtt_client);
-            if (ret) {
-                ESP_LOGE(TAG, "Failed to connect MQTT Client");
-                vTaskDelay(400);
-                continue;
+        if (!mqtt_manager->isClientConnected(drive_mqtt_client)) {
+            bool mqtt_successfully_connected = false;
+
+            for (int i = 0; i < 5; i++) {
+                mqtt_manager->clientConnect(drive_mqtt_client);
+
+                vTaskDelay(1000);
+
+                if (mqtt_manager->isClientConnected(drive_mqtt_client)) {
+                    mqtt_manager->clientSubscribe(drive_mqtt_client, WSG_PI_TIME_TOPIC, 2);
+                    mqtt_successfully_connected = true;
+                    break;
+                }
             }
 
-            vTaskDelay(200);
-            mqtt_manager->clientSubscribe(drive_mqtt_client, WSG_PI_TIME_TOPIC, 2);
+            if (!mqtt_successfully_connected) {
+                mqtt_manager->destroyClient(drive_mqtt_client);
+                drive_mqtt_client = mqtt_manager->createClient(BROKER_URI);
+                continue;
+            }
         }
 
         mqtt_message time_message;
@@ -362,7 +405,7 @@ void vTaskDriveSendDataTask(void*)
         int bytes_written = hardEncoder::encodeESPDataChunk(measurements, proto_o_buf);
 
         mqtt_manager->clientPublish(drive_mqtt_client, proto_o_buf.data(), bytes_written, DRIVE_DATA_TOPIC, 2);
-        // ESP_LOGI(TAG, "Sent Data");
+        ESP_LOGI(TAG, "Sent Data: %lld", esp_timer_get_time() / 1000);
     }
 }
 

@@ -45,8 +45,12 @@ mqttManager::~mqttManager() {}
  *
  * @note Should only be called once per application.
  *******************************************************************************/
-esp_err_t mqttManager::init(void)
+esp_err_t mqttManager::init(const std::string& t_ssid, const std::string& t_pswd)
 {
+    if (t_ssid.length() == 0 || t_pswd.length() == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     lockGuard guard(mutex_);
     esp_err_t err;
 
@@ -88,30 +92,28 @@ esp_err_t mqttManager::init(void)
         return err;
     }
 
-    return ESP_OK;
-}
-
-/*******************************************************************************
- * @brief Connects to the WiFi Access Point
- *
- * @param t_ssid The SSID of the WiFi Access Point
- * @param t_pwd  The password of the WiFi Access Point
- *
- * @return Returns 0 for success or negative error code.
- *******************************************************************************/
-esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string& t_pswd)
-{
-    lockGuard guard(mutex_);
-
-    if (t_ssid.length() == 0 || t_pswd.length() == 0) {
-        return ESP_ERR_INVALID_ARG;
+    err = esp_wifi_start();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to start WiFi (err: %d)\n", err);
+        return err;
     }
 
-    esp_err_t err;
+    err = esp_wifi_set_max_tx_power(80);
+    if (err) {
+        ESP_LOGE(TAG, "Failed to set WiFi TX Power (err: %d)\n", err);
+        return err;
+    }
+
     wifi_config_t wifi_config;
 
     if (t_ssid.length() > sizeof(wifi_config.sta.ssid) || t_pswd.length() > sizeof(wifi_config.sta.password)) {
         return ESP_ERR_INVALID_SIZE;
+    }
+
+    err = esp_wifi_clear_ap_list();
+    if (err) {
+        ESP_LOGE(TAG, "Failed to clear AP list (err: %d)\n", err);
+        return err;
     }
 
     memset(&wifi_config, 0, sizeof(wifi_config_t));
@@ -129,17 +131,22 @@ esp_err_t mqttManager::connectWiFi(const std::string& t_ssid, const std::string&
         return err;
     }
 
-    err = esp_wifi_start();
-    if (err) {
-        ESP_LOGE(TAG, "Failed to start WiFi (err: %d)\n", err);
-        return err;
-    }
+    return ESP_OK;
+}
 
-    err = esp_wifi_set_max_tx_power(80);
-    if (err) {
-        ESP_LOGE(TAG, "Failed to set WiFi TX Power (err: %d)\n", err);
-        return err;
-    }
+/*******************************************************************************
+ * @brief Connects to the WiFi Access Point
+ *
+ * @param t_ssid The SSID of the WiFi Access Point
+ * @param t_pwd  The password of the WiFi Access Point
+ *
+ * @return Returns 0 for success or negative error code.
+ *******************************************************************************/
+esp_err_t mqttManager::connectWiFi(void)
+{
+    lockGuard guard(mutex_);
+
+    esp_err_t err;
 
     err = esp_wifi_connect();
     if (err) {
@@ -170,6 +177,7 @@ mqtt_client_t* mqttManager::createClient(const std::string& t_broker_uri)
 
     mqtt_config.broker.address.uri    = t_broker_uri.data();
     mqtt_config.credentials.client_id = client_id.data();
+    mqtt_config.network.timeout_ms = 3000;
 
     mqtt_client_t* client = new mqtt_client_t();
 
@@ -190,6 +198,13 @@ mqtt_client_t* mqttManager::createClient(const std::string& t_broker_uri)
     client->conn_event = xEventGroupCreate();
 
     return client;
+}
+
+esp_err_t mqttManager::waitWiFiConnect(TickType_t ticks_to_wait)
+{
+    xEventGroupWaitBits(wifi_conn_group_, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, ticks_to_wait);
+
+    return ESP_OK;
 }
 
 void mqttManager::destroyClient(mqtt_client_t* client)
@@ -237,11 +252,15 @@ esp_err_t mqttManager::clientDisconnect(mqtt_client_t* client)
 
 void mqttManager::wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
+    wifi_event_sta_disconnected_t *event;
+
     if (event_base == WIFI_EVENT) {
         switch ((wifi_event_t)event_id) {
         case WIFI_EVENT_STA_START:
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
+            event = (wifi_event_sta_disconnected_t *) event_data;
+            ESP_LOGI(TAG, "WiFi Disconnected. Reason: %d\n", event->reason);
             xEventGroupClearBits(wifi_conn_group_, WIFI_CONNECTED_BIT);
             break;
         default:
