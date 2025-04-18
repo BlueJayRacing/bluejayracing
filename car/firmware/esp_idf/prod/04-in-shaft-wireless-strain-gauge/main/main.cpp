@@ -7,6 +7,7 @@
 #include <mqttManager.hpp>
 #include <test.hpp>
 #include <hardEncoder.hpp>
+#include <ad5626.hpp>
 
 #include <esp_data_chunk.pb.h>
 #include <pb_decode.h>
@@ -51,7 +52,7 @@ extern "C" void app_main(void)
 {
 #if ENABLE_TESTS == 1
     Test test(ESP_LOG_DEBUG);
-    test.testProtobufEncode();
+    test.testADCDACReadAnalogFrontEnd();
 #else
     esp_log_level_set("mqttManager", ESP_LOG_NONE);
     DecisionTask();

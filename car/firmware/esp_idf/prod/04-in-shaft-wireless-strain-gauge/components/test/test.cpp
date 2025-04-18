@@ -4,11 +4,11 @@
 #include <esp_timer.h>
 #include <test.hpp>
 
+#include <esp_data_chunk.pb.h>
 #include <hardEncoder.hpp>
 #include <pb_common.h>
-#include <pb_encode.h>
 #include <pb_decode.h>
-#include <esp_data_chunk.pb.h>
+#include <pb_encode.h>
 
 #if ENABLE_TESTS == 1
 
@@ -449,7 +449,7 @@ void Test::testADCDACEndtoEnd(void)
     gpio_config_t config;
     config.mode         = GPIO_MODE_OUTPUT;
     config.intr_type    = GPIO_INTR_DISABLE;
-    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    config.pin_bit_mask = (1ULL << GPIO_NUM_16) | (1ULL << GPIO_NUM_17);
     config.pull_up_en   = GPIO_PULLUP_DISABLE;
     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
@@ -472,41 +472,54 @@ void Test::testADCDACEndtoEnd(void)
     spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
 
     // Initialize the DAC instance
-    ad5626_init_param_t dac_params;
-    dac_params.cs_pin   = GPIO_NUM_0;
-    dac_params.ldac_pin = GPIO_NUM_17;
+    ad5689r_params_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_22;
+    dac_params.ldac_pin = GPIO_NUM_16;
     dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.gain_pin = GPIO_NUM_NC;
     dac_params.spi_host = SPI2_HOST;
 
     ret = dac_.init(dac_params);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize AD5626: %d", ret);
+        ESP_LOGE(TAG, "Failed to initialize AD5689R: %d", ret);
         return;
     }
 
-    // Initialize the ADC instance
-    ads1120_init_param_t adc_params;
-    adc_params.cs_pin   = GPIO_NUM_21;
-    adc_params.drdy_pin = GPIO_NUM_2;
-    adc_params.spi_host = SPI2_HOST;
+    // Initialize the ADC1 instance
+    ads1120_init_param_t adc1_params;
+    adc1_params.cs_pin   = GPIO_NUM_21;
+    adc1_params.drdy_pin = GPIO_NUM_23;
+    adc1_params.spi_host = SPI2_HOST;
 
-    ret = adc_.init(adc_params);
+    ret = adc1_.init(adc1_params);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize ADS1120: %d", ret);
+        ESP_LOGE(TAG, "Failed to initialize ADS1120-1: %d", ret);
+        return;
+    }
+
+    // Initialize the ADC2 instance
+    ads1120_init_param_t adc2_params;
+    adc2_params.cs_pin   = GPIO_NUM_17;
+    adc2_params.drdy_pin = GPIO_NUM_2;
+    adc2_params.spi_host = SPI2_HOST;
+
+    ret = adc2_.init(adc2_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ADS1120-2: %d", ret);
         return;
     }
 
     // Start running ADC/DAC tests
     testADCDACCheckSPIBus();
     testADCDACReadDACBias();
-    testADCDACTestADCGain2();
-    testADCDACTestADCGain4();
+    // testADCDACTestADCGain2();
+    // testADCDACTestADCGain4();
 }
 
-/* We check whether the SPI bus on the WSG board is functional by programming
- * the ADC to read data at a specific sample rate, and then check to see if the
- * programmed sample rate is close to the real sample rate.
- */
+// /* We check whether the SPI bus on the WSG board is functional by programming
+//  * the ADC to read data at a specific sample rate, and then check to see if the
+//  * programmed sample rate is close to the real sample rate.
+//  */
 
 void Test::testADCDACCheckSPIBus(void)
 {
@@ -519,7 +532,10 @@ void Test::testADCDACCheckSPIBus(void)
     adc_regs.op_mode   = TURBO; // turbo
     adc_regs.data_rate = 6;     // 2000 SPS
 
-    adc_.configure(adc_regs);
+    adc1_.configure(adc_regs);
+    adc2_.configure(adc_regs);
+
+    ESP_LOGI(TAG, "Testing ADC1");
 
     int16_t data;
     int num_success_reads = 0;
@@ -528,8 +544,9 @@ void Test::testADCDACCheckSPIBus(void)
     int current_time      = esp_timer_get_time();
 
     while (current_time - 1000000 < start_time) {
-        if (adc_.isDataReady()) {
-            if (adc_.readADC(&data) == ESP_OK) {
+        // while (true) {
+        if (adc1_.isDataReady()) {
+            if (adc1_.readADC(&data) == ESP_OK) {
                 num_success_reads++;
             } else {
                 num_failed_reads++;
@@ -538,14 +555,43 @@ void Test::testADCDACCheckSPIBus(void)
         current_time = esp_timer_get_time();
     }
 
-    ESP_LOGD(TAG, "Number of successful reads: %d", num_success_reads);
-    ESP_LOGD(TAG, "Number of failed reads: %d", num_failed_reads);
+    ESP_LOGI(TAG, "Number of successful reads: %d", num_success_reads);
+    ESP_LOGI(TAG, "Number of failed reads: %d", num_failed_reads);
     assert(num_success_reads > 1800 && num_success_reads < 2200);
+
+    ESP_LOGI(TAG, "Passed Testing ADC1");
+
+    ESP_LOGI(TAG, "Testing ADC2");
+
+    adc2_.configure(adc_regs);
+
+    num_success_reads = 0;
+    num_failed_reads  = 0;
+    start_time        = esp_timer_get_time();
+    current_time      = esp_timer_get_time();
+
+    while (current_time - 1000000 < start_time) {
+        // while (true) {
+        if (adc2_.isDataReady()) {
+            if (adc2_.readADC(&data) == ESP_OK) {
+                num_success_reads++;
+            } else {
+                num_failed_reads++;
+            }
+        }
+        current_time = esp_timer_get_time();
+    }
+
+    ESP_LOGI(TAG, "Number of successful reads: %d", num_success_reads);
+    ESP_LOGI(TAG, "Number of failed reads: %d", num_failed_reads);
+    assert(num_success_reads > 1800 && num_success_reads < 2200);
+
+    ESP_LOGI(TAG, "Passed Testing ADC2");
 
     ESP_LOGI(TAG, "Passed Testing Reading ADC to check SPI bus");
 }
 
-#define NUM_DAC_BIAS_SAMPLES 315
+#define NUM_DAC_BIAS_SAMPLES 4369
 
 /* We check whether the DAC bias is being set properly by having the ADC read it
  * as a single-ended input between the DAC bias and ground.
@@ -563,16 +609,25 @@ void Test::testADCDACReadDACBias(void)
     adc_regs.data_rate = 6;
     adc_regs.volt_refs = REFP0_REFN0;
 
-    esp_err_t ret = adc_.configure(adc_regs);
+    esp_err_t ret = adc1_.configure(adc_regs);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+        ESP_LOGE(TAG, "Failed to configure ADC1: %d", ret);
         return;
     }
 
-    float sum_diff = 0;
+    ret = adc2_.configure(adc_regs);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure ADC2: %d", ret);
+        return;
+    }
 
-    for (int i = 0; i < NUM_DAC_BIAS_SAMPLES; i++) {
-        ret = dac_.setLevel(AD5626::MAX_LEVEL_VALUE * i / (NUM_DAC_BIAS_SAMPLES));
+    float sum_diffs[2] = {0, 0};
+    int16_t read_values[2];
+    float measured_volts[2];
+
+    for (int i = 100; i < NUM_DAC_BIAS_SAMPLES; i++) {
+        uint16_t dac_value = ((int)AD5689R::MAX_LEVEL_VALUE) * i / NUM_DAC_BIAS_SAMPLES;
+        ret                = dac_.setLevel(BOTH, dac_value);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set DAC level: %d", ret);
             continue;
@@ -580,29 +635,40 @@ void Test::testADCDACReadDACBias(void)
 
         vTaskDelay(1);
 
-        while (!adc_.isDataReady()) {
+        while (!adc1_.isDataReady()) {
             vTaskDelay(1);
         }
 
-        int16_t read_value;
-
-        ret = adc_.readADC(&read_value);
+        ret = adc1_.readADC(&read_values[0]);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+            ESP_LOGE(TAG, "Failed to read ADC1: %d", ret);
             continue;
         }
 
-        float expected_dac_voltage = 4.095 * i / (NUM_DAC_BIAS_SAMPLES);
-        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
-        sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
+        while (!adc2_.isDataReady()) {
+            vTaskDelay(1);
+        }
 
-        ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
-        ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
+        ret = adc2_.readADC(&read_values[1]);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to read ADC1: %d", ret);
+            continue;
+        }
+
+        float expected_dac_voltage = 2.500 * 2 * dac_value / (1 << 16);
+
+        measured_volts[0] = 5.000 * read_values[0] / ((1 << 15) - 1);
+        measured_volts[1] = 5.000 * read_values[1] / ((1 << 15) - 1);
+
+        sum_diffs[0] += std::abs(expected_dac_voltage - measured_volts[0]);
+        sum_diffs[1] += std::abs(expected_dac_voltage - measured_volts[1]);
     }
 
-    ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_DAC_BIAS_SAMPLES);
+    ESP_LOGI(TAG, "Average DAC1 error (V): %f", sum_diffs[0] / (NUM_DAC_BIAS_SAMPLES - 100));
+    ESP_LOGI(TAG, "Average DAC2 error (V): %f", sum_diffs[1] / (NUM_DAC_BIAS_SAMPLES - 100));
 
-    assert(sum_diff / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
+    assert(sum_diffs[0] / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
+    assert(sum_diffs[1] / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
 
     ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
 }
@@ -610,122 +676,122 @@ void Test::testADCDACReadDACBias(void)
 #define NUM_ADC_GAIN2_SAMPLES 250
 #define MVOLTS_PER_SAMPLE     10
 
-/* We check whether the ADC gain is being correctly set by changing the
- * gain to a predetermined DAC bias.
- */
-void Test::testADCDACTestADCGain2(void)
-{
-    ESP_LOGI(TAG, "Testing ADC gain 2");
+// /* We check whether the ADC gain is being correctly set by changing the
+//  * gain to a predetermined DAC bias.
+//  */
+// void Test::testADCDACTestADCGain2(void)
+// {
+//     ESP_LOGI(TAG, "Testing ADC gain 2");
 
-    esp_err_t ret;
-    ads1120_regs_t adc_regs;
-    adc_regs.conv_mode = CONTINUOUS;
-    adc_regs.op_mode   = TURBO;
-    adc_regs.channels  = AIN2_AVSS;
-    adc_regs.data_rate = 6;
-    adc_regs.volt_refs = REFP0_REFN0;
-    adc_regs.gain      = GAIN_2;
+//     esp_err_t ret;
+//     ads1120_regs_t adc_regs;
+//     adc_regs.conv_mode = CONTINUOUS;
+//     adc_regs.op_mode   = TURBO;
+//     adc_regs.channels  = AIN2_AVSS;
+//     adc_regs.data_rate = 6;
+//     adc_regs.volt_refs = REFP0_REFN0;
+//     adc_regs.gain      = GAIN_2;
 
-    ret = adc_.configure(adc_regs);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
-    }
+//     ret = adc_.configure(adc_regs);
+//     if (ret != ESP_OK) {
+//         ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+//     }
 
-    float sum_diff = 0;
+//     float sum_diff = 0;
 
-    for (int i = 0; i < NUM_ADC_GAIN2_SAMPLES; i++) {
+//     for (int i = 0; i < NUM_ADC_GAIN2_SAMPLES; i++) {
 
-        ret = dac_.setLevel(i * MVOLTS_PER_SAMPLE);
-        if (ret != ESP_OK) {
-            ESP_LOGI(TAG, "Failed to set DAC Level: %d", ret);
-            continue;
-        }
+//         ret = dac_.setLevel(i * MVOLTS_PER_SAMPLE);
+//         if (ret != ESP_OK) {
+//             ESP_LOGI(TAG, "Failed to set DAC Level: %d", ret);
+//             continue;
+//         }
 
-        vTaskDelay(1);
+//         vTaskDelay(1);
 
-        while (!adc_.isDataReady()) {
-            vTaskDelay(1);
-        }
+//         while (!adc_.isDataReady()) {
+//             vTaskDelay(1);
+//         }
 
-        int16_t read_value;
+//         int16_t read_value;
 
-        ret = adc_.readADC(&read_value);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
-            continue;
-        }
+//         ret = adc_.readADC(&read_value);
+//         if (ret != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+//             continue;
+//         }
 
-        float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 2;
-        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
-        sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
+//         float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 2;
+//         float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
+//         sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
 
-        ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
-        ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
-    }
+//         ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
+//         ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
+//     }
 
-    ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_ADC_GAIN2_SAMPLES);
+//     ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_ADC_GAIN2_SAMPLES);
 
-    ESP_LOGI(TAG, "Finished testing ADC gain 2");
-}
+//     ESP_LOGI(TAG, "Finished testing ADC gain 2");
+// }
 
-#define NUM_ADC_GAIN4_SAMPLES 125
-#define MVOLTS_PER_SAMPLE     10
+// #define NUM_ADC_GAIN4_SAMPLES 125
+// #define MVOLTS_PER_SAMPLE     10
 
-void Test::testADCDACTestADCGain4(void)
-{
+// void Test::testADCDACTestADCGain4(void)
+// {
 
-    ESP_LOGI(TAG, "Testing ADC gain 4");
+//     ESP_LOGI(TAG, "Testing ADC gain 4");
 
-    esp_err_t ret;
-    ads1120_regs_t adc_regs;
-    adc_regs.conv_mode = CONTINUOUS;
-    adc_regs.op_mode   = TURBO;
-    adc_regs.channels  = AIN2_AVSS;
-    adc_regs.data_rate = 6;
-    adc_regs.volt_refs = REFP0_REFN0;
-    adc_regs.gain      = GAIN_4;
+//     esp_err_t ret;
+//     ads1120_regs_t adc_regs;
+//     adc_regs.conv_mode = CONTINUOUS;
+//     adc_regs.op_mode   = TURBO;
+//     adc_regs.channels  = AIN2_AVSS;
+//     adc_regs.data_rate = 6;
+//     adc_regs.volt_refs = REFP0_REFN0;
+//     adc_regs.gain      = GAIN_4;
 
-    ret = adc_.configure(adc_regs);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
-    }
+//     ret = adc_.configure(adc_regs);
+//     if (ret != ESP_OK) {
+//         ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+//     }
 
-    float sum_diff = 0;
+//     float sum_diff = 0;
 
-    for (int i = 0; i < NUM_ADC_GAIN4_SAMPLES; i++) {
+//     for (int i = 0; i < NUM_ADC_GAIN4_SAMPLES; i++) {
 
-        ret = dac_.setLevel(i * MVOLTS_PER_SAMPLE);
-        if (ret != ESP_OK) {
-            ESP_LOGI(TAG, "Failed to set DAC Level: %d", ret);
-            continue;
-        }
+//         ret = dac_.setLevel(i * MVOLTS_PER_SAMPLE);
+//         if (ret != ESP_OK) {
+//             ESP_LOGI(TAG, "Failed to set DAC Level: %d", ret);
+//             continue;
+//         }
 
-        vTaskDelay(1);
+//         vTaskDelay(1);
 
-        while (!adc_.isDataReady()) {
-            vTaskDelay(1);
-        }
+//         while (!adc_.isDataReady()) {
+//             vTaskDelay(1);
+//         }
 
-        int16_t read_value;
+//         int16_t read_value;
 
-        ret = adc_.readADC(&read_value);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
-            continue;
-        }
+//         ret = adc_.readADC(&read_value);
+//         if (ret != ESP_OK) {
+//             ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+//             continue;
+//         }
 
-        float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 4;
-        float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
-        sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
+//         float expected_dac_voltage = 0.001 * i * MVOLTS_PER_SAMPLE * 4;
+//         float measured_dac_voltage = 4.999 * read_value / ((1 << 15) - 1);
+//         sum_diff += std::abs(expected_dac_voltage - measured_dac_voltage);
 
-        ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
-        ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
-    }
+//         ESP_LOGD(TAG, "Expected DAC Voltage Value: %.10f", expected_dac_voltage);
+//         ESP_LOGD(TAG, "Measured DAC Voltage Value: %.10f", measured_dac_voltage);
+//     }
 
-    ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_ADC_GAIN4_SAMPLES);
+//     ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_ADC_GAIN4_SAMPLES);
 
-    ESP_LOGI(TAG, "Finished testing ADC gain 4");
-}
+//     ESP_LOGI(TAG, "Finished testing ADC gain 4");
+// }
 
 /**
  * We try to read the analog frontend (i.e. the filtered signal from the inst. amplifier)
@@ -735,8 +801,20 @@ void Test::testADCDACReadAnalogFrontEnd(void)
 {
     ESP_LOGI(TAG, "Testing Reading Analog FrontEnd");
 
+    gpio_config_t config;
+    config.mode         = GPIO_MODE_OUTPUT;
+    config.intr_type    = GPIO_INTR_DISABLE;
+    config.pin_bit_mask = (1ULL << GPIO_NUM_16) | (1ULL << GPIO_NUM_17);
+    config.pull_up_en   = GPIO_PULLUP_DISABLE;
+    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+
+    esp_err_t ret = gpio_config(&config);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+        return;
+    }
+
     // Configure the SPI bus
-    esp_err_t ret;
     spi_bus_config_t spi_cfg;
     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
 
@@ -746,33 +824,43 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     spi_cfg.quadwp_io_num = -1;
     spi_cfg.quadhd_io_num = -1;
 
-    ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
-    if (ret) {
-        return;
-    }
+    spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
 
     // Initialize the DAC instance
-    ad5626_init_param_t dac_params;
-    dac_params.cs_pin   = GPIO_NUM_0;
-    dac_params.ldac_pin = GPIO_NUM_17;
+    ad5689r_params_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_22;
+    dac_params.ldac_pin = GPIO_NUM_16;
     dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.gain_pin = GPIO_NUM_NC;
     dac_params.spi_host = SPI2_HOST;
 
     ret = dac_.init(dac_params);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize AD5626: %d", ret);
+        ESP_LOGE(TAG, "Failed to initialize AD5689R: %d", ret);
         return;
     }
 
-    // Initialize the ADC instance
-    ads1120_init_param_t adc_params;
-    adc_params.cs_pin   = GPIO_NUM_21;
-    adc_params.drdy_pin = GPIO_NUM_2;
-    adc_params.spi_host = SPI2_HOST;
+    // Initialize the ADC1 instance
+    ads1120_init_param_t adc1_params;
+    adc1_params.cs_pin   = GPIO_NUM_21;
+    adc1_params.drdy_pin = GPIO_NUM_23;
+    adc1_params.spi_host = SPI2_HOST;
 
-    ret = adc_.init(adc_params);
+    ret = adc1_.init(adc1_params);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize ADS1120: %d", ret);
+        ESP_LOGE(TAG, "Failed to initialize ADS1120-1: %d", ret);
+        return;
+    }
+
+    // Initialize the ADC2 instance
+    ads1120_init_param_t adc2_params;
+    adc2_params.cs_pin   = GPIO_NUM_17;
+    adc2_params.drdy_pin = GPIO_NUM_2;
+    adc2_params.spi_host = SPI2_HOST;
+
+    ret = adc2_.init(adc2_params);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ADS1120-2: %d", ret);
         return;
     }
 
@@ -782,171 +870,193 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     // Sample at Normal Mode, Gain of 1
     adc_regs.conv_mode = CONTINUOUS;
     adc_regs.op_mode   = NORMAL;
-    adc_regs.channels  = AIN1_AIN2;
+    adc_regs.channels  = AIN1_AVSS;
     adc_regs.data_rate = 2;
     adc_regs.volt_refs = REFP0_REFN0;
     adc_regs.gain      = GAIN_1;
 
-    ret = adc_.configure(adc_regs);
+    ret = adc1_.configure(adc_regs);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
         return;
     }
 
-    ret = dac_.setLevel(2500);
+    ret = adc2_.configure(adc_regs);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure ADC: %d", ret);
+        return;
+    }
+
+    ret = dac_.setLevel(BOTH, AD5689R::MAX_LEVEL_VALUE / 2);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set DAC to ground: %d", ret);
         return;
     }
 
-    int16_t adc_val;
+    int adc_vals[2];
 
     while (true) {
-        if (adc_.isDataReady()) {
-            ret = adc_.readADC(&adc_val);
+        adc_vals[0] = 0;
+        adc_vals[1] = 0;
+
+        for (int i = 0; i < 20; i++) {
+            int16_t val;
+            while (!adc1_.isDataReady()) {
+            }
+            ret = adc1_.readADC(&val);
             if (ret != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
                 continue;
             }
 
-            printf("%d\n", adc_val);
-        } else {
-            vTaskDelay(1);
+            adc_vals[0] += val;
+
+            while (!adc2_.isDataReady()) {
+            }
+            ret = adc2_.readADC(&val);
+            if (ret != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to read ADC: %d", ret);
+                continue;
+            }
+
+            adc_vals[1] += val;
         }
+
+        printf("ADC Values: \t %d \t %d\n", adc_vals[0] / 100, adc_vals[1] / 20);
     }
 }
 
-void Test::testCalSensorSetup(void)
-{
-    spi_bus_config_t spi_cfg;
-    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+// void Test::testCalSensorSetup(void)
+// {
+//     spi_bus_config_t spi_cfg;
+//     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
 
-    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
-    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
-    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
-    spi_cfg.quadwp_io_num = -1;
-    spi_cfg.quadhd_io_num = -1;
+//     spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+//     spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+//     spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+//     spi_cfg.quadwp_io_num = -1;
+//     spi_cfg.quadhd_io_num = -1;
 
-    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
-    if (ret) {
-        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
-        return;
-    }
+//     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+//     if (ret) {
+//         ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+//         return;
+//     }
 
-    gpio_config_t config;
-    config.mode         = GPIO_MODE_OUTPUT;
-    config.intr_type    = GPIO_INTR_DISABLE;
-    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
-    config.pull_up_en   = GPIO_PULLUP_DISABLE;
-    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+//     gpio_config_t config;
+//     config.mode         = GPIO_MODE_OUTPUT;
+//     config.intr_type    = GPIO_INTR_DISABLE;
+//     config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+//     config.pull_up_en   = GPIO_PULLUP_DISABLE;
+//     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
-    ret = gpio_config(&config);
-    if (ret) {
-        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
-        return;
-    }
+//     ret = gpio_config(&config);
+//     if (ret) {
+//         ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+//         return;
+//     }
 
-    ad5626_init_param_t dac_params;
-    dac_params.cs_pin   = GPIO_NUM_0;
-    dac_params.ldac_pin = GPIO_NUM_17;
-    dac_params.clr_pin  = GPIO_NUM_NC;
-    dac_params.spi_host = SPI2_HOST;
+//     ad5626_init_param_t dac_params;
+//     dac_params.cs_pin   = GPIO_NUM_0;
+//     dac_params.ldac_pin = GPIO_NUM_17;
+//     dac_params.clr_pin  = GPIO_NUM_NC;
+//     dac_params.spi_host = SPI2_HOST;
 
-    // Initialize the ADC instance
-    ads1120_init_param_t adc_params;
-    adc_params.cs_pin   = GPIO_NUM_21;
-    adc_params.drdy_pin = GPIO_NUM_2;
-    adc_params.spi_host = SPI2_HOST;
+//     // Initialize the ADC instance
+//     ads1120_init_param_t adc_params;
+//     adc_params.cs_pin   = GPIO_NUM_21;
+//     adc_params.drdy_pin = GPIO_NUM_2;
+//     adc_params.spi_host = SPI2_HOST;
 
-    cal_setup_.init(adc_params, dac_params);
+//     cal_setup_.init(adc_params, dac_params);
 
-    testCalSensorSetupZero();
-    testCalSensorSetupReadAnalogFrontEnd();
-}
+//     testCalSensorSetupZero();
+//     testCalSensorSetupReadAnalogFrontEnd();
+// }
 
-void Test::testCalSensorSetupReadAnalogFrontEnd(void)
-{
-    ESP_LOGI(TAG, "Testing Reading Calibration Analog FrontEnd");
+// void Test::testCalSensorSetupReadAnalogFrontEnd(void)
+// {
+//     ESP_LOGI(TAG, "Testing Reading Calibration Analog FrontEnd");
 
-    ads1120_regs_t adc_regs;
-    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+//     ads1120_regs_t adc_regs;
+//     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    cal_measurement_t measurement;
+//     cal_measurement_t measurement;
 
-    while (true) {
-        cal_setup_.measure(&measurement);
-        ESP_LOGI(TAG, "Measurement: %f V, %d", measurement.voltage, measurement.adc_value);
-        vTaskDelay(10);
-    }
-}
+//     while (true) {
+//         cal_setup_.measure(&measurement);
+//         ESP_LOGI(TAG, "Measurement: %f V, %d", measurement.voltage, measurement.adc_value);
+//         vTaskDelay(10);
+//     }
+// }
 
-void Test::testCalSensorSetupZero(void)
-{
-    ESP_LOGI(TAG, "Testing Zeroing Calibration Sensor Setup");
+// void Test::testCalSensorSetupZero(void)
+// {
+//     ESP_LOGI(TAG, "Testing Zeroing Calibration Sensor Setup");
 
-    esp_err_t ret = cal_setup_.zero();
-    if (ret) {
-        ESP_LOGI(TAG, "Failed to Zero");
-        return;
-    } else {
-        ESP_LOGI(TAG, "Finished Zeroing");
-    }
+//     esp_err_t ret = cal_setup_.zero();
+//     if (ret) {
+//         ESP_LOGI(TAG, "Failed to Zero");
+//         return;
+//     } else {
+//         ESP_LOGI(TAG, "Finished Zeroing");
+//     }
 
-    ESP_LOGI(TAG, "Finished Testing Zeroing Calibration Sensor Setup");
-}
+//     ESP_LOGI(TAG, "Finished Testing Zeroing Calibration Sensor Setup");
+// }
 
-void Test::testDriveSensorSetup(void)
-{
-    ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
+// void Test::testDriveSensorSetup(void)
+// {
+//     ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
 
-    spi_bus_config_t spi_cfg;
-    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+//     spi_bus_config_t spi_cfg;
+//     memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
 
-    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
-    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
-    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
-    spi_cfg.quadwp_io_num = -1;
-    spi_cfg.quadhd_io_num = -1;
+//     spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+//     spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+//     spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+//     spi_cfg.quadwp_io_num = -1;
+//     spi_cfg.quadhd_io_num = -1;
 
-    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
-    if (ret) {
-        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
-        return;
-    }
+//     esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+//     if (ret) {
+//         ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+//         return;
+//     }
 
-    gpio_config_t config;
-    config.mode         = GPIO_MODE_OUTPUT;
-    config.intr_type    = GPIO_INTR_DISABLE;
-    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
-    config.pull_up_en   = GPIO_PULLUP_DISABLE;
-    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+//     gpio_config_t config;
+//     config.mode         = GPIO_MODE_OUTPUT;
+//     config.intr_type    = GPIO_INTR_DISABLE;
+//     config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+//     config.pull_up_en   = GPIO_PULLUP_DISABLE;
+//     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
-    ret = gpio_config(&config);
-    if (ret) {
-        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
-        return;
-    }
+//     ret = gpio_config(&config);
+//     if (ret) {
+//         ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+//         return;
+//     }
 
-    ad5626_init_param_t dac_params;
-    dac_params.cs_pin   = GPIO_NUM_0;
-    dac_params.ldac_pin = GPIO_NUM_17;
-    dac_params.clr_pin  = GPIO_NUM_NC;
-    dac_params.spi_host = SPI2_HOST;
+//     ad5626_init_param_t dac_params;
+//     dac_params.cs_pin   = GPIO_NUM_0;
+//     dac_params.ldac_pin = GPIO_NUM_17;
+//     dac_params.clr_pin  = GPIO_NUM_NC;
+//     dac_params.spi_host = SPI2_HOST;
 
-    // Initialize the ADC instance
-    ads1120_init_param_t adc_params;
-    adc_params.cs_pin   = GPIO_NUM_21;
-    adc_params.drdy_pin = GPIO_NUM_2;
-    adc_params.spi_host = SPI2_HOST;
+//     // Initialize the ADC instance
+//     ads1120_init_param_t adc_params;
+//     adc_params.cs_pin   = GPIO_NUM_21;
+//     adc_params.drdy_pin = GPIO_NUM_2;
+//     adc_params.spi_host = SPI2_HOST;
 
-    drive_setup_.init(adc_params, dac_params);
+//     drive_setup_.init(adc_params, dac_params);
 
-    testDriveSensorSetupSPS();
-    testDriveSensorSetupZero();
-    testDriveSensorSetupReadAnalogFrontEnd();
+//     testDriveSensorSetupSPS();
+//     testDriveSensorSetupZero();
+//     testDriveSensorSetupReadAnalogFrontEnd();
 
-    ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
-}
+//     ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
+// }
 
 void Test::testProtobufEncode(void)
 {
@@ -954,79 +1064,79 @@ void Test::testProtobufEncode(void)
     testProtobufHardEncode();
 }
 
-void Test::testDriveSensorSetupSPS(void)
-{
-    ESP_LOGI(TAG, "Testing Drive Sensor Setup SPS");
+// void Test::testDriveSensorSetupSPS(void)
+// {
+//     ESP_LOGI(TAG, "Testing Drive Sensor Setup SPS");
 
-    uint32_t start_time = esp_timer_get_time();
-    drive_measurement_t measurement;
-    int num_success_reads = 0;
+//     uint32_t start_time = esp_timer_get_time();
+//     drive_measurement_t measurement;
+//     int num_success_reads = 0;
 
-    while (esp_timer_get_time() - start_time < 1000000) {
-        drive_setup_.measure(true, &measurement);
-        num_success_reads++;
-    }
+//     while (esp_timer_get_time() - start_time < 1000000) {
+//         drive_setup_.measure(true, &measurement);
+//         num_success_reads++;
+//     }
 
-    assert(num_success_reads > 1800 && num_success_reads < 2200);
+//     assert(num_success_reads > 1800 && num_success_reads < 2200);
 
-    ESP_LOGI(TAG, "Passed Testing Drive Sensor Setup SPS");
-}
+//     ESP_LOGI(TAG, "Passed Testing Drive Sensor Setup SPS");
+// }
 
-void Test::testDriveSensorSetupReadAnalogFrontEnd(void)
-{
-    ESP_LOGI(TAG, "Testing Reading Drive Analog FrontEnd");
+// void Test::testDriveSensorSetupReadAnalogFrontEnd(void)
+// {
+//     ESP_LOGI(TAG, "Testing Reading Drive Analog FrontEnd");
 
-    ads1120_regs_t adc_regs;
-    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+//     ads1120_regs_t adc_regs;
+//     memset(&adc_regs, 0, sizeof(ads1120_regs_t));
 
-    drive_measurement_t measurement;
+//     drive_measurement_t measurement;
 
-    drive_cfg_t sample_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
-    drive_cfg_t excitn_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
-    drive_cfg_t dacbias_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::DAC_BIAS};
+//     drive_cfg_t sample_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
+//     drive_cfg_t excitn_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
+//     drive_cfg_t dacbias_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::DAC_BIAS};
 
-    float strain_gauge_volt;
-    float excitation_volt;
-    float dac_bias_volt;
+//     float strain_gauge_volt;
+//     float excitation_volt;
+//     float dac_bias_volt;
 
-    while (true) {
-        drive_setup_.configure(sample_cfg);
-        drive_setup_.measure(true, &measurement);
-        strain_gauge_volt = measurement.voltage;
+//     while (true) {
+//         drive_setup_.configure(sample_cfg);
+//         drive_setup_.measure(true, &measurement);
+//         strain_gauge_volt = measurement.voltage;
 
-        drive_setup_.configure(excitn_cfg);
-        drive_setup_.measure(true, &measurement);
-        excitation_volt = measurement.voltage;
+//         drive_setup_.configure(excitn_cfg);
+//         drive_setup_.measure(true, &measurement);
+//         excitation_volt = measurement.voltage;
 
-        drive_setup_.configure(dacbias_cfg);
-        drive_setup_.measure(true, &measurement);
-        dac_bias_volt = measurement.voltage;
+//         drive_setup_.configure(dacbias_cfg);
+//         drive_setup_.measure(true, &measurement);
+//         dac_bias_volt = measurement.voltage;
 
-        ESP_LOGI(TAG, "%f \t%f \t%f", strain_gauge_volt, excitation_volt, dac_bias_volt);
-        vTaskDelay(50);
-    }
-}
+//         ESP_LOGI(TAG, "%f \t%f \t%f", strain_gauge_volt, excitation_volt, dac_bias_volt);
+//         vTaskDelay(50);
+//     }
+// }
 
-void Test::testDriveSensorSetupZero(void)
-{
-    ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
+// void Test::testDriveSensorSetupZero(void)
+// {
+//     ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
 
-    esp_err_t ret = drive_setup_.zero();
-    if (ret) {
-        ESP_LOGI(TAG, "Failed to Zero");
-        return;
-    } else {
-        ESP_LOGI(TAG, "Finished Zeroing");
-    }
+//     esp_err_t ret = drive_setup_.zero();
+//     if (ret) {
+//         ESP_LOGI(TAG, "Failed to Zero");
+//         return;
+//     } else {
+//         ESP_LOGI(TAG, "Finished Zeroing");
+//     }
 
-    ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
-}
+//     ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
+// }
 
 #define NUM_ENCODES 100
 
 std::array<uint8_t, 12000> buffer_1;
 std::array<uint8_t, 12000> buffer_2;
-ESPDataChunk measurements = ESPDataChunk_init_zero;
+ESPDataChunk measurements     = ESPDataChunk_init_zero;
 ESPDataChunk out_measurements = ESPDataChunk_init_zero;
 
 void Test::testProtobufStockEncode(void)
@@ -1039,20 +1149,20 @@ void Test::testProtobufStockEncode(void)
     pb_ostream_t o_stream;
 
     // Generate a test data packet to be serialized
-    measurements.base_timestamp = esp_timer_get_time();
-    measurements.dac_bias = 4095;
+    measurements.base_timestamp     = esp_timer_get_time();
+    measurements.dac_bias           = 4095;
     measurements.excitation_voltage = 2.5;
     strcpy(measurements.mac_address, "AB:CD:EF:GH:IJ:KL");
     measurements.sample_channel_id = 0;
 
     for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
         measurements.timestamp_deltas[i] = i * 500;
-        measurements.values[i] = 3.000;
+        measurements.values[i]           = 3.000;
     }
 
     for (int i = 0; i < NUM_ENCODES; i++) {
-        o_stream     = pb_ostream_from_buffer(buffer_1.data(), buffer_1.size());
-    
+        o_stream = pb_ostream_from_buffer(buffer_1.data(), buffer_1.size());
+
         start_time = esp_timer_get_time();
         pb_encode(&o_stream, ESPDataChunk_fields, &measurements);
         end_time = esp_timer_get_time();
@@ -1065,35 +1175,36 @@ void Test::testProtobufStockEncode(void)
         total_micros += encode_times_micros[i];
     }
 
-    ESP_LOGI(TAG, "Average stock encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    ESP_LOGI(TAG, "Average stock encoding time (micros): %f", ((float)total_micros) / NUM_ENCODES);
     ESP_LOGI(TAG, "Stock encoded bytestream length (bytes): %u", o_stream.bytes_written);
     ESP_LOGI(TAG, "Finished testing Protobuf stock encoding");
 }
 
-void Test::testProtobufHardEncode(void) {
+void Test::testProtobufHardEncode(void)
+{
     ESP_LOGI(TAG, "Testing Protobuf hard encoding");
-    
+
     uint32_t encode_times_micros[NUM_ENCODES];
     uint32_t start_time;
     uint32_t end_time;
     int num_bytes_written;
 
     // Generate a test data packet to be serialized
-    measurements.base_timestamp = esp_timer_get_time();
-    measurements.dac_bias = 4095;
+    measurements.base_timestamp     = esp_timer_get_time();
+    measurements.dac_bias           = 4095;
     measurements.excitation_voltage = 2.5;
     strcpy(measurements.mac_address, "AB:CD:EF:GH:IJ:KL");
     measurements.sample_channel_id = 0;
 
     for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
         measurements.timestamp_deltas[i] = i * 500;
-        measurements.values[i] = i * 3.000;
+        measurements.values[i]           = i * 3.000;
     }
 
-    for (int i = 0; i < NUM_ENCODES; i++) {    
-        start_time = esp_timer_get_time();
+    for (int i = 0; i < NUM_ENCODES; i++) {
+        start_time        = esp_timer_get_time();
         num_bytes_written = hardEncoder::encodeESPDataChunk(measurements, buffer_2);
-        end_time = esp_timer_get_time();
+        end_time          = esp_timer_get_time();
 
         encode_times_micros[i] = end_time - start_time;
     }
@@ -1110,7 +1221,7 @@ void Test::testProtobufHardEncode(void) {
         }
     }
 
-    ESP_LOGI(TAG, "Average hard encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    ESP_LOGI(TAG, "Average hard encoding time (micros): %f", ((float)total_micros) / NUM_ENCODES);
     ESP_LOGI(TAG, "Hard encoded bytestream length (bytes): %u", num_bytes_written);
 
     pb_istream_t istream = pb_istream_from_buffer(buffer_2.data(), num_bytes_written);

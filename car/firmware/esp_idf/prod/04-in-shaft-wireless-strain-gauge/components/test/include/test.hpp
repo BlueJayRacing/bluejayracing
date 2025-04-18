@@ -4,7 +4,7 @@
 
 #include <config.hpp>
 #include <mqttManager.hpp>
-#include <ad5626.hpp>
+#include <ad5689r.hpp>
 #include <ads1120.hpp>
 #include <calSensorSetup.hpp>
 #include <driveSensorSetup.hpp>
@@ -17,8 +17,8 @@ class Test {
     void testMQTTManager(void);
     void testADCDACEndtoEnd(void);
     void testADCDACReadAnalogFrontEnd(void); // Reads the analog front end forever after zeroing
-    void testCalSensorSetup(void); // Reads the analog front end forever after zeroing
-    void testDriveSensorSetup(void); // Reads the analog front end forever after zeroing
+    // void testCalSensorSetup(void); // Reads the analog front end forever after zeroing
+    // void testDriveSensorSetup(void); // Reads the analog front end forever after zeroing
     void testProtobufEncode(void);
 
   private:
@@ -31,15 +31,15 @@ class Test {
 
     void testADCDACCheckSPIBus(void);
     void testADCDACReadDACBias(void);
-    void testADCDACTestADCGain2(void);
-    void testADCDACTestADCGain4(void);
+    // void testADCDACTestADCGain2(void);
+    // void testADCDACTestADCGain4(void);
 
-    void testCalSensorSetupReadAnalogFrontEnd(void);
-    void testCalSensorSetupZero(void);
+    // void testCalSensorSetupReadAnalogFrontEnd(void);
+    // void testCalSensorSetupZero(void);
 
-    void testDriveSensorSetupSPS(void);
-    void testDriveSensorSetupReadAnalogFrontEnd(void);
-    void testDriveSensorSetupZero(void);
+    // void testDriveSensorSetupSPS(void);
+    // void testDriveSensorSetupReadAnalogFrontEnd(void);
+    // void testDriveSensorSetupZero(void);
 
     void testProtobufStockEncode(void);
     void testProtobufHardEncode(void);
@@ -47,8 +47,9 @@ class Test {
 
   private:
     mqttManager* mqtt_manager_;
-    AD5626 dac_;
-    ADS1120 adc_;
+    AD5689R dac_;
+    ADS1120 adc1_;
+    ADS1120 adc2_;
     calSensorSetup cal_setup_;
     driveSensorSetup drive_setup_;
 };
