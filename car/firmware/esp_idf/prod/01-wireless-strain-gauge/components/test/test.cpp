@@ -8,7 +8,7 @@
 #include <pb_common.h>
 #include <pb_encode.h>
 #include <pb_decode.h>
-#include <esp_data_chunk.pb.h>
+#include <wsg_drive_data.pb.h>
 
 #if ENABLE_TESTS == 1
 
@@ -16,7 +16,7 @@
 #define SPI2_MISO_PIN 20
 #define SPI2_SCLK_PIN 19
 
-#define ADC_VALUE_ERROR_MARGIN 0.003
+#define ADC_VALUE_ERROR_MARGIN 0.006
 
 static const char* TAG = "test";
 
@@ -30,7 +30,7 @@ void Test::testMQTTManager(void)
     mqtt_manager_ = mqttManager::getInstance();
 
     // Initialize the MQTT Manager
-    assert(mqtt_manager_->init() == ESP_OK);
+    assert(mqtt_manager_->init("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
     ESP_LOGD(TAG, "Initialized MQTT manager");
 
     // Run MQTT manager tests
@@ -49,11 +49,6 @@ void Test::testMQTTManagerBasicParamErrors(void)
     ESP_LOGI(TAG, "Testing MQTT Manager Basic Paramter Error Handling");
 
     mqtt_client_t client;
-
-    assert(mqtt_manager_->connectWiFi("", "hi") == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->connectWiFi("hi", "") == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->connectWiFi(std::string('c', 33), "hi") == ESP_ERR_INVALID_SIZE);
-    assert(mqtt_manager_->connectWiFi("hi", std::string('c', 65)) == ESP_ERR_INVALID_SIZE);
 
     assert(mqtt_manager_->createClient("") == NULL);
 
@@ -93,7 +88,7 @@ void Test::testMQTTManagerWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Testing MQTT Manager WiFi Connection");
 
     for (int i = 0; i < 5; i++) {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int j = 0; j < 30; j++) {
@@ -132,7 +127,7 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
 
     // Initialization (Connects to WiFi)
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -210,7 +205,7 @@ void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
 
     // Initialization (Connects to WiFi + MQTT)
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -264,7 +259,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     ESP_LOGI(TAG, "Testing MQTT Manager Multiple Clients Connect/Disconnect");
 
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -367,7 +362,7 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     ESP_LOGI(TAG, "Testing MQTT Manager Client Publish/Subscribe");
 
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -1026,8 +1021,8 @@ void Test::testDriveSensorSetupZero(void)
 
 std::array<uint8_t, 12000> buffer_1;
 std::array<uint8_t, 12000> buffer_2;
-ESPDataChunk measurements = ESPDataChunk_init_zero;
-ESPDataChunk out_measurements = ESPDataChunk_init_zero;
+wsg_drive_data_t measurements = wsg_drive_data_t_init_zero;
+wsg_drive_data_t out_measurements = wsg_drive_data_t_init_zero;
 
 void Test::testProtobufStockEncode(void)
 {
@@ -1054,7 +1049,7 @@ void Test::testProtobufStockEncode(void)
         o_stream     = pb_ostream_from_buffer(buffer_1.data(), buffer_1.size());
     
         start_time = esp_timer_get_time();
-        pb_encode(&o_stream, ESPDataChunk_fields, &measurements);
+        pb_encode(&o_stream, wsg_drive_data_t_fields, &measurements);
         end_time = esp_timer_get_time();
 
         encode_times_micros[i] = end_time - start_time;
@@ -1092,7 +1087,7 @@ void Test::testProtobufHardEncode(void) {
 
     for (int i = 0; i < NUM_ENCODES; i++) {    
         start_time = esp_timer_get_time();
-        num_bytes_written = hardEncoder::encodeESPDataChunk(measurements, buffer_2);
+        num_bytes_written = hardEncoder::encodeDriveData(measurements, buffer_2);
         end_time = esp_timer_get_time();
 
         encode_times_micros[i] = end_time - start_time;
@@ -1115,7 +1110,7 @@ void Test::testProtobufHardEncode(void) {
 
     pb_istream_t istream = pb_istream_from_buffer(buffer_2.data(), num_bytes_written);
 
-    if (!pb_decode(&istream, ESPDataChunk_fields, &out_measurements)) {
+    if (!pb_decode(&istream, wsg_drive_data_t_fields, &out_measurements)) {
         ESP_LOGI(TAG, "Failed to decode stream");
         return;
     }

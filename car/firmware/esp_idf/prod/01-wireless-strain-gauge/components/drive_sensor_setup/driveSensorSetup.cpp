@@ -222,6 +222,13 @@ esp_err_t driveSensorSetup::configure(drive_cfg_t new_cfg)
     return ESP_OK;
 }
 
+esp_err_t driveSensorSetup::setDACValue(uint16_t new_dac_bias) {
+    new_dac_bias = max_(new_dac_bias, 0);
+    new_dac_bias = min_(new_dac_bias, AD5626::MAX_LEVEL_VALUE);
+
+    return dac_.setLevel(new_dac_bias);
+}
+
 int min_(int a, int b) { return (a < b) ? a : b; }
 
 int max_(int a, int b) { return (a > b) ? a : b; }

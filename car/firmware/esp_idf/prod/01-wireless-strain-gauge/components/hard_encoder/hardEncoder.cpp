@@ -6,12 +6,12 @@ static const char* TAG = "hard_encoder";
 namespace hardEncoder
 {
 
-int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buffer)
+int encodeDriveData(wsg_drive_data_t& data_chunk, std::array<uint8_t, 12000>& buffer)
 {
     pb_ostream_t stream = pb_ostream_from_buffer(buffer.data(), 12000);
 
     // Encode MAC Address
-    if (!pb_encode_tag(&stream, PB_WT_STRING, ESPDataChunk_mac_address_tag)) {
+    if (!pb_encode_tag(&stream, PB_WT_STRING, wsg_drive_data_t_mac_address_tag)) {
         return -1;
     }
     if (!pb_encode_string(&stream, (pb_byte_t*)data_chunk.mac_address, 17)) {
@@ -21,7 +21,7 @@ int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buf
     // ESP_LOGI(TAG, "After MAC: %u", stream.bytes_written);
 
     // Encode Base Timestamp
-    if (!pb_encode_tag(&stream, PB_WT_64BIT, ESPDataChunk_base_timestamp_tag)) {
+    if (!pb_encode_tag(&stream, PB_WT_64BIT, wsg_drive_data_t_base_timestamp_tag)) {
         return -1;
     }
     if (!pb_encode_fixed64(&stream, &data_chunk.base_timestamp)) {
@@ -30,7 +30,7 @@ int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buf
 
     // ESP_LOGI(TAG, "After Timestamp: %u", stream.bytes_written);
 
-    if (!pb_encode_tag(&stream, PB_WT_STRING, ESPDataChunk_values_tag)) {
+    if (!pb_encode_tag(&stream, PB_WT_STRING, wsg_drive_data_t_values_tag)) {
         return -1;
     }
     if(!pb_encode_varint(&stream, 4000)) {
@@ -45,7 +45,7 @@ int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buf
 
     // ESP_LOGI(TAG, "After Values: %u", stream.bytes_written);
 
-    if (!pb_encode_tag(&stream, PB_WT_STRING, ESPDataChunk_timestamp_deltas_tag)) {
+    if (!pb_encode_tag(&stream, PB_WT_STRING, wsg_drive_data_t_timestamp_deltas_tag)) {
         return -1;
     }
     if(!pb_encode_varint(&stream, 4000)) {
@@ -61,7 +61,7 @@ int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buf
     // ESP_LOGI(TAG, "After timestamp deltas: %u", stream.bytes_written);
 
     // Encode DAC Bias
-    if (!pb_encode_tag(&stream, PB_WT_VARINT, ESPDataChunk_dac_bias_tag)) {
+    if (!pb_encode_tag(&stream, PB_WT_VARINT, wsg_drive_data_t_dac_bias_tag)) {
         return -1;
     }
     if (!pb_encode_varint(&stream, data_chunk.dac_bias)) {
@@ -69,7 +69,7 @@ int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buf
     }
 
     // Encode Excitation Voltage
-    if (!pb_encode_tag(&stream, PB_WT_VARINT, ESPDataChunk_excitation_voltage_tag)) {
+    if (!pb_encode_tag(&stream, PB_WT_VARINT, wsg_drive_data_t_excitation_voltage_tag)) {
         return -1;
     }
     if (!pb_encode_varint(&stream, data_chunk.excitation_voltage)) {
@@ -77,7 +77,7 @@ int encodeESPDataChunk(ESPDataChunk& data_chunk, std::array<uint8_t, 12000>& buf
     }
 
     // Encode Sample Channel ID
-    if (!pb_encode_tag(&stream, PB_WT_VARINT, ESPDataChunk_sample_channel_id_tag)) {
+    if (!pb_encode_tag(&stream, PB_WT_VARINT, wsg_drive_data_t_sample_channel_id_tag)) {
         return -1;
     }
     if (!pb_encode_varint(&stream, data_chunk.sample_channel_id)) {

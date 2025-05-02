@@ -8,11 +8,11 @@
 #include <mqttManager.hpp>
 #include <test.hpp>
 
-#include <esp_data_chunk.pb.h>
 #include <pb_decode.h>
 #include <pb_encode.h>
-#include <wsg_cal_com.pb.h>
+#include <wsg_com.pb.h>
 #include <wsg_cal_data.pb.h>
+#include <wsg_drive_data.pb.h>
 #include <wsg_pi_time.pb.h>
 
 #define SPI2_MOSI_PIN 18
@@ -34,6 +34,7 @@ static const char* TAG = "main";
 mqttManager* mqtt_manager;
 QueueHandle_t drive_data_queue;
 QueueHandle_t time_queue;
+int pi_dac_bias = -1;
 
 typedef struct ts_translation {
     uint64_t pi_time_us;
@@ -51,7 +52,7 @@ extern "C" void app_main(void)
 {
 #if ENABLE_TESTS == 1
     Test test(ESP_LOG_DEBUG);
-    test.testProtobufEncode();
+    test.testADCDACEndtoEnd();
 #else
     esp_log_level_set("mqttManager", ESP_LOG_NONE);
     DecisionTask();
@@ -76,8 +77,15 @@ void DecisionTask(void)
         return;
     }
 
-    cal_command_t poll_command;
-    poll_command.command = 1;
+    wsg_com_poll_t wsg_poll;
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    sprintf(wsg_poll.mac_address, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    ESP_LOGI(TAG, "MAC Address: %s", wsg_poll.mac_address);
+
+    uint8_t proto_o_buf[30];
+    pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
+    pb_encode(&o_stream, wsg_com_poll_t_fields, &wsg_poll);
 
     for (;;) {
         int num_wifi_disconnects = 0;
@@ -117,10 +125,6 @@ void DecisionTask(void)
             }
         }
 
-        uint8_t proto_o_buf[30];
-        pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
-        pb_encode(&o_stream, cal_command_t_fields, &poll_command);
-
         ret = mqtt_manager->clientPublish(main_mqtt_client, proto_o_buf, o_stream.bytes_written, DEC_ESP_PI_TOPIC, 2);
         if (ret) {
             ESP_LOGE(TAG, "Failed to enqueue MQTT message: %d", ret);
@@ -137,22 +141,28 @@ void DecisionTask(void)
         }
 
         pb_istream_t i_stream = pb_istream_from_buffer(start_message.payload.data(), start_message.payload_len);
-        cal_command_t start_command;
-        proto_status = pb_decode(&i_stream, cal_command_t_fields, &start_command);
+        wsg_com_response_t pi_response;
+        proto_status = pb_decode(&i_stream, wsg_com_response_t_fields, &pi_response);
         if (!proto_status) {
             ESP_LOGE(TAG, "Failed to decode Start message");
             vTaskDelay(1000);
             continue;
         }
 
-        if (start_command.command == 1) {
+        if (strcmp(wsg_poll.mac_address, pi_response.mac_address) != 0) {
+            continue;
+        }
+
+        if (pi_response.command == 1) {
             ESP_LOGI(TAG, "Executing Calibration Task");
             xTaskCreate(vTaskCalTask, "Calibration Main Control Loop", (1 << 15), NULL, 3, NULL);
             break;
-        } else if (start_command.command == 2) {
+        } else if (pi_response.command == 2) {
             ESP_LOGI(TAG, "Executing Drive Task");
-            drive_data_queue = xQueueCreate(20, sizeof(ESPDataChunk));
+            drive_data_queue = xQueueCreate(20, sizeof(wsg_drive_data_t));
             time_queue       = xQueueCreate(10, sizeof(ts_translation_t));
+            pi_dac_bias = pi_response.dac_bias;
+            ESP_LOGI(TAG, "Received DAC Bias Value: %d", pi_dac_bias);
 
             xTaskCreate(vTaskDriveRecordADCTask, "Drive Record ADC Task", 24000, NULL, 3, NULL);
             xTaskCreate(vTaskDriveSendDataTask, "Drive Send Data Task", 24000, NULL, 3, NULL);
@@ -231,7 +241,7 @@ void vTaskCalTask(void*)
             }
         }
 
-        cal_data_t measurements = cal_data_t_init_zero;
+        wsg_cal_data_t measurements = wsg_cal_data_t_init_zero;
         cal_measurement_t meas;
 
         for (int i = 0; i < 40; i++) {
@@ -245,7 +255,7 @@ void vTaskCalTask(void*)
         uint8_t proto_o_buf[800];
         pb_ostream_t o_stream = pb_ostream_from_buffer(proto_o_buf, sizeof(proto_o_buf));
 
-        proto_status = pb_encode(&o_stream, cal_data_t_fields, &measurements);
+        proto_status = pb_encode(&o_stream, wsg_cal_data_t_fields, &measurements);
         if (!proto_status) {
             ESP_LOGE(TAG, "Failed to encode data message: %s\n", PB_GET_ERROR(&o_stream));
         }
@@ -268,16 +278,11 @@ void vTaskDriveRecordADCTask(void*)
 
     ESP_LOGI(TAG, "Configured Sensor Setup");
 
-    // Zeroing WSG
-    ret = drive_setup.zero();
-    if (ret) { // ZEROING FAILED
-        ESP_LOGE(TAG, "Zeroing Failed");
-    } else { // ZEROING SUCCEEDED
-        ESP_LOGI(TAG, "Zeroing Succeeded");
-    }
+    // Set DAC Value
+    drive_setup.setDACValue(pi_dac_bias);
 
     ESP_LOGI(TAG, "Measuring and sending data");
-    ESPDataChunk measurements = ESPDataChunk_init_zero;
+    wsg_drive_data_t measurements = wsg_drive_data_t_init_zero;
 
     uint8_t mac[6];
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
@@ -384,8 +389,8 @@ void vTaskDriveSendDataTask(void*)
 
         if (mqtt_manager->clientReceive(drive_mqtt_client, time_message, 2) == ESP_OK) {
             pb_istream_t i_stream = pb_istream_from_buffer(time_message.payload.data(), time_message.payload_len);
-            pi_time_t updated_time;
-            proto_status = pb_decode(&i_stream, pi_time_t_fields, &updated_time);
+            wsg_pi_time_t updated_time;
+            proto_status = pb_decode(&i_stream, wsg_pi_time_t_fields, &updated_time);
             if (!proto_status) {
                 ESP_LOGE(TAG, "Failed to decode Start message");
                 vTaskDelay(1000);
@@ -396,13 +401,13 @@ void vTaskDriveSendDataTask(void*)
             xQueueSend(time_queue, &new_translation, 0);
         }
 
-        ESPDataChunk measurements = ESPDataChunk_init_zero;
+        wsg_drive_data_t measurements = wsg_drive_data_t_init_zero;
 
         if (xQueueReceive(drive_data_queue, &measurements, 1000) != pdTRUE) {
             continue;
         }
 
-        int bytes_written = hardEncoder::encodeESPDataChunk(measurements, proto_o_buf);
+        int bytes_written = hardEncoder::encodeDriveData(measurements, proto_o_buf);
 
         mqtt_manager->clientPublish(drive_mqtt_client, proto_o_buf.data(), bytes_written, DRIVE_DATA_TOPIC, 2);
         ESP_LOGI(TAG, "Sent Data: %lld", esp_timer_get_time() / 1000);
