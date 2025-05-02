@@ -27,6 +27,7 @@ class driveSensorSetup {
     esp_err_t zero(void);
     esp_err_t configure(drive_cfg_t new_cfg);
     esp_err_t measure(bool wait_ready, drive_measurement_t* measurement);
+    esp_err_t setDACValue(uint16_t new_dac_value);
 
   private:
     AD5626 dac_;

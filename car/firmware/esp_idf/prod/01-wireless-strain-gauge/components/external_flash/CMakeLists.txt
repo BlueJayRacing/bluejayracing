@@ -4,4 +4,6 @@ idf_component_register( SRCS "externalFlash.cpp"
                             driver
                             esp_system 
                             log
+                            spi_flash
+                            w25n04kv
                             )
