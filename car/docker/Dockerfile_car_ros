@@ -2,7 +2,7 @@
 # generated from docker_images_ros2/create_ros_image.Dockerfile.em
 # FROM ros:humble-perception-jammy
 # FROM ros:humble-perception
-FROM ros:jazzy-perception
+FROM ros:jazzy-perception@sha256:67ab684f5071f548e0899eb516b230237b397dc94e370d0158bd99fa7d7484a6
 # FROM osrf/ros:humble-desktop-full
 
 SHELL ["/bin/bash", "-c"]

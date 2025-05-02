@@ -10,6 +10,8 @@
   <depend>car_description</depend>
   <depend>car</depend>
   <depend>inertial_sense_ros2</depend>
+  <depend>udp_data_chunk_server</depend>
+  <depend>data_api_http_server</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

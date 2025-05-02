@@ -32,7 +32,20 @@ def generate_launch_description():
         PythonLaunchDescriptionSource([car_nodes_launch_path])
     )
 
+    udp_data_chunk_server = Node(
+        package="udp_data_chunk_server",
+        executable="udp_data_chunk_server",
+        output="screen",
+    )
+    data_api_http_server = Node(
+        package="data_api_http_server",
+        executable="aggregation_server_node",
+        output="screen",
+    )
+
     return LaunchDescription([
         inertial_sense_node,
-        car_nodes_launch
+        car_nodes_launch,
+        udp_data_chunk_server,
+        data_api_http_server
     ])

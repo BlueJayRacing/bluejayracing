@@ -21,18 +21,6 @@ def generate_launch_description():
         output="screen",
     )
 
-    broker_node = Node(
-        package="car",
-        executable="broker_node",
-        output="screen",
-    )
-
-    writer_node = Node(
-        package="car",
-        executable="writer_node",
-        output="screen",
-    )
-
     transmit_prioritizer_node = Node(
         package="car",
         executable="transmit_prioritizer_node",
@@ -49,8 +37,6 @@ def generate_launch_description():
         [
             wsg_update_time_node,
             wsg_drive_data_node,
-            broker_node,
-            writer_node,
             transmit_prioritizer_node,
             # xbee_node,
         ]

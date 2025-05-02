@@ -143,8 +143,11 @@ class UDPDataChunkServer
 {
 public:
   UDPDataChunkServer(boost::asio::io_context & io_context, uint16_t port, DataChunkCallback callback)
-    : socket_(io_context, udp::endpoint(udp::v4(), port)), callback_(callback)
+    : socket_(io_context), callback_(callback)
   {
+    socket_.open(udp::v4());
+    socket_.set_option(boost::asio::socket_base::reuse_address(true));
+    socket_.bind(udp::endpoint(udp::v4(), port));
     start_receive();
   }
 
@@ -182,7 +185,7 @@ private:
       }
     } else {
       RCLCPP_ERROR(rclcpp::get_logger("UDPDataChunkServer"), 
-                   "UDP receive error: %s", error.message().c_str());
+                  "UDP receive error: %s", error.message().c_str());
     }
     start_receive();
   }
