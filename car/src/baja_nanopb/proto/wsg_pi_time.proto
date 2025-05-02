@@ -2,6 +2,6 @@ syntax = "proto3";
 
 import "nanopb.proto";
 
-message pi_time_t {
+message wsg_pi_time_t {
     fixed64 time_us = 1;
 };

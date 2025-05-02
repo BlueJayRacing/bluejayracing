@@ -6,7 +6,7 @@
 #include <limits>
 #include "pb_encode.h"
 #include "pb_decode.h"
-#include "wsg_cal_com.pb.h"
+#include "wsg_com.pb.h"
 #include "wsg_cal_data.pb.h"
 
 #define LOCALHOST_ADDRESS       "localhost:1883"
@@ -115,18 +115,14 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
     do {
         if (topic_str == WSG_ESP_PI_TOPIC) {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Received Message from ESP32");
+            wsg_com_poll_t esp_poll = wsg_com_poll_t_init_zero;
+
             // Decode Polling Message
             {
-                cal_command_t decoded_cmd = cal_command_t_init_zero;
                 pb_istream_t istream = pb_istream_from_buffer((const pb_byte_t*) message->payload, message->payloadlen);
 
-                if (!pb_decode(&istream, cal_command_t_fields, &decoded_cmd)) {
+                if (!pb_decode(&istream, wsg_com_poll_t_fields, &esp_poll)) {
                     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error decoding ESP Command: %s", PB_GET_ERROR(&istream));
-                    break;
-                }
-
-                if (decoded_cmd.command != 1) {
-                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Did not received polling signal");
                     break;
                 }
 
@@ -135,14 +131,15 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
             
             // Send Start Message
             {
-                cal_command_t cmd = cal_command_t_init_zero;
+                wsg_com_response_t cmd = wsg_com_response_t_init_zero;
+                strcpy(cmd.mac_address, esp_poll.mac_address);
                 cmd.command = 1;
 
                 uint8_t buffer[128] = {0};
                 pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-                if (!pb_encode(&ostream, cal_command_t_fields, &cmd)) {
-                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error encoding cal_command_t: %s", PB_GET_ERROR(&ostream));
+                if (!pb_encode(&ostream, wsg_com_response_t_fields, &cmd)) {
+                    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error encoding wsg_com_response_t: %s", PB_GET_ERROR(&ostream));
                     break;
                 }
 
@@ -159,10 +156,10 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
                 RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "published calibration start command");
             }
         } else if (topic_str == WSG_CAL_DATA_TOPIC) {   
-            cal_data_t cal_data = cal_data_t_init_zero;
+            wsg_cal_data_t cal_data = wsg_cal_data_t_init_zero;
             pb_istream_t istream = pb_istream_from_buffer((const pb_byte_t*) message->payload, message->payloadlen);
 
-            if (!pb_decode(&istream, cal_data_t_fields, &cal_data)) {
+            if (!pb_decode(&istream, wsg_cal_data_t_fields, &cal_data)) {
                 RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error decoding ESP Data: %s", PB_GET_ERROR(&istream));
                 break;
             }
@@ -198,11 +195,11 @@ int WSGCalibrationDriver::message_arrived(void *context, char *topicName, int to
             }
 
             if (label_counter % 10 == 0) {
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sample Avg\tSample Min\tSample Max\tSamples-10 Avg\tSamples-10 Min\tSamples-10 Max\t");
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sample Avg\tSample Min\tSample Max\tSamples-10 Avg\tSamples-10 Min\tSamples-10 Max\tDAC Bias\t");
             }
             label_counter++;
 
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%f\t%f\t%f\t%f\t%f\t%f\t", sample_average, sample_min, sample_max, sample_10_average, sample_10_min, sample_10_max);
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "%f\t%f\t%f\t%f\t%f\t%f\t%d\t", sample_average, sample_min, sample_max, sample_10_average, sample_10_min, sample_10_max, cal_data.dac_bias[0]);
         } else {
             RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Message from unknown topic recieved");
         }

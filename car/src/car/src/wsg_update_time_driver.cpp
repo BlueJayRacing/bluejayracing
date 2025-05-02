@@ -89,14 +89,14 @@ void WSGUpdateTimeDriver::publish_message_callback() {
     
     auto curr_time = std::chrono::high_resolution_clock::now();    
 
-    pi_time_t pi_time = pi_time_t_init_zero;
+    wsg_pi_time_t pi_time = wsg_pi_time_t_init_zero;
     pi_time.time_us = curr_time.time_since_epoch()/1.0us;
 
     uint8_t buffer[30] = {0};
     pb_ostream_t ostream = pb_ostream_from_buffer(buffer, sizeof(buffer));
 
-    if (!pb_encode(&ostream, pi_time_t_fields, &pi_time)) {
-        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error encoding pi_time_t: %s", PB_GET_ERROR(&ostream));
+    if (!pb_encode(&ostream, wsg_pi_time_t_fields, &pi_time)) {
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Error encoding wsg_pi_time_t: %s", PB_GET_ERROR(&ostream));
         return;
     }
 
