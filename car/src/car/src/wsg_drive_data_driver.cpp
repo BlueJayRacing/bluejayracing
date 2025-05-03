@@ -194,6 +194,10 @@ int WSGDriveDataDriver::message_arrived(void* context, char* topicName, int topi
             }
 
             std::string esp_mac_address(drive_data.mac_address);
+            int zeroing_dac_value;
+            int strain_volt_slope;
+
+            get_esp_calibration(driver->car_config_, esp_mac_address, zeroing_dac_value, strain_volt_slope);
 
             int global_channel_id =
                 find_global_channel_id(driver->car_config_, esp_mac_address, drive_data.sample_channel_id);
