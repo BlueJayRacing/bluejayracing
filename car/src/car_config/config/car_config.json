@@ -172,8 +172,8 @@
                     "3": 1304,
                     "4": 1305
                 },
-                "zeroing_dac_value" : 0,
-                "strain_volt_slope" : 0
+                "zeroing_dac_value" : 2412,
+                "strain_volt_slope" : 1684
             },
             "esp_v3_b3": {
                 "device_id": 14,
@@ -188,8 +188,8 @@
                     "3": 1404,
                     "4": 1405
                 },
-                "zeroing_dac_value" : 0,
-                "strain_volt_slope" : 0
+                "zeroing_dac_value" : 2412,
+                "strain_volt_slope" : 1684
             },
 	    "esp_v3_b6": {
                 "device_id": 15,
@@ -209,7 +209,7 @@
             },
 	    "esp_v3_b7": {
                 "device_id": 16,
-                "device_name": "REAR_7",
+                "device_name": "REAR_RIGHT",
                 "mac_addresses": [
                     "8C:BF:EA:CD:27:50"
                 ],
@@ -220,12 +220,12 @@
                     "3": 1604,
                     "4": 1605
                 },
-                "zeroing_dac_value" : 0,
-                "strain_volt_slope" : 0
+                "zeroing_dac_value" : 1959,
+                "strain_volt_slope" : 4844
             },
 	    "esp_v3_b8": {
                 "device_id": 17,
-                "device_name": "BOARD_8",
+                "device_name": "REAR_LEFT",
                 "mac_addresses": [
                     "8C:BF:EA:CB:B0:BC"
                 ],
@@ -236,12 +236,12 @@
                     "3": 1704,
                     "4": 1705
                 },
-                "zeroing_dac_value" : 0,
-                "strain_volt_slope" : 0
+                "zeroing_dac_value" : 2639,
+                "strain_volt_slope" : 4711
             },
 	    "esp_v3_b9": {
                 "device_id": 18,
-                "device_name": "REAR_9",
+                "device_name": "BOARD_9",
                 "mac_addresses": [
                     "8C:BF:EA:CB:AD:F4"
                 ],

@@ -215,7 +215,7 @@ int WSGDriveDataDriver::message_arrived(void* context, char* topicName, int topi
 
                 if (csvFile.is_open()) {
                     csvFile << int(global_channel_id) << ","
-                            << drive_data.base_timestamp + drive_data.timestamp_deltas[i] << "," << drive_data.values[i]
+                            << drive_data.base_timestamp + drive_data.timestamp_deltas[i] << "," << (drive_data.values[i] - 2.50) * strain_volt_slope
                             << ",\n";
                 }
             }
