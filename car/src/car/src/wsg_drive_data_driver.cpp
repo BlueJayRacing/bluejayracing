@@ -1,15 +1,16 @@
+#include <chrono>
+#include <cstring>
+#include <fstream>
+#include <limits>
+#include <format>
+#include <unistd.h>
+#include <nlohmann/json.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "wsg_com.pb.h"
 #include "wsg_drive_data.pb.h"
-#include <ament_index_cpp/get_package_share_directory.hpp>
-#include <chrono>
-#include <cstring>
-#include <fstream>
-#include <limits>
-#include <nlohmann/json.hpp>
-#include <unistd.h>
 #include <wsg_drive_data_driver/wsg_drive_data_driver.hpp>
 
 #define LOCALHOST_ADDRESS    "localhost:1883"
@@ -34,7 +35,9 @@ WSGDriveDataDriver::WSGDriveDataDriver() : Node("wsg_drive_data_driver")
     connect_to_broker();
     subscribe_to_topics();
 
-    std::ofstream csvFile("src/bjr_packages/car/data.txt");
+    data_file_path = make_utc_filename();
+
+    std::ofstream csvFile(data_file_path, std::ios::app);
     csvFile.close();
 
     // Get the path to the package
@@ -195,7 +198,7 @@ int WSGDriveDataDriver::message_arrived(void* context, char* topicName, int topi
             int global_channel_id =
                 find_global_channel_id(driver->car_config_, esp_mac_address, drive_data.sample_channel_id);
 
-            std::ofstream csvFile("src/bjr_packages/car/data.txt", std::ios::app);
+            std::ofstream csvFile(driver->data_file_path, std::ios::app);
 
             // Reuse AnalogChannel object
             baja_msgs::msg::UnifiedSample sample;
@@ -313,6 +316,24 @@ bool WSGDriveDataDriver::get_esp_calibration(const json& car_config_, const std:
         }
     }
     return false; // not found
+}
+
+std::string WSGDriveDataDriver::make_utc_filename(void)
+{
+    using clock = std::chrono::system_clock;
+
+    std::time_t now = clock::to_time_t(clock::now());
+    std::tm     tm  = *std::gmtime(&now);   // convert to UTC
+
+    std::ostringstream oss;
+    oss << "src/bjr_packages/car/data_"                           // prefix
+        << std::setw(2) << std::setfill('0') << tm.tm_mon + 1 << '_'  // month
+        << std::setw(2) << tm.tm_mday        << '_'                    // day
+        << std::setw(2) << tm.tm_hour        << ':'                    // hour
+        << std::setw(2) << tm.tm_min         << ':'                    // minute
+        << std::setw(2) << tm.tm_sec         << ".txt";                // second + ext
+
+    return oss.str();
 }
 
 } // namespace wsg_drive_data_driver
