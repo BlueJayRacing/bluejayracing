@@ -11,16 +11,16 @@
 
 #define SHIELD_TYPE     "Teensy4.1 QNEthernet"
 
-#define USING_DHCP            true
-// #define USING_DHCP            false
+// #define USING_DHCP            true
+#define USING_DHCP            false
 
 #if !USING_DHCP
   // Set the static IP address to use if the DHCP fails to assign
-  IPAddress myIP(192, 168, 20, 222);
-  IPAddress myNetmask(255, 255, 255, 0);
-  IPAddress myGW(192, 168, 2, 1);
-  //IPAddress mydnsServer(192, 168, 2, 1);
-  IPAddress mydnsServer(8, 8, 8, 8);
+  // IPAddress myIP(192, 168, 20, 222);
+  // IPAddress myNetmask(255, 255, 255, 0);
+  // IPAddress myGW(192, 168, 2, 1);
+  // //IPAddress mydnsServer(192, 168, 2, 1);
+  // IPAddress mydnsServer(8, 8, 8, 8);
 #endif
 
 #include "QNEthernet.h"       // https://github.com/ssilverman/QNEthernet

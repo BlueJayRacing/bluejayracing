@@ -283,7 +283,8 @@ void setup() {
     // Initialize digital inputs
     baja::util::Debug::info(F("Initializing digital inputs..."));
     digitalInitialized = baja::digital::functions::initialize(
-        sampleBuffer
+        sampleBuffer,
+        fastBuffer
     );
     
     if (digitalInitialized) {

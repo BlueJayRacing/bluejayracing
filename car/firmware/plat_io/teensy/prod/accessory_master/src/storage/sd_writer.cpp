@@ -718,7 +718,7 @@ bool SDWriter::syncRingBuf(bool forceFullSync) {
         }
         String a = (syncType? "Force":"write");
         // Only print the log if either bytesWritten > 500 or syncTime > 100 AND the calculated speed is below 20 MB/s
-        if ((bytesWritten > 1000 || syncTime > 30) && (static_cast<float>(bytesWritten) / syncTime < 20.0) || syncTime > 50) {
+        if ((bytesWritten > 1000 || syncTime > 35) && (static_cast<float>(bytesWritten) / syncTime < 16.0) || syncTime > 50) {
             util::Debug::info("SD: " + a + "-Synced " + String(bytesWritten) + 
                             " bytes in " + String(syncTime) + " µs");
         }

@@ -11,6 +11,7 @@ import DataVisPage from './pages/DataVisPage';
 
 // Import our custom styles
 import './styles/components.css';
+import HomePage from './pages/HomePage';
 
 // Create a theme instance
 const theme = createTheme({
@@ -70,6 +71,7 @@ const App: React.FC = () => {
             <Route path="/" element={<DataPage />} />
             <Route path="/data" element={<DataPage />} />
             <Route path="/visualize" element={<DataVisPage />} />
+            <Route path="/map" element={<HomePage />} />
           </Routes>
         </Router>
       </DataProvider>

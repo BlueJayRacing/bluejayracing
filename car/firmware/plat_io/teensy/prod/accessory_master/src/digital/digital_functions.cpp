@@ -10,6 +10,7 @@ namespace functions {
 static bool running_ = false;
 static uint64_t sampleCount_ = 0;
 static buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>* mainBuffer_ = nullptr;
+static buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>* fastBuffer_ = nullptr;
 
 // Timing statistics
 static uint32_t totalProcessingTime_ = 0;
@@ -37,12 +38,14 @@ static void isr_d5() { digitalCounters_[4]++; digitalCounterIncremented_[4] = tr
 static void isr_d6() { digitalCounters_[5]++; digitalCounterIncremented_[5] = true; }
 
 bool initialize(
-    buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& mainBuffer) {
+    buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& mainBuffer,
+    buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>& fastBuffer) {
     
     util::Debug::info(F("Digital: Initializing"));
     
-    // Store the main buffer reference
+    // Store the buffer references
     mainBuffer_ = &mainBuffer;
+    fastBuffer_ = &fastBuffer;
     
     // Initialize counters and flags
     for (int i = 0; i < DIGITAL_CHANNEL_COUNT; i++) {
@@ -116,7 +119,7 @@ bool isRunning() {
 
 bool process() {
     // Check if digital monitoring is running
-    if (!running_ || !mainBuffer_) {
+    if (!running_ || !mainBuffer_ || !fastBuffer_) {
         return false;
     }
     
@@ -150,20 +153,45 @@ bool process() {
             // Update last sample time
             lastSampleTimeMs_[i] = currentTimeMs;
             
+            // Get a high-precision timestamp for this sample
+            uint64_t timestampMicros = getMicrosecondsSinceEpoch();
+            
             // Create a channel sample with internal ID and timestamp
             data::ChannelSample channelSample(
-                getMicrosecondsSinceEpoch(),  // Microsecond timestamp
-                DIGITAL_CHANNEL_ID_START + i, // Internal channel ID (16-21)
-                counterValue,                 // Raw counter value
-                currentTimeMs                 // Recorded time in milliseconds
+                timestampMicros,                // Microsecond timestamp
+                DIGITAL_CHANNEL_ID_START + i,   // Internal channel ID (16-21)
+                counterValue,                   // Raw counter value
+                currentTimeMs                   // Recorded time in milliseconds
             );
             
-            // Write to main buffer
-            if (mainBuffer_->write(channelSample)) {
+            // Write to main buffer for SD storage
+            bool mainBufferOk = mainBuffer_->write(channelSample);
+            
+            // Also write to fast buffer for network transmission
+            // Note: Using a static counter for downsampling, similar to what might be in ADC code
+            static uint32_t downsampleCounter = 0;
+            bool fastBufferOk = false;
+            
+            // Only add to fast buffer according to downsample ratio
+            if (downsampleCounter % config::FAST_BUFFER_DOWNSAMPLE_RATIO == 0) {
+                fastBufferOk = fastBuffer_->write(channelSample);
+                
+                // Log warning if fast buffer is full (but not too frequently)
+                if (!fastBufferOk) {
+                    static uint32_t lastFastBufferFullWarning = 0;
+                    if (currentTimeMs - lastFastBufferFullWarning > 5000) { // Only warn every 5 seconds
+                        util::Debug::warning(F("Digital: Fast buffer full, sample dropped"));
+                        lastFastBufferFullWarning = currentTimeMs;
+                    }
+                }
+            }
+            downsampleCounter++;
+            
+            if (mainBufferOk) {
                 samplesProcessed = true;
                 sampleCount_++;
             } else {
-                // Buffer full, log warning occasionally
+                // Main buffer full, log warning occasionally
                 static uint32_t lastBufferFullWarning = 0;
                 if (currentTimeMs - lastBufferFullWarning > 5000) { // Only warn every 5 seconds
                     util::Debug::warning(F("Digital: Main buffer full, digital sample dropped"));

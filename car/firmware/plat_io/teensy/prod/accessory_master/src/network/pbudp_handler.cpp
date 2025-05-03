@@ -5,7 +5,7 @@
 
 
 #define LinkStatus_kLinkStatusUp 1
-#define USING_DHCP true
+// #define USING_DHCP true
 
 namespace baja {
 namespace network {

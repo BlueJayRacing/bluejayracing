@@ -1,6 +1,7 @@
 #pragma once
 
 #include "util/ring_buffer.hpp"
+#include "util/circular_buffer.hpp"
 #include "util/sample_data.hpp"
 #include "config/config.hpp"
 #include <Arduino.h>
@@ -28,10 +29,12 @@ namespace functions {
  * @brief Initialize the digital input module
  * 
  * @param mainBuffer Reference to the main ring buffer for SD storage
+ * @param fastBuffer Reference to the fast buffer for network transmission
  * @return true if initialization was successful
  */
 bool initialize(
-    buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& mainBuffer);
+    buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& mainBuffer,
+    buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>& fastBuffer);
 
 /**
  * @brief Start digital input monitoring
