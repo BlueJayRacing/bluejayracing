@@ -17,6 +17,7 @@
 #include "util/channel_mapping.hpp"
 
 // Thread modules
+#include "led/led_functions.hpp" 
 #include "adc/adc_functions.hpp"
 #include "storage/sd_functions.hpp"
 #include "network/pbudp_functions.hpp"      // Combined PB+UDP thread
@@ -58,6 +59,11 @@ uint32_t loopCount = 0;
 uint32_t samplesProcessedTotal = 0;
 uint32_t startTime = 0;
 uint32_t lastSampleCount = 0;
+
+
+// Global system state variables for Status LED
+baja::led::SystemState systemState = baja::led::SystemState::READY;
+bool hasNetworkHardware = false;
 
 // Function to get time from Teensy RTC
 time_t getTeensyTime() {
@@ -246,7 +252,7 @@ void printSystemStatus() {
 void setup() {
     // Initialize serial
     Serial.begin(115200);
-    while (!Serial && millis() < 3000) { }
+    while (!Serial && millis() < 1000) { }
     
     // Record start time
     startTime = millis();
@@ -262,6 +268,10 @@ void setup() {
     freeRamLow = freeRam;
     baja::util::Debug::info(F("Initial free RAM: ") + String(freeRam) + F(" bytes"));
     
+    // Initialize the LED indication first - LED will be blue during boot
+    baja::led::init(systemState);
+    baja::led::startBoot();
+
     // Set up the correct time
     setupTime();
     
@@ -410,6 +420,7 @@ void setup() {
         }
     }
 
+    // Initialize time functions
     baja::time::functions::initialize();
     
     // Log configuration summary
@@ -422,6 +433,29 @@ void setup() {
     baja::util::Debug::info(F("Digital inputs: ") + String(digitalInitialized ? "Enabled" : "Disabled"));
     baja::util::Debug::info(F("==========================================\n"));
     
+    // ---------------- Initial LED status ----------------------------------
+    bool coreDataOk = adcInitialized && sdCardInitialized && digitalInitialized;
+    if (!coreDataOk) {
+        systemState = baja::led::SystemState::DATA_BAD;
+    }
+    // Check network (if core data is OK)
+    else if (!networkInitialized) {
+        systemState = baja::led::SystemState::NO_NETWORK;
+    }
+    // Check time (if core data and network are OK)
+    else if (year() < 2025) {
+        systemState = baja::led::SystemState::NO_TIME;
+    }
+    else {
+        systemState = baja::led::SystemState::READY;
+    }
+
+    // Log the initial system state
+    baja::util::Debug::info(F("Initial system state: ") + String(static_cast<int>(systemState)));
+
+    // End boot mode - this will set the LED to the appropriate color
+    baja::led::endBoot();
+
     baja::util::Debug::info(F("Initialization complete. System running."));
 }
 
@@ -429,32 +463,57 @@ void setup() {
 void loop() {
     // Increment loop counter
     loopCount++;
+
+    // Assume regular operation every few cycles
+    if (loopCount % 1000 == 4) {
+        systemState = baja::led::SystemState::READY;
+    }
     
     // Always process ADC data - highest priority
     if (adcInitialized && baja::adc::functions::processSample()) {
         samplesProcessedTotal++;
+    } else if (!baja::adc::functions::isRunning()) {
+        systemState = baja::led::SystemState::DATA_BAD;
     }
     
     // Process digital inputs every cycle
     if (digitalInitialized && baja::digital::functions::isRunning()) {
         baja::digital::functions::process();
+    } else if (!baja::digital::functions::isRunning()) {
+        systemState = baja::led::SystemState::DATA_BAD;
     }
     
     // Process SD operations - only if enough samples are available
     // (This is already handled in SDWriter::process())
     if (sdCardInitialized && baja::storage::functions::isRunning() && loopCount % 5 == 0) {
         baja::storage::functions::process();
+    } else if (!baja::storage::functions::isRunning()) {
+        systemState = baja::led::SystemState::DATA_BAD;
     }
     
     // Process network operations - only if enough samples are available
     // (This is already handled in PBUDPHandler::processAndSendBatch())
     if (networkInitialized && baja::network::functions::isRunning() && loopCount % 5 == 1) {
-        baja::network::functions::process();
+        size_t sent = baja::network::functions::process();
+        if (sent == (size_t)-1) {
+            systemState = baja::led::SystemState::NO_CONNECTION;;
+        }
+    } else if (!baja::network::functions::isRunning()) {
+        if (networkInitialized) {
+            systemState = baja::led::SystemState::NO_CONNECTION;
+        } else {
+            systemState = baja::led::SystemState::NO_NETWORK;
+        }
     }
 
-    if (networkInitialized && loopCount % 100 == 0) {
+    if (networkInitialized && loopCount % 100 == 2) {
         // Process NTP time updates
         baja::time::functions::update();
+    }
+
+    // Update LED every 100 cycles
+    if (loopCount % 100 == 3) {
+        baja::led::update();
     }
     
     

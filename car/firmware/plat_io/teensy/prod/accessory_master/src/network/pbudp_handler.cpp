@@ -153,7 +153,7 @@ size_t PBUDPHandler::processAndSendBatch() {
             util::Debug::warning("PBUDPHandler: Network connection is down");
             lastConnectionWarning = millis();
         }
-        return 0;
+        return -1; // Indicate no samples processed
     }
     
     // Get number of available samples in the source buffer

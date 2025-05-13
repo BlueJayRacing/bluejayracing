@@ -40,5 +40,13 @@ constexpr bool USE_HARD_CODED_ENCODING = true;  // Use hard-coded optimized enco
 constexpr double ADC_DEFAULT_GAIN = 1.0;          // Default gain for ADC channels
 constexpr bool ADC_ENABLE_ALL_CHANNELS = false;   // Enable all channels regardless of defaults
 
+// LED configuration  
+constexpr uint8_t  LED_STATUS_PIN               = 17;
+constexpr uint8_t  LED_STRIP_PIN                = 7;        // change to 8 if needed
+constexpr uint8_t  LED_STATUS_BRIGHTNESS        = 32;       // 0‑255
+constexpr uint8_t  LED_STRIP_BRIGHTNESS         = 64;       // 0‑255
+constexpr bool     LED_STRIP_VISUALIZER_ENABLE  = true;
+
+
 } // namespace config
 } // namespace baja
