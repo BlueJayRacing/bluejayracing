@@ -16,6 +16,10 @@ find_package(baja_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(paho_mqtt REQUIRED)
 find_package(ads1115 REQUIRED)
+find_package(nanopb REQUIRED)
+find_package(baja_nanopb REQUIRED)
+find_package(car_config REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 # Include directories
 include_directories(
@@ -31,39 +35,25 @@ include_directories(
 #   ads1115
 # )
 
-
-# # MQTT CLIENT SUBSCRIBE
-add_library(mqtt_client_driver SHARED src/mqtt_client_driver.cpp)
-ament_target_dependencies(mqtt_client_driver
+# WSG UPDATE TIME
+add_library(wsg_update_time_driver SHARED src/wsg_update_time_driver.cpp)
+ament_target_dependencies(wsg_update_time_driver
   rclcpp
   baja_msgs
-  baja_proto
   paho_mqtt
+  nanopb
+  baja_nanopb
+  baja_proto
 )
-add_executable(mqtt_client_node src/mqtt_client_node.cpp)
-target_link_libraries(mqtt_client_node mqtt_client_driver)
-ament_target_dependencies(mqtt_client_node
-  rclcpp
-  baja_msgs
-  baja_proto
-  paho_mqtt
-)
-
-# MQTT CLIENT PUBLISH
-add_library(mqtt_client_publish_driver SHARED src/mqtt_client_publish_driver.cpp)
-ament_target_dependencies(mqtt_client_publish_driver
-  rclcpp
-  baja_msgs
-  baja_proto
-  paho_mqtt
-)
-add_executable(mqtt_client_publish_node src/mqtt_client_publish_node.cpp ${HELPER_SOURCES})
-target_link_libraries(mqtt_client_publish_node mqtt_client_publish_driver)
-ament_target_dependencies(mqtt_client_publish_node
+add_executable(wsg_update_time_node src/wsg_update_time_node.cpp ${HELPER_SOURCES})
+target_link_libraries(wsg_update_time_node wsg_update_time_driver)
+ament_target_dependencies(wsg_update_time_node
   paho_mqtt
   baja_msgs
-  baja_proto
   rclcpp
+  nanopb
+  baja_nanopb
+  baja_proto
 )
 
 # BROKER
@@ -136,25 +126,69 @@ ament_target_dependencies(xbee_node
   std_msgs
 )
 
-# # WSG Calibration Driver
-# add_library(wsg_calibration_driver SHARED src/wsg_calibration_driver.cpp)
-# target_compile_definitions(wsg_calibration_driver PUBLIC "POSIX")
-# ament_target_dependencies(wsg_calibration_driver
-#   rclcpp
-#   baja_msgs
-#   baja_proto
-#   std_msgs
-#   paho_mqtt
-# )
-# add_executable(wsg_calibration_node src/wsg_calibration_node.cpp)
-# target_link_libraries(wsg_calibration_node wsg_calibration_driver)
-# ament_target_dependencies(wsg_calibration_node
-#   rclcpp
-#   baja_msgs
-#   baja_proto
-#   std_msgs
-#   paho_mqtt
-# )
+# WSG Drive Data Driver
+add_library(wsg_drive_data_driver SHARED src/wsg_drive_data_driver.cpp)
+target_compile_definitions(wsg_drive_data_driver PUBLIC "POSIX")
+target_include_directories(wsg_drive_data_driver PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+  "${CMAKE_INSTALL_PREFIX}/include/nanopb"
+)
+ament_target_dependencies(wsg_drive_data_driver
+  car_config
+  rclcpp
+  baja_msgs
+  std_msgs
+  paho_mqtt
+  nanopb
+  baja_nanopb
+  baja_proto
+  ament_index_cpp
+)
+add_executable(wsg_drive_data_node src/wsg_drive_data_node.cpp)
+target_link_libraries(wsg_drive_data_node wsg_drive_data_driver)
+target_include_directories(wsg_drive_data_node PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+)
+ament_target_dependencies(wsg_drive_data_node
+  car_config
+  rclcpp
+  baja_msgs
+  std_msgs
+  paho_mqtt
+  nanopb
+  baja_nanopb
+  baja_proto
+  ament_index_cpp
+)
+
+# WSG Calibration Driver
+add_library(wsg_calibration_driver SHARED src/wsg_calibration_driver.cpp)
+target_compile_definitions(wsg_calibration_driver PUBLIC "POSIX")
+target_include_directories(wsg_calibration_driver PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+  "${CMAKE_INSTALL_PREFIX}/include/nanopb"
+)
+ament_target_dependencies(wsg_calibration_driver
+  rclcpp
+  baja_msgs
+  std_msgs
+  paho_mqtt
+  nanopb
+  baja_nanopb
+)
+add_executable(wsg_calibration_node src/wsg_calibration_node.cpp)
+target_link_libraries(wsg_calibration_node wsg_calibration_driver)
+target_include_directories(wsg_calibration_node PUBLIC
+  ${nanopb_INCLUDE_DIRS}
+)
+ament_target_dependencies(wsg_calibration_node
+  rclcpp
+  baja_msgs
+  std_msgs
+  paho_mqtt
+  nanopb
+  baja_nanopb
+)
 
 # # Calibration Printer
 # add_library(calibration_printer SHARED src/calibration_printer.cpp)
@@ -185,23 +219,25 @@ install(DIRECTORY
 install(TARGETS
   broker_driver
   writer_driver
-  mqtt_client_driver
-  mqtt_client_publish_driver
   transmit_prioritizer_driver
   xbee_driver
   # calibration_printer
+  wsg_update_time_driver
+  wsg_calibration_driver
+  wsg_drive_data_driver
   LIBRARY DESTINATION lib
 )
 
 # Install targets
 install(TARGETS
-  mqtt_client_node
-  mqtt_client_publish_node
   broker_node
   writer_node
   transmit_prioritizer_node
   xbee_node
   # calibration_printer_node
+  wsg_update_time_node
+  wsg_calibration_node
+  wsg_drive_data_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

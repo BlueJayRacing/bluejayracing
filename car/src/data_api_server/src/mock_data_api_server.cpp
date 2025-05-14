@@ -79,7 +79,7 @@ MockDataGenerator::MockDataGenerator(size_t window_size)
     : window_size_(window_size), 
       should_stop_(false), 
       generation_rate_hz_(10.0),
-      samples_per_generation_(200)  // 200 samples per tick at 10Hz = 2000Hz effective rate
+      samples_per_generation_(1)  // 200 samples per tick at 10Hz = 2000Hz effective rate
 {
     // Initialize random number generator with time-based seed
     std::random_device rd;

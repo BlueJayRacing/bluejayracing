@@ -1,165 +1,125 @@
 // src/components/data_view/RecordingControls.tsx
-import React, { useState, useEffect } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Box, Chip, CircularProgress } from '@mui/material';
+
+import React, { useState } from 'react';
+import { 
+  Box, 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions,
+  TextField,
+  IconButton,
+  Tooltip,
+  Chip
+} from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import { useDataContext } from '../../hooks/useDataContext';
-import { Link } from 'react-router-dom';
 
 const RecordingControls: React.FC = () => {
-  const { isRecording, currentRecording, startRecording, stopRecording, recordings } = useDataContext();
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [recordingStats, setRecordingStats] = useState({
-    sampleCount: 0,
-    dataSize: 0
-  });
+  const { isRecording, startRecording, stopRecording, currentRecording } = useDataContext();
+  const [recordingName, setRecordingName] = useState<string>('');
+  const [showDialog, setShowDialog] = useState<boolean>(false);
   
-  // Update elapsed time during recording
-  useEffect(() => {
-    if (!isRecording || !currentRecording) {
-      setElapsedTime(0);
-      return;
+  // Handle start recording
+  const handleStartRecording = () => {
+    if (recordingName.trim()) {
+      startRecording(recordingName.trim());
+      setRecordingName('');
+      setShowDialog(false);
+    } else {
+      // Generate a default name
+      const defaultName = `Recording ${new Date().toLocaleString()}`;
+      startRecording(defaultName);
+      setShowDialog(false);
     }
-    
-    // Initial update
-    setElapsedTime(Date.now() - currentRecording.startTime);
-    if (currentRecording.stats) {
-      setRecordingStats({
-        sampleCount: currentRecording.stats.sampleCount,
-        dataSize: currentRecording.stats.dataSize
-      });
-    }
-    
-    // Regular updates using Animation Frame for smoother UI
-    let animationId: number;
-    const updateTime = () => {
-      setElapsedTime(Date.now() - currentRecording.startTime);
-      
-      // Update stats (every ~500ms to avoid over-updating)
-      if (Date.now() % 500 < 50 && currentRecording.stats) {
-        setRecordingStats({
-          sampleCount: currentRecording.stats.sampleCount,
-          dataSize: currentRecording.stats.dataSize
-        });
-      }
-      
-      animationId = requestAnimationFrame(updateTime);
-    };
-    
-    animationId = requestAnimationFrame(updateTime);
-    
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-    };
-  }, [isRecording, currentRecording]);
-  
-  const handleStartClick = () => {
-    // Generate automatic name with date and time
-    const nowDate = new Date();
-    const formattedDate = nowDate.toLocaleDateString();
-    const formattedTime = nowDate.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
-    
-    const autoName = `Recording ${formattedDate} ${formattedTime}`;
-    startRecording(autoName);
   };
   
-  const handleStopClick = () => {
+  // Handle stop recording
+  const handleStopRecording = () => {
     stopRecording();
-    setElapsedTime(0);
   };
   
-  // Format time display
-  const formatElapsedTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
+  // Format recording time
+  const formatRecordingTime = (startTime: number): string => {
+    const seconds = Math.floor((Date.now() - startTime) / 1000);
     
-    return [
-      hours > 0 ? String(hours).padStart(2, '0') : '',
-      String(minutes % 60).padStart(2, '0'),
-      String(seconds % 60).padStart(2, '0')
-    ].filter(Boolean).join(':');
-  };
-  
-  // Format file size
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    
+    return `${pad(hours)}:${pad(minutes)}:${pad(remainingSeconds)}`;
   };
   
   return (
-    <div>
+    <Box display="flex" alignItems="center" gap={2}>
       {isRecording ? (
-        <Box display="flex" alignItems="center">
-          <Box mr={2} display="flex" alignItems="center">
-            <Chip 
-              color="error"
-              icon={<CircularProgress size={16} color="inherit" />}
-              label={`Recording: ${formatElapsedTime(elapsedTime)}`}
-              sx={{
-                animation: 'pulse 2s infinite',
-                '@keyframes pulse': {
-                  '0%': { opacity: 0.8 },
-                  '50%': { opacity: 1 },
-                  '100%': { opacity: 0.8 }
-                }
-              }}
-            />
-          </Box>
-          <Box mr={2}>
-            <Chip 
-              variant="outlined"
-              label={`${recordingStats.sampleCount.toLocaleString()} samples`}
-              size="small"
-            />
-          </Box>
-          <Box mr={2}>
-            <Chip 
-              variant="outlined"
-              label={formatFileSize(recordingStats.dataSize)}
-              size="small"
-            />
-          </Box>
-          <Button
-            variant="contained"
+        <>
+          <Chip 
             color="error"
-            startIcon={<StopIcon />}
-            onClick={handleStopClick}
-          >
-            Stop Recording
-          </Button>
-        </Box>
+            label={`Recording: ${formatRecordingTime(parseInt(currentRecording?.id || ''))}` }
+            className="animate-pulse"
+          />
+          
+          <Tooltip title="Stop Recording">
+            <IconButton 
+              color="error" 
+              onClick={handleStopRecording}
+              size="small"
+            >
+              <StopIcon />
+            </IconButton>
+          </Tooltip>
+        </>
       ) : (
-        <Box display="flex" alignItems="center">
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<PlayArrowIcon />}
-            onClick={handleStartClick}
-            sx={{ mr: 2 }}
-          >
+        <Button
+          variant="contained"
+          color="error"
+          startIcon={<PlayArrowIcon />}
+          onClick={() => setShowDialog(true)}
+        >
+          Start Recording
+        </Button>
+      )}
+      
+      <Button
+        variant="outlined"
+        startIcon={<VisibilityIcon />}
+        component="a"
+        href="/recordings"
+      >
+        View Recordings
+      </Button>
+      
+      {/* Dialog for naming a recording */}
+      <Dialog open={showDialog} onClose={() => setShowDialog(false)}>
+        <DialogTitle>New Recording</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Recording Name"
+            fullWidth
+            variant="outlined"
+            value={recordingName}
+            onChange={(e) => setRecordingName(e.target.value)}
+            placeholder="Enter a name for this recording"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowDialog(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleStartRecording} color="primary" variant="contained">
             Start Recording
           </Button>
-          
-          {recordings.length > 0 && (
-            <Button
-              variant="outlined"
-              component={Link}
-              to="/recordings"
-            >
-              View Recordings ({recordings.length})
-            </Button>
-          )}
-        </Box>
-      )}
-    </div>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

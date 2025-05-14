@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "nanopb.proto";
+
+message wsg_com_poll_t {
+    string mac_address = 1 [(nanopb).max_length = 17];
+};
+
+message wsg_com_response_t {
+    string mac_address = 1 [(nanopb).max_length = 17];
+    fixed32 command = 2;
+    fixed32 dac_bias = 3;
+};
+

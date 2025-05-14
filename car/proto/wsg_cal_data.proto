@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "nanopb.proto";
 
-message cal_data_t {
+message wsg_cal_data_t {
     repeated uint32 adc_value = 1 [(nanopb).max_count = 40, (nanopb).fixed_count = true];
     repeated uint32 dac_bias = 2 [(nanopb).max_count = 40, (nanopb).fixed_count = true];
     repeated float voltage = 3 [(nanopb).max_count = 40, (nanopb).fixed_count = true];

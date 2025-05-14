@@ -14,6 +14,7 @@ if ! docker ps | grep -q bjr_docker_ros; then
 	    --privileged \
 	    -v /dev/bus/usb:/dev/bus/usb \
 	    -v /dev/:/dev/ \
+        -v /home/dock/Documents:/home/pi/Documents \
 	    --device-cgroup-rule='c 81:* rmw' \
 	    --device-cgroup-rule='c 189:* rmw' \
         -v $SCRIPTPATH/../src:/bjr_ws/src/bjr_packages \

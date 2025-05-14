@@ -10,7 +10,7 @@
  *			  acozma (andrei.cozma@analog.com)
  *            dnechita (dan.nechita@analog.com)
  *******************************************************************************/
-#include <iostream>
+// #include <iostream>
 #include <stdlib.h>
 
 #include "ad7175_2_regs.hpp"
@@ -113,6 +113,7 @@ int32_t AD717X::init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, in
             return ret;
 
         ret = configureDeviceODR(setup_i, t_init_param.setups.at(setup_i).filter_config.odr);
+
         if (ret < 0)
             return ret;
 
@@ -146,6 +147,12 @@ int32_t AD717X::init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, in
     }
 
     return 0;
+}
+
+int32_t AD717X::init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin, SPISettings t_settings)
+{
+    settings_ = t_settings;
+    return init(t_init_param, t_spi_host, t_cs_pin);
 }
 
 /*******************************************************************************

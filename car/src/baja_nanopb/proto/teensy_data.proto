@@ -1,0 +1,18 @@
+// teensy_data.proto
+syntax = "proto3";
+import "nanopb.proto";
+
+// Single sample from the Teensy using the internal channel id.
+message Sample {
+  uint32 internal_channel_id = 1 [(nanopb).int_size = IS_8];  // internal channel id (0-29)
+  uint32 value = 2;                                           // Sensor reading
+  uint32 timestamp_delta = 3 [(nanopb).int_size = IS_16];      // Delta time (in microseconds)
+}
+
+// DataChunk message grouping multiple samples.
+message DataChunk {
+  repeated fixed64 timestamps = 1 [(nanopb).max_count = 50, (nanopb).fixed_count = true];
+  repeated uint32 internal_channel_ids = 2 [(nanopb).max_count = 50, (nanopb).fixed_count = true, (nanopb).int_size = IS_8];
+  repeated uint32 values = 3 [(nanopb).max_count = 50, (nanopb).fixed_count = true];
+  uint32 sample_count = 4 [(nanopb).int_size = IS_16];  // Actual number of valid samples
+}

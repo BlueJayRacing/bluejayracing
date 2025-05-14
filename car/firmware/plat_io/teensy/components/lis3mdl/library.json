@@ -1,0 +1,32 @@
+{
+  "name": "LIS3MDL_Teensy4_I2C",
+  "version": "1.0.0",
+  "description": "Asynchronous LIS3MDL Magnetometer Library optimized for Teensy 4.x",
+  "keywords": "LIS3MDL, magnetometer, Teensy, I2C, async, asynchronous",
+  "repository": {
+      "type": "git"
+  },
+  "authors": [
+      {
+          "name": "Aaren Wong",
+          "email": "awong69@jhu.edu",
+          "maintainer": true
+      }
+  ],
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "teensy",
+  "dependencies": {
+      "adafruit/Adafruit Sensor": "^1.1.4"
+  },
+  "export": {
+      "include": [
+          "include/*",
+          "src/*",
+          "examples/*",
+          "library.json",
+          "LICENSE",
+          "README.md"
+      ]
+  }
+}

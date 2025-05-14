@@ -9,9 +9,18 @@ class Test {
 public:
     void readAnalogChannels(void);
     void readDigitalChannels(void);
+    void continuousChannelReadStats(void);
+private:
+    static void D1InterruptFn(void);
+    static void D2InterruptFn(void);
+    static void D3InterruptFn(void);
+    static void D4InterruptFn(void);
+    static void D5InterruptFn(void);
+    static void D6InterruptFn(void);
 
 private:
     AD717X ad7175;
+    
 };
 
 #endif

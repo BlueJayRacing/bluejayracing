@@ -1,0 +1,2 @@
+write:
+  pragmas: ["journal_mode = WAL", "synchronous = NORMAL", "schema.cache_size = 1000", "schema.page_size = 4096"]
