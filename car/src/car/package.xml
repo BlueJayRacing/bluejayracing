@@ -13,11 +13,17 @@
   <depend>xbee_baja</depend>
   <depend>xbee_digi</depend>
   <depend>baja_msgs</depend>
-  <depend>baja_proto</depend>
   <depend>std_msgs</depend>
   <depend>paho_mqtt</depend>
   <depend>ads1115</depend>
   <depend>comms</depend>
+  <depend>car_config</depend>
+  
+  <build_depend>baja_nanopb</build_depend>
+  <exec_depend>baja_nanopb</exec_depend>
+
+  <build_depend>nanopb</build_depend>
+  <exec_depend>nanopb</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

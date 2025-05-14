@@ -1,113 +1,146 @@
 // src/components/data_view/DataBufferManager.tsx
-import React, { useEffect, useState } from 'react';
-import { 
-  Box, 
-  Card, 
-  CardContent, 
-  Typography, 
-  LinearProgress,
+
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Button,
+  Typography,
   Chip,
-  Stack,
-  Alert
+  Tooltip,
+  IconButton,
+  Paper,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent
 } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useDataContext } from '../../hooks/useDataContext';
+import { API_CONFIG } from '../../config/deviceConfig';
+import TimestampModeToggle from './TimestampModeToggle';
+import { useTimestamp } from '../../contexts/TimestampContext';
 
-interface DataBufferManagerProps {
-  bufferSize?: number;
-}
-
-const DataBufferManager: React.FC<DataBufferManagerProps> = ({ 
-  bufferSize = 100 // Default 100 samples (not seconds)
-}) => {
-  const { channels, maxDataRate, isLoading, useMockData } = useDataContext();
-  const [bufferUsage, setBufferUsage] = useState(0);
-  const [dataPointCount, setDataPointCount] = useState(0);
-  const [updateRate, setUpdateRate] = useState(0);
-  const [lastUpdateTime, setLastUpdateTime] = useState(Date.now());
-  const [updateInterval, setUpdateInterval] = useState(200); // ms
-
-  // Calculate buffer statistics
+const DataBufferManager: React.FC = () => {
+  
+  const { devices, channels } = useDataContext();
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [totalSamples, setTotalSamples] = useState<number>(0);
+  const [windowDuration, setWindowDuration] = useState<number>(60000); // 60 seconds default (increased from 30s)
+  
+  // Count total samples across all channels
   useEffect(() => {
-    if (!channels.length) return;
-
-    // Count total data points across all channels
-    const totalPoints = channels.reduce(
-      (sum, channel) => sum + channel.samples.length, 
-      0
-    );
+    let count = 0;
+    channels.forEach(channel => {
+      count += channel.samples.length;
+    });
+    setTotalSamples(count);
+    setLastUpdated(new Date());
+  }, [channels]);
+  
+  // Handle window duration change
+  const handleWindowDurationChange = (event: SelectChangeEvent<number>) => {
+    const newDuration = event.target.value as number;
+    console.log(`Window duration changed to ${newDuration}ms`);
+    setWindowDuration(newDuration);
     
-    setDataPointCount(totalPoints);
+    // Dispatch custom event to notify other components
+    const durationChangeEvent = new CustomEvent('windowDurationChange', {
+      detail: { duration: newDuration }
+    });
+    window.dispatchEvent(durationChangeEvent);
+  };
+  
+  // Count available devices
+  const availableDeviceCount = devices.filter(d => d.available).length;
+  const totalDeviceCount = devices.length;
+  
+  // Format time ago
+  const formatTimeAgo = (date: Date): string => {
+    const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
     
-    // Calculate buffer usage (ratio of actual points to maximum possible)
-    const maxPointsPossible = channels.length * bufferSize * maxDataRate;
-    const usage = Math.min(100, (totalPoints / maxPointsPossible) * 100);
-    setBufferUsage(usage);
+    if (seconds < 5) return 'just now';
+    if (seconds < 60) return `${seconds} seconds ago`;
     
-    // Calculate update rate
-    const now = Date.now();
-    const timeDiff = now - lastUpdateTime;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes === 1) return '1 minute ago';
+    if (minutes < 60) return `${minutes} minutes ago`;
     
-    if (timeDiff > 100) { // Only update once per second for stability
-      setUpdateRate(100 / updateInterval);
-      setLastUpdateTime(now);
-    }
-  }, [channels, bufferSize, maxDataRate, lastUpdateTime, updateInterval]);
+    const hours = Math.floor(minutes / 60);
+    if (hours === 1) return '1 hour ago';
+    return `${hours} hours ago`;
+  };
 
   return (
-    <Card variant="outlined" className="mb-4">
-      <CardContent>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="h6">
+    <Paper className="p-3 bg-white">
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box>
+          <Typography variant="subtitle2" gutterBottom>
             Data Buffer Status
           </Typography>
           
-          {useMockData && (
-            <Alert severity="info" className="py-0">
-              Using simulated data - API not available
-            </Alert>
-          )}
+          <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
+            <Tooltip title="Number of samples in memory">
+              <Chip 
+                label={`${totalSamples.toLocaleString()} samples`} 
+                color="primary" 
+                size="small"
+              />
+            </Tooltip>
+            
+            <Tooltip title="Available devices">
+              <Chip 
+                label={`${availableDeviceCount}/${totalDeviceCount} devices`} 
+                color={availableDeviceCount > 0 ? "success" : "error"} 
+                size="small"
+              />
+            </Tooltip>
+            
+            <Tooltip title={`Polling every ${API_CONFIG.pollingIntervals.data}ms`}>
+              <Chip 
+                label={`${API_CONFIG.pollingIntervals.data}ms polling`} 
+                color="default" 
+                size="small"
+              />
+            </Tooltip>
+            
+            <Typography variant="caption" color="text.secondary">
+              Last updated: {formatTimeAgo(lastUpdated)}
+            </Typography>
+            
+            <Tooltip title="Refresh status">
+              <IconButton 
+                size="small" 
+                color="primary"
+                onClick={() => setLastUpdated(new Date())}
+              >
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
         
-        <Stack direction="row" spacing={2} className="mb-3">
-          <Chip 
-            label={`${isLoading ? 'Loading...' : useMockData ? 'Using Mock Data' : 'Connected'}`}
-            color={isLoading ? 'warning' : useMockData ? 'info' : 'success'}
-          />
-          <Chip 
-            label={`Update Rate: ${updateRate.toFixed(1)} Hz`}
-            color="primary"
-            variant="outlined"
-          />
-          <Chip 
-            label={`Data Points: ${dataPointCount}`}
-            color="default"
-            variant="outlined"
-          />
-        </Stack>
-        
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Buffer Usage ({bufferUsage.toFixed(1)}%)
-        </Typography>
-        
-        <LinearProgress 
-          variant="determinate" 
-          value={bufferUsage}
-          color={bufferUsage > 90 ? 'error' : bufferUsage > 70 ? 'warning' : 'primary'}
-        />
-        
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Buffer Size: {bufferSize} samples per channel
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Max Data Rate: {maxDataRate} Hz
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Channels: {channels.length}
-          </Typography>
+        <Box>
+          <FormControl size="small" variant="outlined" style={{ minWidth: 120 }}>
+            <InputLabel>Window</InputLabel>
+            <Select
+              value={windowDuration}
+              onChange={handleWindowDurationChange}
+              label="Window"
+            >
+              <MenuItem value={5000}>5 seconds</MenuItem>
+              <MenuItem value={10000}>10 seconds</MenuItem>
+              <MenuItem value={30000}>30 seconds</MenuItem>
+              <MenuItem value={60000}>1 minute</MenuItem>
+              <MenuItem value={120000}>2 minutes</MenuItem>
+              <MenuItem value={300000}>5 minutes</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TimestampModeToggle />
         </Box>
-      </CardContent>
-    </Card>
+      </Box>
+    </Paper>
   );
 };
 

@@ -38,6 +38,125 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
    
+RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps nanopb
+
+#jazzy packages
+RUN apt-get update && apt-get install -y \
+    ros-jazzy-realsense2-camera \
+    ros-jazzy-realsense2-description \
+    ros-jazzy-image-transport \
+    ros-jazzy-cv-bridge \
+    ros-jazzy-vision-opencv \
+    ffmpeg
+
+# ros2 packages
+RUN sudo add-apt-repository --yes ppa:pistache+team/stable
+RUN sudo apt-get update && apt-get install -y \
+    sudo python3-pip ros-jazzy-joint-state-publisher-gui ros-jazzy-robot-state-publisher ros-jazzy-teleop-twist-keyboard \
+    ros-jazzy-ros2-control ros-jazzy-ros2-controllers ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-librealsense2* ros-jazzy-realsense2*
+    
+RUN sudo apt-get update && sudo apt-get install -y \
+    unzip mosquitto-clients libpistache-dev \
+    sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils libeigen3-dev libboost-all-dev
+
+RUN sudo updatedb
+
+ARG USER=dock
+ARG PASSWD=dock
+
+RUN userdel ubuntu
+
+RUN useradd -d /home/$USER -m -s /bin/bash $USER && echo "$USER:$PASSWD" | chpasswd && adduser $USER sudo
+
+RUN usermod -aG dialout dock
+
+RUN mkdir -p /bjr_ws/src
+
+RUN chown -R dock:dock bjr_ws
+
+RUN echo "dock ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+USER dock
+
+
+RUN touch ~/.sudo_as_admin_successful
+
+RUN chmod -R +rwx bjr_ws
+RUN chown -R dock bjr_ws
+
+RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
+    cd /bjr_ws && \
+    rosdep update && \
+    rosdep install -i --from-path src --rosdistro jazzy -y && \
+    colcon build
+
+
+ADD common bjr_ws/src/common
+
+RUN sudo chmod -R +rwx bjr_ws/src/common
+RUN sudo chown -R dock bjr_ws/src/common
+    
+
+ADD src bjr_ws/src/bjr_packages
+
+RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
+RUN sudo chown -R dock bjr_ws/src/bjr_packages
+
+# RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
+#     cd /bjr_ws && \
+#     colcon build'
+
+
+
+# Set ROS_DOMAIN_ID from hostname
+# RUN echo 'export ROS_DOMAIN_ID=0' >> /home/$USER/.bashrc
+ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+
+RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
+RUN echo 'source /bjr_ws/install/setup.bash' >> /home/$USER/.bashrc
+
+WORKDIR /bjr_ws/
+
+# This is an auto generated Dockerfile for ros:perception
+# generated from docker_images_ros2/create_ros_image.Dockerfile.em
+FROM ros:jazzy-perception
+# FROM osrf/ros:humble-desktop-full
+
+SHELL ["/bin/bash", "-c"]
+
+# Custom CMake install to get v3.28
+ENV CMAKE_VERSION=3.28.1
+RUN apt-get remove -y cmake
+RUN apt-get update && \
+    apt-get -y install build-essential wget
+RUN rm -rf /var/lib/apt/lists/*
+RUN wget https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-linux-aarch64.sh \
+      -q -O /tmp/cmake-install.sh
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+RUN chmod u+x /tmp/cmake-install.sh
+RUN mkdir /opt/cmake-$CMAKE_VERSION -p
+RUN /tmp/cmake-install.sh --skip-license --prefix=/opt/cmake-$CMAKE_VERSION
+RUN rm /tmp/cmake-install.sh
+RUN ln -s /opt/cmake-$CMAKE_VERSION/bin/* /usr/bin/
+
+
+# install ros2 packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-jazzy-desktop* \
+    ros-jazzy-navigation2 ros-jazzy-nav2-bringup \
+    ros-jazzy-slam-toolbox ros-jazzy-robot-localization \
+    ros-jazzy-xacro \
+    ros-jazzy-irobot-create-msgs \
+    ros-jazzy-teleop-twist-joy ros-jazzy-teleop-twist-keyboard \
+    python3-colcon-common-extensions \
+    ros-jazzy-tf-transformations \
+    nano emacs joystick\
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+
+   
 RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps
 
 #jazzy packages

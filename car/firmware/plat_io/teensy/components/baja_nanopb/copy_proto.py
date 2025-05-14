@@ -1,6 +1,7 @@
 import os
 import glob
 import shutil
+import filecmp
 
 Import("env")
 
@@ -22,15 +23,20 @@ def copy_folder_contents(src_root, dest_root, folder_names):
             dest_path = os.path.join(dest_folder, item)
             
             if os.path.isdir(src_path):
+                # For directories, you might want to recursively copy if needed.
                 shutil.copytree(src_path, dest_path, dirs_exist_ok=True)
+                print(f"Copied directory '{src_path}' to '{dest_path}'")
             else:
+                # If destination exists and is identical, skip copying.
+                if os.path.exists(dest_path) and filecmp.cmp(src_path, dest_path, shallow=False):
+                    print(f"Skipping '{src_path}' as no changes detected.")
+                    continue
                 shutil.copy2(src_path, dest_path)
-                
-            print(f"Copied '{src_path}' to '{dest_path}'")
+                print(f"Copied '{src_path}' to '{dest_path}'")
 
 source_directory = os.path.join(mylib_root, '..', '..', '..', '..', '..', 'common', 'nanopb')
 destination_directory = mylib_root  # Change this to the actual destination root directory
-    
+
 folders_to_copy = ["src", "include"]
-    
+
 copy_folder_contents(source_directory, destination_directory, folders_to_copy)

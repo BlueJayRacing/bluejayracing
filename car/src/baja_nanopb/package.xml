@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>baja_nanopb</name>
+  <version>0.0.1</version>
+  <description>ROS 2 package that generates C code from proto files using nanopb and builds a shared library.</description>
+  <maintainer email="your-email@example.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <!-- Depend on Python3 for the generator script -->
+  <build_depend>python3</build_depend>
+  <exec_depend>python3</exec_depend>
+  <!-- Depend on nanopb (installed via apt or built as above) -->
+  <build_depend>nanopb</build_depend>
+  <exec_depend>nanopb</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

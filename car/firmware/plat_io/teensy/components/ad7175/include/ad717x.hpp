@@ -44,6 +44,7 @@ typedef enum ad717x_mode
 typedef enum ad717x_ref_source
 {
     EXTERNAL_REF = 0x0, /* External Reference REF+/-*/
+    EXTERNAL_REF2 = 0x1, /* External Reference REF2+/-*/
     INTERNAL_REF = 0x2, /* Internal 2.5V Reference */
     AVDD_AVSS    = 0x3  /* AVDD - AVSS */
 } ad717x_ref_source_t;
@@ -520,6 +521,7 @@ class AD717X {
     ~AD717X();
 
     int32_t init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin);
+    int32_t init(ad717x_init_param_t& t_init_param, SPIClass* t_spi_host, int8_t t_cs_pin, SPISettings t_settings);
     int32_t readRegister(uint8_t t_addr);
     int32_t writeRegister(uint8_t t_addr);
     int32_t reset(void);
@@ -539,8 +541,9 @@ class AD717X {
     int32_t readStatusRegOnData(bool enable);
     void parseStatusReg(ad717x_dev_status_t* dev_status);
 
-  private:
     ad717x_st_reg* getReg(uint8_t t_reg_address);
+  private:
+    
     int32_t initRegs(ad717x_device_type_t t_dev_type);
     int32_t updateCRCSetting(void);
     int32_t computeDataregSize(void);

@@ -1,75 +1,52 @@
 // src/components/shared/types.ts
+
+// TimeValue represents a single data point with timestamp and value
 export interface TimeValue {
   timestamp: number;
   value: number;
 }
 
-export enum ChannelType {
-  LINEAR_POTENTIOMETER = 0,
-  HALL_EFFECT_SPEED = 1,
-  BRAKE_PRESSURE = 2,
-  NAVIGATION = 3,
-  STEERING_ENCODER = 4,
-  AXLE_TORQUE = 5
+// Channel represents a data channel with samples
+export interface Channel {
+  name: string;             // Full channel name (deviceId/channelName)
+  type: number;             // Channel type (analog, digital, etc.)
+  min_value: number;        // Min value for scaling
+  max_value: number;        // Max value for scaling
+  samples: TimeValue[];     // Samples data
+  metadata?: ChannelMetadata; // Additional metadata
+  device_id?: string;       // Source device ID
 }
 
+// ChannelMetadata represents additional information about a channel
 export interface ChannelMetadata {
   name: string;
-  type: ChannelType;
-  sample_rate: number;  // Hz
-  transmission_rate: number;  // Hz
-  location: string;    // e.g., "FrontLeft", "RearRight"
-  units: string;       // e.g., "V", "RPM", "PSI"
+  type: number;
+  sample_rate: number;
+  transmission_rate: number;
+  location: string;
+  units: string;
   description: string;
   min_value: number;
   max_value: number;
 }
 
-export interface Channel {
-  name: string;
-  type: ChannelType;
-  min_value: number;
-  max_value: number;
-  samples: TimeValue[];
-  metadata?: ChannelMetadata;
+// Device represents a data source
+export interface Device {
+  id: string;               // Device ID
+  name: string;             // Human-readable name
+  available: boolean;       // Whether the device is available
+  lastSeen?: number;        // Last time the device was seen
+  channels?: string[];      // Channel names associated with this device
+  config?: any;             // Reference to the device configuration
 }
 
+// Recording represents a saved data session
 export interface Recording {
   id: string;
   name: string;
   startTime: number;
-  endTime: number | null;
-  channelData: {
-    [channelName: string]: TimeValue[];
-  };
-  channelMetadata: {
-    [channelName: string]: ChannelMetadata;
-  };
-  stats: {
-    duration: number;    // ms
-    dataSize: number;    // bytes
-    sampleCount: number; // total samples
-    channelCount: number;
-    maxSampleRate: number;
-    averageSampleRate: number;
-  };
-}
-
-export interface CarState {
-  suspensionLengthsInInches: {
-    frontLeft: number;
-    frontRight: number;
-    rearLeft: number;
-    rearRight: number;
-  };
-  wheelSpeedsInRPM: {
-    frontLeft: number;
-    frontRight: number;
-    lockedRear: number;
-  };
-  steeringAngleInDegrees: number;
-  framePose: {
-    position: [number, number, number];
-    rotation: [number, number, number, number];
-  };
+  endTime?: number;
+  devices: string[];
+  channels: string[];
+  data?: Channel[];
 }

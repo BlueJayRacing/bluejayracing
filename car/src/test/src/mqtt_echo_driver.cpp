@@ -104,7 +104,7 @@ int MQTTEchoDriver::message_arrived(void *context, char *topicName, int topicLen
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
 
-    return 0;
+    return 1;
 }
 
 void MQTTEchoDriver::delivery_complete(void *context, MQTTClient_deliveryToken dt) {
