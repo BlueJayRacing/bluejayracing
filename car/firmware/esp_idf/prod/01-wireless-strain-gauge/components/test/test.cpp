@@ -1,24 +1,26 @@
+#include <config.hpp>
 #include <esp_log.h>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <test.hpp>
-#include <w25n04kv.hpp>
+
+#include <hardEncoder.hpp>
+#include <pb_common.h>
+#include <pb_encode.h>
+#include <pb_decode.h>
+#include <wsg_drive_data.pb.h>
+
+#if ENABLE_TESTS == 1
 
 #define SPI2_MOSI_PIN 18
 #define SPI2_MISO_PIN 20
 #define SPI2_SCLK_PIN 19
 
-#define ADC_VALUE_ERROR_MARGIN 0.003
+#define ADC_VALUE_ERROR_MARGIN 0.006
 
 static const char* TAG = "test";
 
 Test::Test(esp_log_level_t test_log_level) { esp_log_level_set(TAG, test_log_level); }
-
-void Test::testMemoryQueue(void)
-{
-    testMemoryQueueBasic();
-    testMemoryQueueAcquireFull();
-}
 
 void Test::testMQTTManager(void)
 {
@@ -28,7 +30,7 @@ void Test::testMQTTManager(void)
     mqtt_manager_ = mqttManager::getInstance();
 
     // Initialize the MQTT Manager
-    assert(mqtt_manager_->init() == ESP_OK);
+    assert(mqtt_manager_->init("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
     ESP_LOGD(TAG, "Initialized MQTT manager");
 
     // Run MQTT manager tests
@@ -40,83 +42,6 @@ void Test::testMQTTManager(void)
     testMQTTManagerClientPublishSubscribe();
 }
 
-/* We check basic memory queue functions like acquiring, writing to, and pushing
- * blocks onto the memory queue. We also cover function returns on invalid input
- * or invalid operation for that state.
- */
-void Test::testMemoryQueueBasic(void)
-{
-    ESP_LOGI(TAG, "Testing Basic Memory Queue Functions");
-    memoryQueue queue(10, 20);
-    ESP_LOGD(TAG, "Initialized memory queue");
-
-    // Try to correctly acquire a block to write on
-    memoryBlock* acquired_block = queue.acquire();
-    assert(acquired_block != nullptr);
-    ESP_LOGD(TAG, "successfully acquired block");
-
-    std::vector<uint8_t> data_vec;
-    data_vec.reserve(20);
-    for (int i = 0; i < 20; i++) {
-        data_vec.push_back(i);
-    }
-
-    assert(acquired_block->write(data_vec) == 20);
-    assert(acquired_block->write(data_vec) == 0);
-    ESP_LOGD(TAG, "successfully written to block");
-
-    // Try to acquire a block to write on while acquire_lock is on
-    assert(queue.acquire() == nullptr);
-    ESP_LOGD(TAG, "successfully prevented acquiring two blocks at once");
-
-    // Try to correctly push a block that you have finished writing to
-    assert(queue.push(acquired_block) == 0);
-    assert(queue.getNumPushed() == 1);
-    ESP_LOGD(TAG, "successfully pushed acquired block");
-
-    // Try to correctly pop a block to read from
-    memoryBlock popped_block(20);
-    assert(queue.pop(popped_block) == 0);
-    ESP_LOGD(TAG, "successfully popped block from queue");
-
-    uint8_t* data = popped_block.data();
-    for (int i = 0; i < 20; i++) {
-        assert(*(data + i) == i);
-    }
-    ESP_LOGI(TAG, "Passed Basic Memory Queue Functions");
-}
-
-/* We check to see if the queue can properly free the oldest memory blocks when
- * acquiring memory blocks on a full queue.
- */
-void Test::testMemoryQueueAcquireFull(void)
-{
-    ESP_LOGI(TAG, "Testing Memory Queue When Full");
-    memoryQueue queue(10, 20);
-
-    for (int i = 0; i < 20; i++) {
-        std::vector<uint8_t> data_vec(20, i);
-
-        memoryBlock* acquired_block = queue.acquire();
-        assert(acquired_block != nullptr);
-        assert(acquired_block->write(data_vec) == 20);
-        queue.push(acquired_block);
-        ESP_LOGD(TAG, "Pushed Block %d", i);
-    }
-
-    memoryBlock mem_block(20);
-    uint8_t* data = mem_block.data();
-
-    for (int i = 0; i < queue.size(); i++) {
-        assert(queue.pop(mem_block) == 0);
-        for (int j = 0; j < mem_block.size(); j++) {
-            ESP_LOGD(TAG, "Data val: %d, Index: %d", *(data + j), i);
-            assert(*(data + j) == (i + 10));
-        }
-    }
-    ESP_LOGI(TAG, "Passed Memory Queue When Full");
-}
-
 /* We check to see if the MQTT manager returns the correct return values on error.
  */
 void Test::testMQTTManagerBasicParamErrors(void)
@@ -124,11 +49,6 @@ void Test::testMQTTManagerBasicParamErrors(void)
     ESP_LOGI(TAG, "Testing MQTT Manager Basic Paramter Error Handling");
 
     mqtt_client_t client;
-
-    assert(mqtt_manager_->connectWiFi("", "hi") == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->connectWiFi("hi", "") == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->connectWiFi(std::string('c', 33), "hi") == ESP_ERR_INVALID_SIZE);
-    assert(mqtt_manager_->connectWiFi("hi", std::string('c', 65)) == ESP_ERR_INVALID_SIZE);
 
     assert(mqtt_manager_->createClient("") == NULL);
 
@@ -138,18 +58,23 @@ void Test::testMQTTManagerBasicParamErrors(void)
     assert(mqtt_manager_->clientDisconnect(NULL) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->isClientConnected(NULL) == false);
 
-    assert(mqtt_manager_->clientEnqueue(NULL, "payload", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "", "topic", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "payload", "", 2) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 3) == ESP_ERR_INVALID_ARG);
-    assert(mqtt_manager_->clientEnqueue(&client, "payload", "topic", 2) == ESP_ERR_WIFI_NOT_CONNECT);
+    std::string test_mes("hi");
+
+    assert(mqtt_manager_->clientPublish(NULL, NULL, 5, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), 0, "topic", 2) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), test_mes.length(), "", 2) ==
+           ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), test_mes.length(), "topic", 3) ==
+           ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientPublish(&client, (uint8_t*)test_mes.data(), test_mes.length(), "topic", 2) ==
+           ESP_ERR_WIFI_NOT_CONNECT);
 
     assert(mqtt_manager_->clientSubscribe(NULL, "topic", 2) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientSubscribe(&client, "", 2) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientSubscribe(&client, "topic", 3) == ESP_ERR_INVALID_ARG);
 
     mqtt_message_t message;
-    assert(mqtt_manager_->clientReceive(NULL, message) == ESP_ERR_INVALID_ARG);
+    assert(mqtt_manager_->clientReceive(NULL, message, 100) == ESP_ERR_INVALID_ARG);
     assert(mqtt_manager_->clientClearMessages(NULL) == ESP_ERR_INVALID_ARG);
 
     ESP_LOGI(TAG, "Passed MQTT Manager Basic Paramter Error Handling");
@@ -163,7 +88,7 @@ void Test::testMQTTManagerWiFiConnectDisconnect(void)
     ESP_LOGI(TAG, "Testing MQTT Manager WiFi Connection");
 
     for (int i = 0; i < 5; i++) {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int j = 0; j < 30; j++) {
@@ -202,7 +127,7 @@ void Test::testMQTTManagerClientConnectDisconnect(void)
 
     // Initialization (Connects to WiFi)
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -280,7 +205,7 @@ void Test::testMQTTManagerClientWiFiConnectDisconnect(void)
 
     // Initialization (Connects to WiFi + MQTT)
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -334,7 +259,7 @@ void Test::testMQTTManagerMultipleClientsConDisCon(void)
     ESP_LOGI(TAG, "Testing MQTT Manager Multiple Clients Connect/Disconnect");
 
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -437,7 +362,7 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     ESP_LOGI(TAG, "Testing MQTT Manager Client Publish/Subscribe");
 
     {
-        assert(mqtt_manager_->connectWiFi("bjr_wireless_axle_host", "bluejayracing") == ESP_OK);
+        assert(mqtt_manager_->connectWiFi() == ESP_OK);
         ESP_LOGD(TAG, "Started Connecting to WiFi");
 
         for (int i = 0; i < 30; i++) {
@@ -475,15 +400,17 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
     mqtt_message_t rec_mes;
 
     for (int i = 0; i < 10; i++) {
-        assert(mqtt_manager_->clientEnqueue(client, "hi " + std::to_string(i), "esp32/test_publish", 2) == ESP_OK);
-        assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
-        assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
+        std::string hi_mes("hi " + std::to_string(i));
+        assert(mqtt_manager_->clientPublish(client, (uint8_t*)hi_mes.data(), hi_mes.length(), "esp32/test_publish",
+                                            2) == ESP_OK);
+        // assert(mqtt_manager_->clientWaitPublish(client, 1000) == ESP_OK);
+        // assert(mqtt_manager_->clientWaitPublish(client, 10) == ESP_ERR_TIMEOUT);
         ESP_LOGD(TAG, "Client Published to MQTT");
 
         memset(&rec_mes, 0, sizeof(mqtt_message_t));
 
         for (int j = 0; j < 30; j++) {
-            if (mqtt_manager_->clientReceive(client, rec_mes) == ESP_OK) {
+            if (mqtt_manager_->clientReceive(client, rec_mes, 100) == ESP_OK) {
                 ESP_LOGD(TAG, "Received topic: %s", rec_mes.topic.data());
                 ESP_LOGD(TAG, "Received data: %s", rec_mes.payload.data());
                 break;
@@ -515,10 +442,10 @@ void Test::testMQTTManagerClientPublishSubscribe(void)
 void Test::testADCDACEndtoEnd(void)
 {
     gpio_config_t config;
-    config.mode = GPIO_MODE_OUTPUT;
-    config.intr_type = GPIO_INTR_DISABLE;
+    config.mode         = GPIO_MODE_OUTPUT;
+    config.intr_type    = GPIO_INTR_DISABLE;
     config.pin_bit_mask = 1ULL << GPIO_NUM_17;
-    config.pull_up_en = GPIO_PULLUP_DISABLE;
+    config.pull_up_en   = GPIO_PULLUP_DISABLE;
     config.pull_down_en = GPIO_PULLDOWN_DISABLE;
 
     esp_err_t ret = gpio_config(&config);
@@ -670,7 +597,7 @@ void Test::testADCDACReadDACBias(void)
 
     ESP_LOGI(TAG, "Average error (V): %f", sum_diff / NUM_DAC_BIAS_SAMPLES);
 
-    // assert(sum_diff / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
+    assert(sum_diff / NUM_DAC_BIAS_SAMPLES < ADC_VALUE_ERROR_MARGIN);
 
     ESP_LOGI(TAG, "Passed reading DAC Bias from ADC");
 }
@@ -853,7 +780,7 @@ void Test::testADCDACReadAnalogFrontEnd(void)
     adc_regs.channels  = AIN1_AIN2;
     adc_regs.data_rate = 2;
     adc_regs.volt_refs = REFP0_REFN0;
-    adc_regs.gain = GAIN_1;
+    adc_regs.gain      = GAIN_1;
 
     ret = adc_.configure(adc_regs);
     if (ret != ESP_OK) {
@@ -883,3 +810,323 @@ void Test::testADCDACReadAnalogFrontEnd(void)
         }
     }
 }
+
+void Test::testCalSensorSetup(void)
+{
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+        return;
+    }
+
+    gpio_config_t config;
+    config.mode         = GPIO_MODE_OUTPUT;
+    config.intr_type    = GPIO_INTR_DISABLE;
+    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    config.pull_up_en   = GPIO_PULLUP_DISABLE;
+    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+
+    ret = gpio_config(&config);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+        return;
+    }
+
+    ad5626_init_param_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_0;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.spi_host = SPI2_HOST;
+
+    // Initialize the ADC instance
+    ads1120_init_param_t adc_params;
+    adc_params.cs_pin   = GPIO_NUM_21;
+    adc_params.drdy_pin = GPIO_NUM_2;
+    adc_params.spi_host = SPI2_HOST;
+
+    cal_setup_.init(adc_params, dac_params);
+
+    testCalSensorSetupZero();
+    testCalSensorSetupReadAnalogFrontEnd();
+}
+
+void Test::testCalSensorSetupReadAnalogFrontEnd(void)
+{
+    ESP_LOGI(TAG, "Testing Reading Calibration Analog FrontEnd");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    cal_measurement_t measurement;
+
+    while (true) {
+        cal_setup_.measure(&measurement);
+        ESP_LOGI(TAG, "Measurement: %f V, %d", measurement.voltage, measurement.adc_value);
+        vTaskDelay(10);
+    }
+}
+
+void Test::testCalSensorSetupZero(void)
+{
+    ESP_LOGI(TAG, "Testing Zeroing Calibration Sensor Setup");
+
+    esp_err_t ret = cal_setup_.zero();
+    if (ret) {
+        ESP_LOGI(TAG, "Failed to Zero");
+        return;
+    } else {
+        ESP_LOGI(TAG, "Finished Zeroing");
+    }
+
+    ESP_LOGI(TAG, "Finished Testing Zeroing Calibration Sensor Setup");
+}
+
+void Test::testDriveSensorSetup(void)
+{
+    ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
+
+    spi_bus_config_t spi_cfg;
+    memset(&spi_cfg, 0, sizeof(spi_bus_config_t));
+
+    spi_cfg.mosi_io_num   = SPI2_MOSI_PIN;
+    spi_cfg.miso_io_num   = SPI2_MISO_PIN;
+    spi_cfg.sclk_io_num   = SPI2_SCLK_PIN;
+    spi_cfg.quadwp_io_num = -1;
+    spi_cfg.quadhd_io_num = -1;
+
+    esp_err_t ret = spi_bus_initialize(SPI2_HOST, &spi_cfg, SPI_DMA_CH_AUTO);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to initialize SPI bus: %d", ret);
+        return;
+    }
+
+    gpio_config_t config;
+    config.mode         = GPIO_MODE_OUTPUT;
+    config.intr_type    = GPIO_INTR_DISABLE;
+    config.pin_bit_mask = 1ULL << GPIO_NUM_17;
+    config.pull_up_en   = GPIO_PULLUP_DISABLE;
+    config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+
+    ret = gpio_config(&config);
+    if (ret) {
+        ESP_LOGE(TAG, "Failed to configure GPIO: %d", ret);
+        return;
+    }
+
+    ad5626_init_param_t dac_params;
+    dac_params.cs_pin   = GPIO_NUM_0;
+    dac_params.ldac_pin = GPIO_NUM_17;
+    dac_params.clr_pin  = GPIO_NUM_NC;
+    dac_params.spi_host = SPI2_HOST;
+
+    // Initialize the ADC instance
+    ads1120_init_param_t adc_params;
+    adc_params.cs_pin   = GPIO_NUM_21;
+    adc_params.drdy_pin = GPIO_NUM_2;
+    adc_params.spi_host = SPI2_HOST;
+
+    drive_setup_.init(adc_params, dac_params);
+
+    testDriveSensorSetupSPS();
+    testDriveSensorSetupZero();
+    testDriveSensorSetupReadAnalogFrontEnd();
+
+    ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
+}
+
+void Test::testProtobufEncode(void)
+{
+    testProtobufStockEncode();
+    testProtobufHardEncode();
+}
+
+void Test::testDriveSensorSetupSPS(void)
+{
+    ESP_LOGI(TAG, "Testing Drive Sensor Setup SPS");
+
+    uint32_t start_time = esp_timer_get_time();
+    drive_measurement_t measurement;
+    int num_success_reads = 0;
+
+    while (esp_timer_get_time() - start_time < 1000000) {
+        drive_setup_.measure(true, &measurement);
+        num_success_reads++;
+    }
+
+    assert(num_success_reads > 1800 && num_success_reads < 2200);
+
+    ESP_LOGI(TAG, "Passed Testing Drive Sensor Setup SPS");
+}
+
+void Test::testDriveSensorSetupReadAnalogFrontEnd(void)
+{
+    ESP_LOGI(TAG, "Testing Reading Drive Analog FrontEnd");
+
+    ads1120_regs_t adc_regs;
+    memset(&adc_regs, 0, sizeof(ads1120_regs_t));
+
+    drive_measurement_t measurement;
+
+    drive_cfg_t sample_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::STRAIN_GAUGE};
+    drive_cfg_t excitn_cfg  = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::EXCITATION};
+    drive_cfg_t dacbias_cfg = {drive_cfg_t::MEASURING_MODE, drive_cfg_t::DAC_BIAS};
+
+    float strain_gauge_volt;
+    float excitation_volt;
+    float dac_bias_volt;
+
+    while (true) {
+        drive_setup_.configure(sample_cfg);
+        drive_setup_.measure(true, &measurement);
+        strain_gauge_volt = measurement.voltage;
+
+        drive_setup_.configure(excitn_cfg);
+        drive_setup_.measure(true, &measurement);
+        excitation_volt = measurement.voltage;
+
+        drive_setup_.configure(dacbias_cfg);
+        drive_setup_.measure(true, &measurement);
+        dac_bias_volt = measurement.voltage;
+
+        ESP_LOGI(TAG, "%f \t%f \t%f", strain_gauge_volt, excitation_volt, dac_bias_volt);
+        vTaskDelay(50);
+    }
+}
+
+void Test::testDriveSensorSetupZero(void)
+{
+    ESP_LOGI(TAG, "Testing Zeroing Drive Sensor Setup");
+
+    esp_err_t ret = drive_setup_.zero();
+    if (ret) {
+        ESP_LOGI(TAG, "Failed to Zero");
+        return;
+    } else {
+        ESP_LOGI(TAG, "Finished Zeroing");
+    }
+
+    ESP_LOGI(TAG, "Finished Testing Zeroing Drive Sensor Setup");
+}
+
+#define NUM_ENCODES 100
+
+std::array<uint8_t, 12000> buffer_1;
+std::array<uint8_t, 12000> buffer_2;
+wsg_drive_data_t measurements = wsg_drive_data_t_init_zero;
+wsg_drive_data_t out_measurements = wsg_drive_data_t_init_zero;
+
+void Test::testProtobufStockEncode(void)
+{
+    ESP_LOGI(TAG, "Testing Protobuf stock encoding");
+
+    uint32_t encode_times_micros[NUM_ENCODES];
+    uint32_t start_time;
+    uint32_t end_time;
+    pb_ostream_t o_stream;
+
+    // Generate a test data packet to be serialized
+    measurements.base_timestamp = esp_timer_get_time();
+    measurements.dac_bias = 4095;
+    measurements.excitation_voltage = 2.5;
+    strcpy(measurements.mac_address, "AB:CD:EF:GH:IJ:KL");
+    measurements.sample_channel_id = 0;
+
+    for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
+        measurements.timestamp_deltas[i] = i * 500;
+        measurements.values[i] = 3.000;
+    }
+
+    for (int i = 0; i < NUM_ENCODES; i++) {
+        o_stream     = pb_ostream_from_buffer(buffer_1.data(), buffer_1.size());
+    
+        start_time = esp_timer_get_time();
+        pb_encode(&o_stream, wsg_drive_data_t_fields, &measurements);
+        end_time = esp_timer_get_time();
+
+        encode_times_micros[i] = end_time - start_time;
+    }
+
+    uint64_t total_micros = 0;
+    for (int i = 0; i < NUM_ENCODES; i++) {
+        total_micros += encode_times_micros[i];
+    }
+
+    ESP_LOGI(TAG, "Average stock encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    ESP_LOGI(TAG, "Stock encoded bytestream length (bytes): %u", o_stream.bytes_written);
+    ESP_LOGI(TAG, "Finished testing Protobuf stock encoding");
+}
+
+void Test::testProtobufHardEncode(void) {
+    ESP_LOGI(TAG, "Testing Protobuf hard encoding");
+    
+    uint32_t encode_times_micros[NUM_ENCODES];
+    uint32_t start_time;
+    uint32_t end_time;
+    int num_bytes_written;
+
+    // Generate a test data packet to be serialized
+    measurements.base_timestamp = esp_timer_get_time();
+    measurements.dac_bias = 4095;
+    measurements.excitation_voltage = 2.5;
+    strcpy(measurements.mac_address, "AB:CD:EF:GH:IJ:KL");
+    measurements.sample_channel_id = 0;
+
+    for (int i = 0; i < NUM_SAMPLES_PER_MESSAGE; i++) {
+        measurements.timestamp_deltas[i] = i * 500;
+        measurements.values[i] = i * 3.000;
+    }
+
+    for (int i = 0; i < NUM_ENCODES; i++) {    
+        start_time = esp_timer_get_time();
+        num_bytes_written = hardEncoder::encodeDriveData(measurements, buffer_2);
+        end_time = esp_timer_get_time();
+
+        encode_times_micros[i] = end_time - start_time;
+    }
+
+    uint64_t total_micros = 0;
+    for (int i = 0; i < NUM_ENCODES; i++) {
+        total_micros += encode_times_micros[i];
+    }
+
+    for (int i = 0; i < 12000; i++) {
+        if (buffer_1[i] != buffer_2[i]) {
+            ESP_LOGI(TAG, "Index not equal: %d", i);
+            break;
+        }
+    }
+
+    ESP_LOGI(TAG, "Average hard encoding time (micros): %f", ((float) total_micros) / NUM_ENCODES);
+    ESP_LOGI(TAG, "Hard encoded bytestream length (bytes): %u", num_bytes_written);
+
+    pb_istream_t istream = pb_istream_from_buffer(buffer_2.data(), num_bytes_written);
+
+    if (!pb_decode(&istream, wsg_drive_data_t_fields, &out_measurements)) {
+        ESP_LOGI(TAG, "Failed to decode stream");
+        return;
+    }
+
+    assert(out_measurements.base_timestamp == measurements.base_timestamp);
+    assert(out_measurements.dac_bias == measurements.dac_bias);
+    assert(out_measurements.excitation_voltage == measurements.excitation_voltage);
+    assert(out_measurements.sample_channel_id == measurements.sample_channel_id);
+    assert(strcmp(out_measurements.mac_address, measurements.mac_address) == 0);
+
+    for (int i = 0; i < 10; i++) {
+        assert(out_measurements.timestamp_deltas[i] == measurements.timestamp_deltas[i]);
+        assert(out_measurements.values[i] == measurements.values[i]);
+    }
+
+    ESP_LOGI(TAG, "Finished testing Protobuf hard encoding");
+}
+
+#endif

@@ -2,7 +2,7 @@
 # generated from docker_images_ros2/create_ros_image.Dockerfile.em
 # FROM ros:humble-perception-jammy
 # FROM ros:humble-perception
-FROM ros:jazzy-perception
+FROM ros:jazzy-perception@sha256:67ab684f5071f548e0899eb516b230237b397dc94e370d0158bd99fa7d7484a6
 # FROM osrf/ros:humble-desktop-full
 
 SHELL ["/bin/bash", "-c"]
@@ -117,7 +117,8 @@ RUN sudo chmod -R +rwx bjr_ws/src/common
 RUN sudo chown -R dock bjr_ws/src/common
 
 RUN cd /bjr_ws/src && \
-    sudo ln -s common/inertial-sense-sdk/ROS/ros2    
+    sudo ln -s common/inertial-sense-sdk/ROS/ros2 && \
+    sudo ln -s common/inertial-sense-sdk 
 
 ADD src bjr_ws/src/bjr_packages
 
@@ -132,7 +133,12 @@ RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
 RUN echo 'export ROS_DOMAIN_ID=$(hostname | grep -o '[0-9]*$')' >> /home/$USER/.bashrc
 ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 
+RUN cd /home/dock && \
+    mkdir Documents
+
 RUN echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> /home/$USER/.bashrc
 RUN echo 'source /bjr_ws/install/setup.bash' >> /home/$USER/.bashrc
+
+
 
 WORKDIR /bjr_ws/

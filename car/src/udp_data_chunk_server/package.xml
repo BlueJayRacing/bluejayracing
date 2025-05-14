@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>udp_data_chunk_server</name>
+  <version>0.0.1</version>
+  <description>Teensy Receiving Data Chunk Server</description>
+  <maintainer email="awong69@jhu.edu">Aaren Wong</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>baja_msgs</depend>
+  <depend>ament_index_cpp</depend>
+  <depend>car_config</depend>
+
+
+
+  <build_depend>baja_nanopb</build_depend>
+  <exec_depend>baja_nanopb</exec_depend>
+  <build_depend>nanopb</build_depend>
+  <exec_depend>nanopb</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

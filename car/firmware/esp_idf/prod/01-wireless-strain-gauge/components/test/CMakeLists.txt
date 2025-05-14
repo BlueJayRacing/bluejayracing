@@ -4,11 +4,15 @@ idf_component_register( SRCS "test.cpp"
                             driver
                             esp_system 
                             log
-                            memoryQueue
-                            mqttManager
-                            externalFlash
+                            mqtt_manager
+                            config
+                            cal_sensor_setup
+                            drive_sensor_setup
+                            external_flash
                             esp_timer
                             ads1120
                             ad5626
-                            w25n04kv
+                            baja_nanopb
+                            baja_proto
+                            hard_encoder
                             )

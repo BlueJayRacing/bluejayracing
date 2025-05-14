@@ -1,0 +1,233 @@
+##############################################
+# Inertial Sense IMX ROS 2 Configuration
+##############################################
+
+inertial_sense_ros2_node:
+  ros__parameters:
+
+    # Logging
+    enable_log: true
+
+    # Publish TF frames (set to true if you need TF)
+    publishTf: false
+
+    # Frame for all published data
+    frame_id: "body"
+
+    # If your ports/baud rates are autodetected, you can leave them out or comment them.
+    # port: ["/dev/ttyACM0"]
+    # baudrate: 921600
+
+    # INS configuration
+    ins:
+      navigation_dt_ms: 10   # 100 Hz
+      dynamic_model: 8       # (Airborne 4G model, or leave as-is)
+      enable_covariance: false
+      messages:
+        odom_ins_enu:
+          enable: false
+        odom_ins_ned:
+          enable: false
+        odom_ins_ecef:
+          enable: true
+          period: 1          # Same as navigation rate → 100 Hz
+        did_ins1:
+          enable: false
+        did_ins2:
+          enable: false
+        did_ins4:
+          enable: false
+        inl2_states:
+          enable: true
+          period: 2          # Half the navigation rate → 50 Hz
+
+    # Sensor streams (all disabled unless you need them)
+    sensors:
+      messages:
+        imu:
+          enable: false
+        pimu:
+          enable: false
+        magnetometer:
+          enable: false
+        barometer:
+          enable: false
+        strobe_in:
+          enable: false
+
+    # GPS1 Configuration
+    gps1:
+      enabled: true
+      type: "F9P"
+      antenna_offset: [1.0, 0.0, 0.0]  # +1 m in X-axis
+      messages:
+        pos_vel:
+          enable: false
+        navsatfix:
+          enable: false
+        info:
+          enable: false
+        raw:
+          enable: false
+        rtk_pos_rel:
+          enable: false
+        rel:
+          enable: false
+        base:
+          rel:
+            enable: false
+          info:
+            enable: false
+        compass:
+          rel:
+            enable: false
+          info:
+            enable: false
+
+    # GPS2 Configuration
+    gps2:
+      enabled: true
+      type: "F9P"
+      antenna_offset: [-1.0, 0.0, 0.0] # -1 m in X-axis
+      messages:
+        pos_vel:
+          enable: false
+        navsatfix:
+          enable: false
+        info:
+          enable: false
+        raw:
+          enable: false
+        rtk_pos_rel:
+          enable: false
+        rel:
+          enable: false
+        base:
+          rel:
+            enable: false
+          info:
+            enable: false
+        compass:
+          rel:
+            enable: false
+          info:
+            enable: false
+
+
+
+
+
+
+
+
+
+
+
+    rtk_rover:
+      correction_destination:                       # this defines which GPSs get RTK Corrections
+        gps1: positioning                           # Enables RTK precision positioning at GPS1 (RTK corrections are sent to GPS1)
+        gps2: compassing                            # Enable RTK compassing (dual GNSS moving baseline RTK) at GPS2
+        gps3: none                                  # Disable RTK corrections at GPS3
+
+      positioning_enable: false                     # Enable RTK precision positioning at GPS1
+      compassing_enable: false                      # Enable RTK compassing (dual GNSS moving baseline RTK) at GPS2
+      correction_input:
+        select: ntrip_example                       # Select correction input settings
+
+        ntrip_example:                              # Rename as needed
+          type: ntrip                               # configure NTRIP client provider (RTK Rover = TCP Client)
+          format: RTCM3
+          ip_address: '66.219.246.93'               # NTRIP service address
+          ip_port: 7777                             # NTRIP service port
+          # these following parameters are only valid for "client" modes
+          mount_point: ''                           # NTRIP service mount-point (if any)
+          username: ''                              # NTRIP service username (if any)
+          password: ''                              # NTRIP service password (if any)
+          connection_attempts:
+            limit: 1                                # every time we attempt to connect, only try one time
+            backoff: 2                              # default back off, ignored because only connecting once
+          watchdog:                                 # connectivity watchdog timer - reconnects if no RTK activity
+            enable: true
+            interval: 1                             # check every 1 second for traffic
+            timeout: 5                              # number of seconds of inactivity before attempting to reconnect
+
+        ntrip_example2:                             # Rename as needed
+          type: ntrip                               # configure NTRIP client provider (RTK Rover = TCP Client)
+          format: RTCM3
+          ip_address: '66.219.246.93'               # NTRIP service address
+          ip_port: 7777                             # NTRIP service port
+
+        serial_example:
+          type: serial                              # host/pc serial port, always 8N1 - IS-Ros will open and forward data from the EVB to this port
+          format: RTCM3
+          port: /dev/ttyACM1                        # Serial port of local host where corrections can be read from (not the EVB/IMX port!)
+          baud_rate: 115200                         # Serial baud rate
+
+        ros_provider:
+          type: "ros_topic"                         # to/from ROS topics - ROS topic ot subscribe to, received RTCM3 corrections are passed to the EVB
+          format: RTCM3
+          topic: "/rtcm3_corrections"
+
+        xbee_radio:
+          type: "evb"
+          format: RTCM3
+          port: "xbee"
+
+      # Correction providers (input/output) are referenced as "pointers" from the "base" and "rover" sections above.
+      # You can define multiple providers, however only those referenced by "base" and "rover" will be used.  All others
+      # are ignored.  This is a convenience if you have multiple providers, and you intend to switch between them occasionally.
+      # Otherwise, you should remove all those that are unused.
+
+
+
+    rtk_base:
+      enable: false
+      correction_source:
+        imx_serial_0: gps1                          # GPS from which RTK corrections are taken (either off, GPS1 or GPS2)
+        imx_serial_1: off                           # GPS from which RTK corrections are taken (either off, GPS1 or GPS2)
+        imx_serial_2: gps2                          # GPS from which RTK corrections are taken (either off, GPS1 or GPS2)
+        imx_usb: off                                # GPS from which RTK corrections are taken (either off, GPS1 or GPS2)
+
+      correction_outputs:
+        format: RTCM3
+        select: ros_provider                             # This is one of the keys below, which defines which outputs to enable/use (this can be many).
+
+        # - ros_provider
+        # - xbee_radio
+        # RTK corrections
+        ntrip_1:
+          type: ntrip                               # configure NTRIP output provider (TCP Server)
+          ip_address: '127.0.0.1'               # (required) NTRIP service address
+          ip_port: 7777                             # NTRIP service port, default 7777
+          # FIXME:  The following is fluff functionality that we probably shouldn't bother with, but someone might find it useful??
+          mount: ''                                 # (optional) NTRIP service mount-point, the mount this output maps to
+          authentication: "none"                    # (optional) specified the type of authentication that is used to validate a user (basic, oauth, rsa, etc)
+          username: ''                              # (optional) NTRIP service username which is required to connect to this service
+          password: ''                              # (optional) NTRIP service password
+          credentials: '/etc/ntrip/users.txt'       # alternatively to username/password, you can specify a credentials file (a list of 'username:password') which is used for authentication of multiple users
+
+        serial_1:
+          type: serial                              # host/pc serial port, always 8N1 - IS-Ros will open and forward data from the EVB to this port
+          port: "/dev/ttyACM0"                      # the host's local serial port to which data is written (not the EVB/IMX port!)
+          baud_rate: 115200
+          
+        # RTK corrections to/from ROS topics -
+        ros_provider:
+          type: ros_topic                           # publishes RTCM3 corrections onto the specific ROS topic
+          topic: "/rtcm3_corrections"               # the topic to publish on - this should *probably* be an absolute topic
+
+        # RTK corrections passed through the EVB - rover/inputs are always read from the EVB CB, base/outputs are always written to the EVB CB
+        xbee_radio:
+          type: evb                                 # routes the RTCM3 corrections back to the EVB, and onto the comm-bridge -- FIXME: Not sure if this works.. still trying to wrap my head around the limits of the comm-bridge.
+          port: "xbee"                              # FIXME: Maybe we don't need a port, since the comm-bridge configuration really handles this... it either goes to the EVB or it doesn't... or does it ALWAYS go to the EVB?
+
+
+
+
+
+
+
+
+    # Disable diagnostic outputs
+    diagnostics:
+      enable: false
