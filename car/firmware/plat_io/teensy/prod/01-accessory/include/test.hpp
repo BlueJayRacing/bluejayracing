@@ -9,7 +9,7 @@ class Test {
 public:
     void readAnalogChannels(void);
     void readDigitalChannels(void);
-
+    void continuousChannelReadStats(void);
 private:
     static void D1InterruptFn(void);
     static void D2InterruptFn(void);

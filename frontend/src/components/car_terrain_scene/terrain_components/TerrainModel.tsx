@@ -13,7 +13,8 @@ interface TerrainModelProps {
 
 const TerrainModel: React.FC<TerrainModelProps> = ({ 
   terrainConfig,
-  modelPath = '/models/penn2_rec.glb'
+  // modelPath = '/models/penn2.glb'
+  modelPath = '/models/mich_end_start.glb'
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   

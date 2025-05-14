@@ -26,6 +26,7 @@ const HomePage: React.FC = () => {
   const modelPaths = {
     car: '/models/vehicle.glb',
     terrain: '/models/penn2_rec.glb'
+    // terrain: '/models/mich_end_start.glb'
   };
 
   // Animation loop

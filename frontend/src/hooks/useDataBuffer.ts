@@ -21,13 +21,26 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
   const chartProcessedTimestampsRef = useRef<{[channelName: string]: Set<number>}>({});
   
   // Calculate buffer size based on polling rate
-  // Aim to store approximately 30 seconds of data for better continuity
-  const bufferSize = Math.max(200, pollingRate * 30);
+  // Aim to store approximately 60 seconds of data for better continuity (increased from 30s)
+  const bufferSize = Math.max(500, pollingRate * 60); // Increased from 30 to 60 seconds and min size from 200 to 500
+  
+  // DEBUG: Track buffer statistics
+  const bufferStatsRef = useRef<{
+    lastTrimTimestamp: number;
+    trimmedPoints: {[channelName: string]: number};
+    totalPointsAdded: {[channelName: string]: number};
+    totalPointsRequested: {[channelName: string]: number};
+  }>({
+    lastTrimTimestamp: Date.now(),
+    trimmedPoints: {},
+    totalPointsAdded: {},
+    totalPointsRequested: {}
+  });
 
   useEffect(() => {
     if (!rawChannels || rawChannels.length === 0) return;
 
-    // console.log('Buffer update triggered with', rawChannels.length, 'channels');
+    console.log('Buffer update triggered with', rawChannels.length, 'channels, buffer size limit:', bufferSize);
 
     // Process new data and update buffer
     const newBuffer = { ...bufferRef.current };
@@ -37,11 +50,22 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
       // Initialize buffer and tracking for this channel if it doesn't exist
       if (!newBuffer[channel.name]) {
         newBuffer[channel.name] = [];
-        // console.log(`Initializing buffer for channel: ${channel.name}`);
+        console.log(`Initializing buffer for channel: ${channel.name}`);
       }
       
       if (!chartProcessedTimestampsRef.current[channel.name]) {
         chartProcessedTimestampsRef.current[channel.name] = new Set();
+      }
+      
+      // Initialize buffer stats tracking
+      if (!bufferStatsRef.current.trimmedPoints[channel.name]) {
+        bufferStatsRef.current.trimmedPoints[channel.name] = 0;
+      }
+      if (!bufferStatsRef.current.totalPointsAdded[channel.name]) {
+        bufferStatsRef.current.totalPointsAdded[channel.name] = 0;
+      }
+      if (!bufferStatsRef.current.totalPointsRequested[channel.name]) {
+        bufferStatsRef.current.totalPointsRequested[channel.name] = 0;
       }
       
       const existingData = newBuffer[channel.name];
@@ -83,11 +107,14 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
           existingTimestamps.add(sample.timestamp);
           newSamplesAdded++;
           totalNewSamples++;
+          
+          // Track for debug stats
+          bufferStatsRef.current.totalPointsAdded[channel.name]++;
         }
       });
       
       if (newSamplesAdded > 0) {
-        // console.log(`Added ${newSamplesAdded} new samples to ${channel.name}`);
+        console.log(`Added ${newSamplesAdded} new samples to ${channel.name}`);
         
         // Always sort by timestamp to ensure correct order
         existingData.sort((a, b) => a.timestamp - b.timestamp);
@@ -95,16 +122,27 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
         // Keep buffer size in check
         if (existingData.length > bufferSize) {
           const excessCount = existingData.length - bufferSize;
-          // console.log(`Trimming buffer for ${channel.name}: removing ${excessCount} oldest samples`);
+          console.log(`Trimming buffer for ${channel.name}: removing ${excessCount} oldest samples, keeping ${bufferSize}`);
           
           // Get timestamps being removed
           const removedTimestamps = existingData.slice(0, excessCount).map(d => d.timestamp);
+          
+          // Track earliest and latest timestamps being removed
+          if (removedTimestamps.length > 0) {
+            const earliestRemoved = new Date(removedTimestamps[0]).toISOString();
+            const latestRemoved = new Date(removedTimestamps[removedTimestamps.length-1]).toISOString();
+            console.log(`Trimmed time range: ${earliestRemoved} to ${latestRemoved}`);
+          }
           
           // Drop oldest data points
           existingData.splice(0, excessCount);
           
           // Update the existing timestamps Set to match what we've kept
           removedTimestamps.forEach(ts => existingTimestamps.delete(ts));
+          
+          // Track trimmed points for stats
+          bufferStatsRef.current.trimmedPoints[channel.name] += excessCount;
+          bufferStatsRef.current.lastTrimTimestamp = Date.now();
         }
         
         newBuffer[channel.name] = existingData;
@@ -124,7 +162,33 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
       };
     });
     
-    // console.log(`Buffer update complete, added ${totalNewSamples} samples total`);
+    // Log buffer stats periodically (every 10 seconds)
+    const now = Date.now();
+    if (now - bufferStatsRef.current.lastTrimTimestamp > 10000) {
+      console.log(`Buffer stats: ${totalNewSamples} new samples total`);
+      
+      // Log stats for channels with significant data
+      Object.keys(bufferStatsRef.current.totalPointsAdded)
+        .filter(channel => bufferStatsRef.current.totalPointsAdded[channel] > 0)
+        .forEach(channel => {
+          const added = bufferStatsRef.current.totalPointsAdded[channel];
+          const trimmed = bufferStatsRef.current.trimmedPoints[channel];
+          const requested = bufferStatsRef.current.totalPointsRequested[channel];
+          const current = newBuffer[channel]?.length || 0;
+          
+          console.log(`${channel}: added=${added}, trimmed=${trimmed}, requested=${requested}, current=${current}`);
+          
+          if (newBuffer[channel] && newBuffer[channel].length > 0) {
+            const oldestPoint = new Date(newBuffer[channel][0].timestamp).toISOString();
+            const newestPoint = new Date(newBuffer[channel][newBuffer[channel].length-1].timestamp).toISOString();
+            console.log(`  Time range: ${oldestPoint} to ${newestPoint}`);
+          }
+        });
+      
+      // Reset trim timestamp for next periodic log
+      bufferStatsRef.current.lastTrimTimestamp = now;
+    }
+    
     setBufferedData(formattedData);
   }, [rawChannels, bufferSize]);
 
@@ -144,6 +208,12 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
       !processedTimestamps.has(sample.timestamp)
     );
     
+    // Update stats
+    if (!bufferStatsRef.current.totalPointsRequested[channelName]) {
+      bufferStatsRef.current.totalPointsRequested[channelName] = 0;
+    }
+    bufferStatsRef.current.totalPointsRequested[channelName] += newSamples.length;
+    
     // If we have new samples, mark them as processed
     if (newSamples.length > 0) {
       // Create a new processed set if needed
@@ -156,7 +226,14 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
         chartProcessedTimestampsRef.current[channelName].add(sample.timestamp);
       });
       
-      // console.log(`getNewData for ${channelName}: found ${newSamples.length} new samples`);
+      console.log(`getNewData for ${channelName}: found ${newSamples.length} new samples`);
+      
+      // Log time range of new samples
+      if (newSamples.length > 0) {
+        const firstSample = new Date(newSamples[0].timestamp).toISOString();
+        const lastSample = new Date(newSamples[newSamples.length - 1].timestamp).toISOString();
+        console.log(`  New samples time range: ${firstSample} to ${lastSample}`);
+      }
       
       return {
         hasNewData: true,
@@ -177,8 +254,10 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
     });
     
     const newDataCount = Object.values(result).filter(r => r.hasNewData).length;
+    const totalNewPoints = Object.values(result).reduce((sum, r) => sum + r.newSamples.length, 0);
+    
     if (newDataCount > 0) {
-      // console.log(`getAllNewData for ${channelNames.length} channels: ${newDataCount} channels have new data`);
+      console.log(`getAllNewData for ${channelNames.length} channels: ${newDataCount} channels have new data (${totalNewPoints} points)`);
     }
     
     return result;
@@ -186,13 +265,13 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
 
   // Reset the processed state for a channel to force retrieving all data
   const resetChannelProcessing = (channelName: string): void => {
-    // console.log(`Resetting processing state for channel: ${channelName}`);
+    console.log(`Resetting processing state for channel: ${channelName}`);
     chartProcessedTimestampsRef.current[channelName] = new Set();
   };
 
   // Reset all processed timestamps
   const resetAllProcessing = (): void => {
-    // console.log('Resetting processing state for all channels');
+    console.log('Resetting processing state for all channels');
     Object.keys(chartProcessedTimestampsRef.current).forEach(key => {
       chartProcessedTimestampsRef.current[key] = new Set();
     });
@@ -203,7 +282,14 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
     const channel = bufferedData.find(c => c.name === channelName);
     if (!channel || !channel.samples) return [];
     
-    // console.log(`getAllDataForChannel ${channelName}: returning ${channel.samples.length} samples`);
+    console.log(`getAllDataForChannel ${channelName}: returning ${channel.samples.length} samples`);
+    
+    // Log time range
+    if (channel.samples.length > 0) {
+      const firstSample = new Date(channel.samples[0].timestamp).toISOString();
+      const lastSample = new Date(channel.samples[channel.samples.length - 1].timestamp).toISOString();
+      console.log(`  Time range: ${firstSample} to ${lastSample}`);
+    }
     
     // Return a copy of all samples
     return [...channel.samples];
@@ -218,7 +304,7 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
       sample.timestamp >= startTime && sample.timestamp <= endTime
     );
     
-    // console.log(`getDataForTimeWindow ${channelName}: returning ${filteredData.length} samples in window`);
+    console.log(`getDataForTimeWindow ${channelName}: returning ${filteredData.length}/${channel.samples.length} samples in window`);
     
     return filteredData;
   };
@@ -236,6 +322,13 @@ export const useDataBuffer = (rawChannels: Channel[], pollingRate: number) => {
       bufferRef.current = {};
       chartProcessedTimestampsRef.current = {};
       setBufferedData([]);
+      
+      // Reset stats
+      Object.keys(bufferStatsRef.current.trimmedPoints).forEach(key => {
+        bufferStatsRef.current.trimmedPoints[key] = 0;
+        bufferStatsRef.current.totalPointsAdded[key] = 0;
+        bufferStatsRef.current.totalPointsRequested[key] = 0;
+      });
     },
     getBufferSize: () => bufferSize
   };
