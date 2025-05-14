@@ -86,7 +86,6 @@ void Test::readAnalogChannels(void)
     }
 }
 
-<<<<<<< HEAD
 void Test::continuousChannelReadStats(void)
 {
     SPI.begin();
@@ -185,9 +184,6 @@ void Test::continuousChannelReadStats(void)
     }
 }
 
-=======
-uint32_t interrupt_counts[6] = {0, 0, 0, 0, 0, 0};
->>>>>>> fullstack_integration
 
 void Test::readDigitalChannels(void) {
     pinMode(D1_PIN, INPUT_PULLUP);

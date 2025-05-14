@@ -32,7 +32,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-jazzy-xacro \
     ros-jazzy-irobot-create-msgs \
     ros-jazzy-teleop-twist-joy ros-jazzy-teleop-twist-keyboard \
+    ros-jazzy-desktop* \
+    ros-jazzy-navigation2 ros-jazzy-nav2-bringup \
+    ros-jazzy-slam-toolbox ros-jazzy-robot-localization \
+    ros-jazzy-xacro \
+    ros-jazzy-irobot-create-msgs \
+    ros-jazzy-teleop-twist-joy ros-jazzy-teleop-twist-keyboard \
     python3-colcon-common-extensions \
+    ros-jazzy-tf-transformations \
     ros-jazzy-tf-transformations \
     nano emacs joystick\
     python3-pip \
@@ -41,9 +48,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
    
 RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps nanopb
+RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps nanopb
 
 #jazzy packages
+#jazzy packages
 RUN apt-get update && apt-get install -y \
+    ros-jazzy-realsense2-camera \
+    ros-jazzy-realsense2-description \
+    ros-jazzy-image-transport \
+    ros-jazzy-cv-bridge \
+    ros-jazzy-vision-opencv \
     ros-jazzy-realsense2-camera \
     ros-jazzy-realsense2-description \
     ros-jazzy-image-transport \
@@ -60,12 +74,23 @@ RUN sudo apt-get update && apt-get install -y \
 RUN sudo apt-get update && sudo apt-get install -y \
     unzip mosquitto-clients libpistache-dev \
     sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils libeigen3-dev libboost-all-dev
+RUN sudo add-apt-repository --yes ppa:pistache+team/stable
+RUN sudo apt-get update && apt-get install -y \
+    sudo python3-pip ros-jazzy-joint-state-publisher-gui ros-jazzy-robot-state-publisher ros-jazzy-teleop-twist-keyboard \
+    ros-jazzy-ros2-control ros-jazzy-ros2-controllers ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-librealsense2* ros-jazzy-realsense2*
+    
+RUN sudo apt-get update && sudo apt-get install -y \
+    unzip mosquitto-clients libpistache-dev \
+    sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils libeigen3-dev libboost-all-dev
 
 RUN sudo updatedb
 
 
+
 ARG USER=dock
 ARG PASSWD=dock
+
+RUN userdel ubuntu
 
 RUN userdel ubuntu
 
@@ -90,6 +115,7 @@ RUN chown -R dock bjr_ws
 RUN bash /opt/ros/$ROS_DISTRO/setup.bash && \
     cd /bjr_ws && \
     rosdep update && \
+    rosdep install -i --from-path src --rosdistro jazzy -y && \
     rosdep install -i --from-path src --rosdistro jazzy -y && \
     colcon build
 

@@ -3,6 +3,13 @@
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <test.hpp>
+#include <w25n04kv.hpp>
+
+#define SPI2_MOSI_PIN 18
+#define SPI2_MISO_PIN 20
+#define SPI2_SCLK_PIN 19
+
+#define ADC_VALUE_ERROR_MARGIN 0.003
 
 #include <hardEncoder.hpp>
 #include <pb_common.h>
