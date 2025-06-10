@@ -59,9 +59,9 @@ void startBoot() {
 void endBoot() {
     inBootMode = false;
 
-    if (systemStatePtr) {
-        *systemStatePtr = SystemState::READY;
-    }
+    // if (systemStatePtr) {
+    //     *systemStatePtr = SystemState::READY;
+    // }
     
     // Force an update with the current state
     updateLED();
@@ -75,7 +75,7 @@ void updateLED() {
     }
     
     // Only update if the state has changed
-    if (*systemStatePtr == lastDisplayedState && !inBootMode) {
+    if ((*systemStatePtr == lastDisplayedState || (lastDisplayedState == SystemState::DATA_BAD && *systemStatePtr != SystemState::READY)) && !inBootMode) {
         return;
     }
     
