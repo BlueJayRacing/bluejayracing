@@ -1,7 +1,7 @@
 
 #include "magnetometer.hpp"
 
-Magnetometer::Magnetometer(TwoWire &w, uint8_t addr) 
+Magnetometer::Magnetometer(TwoWire &w, TLx493D_IICAddressType_t addr) 
   : sensor(w, addr) {}
 
 bool Magnetometer::begin() {
@@ -9,18 +9,18 @@ bool Magnetometer::begin() {
     return sensor.begin();
 }
 
-bool Magnetometer::readRawMag(double &x, double &y, double &z) {
+bool Magnetometer::readRawMag(int16_t &x, int16_t &y, int16_t &z) {
     return sensor.getRawMagneticField(&x, &y, &z);
 }
 
-double Magnetometer::readMagX(double &x) {
+int16_t Magnetometer::readMagX(int16_t &x) {
     return x;
 }
 
-double Magnetometer::readMagY(double &y) {
+int16_t Magnetometer::readMagY(int16_t &y) {
     return y;
 }
 
-double Magnetometer::readMagZ(double &z) {
+int16_t Magnetometer::readMagZ(int16_t &z) {
     return z;
 }

@@ -8,12 +8,12 @@
 
 class Magnetometer {
 public:
-    Magnetometer(TwoWire &w, uint8_t addr);
+    Magnetometer(TwoWire &w, TLx493D_IICAddressType_t addr);
     bool begin();
-    bool readRawMag(double &x, double &y, double &z);
-    double readMagX(double &x);
-    double readMagY(double &y);
-    double readMagZ(double &z);
+    bool readRawMag(int16_t &x, int16_t &y, int16_t &z);
+    int16_t readMagX(int16_t &x);
+    int16_t readMagY(int16_t &y);
+    int16_t readMagZ(int16_t &z);
 
 private:
     ifx::tlx493d::TLx493D_A1B6 sensor;
