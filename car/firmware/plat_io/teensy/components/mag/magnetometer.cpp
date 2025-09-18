@@ -1,7 +1,8 @@
 
 #include "magnetometer.hpp"
 
-Magnetometer::Magnetometer() : sensor(Wire, TLx493D_IIC_ADDR_A0_e) {}
+Magnetometer::Magnetometer(TwoWire &w, uint8_t addr) 
+  : sensor(w, addr) {}
 
 bool Magnetometer::begin() {
     Wire.begin();

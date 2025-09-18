@@ -8,7 +8,7 @@
 
 class Magnetometer {
 public:
-    Magnetometer();
+    Magnetometer(TwoWire &w, uint8_t addr);
     bool begin();
     bool readRawMag(double &x, double &y, double &z);
     double readMagX(double &x);
