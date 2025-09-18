@@ -2,10 +2,10 @@
 #include "magnetometer.hpp"
 
 Magnetometer::Magnetometer() 
-    : sensor(Wire, TLx493D_IIC_ADDR_A0_e) {}
+    : sensor(Wire1, TLx493D_IIC_ADDR_A4_e) {}
 
 bool Magnetometer::begin() {
-    Wire.begin();
+    Wire1.begin();
     return sensor.begin();
 }
 
