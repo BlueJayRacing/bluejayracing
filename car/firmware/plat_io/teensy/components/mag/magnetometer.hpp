@@ -6,13 +6,13 @@
 #include "TLx493D_inc.hpp"
 
 
-class Magnetometer {
-public:
-    Magnetometer(TwoWire &w, TLx493D_IICAddressType_t addr);
-    bool begin();
-    bool readRawMag(int16_t &x, int16_t &y, int16_t &z);
-    int16_t readMagX(int16_t &x);
-    int16_t readMagY(int16_t &y);
+class Magnetometer { 
+public: 
+    Magnetometer(); 
+    bool begin(); 
+    bool readRawMag(int16_t &x, int16_t &y, int16_t &z); 
+    int16_t readMagX(int16_t &x); 
+    int16_t readMagY(int16_t &y); 
     int16_t readMagZ(int16_t &z);
 
 private:
