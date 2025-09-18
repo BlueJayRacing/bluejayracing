@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 #include <TeensyThreads.h>
 #include <SPI.h>
 #include <TimeLib.h>
