@@ -2,21 +2,21 @@
 #define _MAGNETOMETER_HPP_
 
 #include <Arduino.h>
+#include <Wire.h>
+#include "TLx493D_inc.hpp"
+
 
 class Magnetometer {
 public:
-    //Magnetometer(TwoWire &wire = Wire, uint8_t address = 0x5E);
     Magnetometer();
-    void begin();
-    bool readMagData(int16_t &x, int16_t &y, int16_t &z);
-/*
-private:
-    TwoWire *_wire;
-    uint8_t _address;
+    bool begin();
+    bool readRawMag(double &x, double &y, double &z);
+    double readMagX(double &x);
+    double readMagY(double &y);
+    double readMagZ(double &z);
 
-    void writeRegister(uint8_t reg, uint8_t value);
-    bool readRegisters(uint8_t reg, uint8_t *buffer, uint8_t length);
-*/
+private:
+    ifx::tlx493d::TLx493D_A1B6 sensor;
 };
 
 #endif
