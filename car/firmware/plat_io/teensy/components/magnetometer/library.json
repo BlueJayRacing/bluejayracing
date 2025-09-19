@@ -1,0 +1,18 @@
+{
+    "name": "magnetometer",
+    "version": "1.0.0",
+    "description": "device driver for mag",
+    "authors":
+    [
+      {
+        "name": "Travis Chen",
+        "email": "travis.yu.chen@gmail.com",
+        "maintainer": true
+      }
+    ],
+    "license": "MIT",
+    "dependencies": {
+    },
+    "frameworks": "*",
+    "platforms": "*"
+  }
