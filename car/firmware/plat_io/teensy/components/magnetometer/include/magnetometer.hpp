@@ -8,7 +8,7 @@
 
 class Magnetometer { 
 public: 
-    Magnetometer(); 
+    Magnetometer(TwoWire wire); 
     bool begin(); 
     bool readRawMag(int16_t &x, int16_t &y, int16_t &z); 
     int16_t readMagX(int16_t &x); 
@@ -17,6 +17,7 @@ public:
 
 private:
     ifx::tlx493d::TLx493D_A1B6 sensor;
+    TwoWire i2c_wire;
 };
 
 #endif
