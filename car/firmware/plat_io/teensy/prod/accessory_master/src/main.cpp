@@ -23,6 +23,7 @@
 #include "storage/sd_functions.hpp"
 #include "network/pbudp_functions.hpp"      // Combined PB+UDP thread
 #include "digital/digital_functions.hpp"    // Digital input monitoring
+#include "mag/mag_functions.hpp"
 
 // NEW: Time functions module (our NTP/SRTC updater)
 #include "ntp/time_functions.hpp"
@@ -55,6 +56,7 @@ baja::buffer::CircularBuffer<baja::data::ChannelSample, baja::config::FAST_BUFFE
 bool adcInitialized = false;
 bool sdCardInitialized = false;
 bool networkInitialized = false;
+bool magInitialized = false;
 bool digitalInitialized = false;    // Digital input status flag
 uint32_t loopCount = 0;
 uint32_t samplesProcessedTotal = 0;
@@ -421,6 +423,15 @@ void setup() {
         }
     }
 
+    magInitialized = baja::mag::functions::initialize(sampleBuffer, fastBuffer);
+
+    if(magInitialized) {
+        baja::util::Debug::info("Initialized the magnetometer");
+    } else {
+        baja::util::Debug::error("Failed to initialize the magnetometer");
+    }
+
+
     // Initialize time functions
     baja::time::functions::initialize();
     
@@ -482,6 +493,10 @@ void loop() {
         baja::digital::functions::process();
     } else if (!baja::digital::functions::isRunning()) {
         systemState = baja::led::SystemState::DATA_BAD;
+    }
+
+    if(magInitialized) {
+        baja::mag::functions::processSample();
     }
     
     // Process SD operations - only if enough samples are available

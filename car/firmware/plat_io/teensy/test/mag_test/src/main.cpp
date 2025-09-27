@@ -1,13 +1,16 @@
 #include <Arduino.h>
 #include "magnetometer.hpp"
 
-Magnetometer mag(Wire1);
+Magnetometer* mag;
 
 void setup() {
+  Wire1.begin();
+  mag = new Magnetometer(Wire1, TLx493D_IIC_ADDR_A0_e);
+
   Serial.begin(115200);
   while (!Serial);  // wait for Serial monitor
 
-  if (!mag.begin()) {
+  if (!mag->begin()) {
     Serial.println("Failed to initialize magnetometer");
     while (1); // halt
   }
@@ -17,7 +20,7 @@ void setup() {
 void loop() {
   int16_t x = 0, y = 0, z = 0;
 
-  if (mag.readRawMag(x, y, z)) {
+  if (mag->readRawMag(x, y, z)) {
     Serial.print("Magnetic Field: X=");
     Serial.print(x);
     Serial.print(" mT, Y=");
