@@ -1,28 +1,23 @@
 #include "magnetometer.hpp"
 
-Magnetometer::Magnetometer(TwoWire& wire, TLx493D_IICAddressType_t addr) : sensor(wire, addr), i2c_wire(wire) {}
+Magnetometer::Magnetometer() {}
 
-bool Magnetometer::begin() {
-    return sensor.begin();
+bool Magnetometer::begin(TwoWire& wire, uint8_t addr) {
+    wire.begin();
+    if(!sensor.begin_I2C(addr, &wire)) {
+        return false;
+    }
+
+    sensor.setPerformanceMode(LIS3MDL_ULTRAHIGHMODE);
+    sensor.setOperationMode(LIS3MDL_CONTINUOUSMODE);
+
+    return true;
 }
 
-bool Magnetometer::readRawMag(int16_t &x, int16_t &y, int16_t &z) {
+void Magnetometer::readRawMag(int16_t &x, int16_t &y, int16_t &z) {
+    sensor.read();
 
-    return sensor.getRawMagneticField(&x, &y, &z);
-}
-
-// uint8_t Magnetometer::test() {
-//     return sensor.setIICAddress(TLx493D_IIC_ADDR_A1_e);
-// }
-
-int16_t Magnetometer::readMagX(int16_t &x) {
-    return x;
-}
-
-int16_t Magnetometer::readMagY(int16_t &y) {
-    return y;
-}
-
-int16_t Magnetometer::readMagZ(int16_t &z) {
-    return z;
+    x = sensor.x;
+    y = sensor.y;
+    z = sensor.z;
 }

@@ -11,10 +11,10 @@ static MagHandler* mag_vec[MAG_COUNT];
 bool initialize(buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFFER_SIZE>& mainBuffer, 
     buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>& fastBuffer) {
     util::Debug::info("MAG: Magnetometer initializing");
-    Wire1.begin();
+    Wire.begin();
 
     for (int i = 0; i < MAG_COUNT; i++) {
-        MagHandler * mag = new MagHandler(mainBuffer, fastBuffer, i, Wire1);
+        MagHandler * mag = new MagHandler(mainBuffer, fastBuffer, i, Wire);
 
         if (!mag->begin()) {
             util::Debug::error("MAG " + String(i) + ": Failed to initialize magnetometer");

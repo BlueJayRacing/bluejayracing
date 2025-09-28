@@ -8,12 +8,12 @@ namespace mag {
     MagHandler::MagHandler(buffer::RingBuffer<data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer, buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>& fastBuffer, int mag_id, TwoWire& wire) : 
         ringBuffer_(ringBuffer),
         fastBuffer_(fastBuffer),
-        mag(wire, MAG_ADDR_MAP.at(mag_id)),
         samplingCount(0),
-        mag_id_(mag_id) {}
+        mag_id_(mag_id),
+        wire_(wire) {}
 
     bool MagHandler::begin() {
-        if (!mag.begin()) {
+        if (!mag.begin(wire_, MAG_ADDR_MAP.at(mag_id_))) {
             util::Debug::error("Magnetometer initialization failed");
             return false;
         }
@@ -25,12 +25,9 @@ namespace mag {
         uint64_t time = getMicrosecondsSinceEpoch();
         uint32_t milli = millis();
 
-        if (!mag.readRawMag(data_x, data_y, data_z)) {
-            util::Debug::error("Magnetometer read failed");
-            return false;
-        }
+        mag.readRawMag(data_x, data_y, data_z);
 
-        util::Debug::info("Magdata: " + String(data_x) + ", " + String(data_y) + ", " + String(data_z));
+        util::Debug::info("Magdata " + String(mag_id_) + ": " + String(data_x) + ", " + String(data_y) + ", " + String(data_z));
 
         data::ChannelSample channelSampleX(
             time,

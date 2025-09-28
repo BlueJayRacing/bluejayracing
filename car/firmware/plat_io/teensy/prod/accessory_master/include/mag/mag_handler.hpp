@@ -38,6 +38,7 @@ private:
     Magnetometer mag;
     uint64_t samplingCount;
     int mag_id_;
+    TwoWire& wire_;
 };
 
 
