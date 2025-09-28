@@ -4,5 +4,7 @@
     "board/esp32c6-ftdi.cfg"
   ],
   "idf.portWin": "COM11",
-  "idf.flashType": "UART"
+  "idf.flashType": "UART",
+  "idf.currentSetup": "C:\\Users\\crisp\\esp\\v5.4.2\\esp-idf",
+  "idf.adapterTargetName": "esp32c6"
 }

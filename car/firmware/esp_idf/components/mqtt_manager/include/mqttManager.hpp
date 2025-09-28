@@ -22,10 +22,7 @@ typedef struct mqtt_message {
     std::array<char, 20> topic;
     std::array<uint8_t, 30> payload;
     uint8_t payload_len;
-<<<<<<<< HEAD:car/firmware/esp_idf/components/mqtt_manager/include/mqttManager.hpp
     uint32_t esp_time;
-========
->>>>>>>> main:car/firmware/esp_idf/components/mqttManager/include/mqttManager.hpp
 } mqtt_message_t;
 
 /*******************************************************************************
@@ -47,13 +44,10 @@ class mqttManager {
     esp_err_t clientConnect(mqtt_client_t* client);
     esp_err_t clientDisconnect(mqtt_client_t* client);
     bool isClientConnected(mqtt_client_t* client) const;
-<<<<<<<< HEAD:car/firmware/esp_idf/components/mqtt_manager/include/mqttManager.hpp
     esp_err_t clientPublish(mqtt_client_t* client, uint8_t* buf, uint16_t buf_length, const std::string& topic, uint8_t QoS);
     // esp_err_t clientWaitPublish(mqtt_client_t* client, TickType_t timeout);
-========
     esp_err_t clientEnqueue(mqtt_client_t* client, uint8_t* buf, uint16_t buf_length, const std::string& topic, uint8_t QoS);
     esp_err_t clientWaitPublish(mqtt_client_t* client, TickType_t timeout);
->>>>>>>> main:car/firmware/esp_idf/components/mqttManager/include/mqttManager.hpp
     esp_err_t clientSubscribe(mqtt_client_t* client, const std::string& topic, uint8_t QoS);
     esp_err_t clientWaitSubscribe(mqtt_client_t* client, TickType_t timeout);
     esp_err_t clientReceive(mqtt_client_t* client, mqtt_message_t& message, TickType_t timeout);

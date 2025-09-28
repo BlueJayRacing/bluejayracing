@@ -338,17 +338,10 @@ bool mqttManager::isClientConnected(mqtt_client_t* client) const
     }
 }
 
-<<<<<<<< HEAD:car/firmware/esp_idf/components/mqtt_manager/mqttManager.cpp
 esp_err_t mqttManager::clientPublish(mqtt_client_t* client, uint8_t* buf, uint16_t buf_length, const std::string& t_topic,
                                      uint8_t t_QoS)
 {
     if (client == NULL || t_topic.size() == 0 || buf == NULL || buf_length == 0 || t_QoS >= 3) {
-========
-esp_err_t mqttManager::clientEnqueue(mqtt_client_t* client, uint8_t* buf, uint16_t buf_length, const std::string& t_topic,
-                                     uint8_t t_QoS)
-{
-    if (client == NULL || t_topic.size() == 0 || buf_length == 0 || t_QoS >= 3) {
->>>>>>>> main:car/firmware/esp_idf/components/mqttManager/mqttManager.cpp
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -356,13 +349,9 @@ esp_err_t mqttManager::clientEnqueue(mqtt_client_t* client, uint8_t* buf, uint16
         return ESP_ERR_WIFI_NOT_CONNECT;
     }
 
-<<<<<<<< HEAD:car/firmware/esp_idf/components/mqtt_manager/mqttManager.cpp
-    int msg_id = esp_mqtt_client_publish(client->client_handle, t_topic.data(), (char*) buf, buf_length,
-                                         t_QoS, false);
-========
+
     int msg_id = esp_mqtt_client_enqueue(client->client_handle, t_topic.data(), (char*) buf, buf_length,
                                          t_QoS, true, true);
->>>>>>>> main:car/firmware/esp_idf/components/mqttManager/mqttManager.cpp
     if (msg_id == -1 || msg_id == -2) {
         ESP_LOGE(TAG, "Failed to publish for client (err: %d)\n", msg_id);
         return ESP_FAIL;
@@ -371,7 +360,6 @@ esp_err_t mqttManager::clientEnqueue(mqtt_client_t* client, uint8_t* buf, uint16
     return ESP_OK;
 }
 
-<<<<<<<< HEAD:car/firmware/esp_idf/components/mqtt_manager/mqttManager.cpp
 // esp_err_t mqttManager::clientWaitPublish(mqtt_client_t* client, TickType_t timeout)
 // {
 //     EventBits_t ret = xEventGroupWaitBits(client->conn_event, MQTT_PUBLISHED_BIT, true, true, timeout);
@@ -381,17 +369,6 @@ esp_err_t mqttManager::clientEnqueue(mqtt_client_t* client, uint8_t* buf, uint16
 //         return ESP_ERR_TIMEOUT;
 //     }
 // }
-========
-esp_err_t mqttManager::clientWaitPublish(mqtt_client_t* client, TickType_t timeout)
-{
-    EventBits_t ret = xEventGroupWaitBits(client->conn_event, MQTT_PUBLISHED_BIT, true, true, timeout);
-    if ((ret & MQTT_PUBLISHED_BIT) != 0) {
-        return ESP_OK;
-    } else {
-        return ESP_ERR_TIMEOUT;
-    }
-}
->>>>>>>> main:car/firmware/esp_idf/components/mqttManager/mqttManager.cpp
 
 esp_err_t mqttManager::clientSubscribe(mqtt_client_t* client, const std::string& t_topic, uint8_t t_QoS)
 {
