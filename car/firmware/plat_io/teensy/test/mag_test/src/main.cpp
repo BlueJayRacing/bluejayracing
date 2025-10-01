@@ -4,26 +4,23 @@
 Magnetometer* mag;
 
 void setup() {
-  Wire1.begin();
+  Wire.begin();
   mag = new Magnetometer();
 
   Serial.begin(115200);
   while (!Serial);  // wait for Serial monitor
   // digitalWrite(7, HIGH);
   // digitalWrite(8, HIGH);
-  for (int i = 0; i <= 0xFF; i++){
-    if (!mag->begin(Wire1, i)) {
-      Serial.println("Failed to initialize magnetometer: " + String(i));
-    } else {
-      Serial.println(String(i));
-      break;
-    }
+  // for (int i = 0; i <= 0xFF; i++){
+  if (!mag->begin(Wire, 0x1B)) {
+    Serial.println("Failed to initialize magnetometer");
+    while(1);
   }
   Serial.println("Magnetometer ready");
 }
 
 void loop() {
-  int16_t x = 0, y = 0, z = 0;
+  float x = 0, y = 0, z = 0;
 
   mag->readRawMag(x, y, z);
   Serial.print("Magnetic Field: X=");

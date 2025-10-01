@@ -495,7 +495,7 @@ void loop() {
         systemState = baja::led::SystemState::DATA_BAD;
     }
 
-    if(magInitialized && loopCount % 50 == 0) {
+    if(magInitialized && loopCount % 13 == 0) {
         baja::mag::functions::processSample();
     }
     

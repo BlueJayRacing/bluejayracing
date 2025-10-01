@@ -13,8 +13,8 @@ const int MAG_COUNT = 4;
 // } MagId;
 
 const std::map<int, uint8_t> MAG_ADDR_MAP = {
-    {0, 0x18},
-    {1, 0x19},
+    {0, 0x19},
+    {1, 0x18},
     {2, 0x1A},
     {3, 0x1B},
 };

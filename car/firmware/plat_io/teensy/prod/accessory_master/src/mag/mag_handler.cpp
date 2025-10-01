@@ -3,7 +3,13 @@
 
 namespace baja {
 namespace mag {
-    const uint32_t DATA_OFFSET = 1<<15;
+    void store_float_as_uint32(float * f, uint32_t * u32) {
+        memcpy(u32, f, sizeof(uint32_t));
+    }
+
+    void store_uint32_as_float(uint32_t * u32, float * f) {
+        memcpy(f, u32, sizeof(uint32_t));
+    }
 
     MagHandler::MagHandler(buffer::RingBuffer<data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer, buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>& fastBuffer, int mag_id, TwoWire& wire) : 
         ringBuffer_(ringBuffer),
@@ -21,32 +27,51 @@ namespace mag {
         return true;
     }
 
-    bool MagHandler::pollAndProcess() {
-        uint64_t time = getMicrosecondsSinceEpoch();
-        uint32_t milli = millis();
-
+    void MagHandler::readMagAsUint32() {
         mag.readRawMag(data_x, data_y, data_z);
 
-        util::Debug::info("Magdata " + String(mag_id_) + ": " + String(data_x) + ", " + String(data_y) + ", " + String(data_z));
+        store_float_as_uint32(&data_x, &conv_data_x);
+        store_float_as_uint32(&data_y, &conv_data_y);
+        store_float_as_uint32(&data_z, &conv_data_z);
+    }
+
+    bool MagHandler::pollAndProcess() {
+        uint64_t time = getMicrosecondsSinceEpoch();
+
+        // testing sampling rate
+        // uint64_t diff = time - start_micro;
+        // if (diff > 5000000) {
+        //     float rate = (float) (samplingCount - start_samples) * 1000000. / diff;
+        //     util::Debug::info("Sampling rate: " + String(rate));
+        //     start_micro = time;
+        //     start_samples = samplingCount;
+        // }
+
+        uint32_t milli = millis();
+
+        readMagAsUint32();
+
+        // if(mag_id_==3)
+        // util::Debug::info("Magdata " + String(mag_id_) + ": " + String(data_x) + "-" + String(conv_data_x) + ", " + String(data_y) + "-" + String(conv_data_y) + ", " + String(data_z) + "-" + String(conv_data_z));
 
         data::ChannelSample channelSampleX(
             time,
             30 + 3 * mag_id_,
-            data_x + DATA_OFFSET,
+            conv_data_x,
             milli
         );
 
         data::ChannelSample channelSampleY(
             time,
             30 + 3 * mag_id_ + 1,
-            data_y + DATA_OFFSET,
+            conv_data_y,
             milli
         );
 
         data::ChannelSample channelSampleZ(
             time,
             30 + 3 * mag_id_ + 2,
-            data_z + DATA_OFFSET,
+            conv_data_z,
             milli
         );
 
@@ -62,19 +87,19 @@ namespace mag {
             return AH_BUFFERBAD;
         }
 
-        if (samplingCount % config::FAST_BUFFER_DOWNSAMPLE_RATIO == 0) {
-            if (!fastBuffer_.write(channelSampleX)) {
+        // if (samplingCount % config::FAST_BUFFER_DOWNSAMPLE_RATIO == 0) {
+        //     if (!fastBuffer_.write(channelSampleX)) {
                 
-            }
+        //     }
 
-            if (!fastBuffer_.write(channelSampleY)) {
+        //     if (!fastBuffer_.write(channelSampleY)) {
 
-            }
+        //     }
 
-            if (!fastBuffer_.write(channelSampleZ)) {
+        //     if (!fastBuffer_.write(channelSampleZ)) {
 
-            }
-        }
+        //     }
+        // }
 
         samplingCount++;
 

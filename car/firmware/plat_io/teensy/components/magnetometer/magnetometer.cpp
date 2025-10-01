@@ -8,16 +8,13 @@ bool Magnetometer::begin(TwoWire& wire, uint8_t addr) {
         return false;
     }
 
-    sensor.setPerformanceMode(LIS3MDL_ULTRAHIGHMODE);
-    sensor.setOperationMode(LIS3MDL_CONTINUOUSMODE);
+    sensor.setGain(MLX90393_GAIN_1X);
+    sensor.setOversampling(MLX90393_OSR_0);
+    sensor.setFilter(MLX90393_FILTER_2);
 
     return true;
 }
 
-void Magnetometer::readRawMag(int16_t &x, int16_t &y, int16_t &z) {
-    sensor.read();
-
-    x = sensor.x;
-    y = sensor.y;
-    z = sensor.z;
+void Magnetometer::readRawMag(float &x, float &y, float &z) {
+    sensor.readData(&x, &y, &z);
 }
