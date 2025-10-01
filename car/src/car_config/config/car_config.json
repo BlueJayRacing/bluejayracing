@@ -177,7 +177,7 @@
             },
             "esp_v3_b3": {
                 "device_id": 14,
-                "device_name": "FRONT_RIGHT",
+                "device_name": "FRONT_RIGHT_NOW_MD_RR",
                 "mac_addresses": [
                     "9C:9E:6E:77:B0:E0"
                 ],
@@ -188,8 +188,8 @@
                     "3": 1404,
                     "4": 1405
                 },
-                "zeroing_dac_value" : 2412,
-                "strain_volt_slope" : 1684
+                "zeroing_dac_value" : 2667,
+                "strain_volt_slope" : 1622
             },
 	    "esp_v3_b6": {
                 "device_id": 15,
@@ -209,7 +209,7 @@
             },
 	    "esp_v3_b7": {
                 "device_id": 16,
-                "device_name": "REAR_RIGHT",
+                "device_name": "REAR_RIGHT_OLD",
                 "mac_addresses": [
                     "8C:BF:EA:CD:27:50"
                 ],
@@ -220,7 +220,7 @@
                     "3": 1604,
                     "4": 1605
                 },
-                "zeroing_dac_value" : 1959,
+                "zeroing_dac_value" : 2667,
                 "strain_volt_slope" : 4844
             },
 	    "esp_v3_b8": {
@@ -236,7 +236,7 @@
                     "3": 1704,
                     "4": 1705
                 },
-                "zeroing_dac_value" : 2639,
+                "zeroing_dac_value" : 4000,
                 "strain_volt_slope" : 4711
             },
 	    "esp_v3_b9": {
@@ -254,6 +254,38 @@
                 },
                 "zeroing_dac_value" : 0,
                 "strain_volt_slope" : 0
+            },
+	   "esp_v3_b10": {
+               "device_id":20,
+	       "device_name": "BOARD_10",
+               "mac_addresses": [
+		  "8C:BF:EA:CB:A3:1C"
+               ],
+               "channel_mapping": {
+                   "0": 2001,
+                   "1": 2002,
+                   "2": 2003,
+                   "3": 2004,
+                   "4": 2005
+                },
+		"zeroing_dac_value" : 4000,
+                "strain_volt_slope": 4711
+            },
+	    "esp_v3_b11": {
+                "device_id": 21,
+                "device_name": "BOARD_11",
+                "mac_addresses": [
+                   "E4:B3:23:AC:62:60"
+                ],
+                "channel_mapping": {
+                    "0": 2101,
+                    "1": 2102,
+                    "2": 2103,
+                    "3": 2104,
+                    "4": 2105
+                },
+                "zeroing_dac_value" : 4000,
+                "strain_volt_slope": 4711
             },
             "in_shaft": {
                 "device_id": 19,

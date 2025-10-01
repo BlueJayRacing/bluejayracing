@@ -2,7 +2,7 @@
 # generated from docker_images_ros2/create_ros_image.Dockerfile.em
 # FROM ros:humble-perception-jammy
 # FROM ros:humble-perception
-FROM ros:jazzy-perception@sha256:67ab684f5071f548e0899eb516b230237b397dc94e370d0158bd99fa7d7484a6
+FROM ros:jazzy-perception@sha256:2cf1d3940a8fafb123bce354840517cc73bc7ae9795fe7131a503db5c4f2093e
 # FROM osrf/ros:humble-desktop-full
 
 SHELL ["/bin/bash", "-c"]
@@ -48,9 +48,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
    
 RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps nanopb
-RUN apt update && apt-get install -y sudo python3-pip software-properties-common lsb-release make protobuf-compiler procps nanopb
 
-#jazzy packages
 #jazzy packages
 RUN apt-get update && apt-get install -y \
     ros-jazzy-realsense2-camera \
@@ -74,14 +72,6 @@ RUN sudo apt-get update && apt-get install -y \
 RUN sudo apt-get update && sudo apt-get install -y \
     unzip mosquitto-clients libpistache-dev \
     sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils libeigen3-dev libboost-all-dev
-RUN sudo add-apt-repository --yes ppa:pistache+team/stable
-RUN sudo apt-get update && apt-get install -y \
-    sudo python3-pip ros-jazzy-joint-state-publisher-gui ros-jazzy-robot-state-publisher ros-jazzy-teleop-twist-keyboard \
-    ros-jazzy-ros2-control ros-jazzy-ros2-controllers ros-jazzy-navigation2 ros-jazzy-nav2-bringup ros-jazzy-librealsense2* ros-jazzy-realsense2*
-    
-RUN sudo apt-get update && sudo apt-get install -y \
-    unzip mosquitto-clients libpistache-dev \
-    sudo xterm clinfo locate lsb-release wget gnupg inetutils-ping net-tools usbutils libeigen3-dev libboost-all-dev
 
 RUN sudo updatedb
 
@@ -89,8 +79,6 @@ RUN sudo updatedb
 
 ARG USER=dock
 ARG PASSWD=dock
-
-RUN userdel ubuntu
 
 RUN userdel ubuntu
 
@@ -151,6 +139,7 @@ ADD src bjr_ws/src/bjr_packages
 RUN sudo chmod -R +rwx bjr_ws/src/bjr_packages
 RUN sudo chown -R dock bjr_ws/src/bjr_packages
 
+# Prebuild source files
 RUN bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash && \
     cd /bjr_ws && \
     colcon build'

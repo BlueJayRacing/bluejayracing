@@ -35,10 +35,7 @@ WSGDriveDataDriver::WSGDriveDataDriver() : Node("wsg_drive_data_driver")
     connect_to_broker();
     subscribe_to_topics();
 
-    data_file_path = make_utc_filename();
-
-    std::ofstream csvFile(data_file_path, std::ios::app);
-    csvFile.close();
+    time_at_boot_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
     // Get the path to the package
     std::string car_cfg_pkg_path  = ament_index_cpp::get_package_share_directory("car_config");
@@ -202,7 +199,7 @@ int WSGDriveDataDriver::message_arrived(void* context, char* topicName, int topi
             int global_channel_id =
                 find_global_channel_id(driver->car_config_, esp_mac_address, drive_data.sample_channel_id);
 
-            std::ofstream csvFile(driver->data_file_path, std::ios::app);
+            std::ofstream csvFile(make_utc_filename(driver->time_at_boot_, global_channel_id), std::ios::app);
 
             // Reuse AnalogChannel object
             baja_msgs::msg::UnifiedSample sample;
@@ -219,8 +216,11 @@ int WSGDriveDataDriver::message_arrived(void* context, char* topicName, int topi
 
                 if (csvFile.is_open()) {
                     csvFile << int(global_channel_id) << ","
-                            << drive_data.base_timestamp + drive_data.timestamp_deltas[i] << "," << (drive_data.values[i] - 2.50) * strain_volt_slope
-                            << ",\n";
+                            << drive_data.base_timestamp + drive_data.timestamp_deltas[i] << "," 
+                            << std::fixed << std::setprecision(4) 
+                            << drive_data.values[i] << ","
+                            << (drive_data.values[i] - 2.50) * strain_volt_slope << ","
+                            << "\n";
                 }
             }
             driver->publisher_->publish(data_chunk);
@@ -322,20 +322,18 @@ bool WSGDriveDataDriver::get_esp_calibration(const json& car_config_, const std:
     return false; // not found
 }
 
-std::string WSGDriveDataDriver::make_utc_filename(void)
+std::string WSGDriveDataDriver::make_utc_filename(const std::time_t& start_time, int channel_id)
 {
-    using clock = std::chrono::system_clock;
-
-    std::time_t now = clock::to_time_t(clock::now());
-    std::tm     tm  = *std::gmtime(&now);   // convert to UTC
+    std::tm     tm  = *std::gmtime(&start_time);   // convert to UTC
 
     std::ostringstream oss;
-    oss << "src/bjr_packages/car/data_"                           // prefix
-        << std::setw(2) << std::setfill('0') << tm.tm_mon + 1 << '_'  // month
+    oss << "src/bjr_packages/car/data/data_"                           // prefix
+        << std::setw(2) << std::setfill('0') << tm.tm_mon + 1 << '_'   // month
         << std::setw(2) << tm.tm_mday        << '_'                    // day
-        << std::setw(2) << tm.tm_hour        << ':'                    // hour
-        << std::setw(2) << tm.tm_min         << ':'                    // minute
-        << std::setw(2) << tm.tm_sec         << ".txt";                // second + ext
+        << std::setw(2) << tm.tm_hour        << '_'                    // hour
+        << std::setw(2) << tm.tm_min         << '_'                    // minute
+        << std::setw(2) << tm.tm_sec         << '_'                    // second
+        << channel_id                        << ".txt";                // channel_id + ext
 
     return oss.str();
 }

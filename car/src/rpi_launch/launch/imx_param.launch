@@ -1,0 +1,4 @@
+<launch>
+        <node name="inertial_sense_node" pkg="inertial_sense_ros2" exec="inertial_sense_ros2_node"
+                output="screen" args="$(find-pkg-share rpi_launch)/config/inertial_sense_imx.yaml"/>
+</launch>

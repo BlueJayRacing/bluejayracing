@@ -8,7 +8,5 @@ message wsg_drive_data_t {
   fixed64 base_timestamp = 2;  // Base timestamp in microseconds
   repeated float values = 3 [(nanopb).max_count = 1000, (nanopb).fixed_count = true];
   repeated fixed32 timestamp_deltas = 4 [(nanopb).max_count = 1000, (nanopb).fixed_count = true];
-  uint32 dac_bias = 5;
-  uint32 excitation_voltage = 6;
   uint32 sample_channel_id = 7 [(nanopb).int_size = IS_8];
 }

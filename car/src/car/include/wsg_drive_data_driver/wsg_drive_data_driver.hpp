@@ -25,9 +25,9 @@ private:
     static void connection_lost(void *context, char *cause);
     static int find_global_channel_id(const json& configJson, const std::string& macAddress,int localChannelId);
     static bool get_esp_calibration(const json& car_config_, const std::string& mac_to_find, int& zeroing_dac_value, int& strain_volt_slope);
-    std::string make_utc_filename(void);
+    static std::string make_utc_filename(const std::time_t& start_time, int channel_id);
     rclcpp::Publisher<baja_msgs::msg::DataChunk>::SharedPtr publisher_;
-    std::string data_file_path;
+    std::time_t time_at_boot_;
     MQTTClient client_;
     json car_config_;
 };
