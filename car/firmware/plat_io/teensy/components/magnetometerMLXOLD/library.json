@@ -1,12 +1,12 @@
 {
-    "name": "magnetometer493D",
+    "name": "magnetometer",
     "version": "1.0.0",
     "description": "device driver for mag",
     "authors":
     [
       {
-        "name": "",
-        "email": "",
+        "name": "Cyan Brown",
+        "email": "cyanbrown29@gmail.com",
         "maintainer": true
       }
     ],

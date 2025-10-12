@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <magnetometer.hpp>
+#include <tlv493D.hpp>
 
 #include "util/ring_buffer.hpp"
 #include "util/circular_buffer.hpp"

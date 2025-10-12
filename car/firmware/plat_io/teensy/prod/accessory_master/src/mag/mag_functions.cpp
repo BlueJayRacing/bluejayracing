@@ -18,11 +18,6 @@ bool initialize(buffer::RingBuffer<data::ChannelSample, config::SAMPLE_RING_BUFF
 
         if (!mag->begin()) {
             util::Debug::error("MAG " + String(i) + ": Failed to initialize magnetometer");
-
-            // if (!mag->begin()) {
-            //     util::Debug::error("MAG " + String(i) + ": Failed retry initialization");
-            //     continue;
-            // }
             continue;
         }
 

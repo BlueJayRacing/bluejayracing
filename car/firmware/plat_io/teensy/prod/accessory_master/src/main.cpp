@@ -495,13 +495,13 @@ void loop() {
         systemState = baja::led::SystemState::DATA_BAD;
     }
 
-    if(magInitialized && loopCount % 13 == 0) {
+    if(magInitialized) {
         baja::mag::functions::processSample();
     }
     
     // Process SD operations - only if enough samples are available
     // (This is already handled in SDWriter::process())
-    if (sdCardInitialized && baja::storage::functions::isRunning() && loopCount % 5 == 0) {
+    if (sdCardInitialized && baja::storage::functions::isRunning() && loopCount % 2 == 0) {
         baja::storage::functions::process();
     } else if (!baja::storage::functions::isRunning()) {
         systemState = baja::led::SystemState::DATA_BAD;

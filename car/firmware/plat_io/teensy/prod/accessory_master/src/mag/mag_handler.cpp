@@ -19,10 +19,7 @@ namespace mag {
         wire_(wire) {}
 
     bool MagHandler::begin() {
-        if (!mag.begin(wire_, MAG_ADDR_MAP.at(mag_id_))) {
-            util::Debug::error("Magnetometer initialization failed");
-            return false;
-        }
+        mag.begin(wire_, MAG_ADDR_MAP.at(mag_id_));
 
         return true;
     }
@@ -39,20 +36,20 @@ namespace mag {
         uint64_t time = getMicrosecondsSinceEpoch();
 
         // testing sampling rate
-        // uint64_t diff = time - start_micro;
-        // if (diff > 5000000) {
-        //     float rate = (float) (samplingCount - start_samples) * 1000000. / diff;
-        //     util::Debug::info("Sampling rate: " + String(rate));
-        //     start_micro = time;
-        //     start_samples = samplingCount;
-        // }
+        uint64_t diff = time - start_micro;
+        if (diff > 5000000 && mag_id_ == 0) {
+            float rate = (float) (samplingCount - start_samples) * 1000000. / diff;
+            util::Debug::info("Sampling rate: " + String(rate));
+            start_micro = time;
+            start_samples = samplingCount;
+        }
 
         uint32_t milli = millis();
 
         readMagAsUint32();
 
-        // if(mag_id_==3)
-        // util::Debug::info("Magdata " + String(mag_id_) + ": " + String(data_x) + "-" + String(conv_data_x) + ", " + String(data_y) + "-" + String(conv_data_y) + ", " + String(data_z) + "-" + String(conv_data_z));
+        // if(mag_id_==0)
+            // util::Debug::info("Magdata " + String(mag_id_) + ": " + String(data_x) + "-" + String(conv_data_x) + ", " + String(data_y) + "-" + String(conv_data_y) + ", " + String(data_z) + "-" + String(conv_data_z));
 
         data::ChannelSample channelSampleX(
             time,
