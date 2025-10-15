@@ -471,7 +471,7 @@ void setup() {
     baja::util::Debug::info(F("Initialization complete. System running."));
 }
 
-
+uint64_t old_micros;
 void loop() {
     // Increment loop counter
     loopCount++;
@@ -479,6 +479,9 @@ void loop() {
     // Assume regular operation every few cycles
     if (loopCount % 1000 == 4) {
         systemState = baja::led::SystemState::READY;
+        uint64_t time_diff = micros() - old_micros;
+        baja::util::Debug::info("Speed Hz: " + String(1000 * 1000000. / time_diff));
+        old_micros = micros();
     }
     
     // Always process ADC data - highest priority
@@ -501,7 +504,7 @@ void loop() {
     
     // Process SD operations - only if enough samples are available
     // (This is already handled in SDWriter::process())
-    if (sdCardInitialized && baja::storage::functions::isRunning() && loopCount % 2 == 0) {
+    if (sdCardInitialized && baja::storage::functions::isRunning() && loopCount % 5 == 0) {
         baja::storage::functions::process();
     } else if (!baja::storage::functions::isRunning()) {
         systemState = baja::led::SystemState::DATA_BAD;
@@ -522,10 +525,10 @@ void loop() {
         }
     }
 
-    if (networkInitialized && loopCount % 100 == 2) {
-        // Process NTP time updates
-        baja::time::functions::update();
-    }
+    // if (networkInitialized && loopCount % 100 == 2) {
+    //     // Process NTP time updates
+    //     baja::time::functions::update();
+    // }
 
     // Update LED every 100 cycles
     if (loopCount % 100 == 3) {
@@ -539,7 +542,7 @@ void loop() {
     
     if (currentTime - lastStatusTime >= 15000) {
         lastStatusTime = currentTime;
-        printSystemStatus();
+        // printSystemStatus();
     }
     
     // Service watchdog

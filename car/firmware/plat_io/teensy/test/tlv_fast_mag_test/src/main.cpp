@@ -25,23 +25,32 @@ void loop() {
   float x = 0, y = 0, z = 0;
 
   mag->readRawMag(x, y, z);
-  // x = mag->readMagX();
 
-  if (iterations % 200 == 0) {
-    int64_t new_uS = micros();
-    int64_t time_diff_us = (new_uS - uS);
+  // if (iterations % 200 == 0) {
+  //   int64_t new_uS = micros();
+  //   int64_t time_diff_us = (new_uS - uS);
+  //   delay(5000);
+  //   new_uS = micros();
 
-    int32_t iter_diff = iterations - old_iterations;
 
-    float hz = iter_diff / (time_diff_us / 1000000.);
+  //   int32_t iter_diff = iterations - old_iterations;
+
+  //   float hz = iter_diff / (time_diff_us / 1000000.);
+
+  //   uS = new_uS;
+  //   old_iterations = iterations;
     
-    Serial.print(iter_diff);
-    Serial.print(" iterations in ");
-    Serial.print(time_diff_us);
-    Serial.print(" us, Hz: ");
-    Serial.println(hz);
-    Serial.println(mag->getMeasurementDelay());
-  }
+  //   Serial.print(iter_diff);
+  //   Serial.print(" iterations in ");
+  //   Serial.print(time_diff_us);
+  //   Serial.print(" us, Hz: ");
+  //   Serial.println(hz);
+  //   Serial.println(mag->getMeasurementDelay());
+  //   // delay(5000);
+  // }
+
+  // delay(mag->getMeasurementDelay());
+
   
   iterations++;
   Serial.print("Magnetic Field: X=");

@@ -10,10 +10,6 @@ bool Magnetometer::begin() {
     sensor.setPowerMode(TLx493D_FAST_MODE_e);
     sensor.setMeasurement(TLx493D_BxByBz_e);
     sensor.setSensitivity(TLx493D_FULL_RANGE_e);
-    // if (begin) {
-    //     sensor.setAccessMode(sensor.MASTERCONTROLLEDMODE);
-    //     sensor.disableTemp();
-    // }
 
     return begin;
 }

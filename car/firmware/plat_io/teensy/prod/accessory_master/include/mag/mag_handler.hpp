@@ -1,5 +1,6 @@
 #include <Arduino.h>
-#include <tlv493D.hpp>
+// #include <tlv493D.hpp>
+#include <magnetometer493D.hpp>
 
 #include "util/ring_buffer.hpp"
 #include "util/circular_buffer.hpp"
@@ -40,7 +41,7 @@ public:
 private:
     buffer::RingBuffer<data::ChannelSample, baja::config::SAMPLE_RING_BUFFER_SIZE>& ringBuffer_;
     buffer::CircularBuffer<data::ChannelSample, config::FAST_BUFFER_SIZE>& fastBuffer_;
-    float data_x, data_y, data_z;
+    int16_t data_x, data_y, data_z;
     uint32_t conv_data_x, conv_data_y, conv_data_z;
     Magnetometer mag;
     uint64_t samplingCount;

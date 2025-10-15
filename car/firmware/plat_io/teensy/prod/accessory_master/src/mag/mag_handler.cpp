@@ -16,20 +16,27 @@ namespace mag {
         fastBuffer_(fastBuffer),
         samplingCount(0),
         mag_id_(mag_id),
-        wire_(wire) {}
+        wire_(wire),
+        start_micro(micros()),
+        mag(Wire, MAG_ADDR_MAP.at(mag_id)) {}
 
     bool MagHandler::begin() {
-        mag.begin(wire_, MAG_ADDR_MAP.at(mag_id_));
+        // mag.begin(wire_, MAG_ADDR_MAP.at(mag_id_));
+        Wire.begin();
+        return mag.begin();
 
-        return true;
+        // return true;
     }
 
     void MagHandler::readMagAsUint32() {
         mag.readRawMag(data_x, data_y, data_z);
+        conv_data_x = data_x<<16;
+        conv_data_y = data_y<<16;
+        conv_data_z = data_z<<16;
 
-        store_float_as_uint32(&data_x, &conv_data_x);
-        store_float_as_uint32(&data_y, &conv_data_y);
-        store_float_as_uint32(&data_z, &conv_data_z);
+        // store_float_as_uint32(&data_x, &conv_data_x);
+        // store_float_as_uint32(&data_y, &conv_data_y);
+        // store_float_as_uint32(&data_z, &conv_data_z);
     }
 
     bool MagHandler::pollAndProcess() {
@@ -37,7 +44,7 @@ namespace mag {
 
         // testing sampling rate
         uint64_t diff = time - start_micro;
-        if (diff > 5000000 && mag_id_ == 0) {
+        if (samplingCount-start_samples == 1000 && mag_id_ == 0) {
             float rate = (float) (samplingCount - start_samples) * 1000000. / diff;
             util::Debug::info("Sampling rate: " + String(rate));
             start_micro = time;
@@ -46,10 +53,13 @@ namespace mag {
 
         uint32_t milli = millis();
 
+        uint64_t mictest = micros();
         readMagAsUint32();
+        uint64_t testdiff = micros() - mictest;
 
-        // if(mag_id_==0)
-            // util::Debug::info("Magdata " + String(mag_id_) + ": " + String(data_x) + "-" + String(conv_data_x) + ", " + String(data_y) + "-" + String(conv_data_y) + ", " + String(data_z) + "-" + String(conv_data_z));
+        if(mag_id_== 0 && samplingCount % 150 == 0)
+            util::Debug::info(String(testdiff));
+        //     util::Debug::info("Magdata " + String(mag_id_) + ": " + String(data_x) + "-" + String(conv_data_x) + ", " + String(data_y) + "-" + String(conv_data_y) + ", " + String(data_z) + "-" + String(conv_data_z));
 
         data::ChannelSample channelSampleX(
             time,
@@ -73,30 +83,30 @@ namespace mag {
         );
 
         if (!ringBuffer_.write(channelSampleX)) {
-            return AH_BUFFERBAD;
+            // return AH_BUFFERBAD;
         }
 
         if (!ringBuffer_.write(channelSampleY)) {
-            return AH_BUFFERBAD;
+            // return AH_BUFFERBAD;
         }
 
         if (!ringBuffer_.write(channelSampleZ)) {
-            return AH_BUFFERBAD;
+            // return AH_BUFFERBAD;
         }
 
-        // if (samplingCount % config::FAST_BUFFER_DOWNSAMPLE_RATIO == 0) {
-        //     if (!fastBuffer_.write(channelSampleX)) {
+        if (samplingCount % config::FAST_BUFFER_DOWNSAMPLE_RATIO == 0) {
+            if (!fastBuffer_.write(channelSampleX)) {
                 
-        //     }
+            }
 
-        //     if (!fastBuffer_.write(channelSampleY)) {
+            if (!fastBuffer_.write(channelSampleY)) {
 
-        //     }
+            }
 
-        //     if (!fastBuffer_.write(channelSampleZ)) {
+            if (!fastBuffer_.write(channelSampleZ)) {
 
-        //     }
-        // }
+            }
+        }
 
         samplingCount++;
 
